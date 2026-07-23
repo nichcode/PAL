@@ -31,7 +31,7 @@ PalResult PAL_CALL createDeviceD3D12(
 {
     HRESULT result;
     DeviceD3D12* device = nullptr;
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
 
     // check if any of the features are not supported
     PalAdapterFeatures adapterFeatures = getAdapterFeaturesD3D12(adapter);
@@ -52,8 +52,8 @@ PalResult PAL_CALL createDeviceD3D12(
     // get and cache highest shader model
     device->shaderModel = getHighestSupportedShaderTargetD3D12(adapter, PAL_SHADER_FORMAT_DXIL);
     result = s_D3D12.createDevice(
-        (IUnknown*)d3d12Adapter->handle,
-        d3d12Adapter->level,
+        (IUnknown*)adapterImpl->handle,
+        adapterImpl->level,
         &IID_Device,
         (void**)&tmpDevice);
 
@@ -297,46 +297,52 @@ PalResult PAL_CALL createDeviceD3D12(
         device->canFenceReset = PAL_TRUE;
     }
 
-    device->adapter = d3d12Adapter->handle;
+    device->adapter = adapterImpl->handle;
     *outDevice = (PalDevice*)device;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyDeviceD3D12(PalDevice* device)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    if (d3d12Device->meshSignature) {
-        d3d12Device->meshSignature->lpVtbl->Release(d3d12Device->meshSignature);
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
+    if (deviceImpl->meshSignature) {
+        deviceImpl->meshSignature->lpVtbl->Release(deviceImpl->meshSignature);
     }
 
-    if (d3d12Device->raySignature) {
-        d3d12Device->raySignature->lpVtbl->Release(d3d12Device->raySignature);
+    if (deviceImpl->raySignature) {
+        deviceImpl->raySignature->lpVtbl->Release(deviceImpl->raySignature);
     }
 
-    if (d3d12Device->dispatchSignature) {
-        d3d12Device->dispatchSignature->lpVtbl->Release(d3d12Device->dispatchSignature);
+    if (deviceImpl->dispatchSignature) {
+        deviceImpl->dispatchSignature->lpVtbl->Release(deviceImpl->dispatchSignature);
     }
 
-    if (d3d12Device->drawIndexedSignature) {
-        d3d12Device->drawIndexedSignature->lpVtbl->Release(d3d12Device->drawIndexedSignature);
+    if (deviceImpl->drawIndexedSignature) {
+        deviceImpl->drawIndexedSignature->lpVtbl->Release(deviceImpl->drawIndexedSignature);
     }
 
-    if (d3d12Device->drawSignature) {
-        d3d12Device->drawSignature->lpVtbl->Release(d3d12Device->drawSignature);
+    if (deviceImpl->drawSignature) {
+        deviceImpl->drawSignature->lpVtbl->Release(deviceImpl->drawSignature);
     }
 
-    d3d12Device->rtvAllocator.heap->lpVtbl->Release(d3d12Device->rtvAllocator.heap);
-    d3d12Device->dsvAllocator.heap->lpVtbl->Release(d3d12Device->dsvAllocator.heap);
+    deviceImpl->rtvAllocator.heap->lpVtbl->Release(deviceImpl->rtvAllocator.heap);
+    deviceImpl->dsvAllocator.heap->lpVtbl->Release(deviceImpl->dsvAllocator.heap);
 
-    d3d12Device->queue->lpVtbl->Release(d3d12Device->queue);
-    d3d12Device->handle->lpVtbl->Release(d3d12Device->handle);
+    deviceImpl->queue->lpVtbl->Release(deviceImpl->queue);
+    deviceImpl->handle->lpVtbl->Release(deviceImpl->handle);
 
-    if (d3d12Device->infoQueue) {
-        d3d12Device->infoQueue->lpVtbl->Release(d3d12Device->infoQueue);
-        palFree(s_D3D12.allocator, d3d12Device->scratchBuffer);
+    if (deviceImpl->infoQueue) {
+        deviceImpl->infoQueue->lpVtbl->Release(deviceImpl->infoQueue);
+        palFree(s_D3D12.allocator, deviceImpl->scratchBuffer);
     }
 
-    palFree(s_D3D12.allocator, d3d12Device);
+    palFree(s_D3D12.allocator, deviceImpl);
+}
+
+uint32_t PAL_CALL getDeviceLostReasonD3D12(PalDevice* device)
+{
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
+    return deviceImpl->handle->lpVtbl->GetDeviceRemovedReason(deviceImpl->handle);
 }
 
 PalResult PAL_CALL allocateMemoryD3D12(
@@ -347,7 +353,7 @@ PalResult PAL_CALL allocateMemoryD3D12(
     PalMemory** outMemory)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     MemoryD3D12* memory = nullptr;
 
     memory = palAllocate(s_D3D12.allocator, sizeof(MemoryD3D12), 0);
@@ -365,11 +371,11 @@ PalResult PAL_CALL allocateMemoryD3D12(
         desc.Properties.Type = D3D12_HEAP_TYPE_UPLOAD;
     }
 
-    result = d3d12Device->handle->lpVtbl
-                 ->CreateHeap(d3d12Device->handle, &desc, &IID_Heap, (void**)&memory->handle);
+    result = deviceImpl->handle->lpVtbl
+                 ->CreateHeap(deviceImpl->handle, &desc, &IID_Heap, (void**)&memory->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -380,9 +386,9 @@ PalResult PAL_CALL allocateMemoryD3D12(
 
 void PAL_CALL freeMemoryD3D12(PalMemory* memory)
 {
-    MemoryD3D12* d3d12Memory = (MemoryD3D12*)memory;
-    d3d12Memory->handle->lpVtbl->Release(d3d12Memory->handle);
-    palFree(s_D3D12.allocator, d3d12Memory);
+    MemoryD3D12* memoryImpl = (MemoryD3D12*)memory;
+    memoryImpl->handle->lpVtbl->Release(memoryImpl->handle);
+    palFree(s_D3D12.allocator, memoryImpl);
 }
 
 void PAL_CALL querySamplerAnisotropyCapabilitiesD3D12(
@@ -427,15 +433,15 @@ void PAL_CALL queryFragmentShadingRateCapabilitiesD3D12(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     caps->supportedShadingRates = (1u << PAL_FRAGMENT_SHADING_RATE_1X1);
     caps->supportedShadingRates |= (1u << PAL_FRAGMENT_SHADING_RATE_1X2);
     caps->supportedShadingRates |= (1u << PAL_FRAGMENT_SHADING_RATE_2X1);
     caps->supportedShadingRates |= (1u << PAL_FRAGMENT_SHADING_RATE_2X2);
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS6 options = {0};
-    d3d12Device->handle->lpVtbl->CheckFeatureSupport(
-        d3d12Device->handle,
+    deviceImpl->handle->lpVtbl->CheckFeatureSupport(
+        deviceImpl->handle,
         D3D12_FEATURE_D3D12_OPTIONS6,
         &options,
         sizeof(options));
@@ -497,10 +503,10 @@ void PAL_CALL queryDescriptorIndexingCapabilitiesD3D12(
     PalDevice* device,
     PalDescriptorIndexingCapabilities* caps)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     caps->flags = PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING;
     caps->flags |= PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND;
-    getDescriptorTierLimitsD3D12(d3d12Device->handle, nullptr, caps);
+    getDescriptorTierLimitsD3D12(deviceImpl->handle, nullptr, caps);
 }
 
 PalResult PAL_CALL createQueueD3D12(
@@ -509,35 +515,35 @@ PalResult PAL_CALL createQueueD3D12(
     PalQueue** outQueue)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     QueueD3D12* queue = nullptr;
     D3D12_COMMAND_QUEUE_DESC desc = {0};
 
     switch (type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-            if (!d3d12Device->limits.freeComputeQueues) {
+            if (!deviceImpl->limits.freeComputeQueues) {
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
-            d3d12Device->limits.freeComputeQueues--;
+            deviceImpl->limits.freeComputeQueues--;
             break;
         }
 
         case PAL_QUEUE_TYPE_GRAPHICS: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-            if (!d3d12Device->limits.freeGraphicsQueues) {
+            if (!deviceImpl->limits.freeGraphicsQueues) {
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
-            d3d12Device->limits.freeGraphicsQueues--;
+            deviceImpl->limits.freeGraphicsQueues--;
             break;
         }
 
         case PAL_QUEUE_TYPE_COPY: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-            if (!d3d12Device->limits.freeCopyQueues) {
+            if (!deviceImpl->limits.freeCopyQueues) {
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
-            d3d12Device->limits.freeCopyQueues--;
+            deviceImpl->limits.freeCopyQueues--;
             break;
         }
     }
@@ -547,21 +553,21 @@ PalResult PAL_CALL createQueueD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    result = d3d12Device->handle->lpVtbl->CreateCommandQueue(
-        d3d12Device->handle,
+    result = deviceImpl->handle->lpVtbl->CreateCommandQueue(
+        deviceImpl->handle,
         &desc,
         &IID_Queue,
         (void**)&queue->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         palFree(s_D3D12.allocator, queue);
         return makeResultD3D12(result);
     }
 
     // create fence used for queue wait
-    result = d3d12Device->handle->lpVtbl
-                 ->CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, (void**)&queue->fence);
+    result = deviceImpl->handle->lpVtbl
+                 ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&queue->fence);
 
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, queue);
@@ -585,22 +591,22 @@ PalResult PAL_CALL createQueueD3D12(
 
 void PAL_CALL destroyQueueD3D12(PalQueue* queue)
 {
-    QueueD3D12* d3d12Queue = (QueueD3D12*)queue;
-    d3d12Queue->fence->lpVtbl->Release(d3d12Queue->fence);
-    d3d12Queue->handle->lpVtbl->Release(d3d12Queue->handle);
-    CloseHandle(d3d12Queue->fenceEvent);
-    palFree(s_D3D12.allocator, d3d12Queue);
+    QueueD3D12* queueImpl = (QueueD3D12*)queue;
+    queueImpl->fence->lpVtbl->Release(queueImpl->fence);
+    queueImpl->handle->lpVtbl->Release(queueImpl->handle);
+    CloseHandle(queueImpl->fenceEvent);
+    palFree(s_D3D12.allocator, queueImpl);
 }
 
 PalResult PAL_CALL waitQueueD3D12(PalQueue* queue)
 {
-    QueueD3D12* d3d12Queue = (QueueD3D12*)queue;
-    ID3D12Fence* fence = d3d12Queue->fence;
-    HANDLE event = d3d12Queue->fenceEvent;
+    QueueD3D12* queueImpl = (QueueD3D12*)queue;
+    ID3D12Fence* fence = queueImpl->fence;
+    HANDLE event = queueImpl->fenceEvent;
 
     // wait on the fence if the submited work is not done
-    if (fence->lpVtbl->GetCompletedValue(fence) < d3d12Queue->fenceValue) {
-        fence->lpVtbl->SetEventOnCompletion(fence, d3d12Queue->fenceValue, event);
+    if (fence->lpVtbl->GetCompletedValue(fence) < queueImpl->fenceValue) {
+        fence->lpVtbl->SetEventOnCompletion(fence, queueImpl->fenceValue, event);
         WaitForSingleObject(event, INFINITE);
         CloseHandle(event);
     }
@@ -611,8 +617,8 @@ PalBool PAL_CALL canQueuePresentD3D12(
     PalQueue* queue,
     PalSurface* surface)
 {
-    QueueD3D12* d3d12Queue = (QueueD3D12*)queue;
-    if (d3d12Queue->type == PAL_QUEUE_TYPE_GRAPHICS) {
+    QueueD3D12* queueImpl = (QueueD3D12*)queue;
+    if (queueImpl->type == PAL_QUEUE_TYPE_GRAPHICS) {
         return PAL_TRUE; // all graphics queues support presentation
     }
     return PAL_FALSE;
@@ -624,7 +630,7 @@ PalResult PAL_CALL createShaderD3D12(
     PalShader** outShader)
 {
     ShaderD3D12* shader = nullptr;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     void* bytecode = nullptr;
 
     shader = palAllocate(s_D3D12.allocator, sizeof(ShaderD3D12), 0);
@@ -657,10 +663,10 @@ PalResult PAL_CALL createShaderD3D12(
 
 void PAL_CALL destroyShaderD3D12(PalShader* shader)
 {
-    ShaderD3D12* d3dShader = (ShaderD3D12*)shader;
-    palFree(s_D3D12.allocator, (void*)d3dShader->byteCode.pShaderBytecode);
-    palFree(s_D3D12.allocator, d3dShader->entries);
-    palFree(s_D3D12.allocator, d3dShader);
+    ShaderD3D12* shaderImpl = (ShaderD3D12*)shader;
+    palFree(s_D3D12.allocator, (void*)shaderImpl->byteCode.pShaderBytecode);
+    palFree(s_D3D12.allocator, shaderImpl->entries);
+    palFree(s_D3D12.allocator, shaderImpl);
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

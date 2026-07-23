@@ -15,8 +15,8 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
 {
     HRESULT result;
     AccelerationStructureD3D12* as = nullptr;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)info->buffer;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
+    BufferD3D12* bufferImpl = (BufferD3D12*)info->buffer;
 
     as = palAllocate(s_D3D12.allocator, sizeof(AccelerationStructureD3D12), 0);
     if (!as) {
@@ -24,7 +24,7 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
     }
 
     as->type = info->type;
-    as->handle = d3d12Buffer->handle;
+    as->handle = bufferImpl->handle;
     as->address = as->handle->lpVtbl->GetGPUVirtualAddress(as->handle);
     as->address += info->offset;
     *outAs = (PalAccelerationStructure*)as;
@@ -33,8 +33,8 @@ PalResult PAL_CALL createAccelerationstructureD3D12(
 
 void PAL_CALL destroyAccelerationstructureD3D12(PalAccelerationStructure* as)
 {
-    AccelerationStructureD3D12* d3dAs = (AccelerationStructureD3D12*)as;
-    palFree(s_D3D12.allocator, d3dAs);
+    AccelerationStructureD3D12* asImpl = (AccelerationStructureD3D12*)as;
+    palFree(s_D3D12.allocator, asImpl);
 }
 
 void PAL_CALL getAccelerationStructureBuildSizeD3D12(
@@ -42,7 +42,7 @@ void PAL_CALL getAccelerationStructureBuildSizeD3D12(
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildInfo = {0};
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO sizeInfo = {0};
 
@@ -58,8 +58,8 @@ void PAL_CALL getAccelerationStructureBuildSizeD3D12(
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count);
         fillBuildInfoD3D12(PAL_TRUE, info, geometries, &buildInfo);
 
-        d3d12Device->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
-            d3d12Device->handle,
+        deviceImpl->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
+            deviceImpl->handle,
             &buildInfo.Inputs,
             &sizeInfo);
 
@@ -68,8 +68,8 @@ void PAL_CALL getAccelerationStructureBuildSizeD3D12(
     } else {
         fillBuildInfoD3D12(PAL_TRUE, info, nullptr, &buildInfo);
 
-        d3d12Device->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
-            d3d12Device->handle,
+        deviceImpl->handle->lpVtbl->GetRaytracingAccelerationStructurePrebuildInfo(
+            deviceImpl->handle,
             &buildInfo.Inputs,
             &sizeInfo);
     }

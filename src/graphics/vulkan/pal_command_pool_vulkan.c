@@ -15,9 +15,9 @@ PalResult PAL_CALL createCommandPoolVk(
 {
     VkResult result;
     CommandPoolVk* pool = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
-    QueueVk* vkQueue = (QueueVk*)queue;
-    PhysicalQueue* phyQueue = vkQueue->phyQueue;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
+    QueueVk* queueImpl = (QueueVk*)queue;
+    PhysicalQueue* phyQueue = queueImpl->phyQueue;
 
     pool = palAllocate(s_Vk.allocator, sizeof(CommandPoolVk), 0);
     if (!pool) {
@@ -28,21 +28,21 @@ PalResult PAL_CALL createCommandPoolVk(
     cInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     cInfo.queueFamilyIndex = phyQueue->familyIndex;
     cInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    result = s_Vk.createCommandPool(vkDevice->handle, &cInfo, &s_Vk.vkAllocator, &pool->handle);
+    result = s_Vk.createCommandPool(deviceImpl->handle, &cInfo, &s_Vk.allocatorImpl, &pool->handle);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
 
-    pool->device = vkDevice;
+    pool->device = deviceImpl;
     *outPool = (PalCommandPool*)pool;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyCommandPoolVk(PalCommandPool* pool)
 {
-    CommandPoolVk* vkPool = (CommandPoolVk*)pool;
-    s_Vk.destroyCommandPool(vkPool->device->handle, vkPool->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkPool);
+    CommandPoolVk* cmdPoolImpl = (CommandPoolVk*)pool;
+    s_Vk.destroyCommandPool(cmdPoolImpl->device->handle, cmdPoolImpl->handle, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, cmdPoolImpl);
 }
 
 PalResult PAL_CALL allocateCommandBufferVk(
@@ -53,8 +53,8 @@ PalResult PAL_CALL allocateCommandBufferVk(
 {
     VkResult result;
     CommandBufferVk* cmdBuffer = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
-    CommandPoolVk* vkPool = (CommandPoolVk*)pool;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
+    CommandPoolVk* cmdPoolImpl = (CommandPoolVk*)pool;
 
     cmdBuffer = palAllocate(s_Vk.allocator, sizeof(CommandBufferVk), 0);
     if (!cmdBuffer) {
@@ -73,7 +73,7 @@ PalResult PAL_CALL allocateCommandBufferVk(
     VkCommandBufferAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandBufferCount = 1;
-    allocateInfo.commandPool = vkPool->handle;
+    allocateInfo.commandPool = cmdPoolImpl->handle;
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
     cmdBuffer->primary = PAL_TRUE;
@@ -82,7 +82,7 @@ PalResult PAL_CALL allocateCommandBufferVk(
         cmdBuffer->primary = PAL_FALSE;
     }
 
-    result = s_Vk.allocateCommandBuffer(vkDevice->handle, &allocateInfo, &cmdBuffer->handle);
+    result = s_Vk.allocateCommandBuffer(deviceImpl->handle, &allocateInfo, &cmdBuffer->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, (void*)cmdBuffer->allocator.memory);
         palFree(s_Vk.allocator, cmdBuffer);
@@ -96,8 +96,11 @@ PalResult PAL_CALL allocateCommandBufferVk(
     bufCreateInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    result =
-        s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &cmdBuffer->buffer);
+    result = s_Vk.createBuffer(
+        deviceImpl->handle,
+        &bufCreateInfo,
+        &s_Vk.allocatorImpl,
+        &cmdBuffer->buffer);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -105,54 +108,57 @@ PalResult PAL_CALL allocateCommandBufferVk(
 
     // allocate CPU upload memory and bind
     VkMemoryRequirements memReq = {0};
-    s_Vk.getBufferMemoryRequirements(vkDevice->handle, cmdBuffer->buffer, &memReq);
+    s_Vk.getBufferMemoryRequirements(deviceImpl->handle, cmdBuffer->buffer, &memReq);
 
     VkMemoryAllocateInfo bufferAllocateInfo = {0};
     bufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     bufferAllocateInfo.allocationSize = memReq.size;
 
-    uint32_t mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
-    uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
+    uint32_t mask = deviceImpl->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
+    uint32_t memoryIndex = findBestMemoryIndexVk(deviceImpl->phyDevice, mask);
     bufferAllocateInfo.memoryTypeIndex = memoryIndex;
 
     result = s_Vk.allocateMemory(
-        vkDevice->handle,
+        deviceImpl->handle,
         &bufferAllocateInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &cmdBuffer->bufferMemory);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
 
-    s_Vk.bindBufferMemory(vkDevice->handle, cmdBuffer->buffer, cmdBuffer->bufferMemory, 0);
+    s_Vk.bindBufferMemory(deviceImpl->handle, cmdBuffer->buffer, cmdBuffer->bufferMemory, 0);
 
-    cmdBuffer->device = vkDevice;
-    cmdBuffer->pool = vkPool;
+    cmdBuffer->device = deviceImpl;
+    cmdBuffer->pool = cmdPoolImpl;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL freeCommandBufferVk(PalCommandBuffer* cmdBuffer)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     s_Vk.freeCommandBuffer(
-        vkCmdBuffer->device->handle,
-        vkCmdBuffer->pool->handle,
+        cmdBufferImpl->device->handle,
+        cmdBufferImpl->pool->handle,
         1,
-        &vkCmdBuffer->handle);
+        &cmdBufferImpl->handle);
 
-    s_Vk.destroyBuffer(vkCmdBuffer->device->handle, vkCmdBuffer->buffer, &s_Vk.vkAllocator);
-    s_Vk.freeMemory(vkCmdBuffer->device->handle, vkCmdBuffer->bufferMemory, &s_Vk.vkAllocator);
+    s_Vk.destroyBuffer(cmdBufferImpl->device->handle, cmdBufferImpl->buffer, &s_Vk.allocatorImpl);
+    s_Vk.freeMemory(
+        cmdBufferImpl->device->handle,
+        cmdBufferImpl->bufferMemory,
+        &s_Vk.allocatorImpl);
 
-    palFree(s_Vk.allocator, (void*)vkCmdBuffer->allocator.memory);
-    palFree(s_Vk.allocator, vkCmdBuffer);
+    palFree(s_Vk.allocator, (void*)cmdBufferImpl->allocator.memory);
+    palFree(s_Vk.allocator, cmdBufferImpl);
 }
 
 PalResult PAL_CALL resetCommandBufferVk(PalCommandBuffer* cmdBuffer)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkResult result = s_Vk.resetCommandBuffer(vkCmdBuffer->handle, 0);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    VkResult result = s_Vk.resetCommandBuffer(cmdBufferImpl->handle, 0);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -170,9 +176,9 @@ PalResult PAL_CALL submitCommandBufferVk(
     VkFence fenceHandle = nullptr;
     VkSemaphore waitSemaphoreHandle = nullptr;
     VkSemaphore signalSemaphoreHandle = nullptr;
-    QueueVk* vkQueue = (QueueVk*)queue;
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)info->cmdBuffer;
-    PhysicalQueue* phyQueue = vkQueue->phyQueue;
+    QueueVk* queueImpl = (QueueVk*)queue;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)info->cmdBuffer;
+    PhysicalQueue* phyQueue = queueImpl->phyQueue;
 
     if (info->waitSemaphore) {
         SemaphoreVk* tmp = (SemaphoreVk*)info->waitSemaphore;
@@ -192,7 +198,7 @@ PalResult PAL_CALL submitCommandBufferVk(
     }
 
     VkCommandBufferSubmitInfoKHR cmdBufferSubmitInfo = {0};
-    cmdBufferSubmitInfo.commandBuffer = vkCmdBuffer->handle;
+    cmdBufferSubmitInfo.commandBuffer = cmdBufferImpl->handle;
     cmdBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR;
 
     VkSemaphoreSubmitInfoKHR waitSubmitInfo = {0};
@@ -216,7 +222,7 @@ PalResult PAL_CALL submitCommandBufferVk(
     submitInfo.waitSemaphoreInfoCount = waitSemaphoreCount;
     submitInfo.signalSemaphoreInfoCount = signalSemaphoreCount;
 
-    result = vkCmdBuffer->device->queueSubmit(phyQueue->handle, 1, &submitInfo, fenceHandle);
+    result = cmdBufferImpl->device->queueSubmit(phyQueue->handle, 1, &submitInfo, fenceHandle);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }

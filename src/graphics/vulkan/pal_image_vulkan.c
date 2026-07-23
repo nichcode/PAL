@@ -151,7 +151,7 @@ PalResult PAL_CALL createImageVk(
 {
     VkResult result;
     ImageVk* image = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     MemoryVk* memory = nullptr;
 
     image = palAllocate(s_Vk.allocator, sizeof(ImageVk), 0);
@@ -189,7 +189,7 @@ PalResult PAL_CALL createImageVk(
         createInfo.imageType = VK_IMAGE_TYPE_1D;
     }
 
-    result = s_Vk.createImage(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &image->handle);
+    result = s_Vk.createImage(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &image->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, image);
         return makeResultVk(result);
@@ -201,30 +201,30 @@ PalResult PAL_CALL createImageVk(
 
         // allocate and manage memory
         VkMemoryRequirements memReq = {0};
-        s_Vk.getImageMemoryRequirements(vkDevice->handle, image->handle, &memReq);
+        s_Vk.getImageMemoryRequirements(deviceImpl->handle, image->handle, &memReq);
 
         VkMemoryAllocateInfo allocateInfo = {0};
         allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.allocationSize = (VkDeviceSize)memReq.size;
 
-        uint32_t memoryMask = vkDevice->memoryClassMask[memoryType] & memReq.memoryTypeBits;
-        uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, memoryMask);
+        uint32_t memoryMask = deviceImpl->memoryClassMask[memoryType] & memReq.memoryTypeBits;
+        uint32_t memoryIndex = findBestMemoryIndexVk(deviceImpl->phyDevice, memoryMask);
         if (!(memoryMask & (1u << memoryIndex))) {
             return PAL_RESULT_CODE_PLATFORM_FAILURE;
         }
 
         allocateInfo.memoryTypeIndex = memoryIndex;
         result = s_Vk.allocateMemory(
-            vkDevice->handle,
+            deviceImpl->handle,
             &allocateInfo,
-            &s_Vk.vkAllocator,
+            &s_Vk.allocatorImpl,
             &memory->handle);
 
         if (result != VK_SUCCESS) {
             return makeResultVk(result);
         }
 
-        result = s_Vk.bindImageMemory(vkDevice->handle, image->handle, memory->handle, 0);
+        result = s_Vk.bindImageMemory(deviceImpl->handle, image->handle, memory->handle, 0);
         if (result != VK_SUCCESS) {
             return makeResultVk(result);
         }
@@ -233,7 +233,7 @@ PalResult PAL_CALL createImageVk(
         image->isMemoryManaged = PAL_TRUE;
     }
 
-    image->device = vkDevice;
+    image->device = deviceImpl;
     image->info.type = info->type;
     image->info.format = info->format;
     image->info.usages = info->usages;
@@ -252,40 +252,40 @@ PalResult PAL_CALL createImageVk(
 
 void PAL_CALL destroyImageVk(PalImage* image)
 {
-    ImageVk* vkImage = (ImageVk*)image;
-    if (vkImage->info.belongsToSwapchain) {
+    ImageVk* imageImpl = (ImageVk*)image;
+    if (imageImpl->info.belongsToSwapchain) {
         return;
     }
 
-    s_Vk.destroyImage(vkImage->device->handle, vkImage->handle, &s_Vk.vkAllocator);
-    if (vkImage->isMemoryManaged) {
-        s_Vk.freeMemory(vkImage->device->handle, vkImage->memory->handle, &s_Vk.vkAllocator);
-        palFree(s_Vk.allocator, vkImage->memory);
+    s_Vk.destroyImage(imageImpl->device->handle, imageImpl->handle, &s_Vk.allocatorImpl);
+    if (imageImpl->isMemoryManaged) {
+        s_Vk.freeMemory(imageImpl->device->handle, imageImpl->memory->handle, &s_Vk.allocatorImpl);
+        palFree(s_Vk.allocator, imageImpl->memory);
     }
 
-    palFree(s_Vk.allocator, vkImage);
+    palFree(s_Vk.allocator, imageImpl);
 }
 
 void PAL_CALL getImageInfoVk(
     PalImage* image,
     PalImageInfo* info)
 {
-    ImageVk* vkImage = (ImageVk*)image;
-    *info = vkImage->info;
+    ImageVk* imageImpl = (ImageVk*)image;
+    *info = imageImpl->info;
 }
 
 void PAL_CALL getImageMemoryRequirementsVk(
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
-    ImageVk* vkImage = (ImageVk*)image;
-    if (vkImage->info.belongsToSwapchain) {
+    ImageVk* imageImpl = (ImageVk*)image;
+    if (imageImpl->info.belongsToSwapchain) {
         return;
     }
 
-    DeviceVk* device = vkImage->device;
+    DeviceVk* device = imageImpl->device;
     VkMemoryRequirements memReq = {0};
-    s_Vk.getImageMemoryRequirements(device->handle, vkImage->handle, &memReq);
+    s_Vk.getImageMemoryRequirements(device->handle, imageImpl->handle, &memReq);
     requirements->alignment = (uint64_t)memReq.alignment;
     requirements->size = (uint64_t)memReq.size;
     requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, 0);
@@ -301,18 +301,18 @@ PalResult PAL_CALL bindImageMemoryVk(
     PalMemory* memory,
     uint64_t offset)
 {
-    ImageVk* vkImage = (ImageVk*)image;
-    if (vkImage->info.belongsToSwapchain) {
+    ImageVk* imageImpl = (ImageVk*)image;
+    if (imageImpl->info.belongsToSwapchain) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    if (vkImage->memory) {
+    if (imageImpl->memory) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    MemoryVk* vkMemory = (MemoryVk*)memory;
-    s_Vk.bindImageMemory(vkImage->device->handle, vkImage->handle, vkMemory->handle, offset);
-    vkImage->memory = vkMemory;
+    MemoryVk* memoryImpl = (MemoryVk*)memory;
+    s_Vk.bindImageMemory(imageImpl->device->handle, imageImpl->handle, memoryImpl->handle, offset);
+    imageImpl->memory = memoryImpl;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -324,8 +324,8 @@ PalResult PAL_CALL createImageViewVk(
 {
     VkResult result = VK_SUCCESS;
     ImageViewVk* imageView = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
-    ImageVk* vkImage = (ImageVk*)image;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
+    ImageVk* imageImpl = (ImageVk*)image;
 
     imageView = palAllocate(s_Vk.allocator, sizeof(ImageViewVk), 0);
     if (!imageView) {
@@ -335,7 +335,7 @@ PalResult PAL_CALL createImageViewVk(
     VkImageViewCreateInfo createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     createInfo.format = formatToVk(info->format);
-    createInfo.image = vkImage->handle;
+    createInfo.image = imageImpl->handle;
     createInfo.viewType = imageViewTypeToVk(info->type);
 
     createInfo.subresourceRange.aspectMask = imageAspectToVk(info->subresourceRange.aspect);
@@ -344,16 +344,19 @@ PalResult PAL_CALL createImageViewVk(
     createInfo.subresourceRange.levelCount = info->subresourceRange.mipLevelCount;
     createInfo.subresourceRange.layerCount = info->subresourceRange.layerArrayCount;
 
-    result =
-        s_Vk.createImageView(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &imageView->handle);
+    result = s_Vk.createImageView(
+        deviceImpl->handle,
+        &createInfo,
+        &s_Vk.allocatorImpl,
+        &imageView->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, imageView);
         return makeResultVk(result);
     }
 
-    imageView->device = vkDevice;
-    imageView->image = vkImage;
+    imageView->device = deviceImpl;
+    imageView->image = imageImpl;
     imageView->layerCount = createInfo.subresourceRange.layerCount;
     *outImageView = (PalImageView*)imageView;
     return PAL_RESULT_SUCCESS;
@@ -361,9 +364,12 @@ PalResult PAL_CALL createImageViewVk(
 
 void PAL_CALL destroyImageViewVk(PalImageView* imageView)
 {
-    ImageViewVk* vkImageView = (ImageViewVk*)imageView;
-    s_Vk.destroyImageView(vkImageView->device->handle, vkImageView->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkImageView);
+    ImageViewVk* imageViewImpl = (ImageViewVk*)imageView;
+    s_Vk.destroyImageView(
+        imageViewImpl->device->handle,
+        imageViewImpl->handle,
+        &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, imageViewImpl);
 }
 
 PalResult PAL_CALL createSamplerVk(
@@ -373,7 +379,7 @@ PalResult PAL_CALL createSamplerVk(
 {
     VkResult result = VK_SUCCESS;
     SamplerVk* sampler = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
 
     sampler = palAllocate(s_Vk.allocator, sizeof(SamplerVk), 0);
     if (!sampler) {
@@ -400,23 +406,24 @@ PalResult PAL_CALL createSamplerVk(
     createInfo.addressModeW = addressModeToVk(info->addressModeW);
     createInfo.borderColor = borderColorToVk(info->borderColor);
 
-    result = s_Vk.createSampler(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &sampler->handle);
+    result =
+        s_Vk.createSampler(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &sampler->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, sampler);
         return makeResultVk(result);
     }
 
-    sampler->device = vkDevice;
+    sampler->device = deviceImpl;
     *outSampler = (PalSampler*)sampler;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroySamplerVk(PalSampler* sampler)
 {
-    SamplerVk* vkSampler = (SamplerVk*)sampler;
-    s_Vk.destroySampler(vkSampler->device->handle, vkSampler->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkSampler);
+    SamplerVk* samplerImpl = (SamplerVk*)sampler;
+    s_Vk.destroySampler(samplerImpl->device->handle, samplerImpl->handle, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, samplerImpl);
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

@@ -120,14 +120,14 @@ void PAL_CALL getAdapterInfoD3D12(
     PalAdapterInfo* info)
 {
     HRESULT result = 0;
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
     DXGI_ADAPTER_DESC3 desc;
     D3D12_FEATURE_DATA_ARCHITECTURE1 arch = {0};
-    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    ID3D12Device* device = adapterImpl->tmpDevice;
 
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
     shaderModel.HighestShaderModel = D3D_SHADER_MODEL_6_0;
-    d3d12Adapter->handle->lpVtbl->GetDesc3(d3d12Adapter->handle, &desc);
+    adapterImpl->handle->lpVtbl->GetDesc3(adapterImpl->handle, &desc);
 
     result = device->lpVtbl->CheckFeatureSupport(
         device,
@@ -142,8 +142,8 @@ void PAL_CALL getAdapterInfoD3D12(
 
     LARGE_INTEGER driverVersion = {0};
     info->driverVersion = 0;
-    result = d3d12Adapter->handle->lpVtbl->CheckInterfaceSupport(
-        d3d12Adapter->handle,
+    result = adapterImpl->handle->lpVtbl->CheckInterfaceSupport(
+        adapterImpl->handle,
         &IID_Adapter,
         &driverVersion);
 
@@ -192,7 +192,7 @@ void PAL_CALL getAdapterCapabilitiesD3D12(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
     PalViewportCapabilities* viewportCaps = &caps->viewportCaps;
     PalImageCapabilities* imageCaps = &caps->imageCaps;
     PalResourceCapabilities* resourceCaps = &caps->resourceCaps;
@@ -240,7 +240,7 @@ void PAL_CALL getAdapterCapabilitiesD3D12(
 
     // resource limits
     // always supported
-    getDescriptorTierLimitsD3D12(d3d12Adapter->tmpDevice, resourceCaps, nullptr);
+    getDescriptorTierLimitsD3D12(adapterImpl->tmpDevice, resourceCaps, nullptr);
     resourceCaps->maxBoundSets = 32;
 
     // compute limits
@@ -256,9 +256,9 @@ void PAL_CALL getAdapterCapabilitiesD3D12(
 PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
 {
     HRESULT result;
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
     PalAdapterFeatures features = 0;
-    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    ID3D12Device* device = adapterImpl->tmpDevice;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS options = {0};
     D3D12_FEATURE_DATA_D3D12_OPTIONS3 options3 = {0};
@@ -376,7 +376,7 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesD3D12(PalAdapter* adapter)
     features |= PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY;
     features |= PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS;
 
-    if (d3d12Adapter->level >= D3D_FEATURE_LEVEL_12_0) {
+    if (adapterImpl->level >= D3D_FEATURE_LEVEL_12_0) {
         features |= PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE;
     }
     return features;
@@ -394,7 +394,7 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
         return PAL_MAKE_SHADER_TARGET(5, 1);
     }
 
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {0};
 
     D3D_SHADER_MODEL models[11];
@@ -415,8 +415,8 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetD3D12(
     D3D_SHADER_MODEL highestModel = D3D_SHADER_MODEL_5_1;
     for (int i = 0; i < 11; i++) {
         shaderModel.HighestShaderModel = models[i];
-        result = d3d12Adapter->tmpDevice->lpVtbl->CheckFeatureSupport(
-            d3d12Adapter->tmpDevice,
+        result = adapterImpl->tmpDevice->lpVtbl->CheckFeatureSupport(
+            adapterImpl->tmpDevice,
             D3D12_FEATURE_SHADER_MODEL,
             &shaderModel,
             sizeof(shaderModel));
@@ -471,8 +471,8 @@ void PAL_CALL enumerateFormatsD3D12(
     PalFormatInfo* outFormats)
 {
     int32_t fmtCount = 0;
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
-    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
+    ID3D12Device* device = adapterImpl->tmpDevice;
     D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
     for (int i = 0; i < PAL_FORMAT_COUNT; i++) {
@@ -510,8 +510,8 @@ PalBool PAL_CALL isFormatSupportedD3D12(
     PalAdapter* adapter,
     PalFormat format)
 {
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
-    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
+    ID3D12Device* device = adapterImpl->tmpDevice;
     D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
     DXGI_FORMAT fmt = formatToD3D12(format);
@@ -535,8 +535,8 @@ PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
     PalFormat format)
 {
     HRESULT result;
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
-    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
+    ID3D12Device* device = adapterImpl->tmpDevice;
     D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
     DXGI_FORMAT fmt = formatToD3D12(format);
@@ -574,8 +574,8 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
     PalFormat format)
 {
     HRESULT result;
-    AdapterD3D12* d3d12Adapter = (AdapterD3D12*)adapter;
-    ID3D12Device* device = d3d12Adapter->tmpDevice;
+    AdapterD3D12* adapterImpl = (AdapterD3D12*)adapter;
+    ID3D12Device* device = adapterImpl->tmpDevice;
     D3D12_FEATURE_DATA_FORMAT_SUPPORT support = {0};
 
     DXGI_FORMAT fmt = formatToD3D12(format);

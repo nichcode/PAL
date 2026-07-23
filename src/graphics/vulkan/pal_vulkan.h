@@ -456,7 +456,7 @@ typedef struct {
     PalDebugCallback callback;
     const PalAllocator* allocator;
     AdapterVk* adapters;
-    VkAllocationCallbacks vkAllocator;
+    VkAllocationCallbacks allocatorImpl;
 } Vulkan;
 
 extern Vulkan s_Vk;

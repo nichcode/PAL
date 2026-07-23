@@ -14,7 +14,7 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     PalDescriptorSetLayout** outLayout)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     DescriptorSetLayoutD3D12* layout = nullptr;
     DescriptorSetBinding* bindings = nullptr;
     uint32_t count = info->bindingCount;
@@ -126,27 +126,27 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
     }
 
     // check limits
-    if (sampledImageCount > d3d12Device->limits.maxDescriptorSampledImages) {
+    if (sampledImageCount > deviceImpl->limits.maxDescriptorSampledImages) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (storageImageCount > d3d12Device->limits.maxDescriptorStorageImages) {
+    if (storageImageCount > deviceImpl->limits.maxDescriptorStorageImages) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (storageBufferCount > d3d12Device->limits.maxDescriptorStorageBuffers) {
+    if (storageBufferCount > deviceImpl->limits.maxDescriptorStorageBuffers) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (uniformBufferCount > d3d12Device->limits.maxDescriptorUniformBuffers) {
+    if (uniformBufferCount > deviceImpl->limits.maxDescriptorUniformBuffers) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (tlasCount > d3d12Device->limits.maxDescriptorAccelerationStructures) {
+    if (tlasCount > deviceImpl->limits.maxDescriptorAccelerationStructures) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (samplerCount > d3d12Device->limits.maxDescriptorSamplers) {
+    if (samplerCount > deviceImpl->limits.maxDescriptorSamplers) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -160,9 +160,9 @@ PalResult PAL_CALL createDescriptorSetLayoutD3D12(
 
 void PAL_CALL destroyDescriptorSetLayoutD3D12(PalDescriptorSetLayout* layout)
 {
-    DescriptorSetLayoutD3D12* d3d12Layout = (DescriptorSetLayoutD3D12*)layout;
-    palFree(s_D3D12.allocator, d3d12Layout->bindings);
-    palFree(s_D3D12.allocator, d3d12Layout);
+    DescriptorSetLayoutD3D12* layoutImpl = (DescriptorSetLayoutD3D12*)layout;
+    palFree(s_D3D12.allocator, layoutImpl->bindings);
+    palFree(s_D3D12.allocator, layoutImpl);
 }
 
 PalResult PAL_CALL createDescriptorPoolD3D12(
@@ -171,7 +171,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
     PalDescriptorPool** outPool)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     DescriptorPoolD3D12* pool = nullptr;
 
     // partially bound is not supported
@@ -232,20 +232,20 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         desc.NumDescriptors = resourceCount;
 
-        result = d3d12Device->handle->lpVtbl->CreateDescriptorHeap(
-            d3d12Device->handle,
+        result = deviceImpl->handle->lpVtbl->CreateDescriptorHeap(
+            deviceImpl->handle,
             &desc,
             &IID_DescriptorHeap,
             (void**)&heap->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(d3d12Device);
+            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
 
         // get increment size
-        heap->incrementSize = d3d12Device->handle->lpVtbl->GetDescriptorHandleIncrementSize(
-            d3d12Device->handle,
+        heap->incrementSize = deviceImpl->handle->lpVtbl->GetDescriptorHandleIncrementSize(
+            deviceImpl->handle,
             D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         // get base CPU and GPU base pointer
@@ -270,20 +270,20 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
         desc.NumDescriptors = limits->maxSamplers;
 
-        result = d3d12Device->handle->lpVtbl->CreateDescriptorHeap(
-            d3d12Device->handle,
+        result = deviceImpl->handle->lpVtbl->CreateDescriptorHeap(
+            deviceImpl->handle,
             &desc,
             &IID_DescriptorHeap,
             (void**)&heap->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(d3d12Device);
+            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
 
         // get increment size
-        heap->incrementSize = d3d12Device->handle->lpVtbl->GetDescriptorHandleIncrementSize(
-            d3d12Device->handle,
+        heap->incrementSize = deviceImpl->handle->lpVtbl->GetDescriptorHandleIncrementSize(
+            deviceImpl->handle,
             D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
         // get base CPU and GPU base pointer
@@ -305,32 +305,32 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
 
 void PAL_CALL destroyDescriptorPoolD3D12(PalDescriptorPool* pool)
 {
-    DescriptorPoolD3D12* d3d12Pool = (DescriptorPoolD3D12*)pool;
-    if (d3d12Pool->hasResourceHeap) {
-        d3d12Pool->resourceHeap.handle->lpVtbl->Release(d3d12Pool->resourceHeap.handle);
+    DescriptorPoolD3D12* poolImpl = (DescriptorPoolD3D12*)pool;
+    if (poolImpl->hasResourceHeap) {
+        poolImpl->resourceHeap.handle->lpVtbl->Release(poolImpl->resourceHeap.handle);
     }
 
-    if (d3d12Pool->hasSamplerHeap) {
-        d3d12Pool->samplerHeap.handle->lpVtbl->Release(d3d12Pool->samplerHeap.handle);
+    if (poolImpl->hasSamplerHeap) {
+        poolImpl->samplerHeap.handle->lpVtbl->Release(poolImpl->samplerHeap.handle);
     }
 
-    palFree(s_D3D12.allocator, d3d12Pool->sets);
-    palFree(s_D3D12.allocator, d3d12Pool);
+    palFree(s_D3D12.allocator, poolImpl->sets);
+    palFree(s_D3D12.allocator, poolImpl);
 }
 
 PalResult PAL_CALL resetDescriptorPoolD3D12(PalDescriptorPool* pool)
 {
-    DescriptorPoolD3D12* d3d12Pool = (DescriptorPoolD3D12*)pool;
-    d3d12Pool->resourceHeap.nextOffset = 0;
-    d3d12Pool->samplerHeap.nextOffset = 0;
-    d3d12Pool->usedSets = 0;
+    DescriptorPoolD3D12* poolImpl = (DescriptorPoolD3D12*)pool;
+    poolImpl->resourceHeap.nextOffset = 0;
+    poolImpl->samplerHeap.nextOffset = 0;
+    poolImpl->usedSets = 0;
 
-    d3d12Pool->limits.usedAs = 0;
-    d3d12Pool->limits.usedSampledImages = 0;
-    d3d12Pool->limits.usedSamplers = 0;
-    d3d12Pool->limits.usedStorageBuffers = 0;
-    d3d12Pool->limits.usedStorageImages = 0;
-    d3d12Pool->limits.usedUniformBuffers = 0;
+    poolImpl->limits.usedAs = 0;
+    poolImpl->limits.usedSampledImages = 0;
+    poolImpl->limits.usedSamplers = 0;
+    poolImpl->limits.usedStorageBuffers = 0;
+    poolImpl->limits.usedStorageImages = 0;
+    poolImpl->limits.usedUniformBuffers = 0;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -340,9 +340,9 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     PalDescriptorSetLayout* layout,
     PalDescriptorSet** outSet)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
-    DescriptorPoolD3D12* d3d12Pool = (DescriptorPoolD3D12*)pool;
-    DescriptorSetLayoutD3D12* d3d12Layout = (DescriptorSetLayoutD3D12*)layout;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
+    DescriptorPoolD3D12* poolImpl = (DescriptorPoolD3D12*)pool;
+    DescriptorSetLayoutD3D12* layoutImpl = (DescriptorSetLayoutD3D12*)layout;
     DescriptorSetD3D12* set = nullptr;
 
     uint32_t storageImageCount = 0;
@@ -353,8 +353,8 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     uint32_t tlasCount = 0;
 
     // get requirements for the sets using the provided layout
-    for (int i = 0; i < d3d12Layout->bindingCount; i++) {
-        DescriptorSetBinding* binding = &d3d12Layout->bindings[i];
+    for (int i = 0; i < layoutImpl->bindingCount; i++) {
+        DescriptorSetBinding* binding = &layoutImpl->bindings[i];
 
         if (binding->type == PAL_DESCRIPTOR_TYPE_SAMPLER) {
             samplerCount += binding->range.NumDescriptors;
@@ -377,13 +377,13 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     }
 
     // validate descriptor sets limits
-    if (d3d12Pool->usedSets + 1 > d3d12Pool->maxSets) {
+    if (poolImpl->usedSets + 1 > poolImpl->maxSets) {
         // all sets are used
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     // check descriptor limits
-    DescriptorHeapLimits* limits = &d3d12Pool->limits;
+    DescriptorHeapLimits* limits = &poolImpl->limits;
     if (limits->usedAs + tlasCount > limits->maxAs) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
@@ -409,16 +409,16 @@ PalResult PAL_CALL allocateDescriptorSetD3D12(
     }
 
     // assign offset base to the set so we know where to start and end for each set.
-    set = &d3d12Pool->sets[d3d12Pool->usedSets++];
-    set->resourceOffset = d3d12Pool->resourceHeap.nextOffset;
-    set->samplerOffset = d3d12Pool->samplerHeap.nextOffset;
-    set->layout = d3d12Layout;
-    set->pool = d3d12Pool;
+    set = &poolImpl->sets[poolImpl->usedSets++];
+    set->resourceOffset = poolImpl->resourceHeap.nextOffset;
+    set->samplerOffset = poolImpl->samplerHeap.nextOffset;
+    set->layout = layoutImpl;
+    set->pool = poolImpl;
 
     uint32_t totalDescriptors = tlasCount + storageBufferCount + uniformBufferCount;
     totalDescriptors += sampledImageCount + storageImageCount;
-    d3d12Pool->resourceHeap.nextOffset += totalDescriptors;
-    d3d12Pool->samplerHeap.nextOffset += samplerCount;
+    poolImpl->resourceHeap.nextOffset += totalDescriptors;
+    poolImpl->samplerHeap.nextOffset += samplerCount;
 
     limits->usedAs += tlasCount;
     limits->usedSampledImages += sampledImageCount;
@@ -435,7 +435,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
     uint32_t count,
     PalDescriptorSetWriteInfo* infos)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     for (int i = 0; i < count; i++) {
         PalDescriptorSetWriteInfo* info = &infos[i];
         DescriptorSetD3D12* set = (DescriptorSetD3D12*)info->descriptorSet;
@@ -467,8 +467,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
             if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
                 if (info->samplerInfos) {
                     SamplerD3D12* sampler = (SamplerD3D12*)info->samplerInfos[j].sampler;
-                    d3d12Device->handle->lpVtbl->CreateSampler(
-                        d3d12Device->handle,
+                    deviceImpl->handle->lpVtbl->CreateSampler(
+                        deviceImpl->handle,
                         &sampler->desc,
                         dst);
 
@@ -482,7 +482,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
                     desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
                     desc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-                    d3d12Device->handle->lpVtbl->CreateSampler(d3d12Device->handle, &desc, dst);
+                    deviceImpl->handle->lpVtbl->CreateSampler(deviceImpl->handle, &desc, dst);
                 }
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE) {
@@ -496,8 +496,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.RaytracingAccelerationStructure.Location = tlas->address;
                 }
 
-                d3d12Device->handle->lpVtbl
-                    ->CreateShaderResourceView(d3d12Device->handle, nullptr, &desc, dst);
+                deviceImpl->handle->lpVtbl
+                    ->CreateShaderResourceView(deviceImpl->handle, nullptr, &desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
@@ -523,8 +523,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 }
 
                 fillSubresourceD3D12(DESC_TYPE_SRV, type, &range, &desc);
-                d3d12Device->handle->lpVtbl
-                    ->CreateShaderResourceView(d3d12Device->handle, handle, &desc, dst);
+                deviceImpl->handle->lpVtbl
+                    ->CreateShaderResourceView(deviceImpl->handle, handle, &desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
@@ -548,8 +548,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 }
 
                 fillSubresourceD3D12(DESC_TYPE_UAV, type, &range, &desc);
-                d3d12Device->handle->lpVtbl
-                    ->CreateUnorderedAccessView(d3d12Device->handle, handle, nullptr, &desc, dst);
+                deviceImpl->handle->lpVtbl
+                    ->CreateUnorderedAccessView(deviceImpl->handle, handle, nullptr, &desc, dst);
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {0};
@@ -563,8 +563,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.BufferLocation = address + bufferInfo->offset;
                 }
 
-                d3d12Device->handle->lpVtbl->CreateConstantBufferView(
-                    d3d12Device->handle,
+                deviceImpl->handle->lpVtbl->CreateConstantBufferView(
+                    deviceImpl->handle,
                     &desc,
                     dst);
 
@@ -592,8 +592,8 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.Buffer.NumElements = bufferInfo->size / stride;
                 }
 
-                d3d12Device->handle->lpVtbl
-                    ->CreateUnorderedAccessView(d3d12Device->handle, handle, nullptr, &desc, dst);
+                deviceImpl->handle->lpVtbl
+                    ->CreateUnorderedAccessView(deviceImpl->handle, handle, nullptr, &desc, dst);
             }
         }
     }

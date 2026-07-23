@@ -51,6 +51,8 @@ PalResult PAL_CALL createDeviceVk(
 
 void PAL_CALL destroyDeviceVk(PalDevice* device);
 
+uint32_t PAL_CALL getDeviceLostReasonVk(PalDevice* device);
+
 PalResult PAL_CALL allocateMemoryVk(
     PalDevice* device,
     PalMemoryType type,
@@ -613,6 +615,7 @@ static PalGraphicsBackendVtable1 s_VkBackend1 = {
     .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetVk,
     .createDevice = createDeviceVk,
     .destroyDevice = destroyDeviceVk,
+    .getDeviceLostReason = getDeviceLostReasonVk,
     .allocateMemory = allocateMemoryVk,
     .freeMemory = freeMemoryVk,
     .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesVk,
@@ -776,6 +779,8 @@ PalResult PAL_CALL createDeviceD3D12(
     PalDevice** outDevice);
 
 void PAL_CALL destroyDeviceD3D12(PalDevice* device);
+
+uint32_t PAL_CALL getDeviceLostReasonD3D12(PalDevice* device);
 
 PalResult PAL_CALL allocateMemoryD3D12(
     PalDevice* device,
@@ -1302,6 +1307,7 @@ static PalGraphicsBackendVtable1 s_D3D12Backend1 = {
     .getHighestSupportedShaderTarget = getHighestSupportedShaderTargetD3D12,
     .createDevice = createDeviceD3D12,
     .destroyDevice = destroyDeviceD3D12,
+    .getDeviceLostReason = getDeviceLostReasonD3D12,
     .allocateMemory = allocateMemoryD3D12,
     .freeMemory = freeMemoryD3D12,
     .querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilitiesD3D12,

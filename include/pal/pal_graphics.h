@@ -577,6 +577,7 @@
  * - getHighestSupportedShaderTarget
  * - createDevice
  * - destroyDevice
+ * - getDeviceLostReason
  * - allocateMemory
  * - freeMemory
  * - createQueue
@@ -672,7 +673,7 @@ typedef struct PalDevice PalDevice;
 
 /**
  * @struct PalMemory
- * @brief Opaque handle to a device memory. This is not `CPU` memory.
+ * @brief Opaque handle to a device memory. This is not CPU memory.
  *
  * @since 2.0
  */
@@ -2105,12 +2106,14 @@ typedef struct {
 typedef struct {
     void* userData;              /**< Optional user provided data. Can be `nullptr`.*/
     PalDebugCallback callback;   /**< Debug callback function.*/
+    PalBool enableGPUValidation; /**< Enable GPU-Based validation.*/
     PalBool denyGeneral;         /**< Do not recieve general messages.*/
     PalBool denyValidation;      /**< Do not recieve validation messages.*/
     PalBool denyPerformance;     /**< Do not recieve performance messages.*/
     PalBool denyInfoSeverity;    /**< Do not recieve info severity messages.*/
     PalBool denyWarningSeverity; /**< Do not recieve warning severity messages.*/
     PalBool denyErrorSeverity;   /**< Do not recieve error severity messages.*/
+    uint32_t reserved;           /**< 0 for now.*/
 } PalGraphicsDebugger;
 
 /**
@@ -2901,6 +2904,13 @@ typedef struct {
      * Must obey the rules and semantics documented in palDestroyDevice().
      */
     void(PAL_CALL* destroyDevice)(PalDevice* device);
+
+    /**
+     * Backend implementation of ::palGetDeviceLostReason.
+     *
+     * Must obey the rules and semantics documented in palGetDeviceLostReason().
+     */
+    uint32_t(PAL_CALL* getDeviceLostReason)(PalDevice* device);
 
     /**
      * Backend implementation of ::palAllocateMemory.
@@ -3825,9 +3835,9 @@ typedef struct {
         PalAccelerationStructure** outAs);
 
     /**
-     * Backend implementation of ::palDestroyAccelerationstructure.
+     * Backend implementation of ::palDestroyAccelerationStructure.
      *
-     * Must obey the rules and semantics documented in palDestroyAccelerationstructure().
+     * Must obey the rules and semantics documented in palDestroyAccelerationStructure().
      */
     void(PAL_CALL* destroyAccelerationstructure)(PalAccelerationStructure* as);
 
@@ -4172,8 +4182,6 @@ PAL_API PalResult PAL_CALL palEnumerateAdapters(
 /**
  * @brief Get information about an adapter (GPU).
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] adapter Adapter to query information on.
  * @param[out] info Pointer to a PalAdapterInfo to fill.
  *
@@ -4188,8 +4196,6 @@ PAL_API void PAL_CALL palGetAdapterInfo(
 
 /**
  * @brief Get capabilites or limits about an adapter (GPU).
- *
- * The graphics system must be initialized before this call.
  *
  * @param[in] adapter Adapter to query capabilities on.
  * @param[out] caps Pointer to a PalAdapterCapabilities to fill.
@@ -4206,8 +4212,6 @@ PAL_API void PAL_CALL palGetAdapterCapabilities(
 /**
  * @brief Get the supported features of an adapter (GPU).
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] adapter Adapter to query features on.
  *
  * @return adapter features on success or `0` on failure.
@@ -4221,8 +4225,6 @@ PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
 
 /**
  * @brief Get the highest supported shader target of an adapter (GPU).
- *
- * The graphics system must be initialized before this call.
  *
  * @param[in] adapter Adapter to query.
  * @param[in] shaderFormat The shader format. Must have only a single bit set.
@@ -4242,8 +4244,8 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
 /**
  * @brief Create a device from an adapter (GPU).
  *
- * The graphics system must be initialized before this call. PAL does not enable any features
- * by default.
+ * PAL does not enable any features by default. The created device must be destroyed using
+ * `palDestroyDevice()`.
  *
  * Every requested feature must be supported by the adapter. Use `palGetAdapterFeatures` to check
  * the supported features of the adapter that can be enabled. Using a feature which is not
@@ -4269,7 +4271,7 @@ PAL_API PalResult PAL_CALL palCreateDevice(
 /**
  * @brief Destroy a device.
  *
- * The graphics system must be initialized before this call.
+ * All resources created with the device must be destroyed before this call.
  *
  * @param[in] device Pointer to the device to destroy.
  *
@@ -4282,9 +4284,24 @@ PAL_API PalResult PAL_CALL palCreateDevice(
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
 
 /**
+ * @brief Get the native device lost reason code.
+ *
+ * This function returns the backend-specific native code for the reason the device
+ * was lost. Backends that do not provide explicit device lost reason codes return
+ * their standard device lost code.
+ *
+ * @param[in] device The device.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.0
+ */
+PAL_API uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device);
+
+/**
  * @brief Allocates GPU memory for the specified device.
  *
- * The graphics system must be initialized before this call. On CPU adapters, there is usually no
+ * On CPU adapters, there is usually no
  * `PAL_MEMORY_TYPE_GPU_ONLY` memory type available. So it uses shared memory as the vram and set
  * the shared memory to the `PAL_MEMORY_TYPE_GPU_ONLY` for correctness.
  *
@@ -4314,7 +4331,6 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
 /**
  * @brief Free GPU memory allocated by palAllocateMemory.
  *
- * The graphics system must be initialized before this call.
  * If `memory` is `nullptr`, this function will return silently.
  *
  * @param[in] memory Pointer to memory to free.
@@ -4329,8 +4345,6 @@ PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
 
 /**
  * @brief Get sampler anisotropy feature capabilites or limits about a device.
- *
- * The graphics system must be initialized before this call.
  *
  * `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
@@ -4349,8 +4363,6 @@ PAL_API void PAL_CALL palQuerySamplerAnisotropyCapabilities(
 /**
  * @brief Get multi view feature capabilites or limits about a device.
  *
- * The graphics system must be initialized before this call.
- *
  * `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
  *
@@ -4367,8 +4379,6 @@ PAL_API void PAL_CALL palQueryMultiViewCapabilities(
 
 /**
  * @brief Get multi viewport feature capabilites or limits about a device.
- *
- * The graphics system must be initialized before this call.
  *
  * `PAL_ADAPTER_FEATURE_MULTI_VIEWPORT` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
@@ -4387,8 +4397,6 @@ PAL_API void PAL_CALL palQueryMultiViewportCapabilities(
 /**
  * @brief Get depth stencil feature capabilites or limits about a device.
  *
- * The graphics system must be initialized before this call.
- *
  * `PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
  *
@@ -4405,8 +4413,6 @@ PAL_API void PAL_CALL palQueryDepthStencilCapabilities(
 
 /**
  * @brief Get fragment shading rate feature capabilites or limits about a device.
- *
- * The graphics system must be initialized before this call.
  *
  * `PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
@@ -4425,8 +4431,6 @@ PAL_API void PAL_CALL palQueryFragmentShadingRateCapabilities(
 /**
  * @brief Get mesh shader feature capabilites or limits about a device.
  *
- * The graphics system must be initialized before this call.
- *
  * `PAL_ADAPTER_FEATURE_MESH_SHADER` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
  *
@@ -4443,8 +4447,6 @@ PAL_API void PAL_CALL palQueryMeshShaderCapabilities(
 
 /**
  * @brief Get ray tracing feature capabilites or limits about a device.
- *
- * The graphics system must be initialized before this call.
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
@@ -4463,8 +4465,6 @@ PAL_API void PAL_CALL palQueryRayTracingCapabilities(
 /**
  * @brief Get descriptor indexing feature capabilites or limits about a device.
  *
- * The graphics system must be initialized before this call.
- *
  * `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
  *
@@ -4482,7 +4482,7 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
 /**
  * @brief Create a queue from a device.
  *
- * The graphics system must be initialized before this call.
+ * The created queue must be destroyed using `palDestroyQueue()`.
  *
  * The number of queues of each type which can be created is limited per adapter. check with
  * PalAdapterCapabilities::maxComputeQueues, PalAdapterCapabilities::maxGraphicsQueues and
@@ -4513,8 +4513,6 @@ PAL_API PalResult PAL_CALL palCreateQueue(
 /**
  * @brief Destroy a queue.
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] queue Queue to destroy.
  *
  * Thread safety: Thread safe if the device used to create the queue is
@@ -4527,8 +4525,6 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 
 /**
  * @brief Check if a queue is presentable to the provided window.
- *
- * The graphics system must be initialized before this call.
  *
  * @param[in] queue Queue to query.
  * @param[in] surface Surface to check presentation support for.
@@ -4547,8 +4543,6 @@ PAL_API PalBool PAL_CALL palCanQueuePresent(
 /**
  * @brief Blocks indefinitely until the queue becomes idle.
  *
- * The graphics system must be initialized before this call.
- *
  * This function blocks indefinitely until all submitted work on the queue has been completetd.
  * Returns `PAL_RESULT_SUCCESS` to indicate all pending operations has been completetd.
  *
@@ -4565,8 +4559,6 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 
 /**
  * @brief Returns a list of all supported formats of an adapter (GPU).
- *
- * The graphics system must be initialized before this call.
  *
  * This function returns the supported format with the supported image usages
  * associated with the format. This is a handy way of selecting a format based on the image
@@ -4593,8 +4585,6 @@ PAL_API void PAL_CALL palEnumerateFormats(
 /**
  * @brief Check support for a format on an adapter (GPU).
  *
- * The graphics system must be initialized before this call.
- *
  * This is much faster than enumerating all the formats to pick one. You directly check support
  * for the format you want to use. Call palQueryFormatImageUsages() to check for supported image
  * usages if format is supported.
@@ -4617,8 +4607,6 @@ PAL_API PalBool PAL_CALL palIsFormatSupported(
 /**
  * @brief Checks supported image usages associated with a format.
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] adapter Adapter to query format on.
  * @param[in] format Format to query image usages for.
  *
@@ -4635,12 +4623,10 @@ PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
 /**
  * @brief Checks supported sample count associated with a format.
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] adapter Adapter to query format on.
  * @param[in] format Format to query sample count for.
  *
- * @return Supported sample count on success otherwise `0` on failure.
+ * @return Supported sample count on success otherwise 0 on failure.
  *
  * Thread safety: Thread safe.
  *
@@ -4653,7 +4639,7 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
 /**
  * @brief Create an image.
  *
- * The graphics system must be initialized before this call.
+ * The created image must be destroyed using `palDestroyImage()`.
  *
  * PalImageCreateInfo::width, PalImageCreateInfo::height and PalImageCreateInfo::sampleCount
  * must not be greater than the limits of the adapter used to create the device. Check
@@ -4679,8 +4665,6 @@ PAL_API PalResult PAL_CALL palCreateImage(
 /**
  * @brief Destroy an image.
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] image Image to destroy.
  *
  * Thread safety: Thread safe if the device used to create the image is
@@ -4694,7 +4678,6 @@ PAL_API void PAL_CALL palDestroyImage(PalImage* image);
 /**
  * @brief Get information about an image.
  *
- * The graphics system must be initialized before this call.
  * This function also supports swapchain images.
  *
  * @param[in] image Image to query information on.
@@ -4712,8 +4695,6 @@ PAL_API void PAL_CALL palGetImageInfo(
 /**
  * @brief Get memory requirements for the provided image.
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] image Image to query memory requirements on.
  * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
  *
@@ -4728,7 +4709,6 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
 /**
  * @brief Bind an allocated memory to an image.
  *
- * The graphics system must be initialized before this call.
  * The memory size and alignment should match the requirements of the image.
  * Get the requirements with palGetImageMemoryRequirements().
  *
@@ -4752,7 +4732,7 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
 /**
  * @brief Create an image view.
  *
- * The graphics system must be initialized before this call.
+ * The created image view must be destroyed using `palDestroyImageView()`.
  *
  * PalImageViewCreateInfo::type must be compatible by the type of the base image. Eg. A 2D base
  * image must be have an image view of either `PAL_IMAGE_VIEW_TYPE_2D` or
@@ -4784,8 +4764,6 @@ PAL_API PalResult PAL_CALL palCreateImageView(
 /**
  * @brief Destroy an image view.
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] imageView Image view to destroy.
  *
  * Thread safety: Thread safe if the device used to create the image view is
@@ -4799,9 +4777,7 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 /**
  * @brief Create a sampler.
  *
- * The graphics system must be initialized before this call.
- * Samplers are immutable so any parameter used to create it cannot will be fixed after
- * creation.
+ * The created sampler must be destroyed using `palDestroySampler()`.
  *
  * @param[in] device Device that creates the sampler.
  * @param[in] info Pointer to a PalSamplerCreateInfo struct that specifies parameters.
@@ -4823,8 +4799,6 @@ PAL_API PalResult PAL_CALL palCreateSampler(
 /**
  * @brief Destroy a sampler.
  *
- * The graphics system must be initialized before this call.
- *
  * @param[in] sampler Sampler to destroy.
  *
  * Thread safety: Thread safe if the device used to create the sampler is
@@ -4838,7 +4812,7 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
 /**
  * @brief Create a surface for a window.
  *
- * The graphics system must be initialized before this call.
+ * The created surface must be destroyed using `palDestroySurface()`.
  *
  * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the device.
  * Otherwise behavior is undefined.
@@ -4867,7 +4841,7 @@ PAL_API PalResult PAL_CALL palCreateSurface(
 /**
  * @brief Destroy a surface.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] surface Surface to destroy.
  *
@@ -4882,7 +4856,7 @@ PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
 /**
  * @brief Get surface capabilites about a device.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
@@ -4903,7 +4877,8 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
 /**
  * @brief Create a swaphain.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created swapchain must be destroyed using `palDestroySwapchain()`.
  *
  * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the device.
  * Otherwise behavior is undefined.
@@ -4932,7 +4907,7 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
 /**
  * @brief Destroy a swapchain.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] swapchain Swapchain to destroy.
  *
@@ -4947,7 +4922,7 @@ PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
 /**
  * @brief Get a swapchain image from the list of images with an index.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] swapchain Swapchain to get image from.
  * @param[in] index Index of image in the list. Must not be greater than the image count.
@@ -4966,7 +4941,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
 /**
  * @brief Get the next available image from the swapchain image list.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] swapchain Swapchain to get image index from.
  * @param[in] info Pointer to a PalSwapchainNextImageInfo struct that specifies parameters.
@@ -4988,7 +4963,7 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
 /**
  * @brief Present the swapchain.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] swapchain Swapchain to present.
  * @param[in] imageIndex Swapchain image index to present.
@@ -5009,7 +4984,7 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
 /**
  * @brief Resize the provided swapchain.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * The swapchain images must not be in use before this call. All resources (image views) that
  * reference the swapchain images must be destroyed and recreated.
@@ -5033,7 +5008,8 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
 /**
  * @brief Create a shader.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created shader must be destroyed using `palDestroyShader()`.
  *
  * `PAL_ADAPTER_FEATURE_GEOMETRY_SHADER` must be supported and enabled by the device if
  * `PAL_SHADER_STAGE_GEOMETRY` will be used.
@@ -5072,7 +5048,7 @@ PAL_API PalResult PAL_CALL palCreateShader(
 /**
  * @brief Destroy a shader.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] shader Shader to destroy.
  *
@@ -5087,7 +5063,8 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
 /**
  * @brief Create a fence.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created fence must be destroyed using `palDestroyFence()`.
  *
  * @param[in] device Device that creates the fence.
  * @param[in] signaled True if fence should be created signaled. If true, the fence must be reset
@@ -5110,7 +5087,7 @@ PAL_API PalResult PAL_CALL palCreateFence(
 /**
  * @brief Destroy a fence.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] fence Fence to destroy.
  *
@@ -5125,7 +5102,7 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
 /**
  * @brief Wait for a fence.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * This function blocks for `timeout` until the fence is signaled or there is a timeout.
  * Returns `PAL_RESULT_SUCCESS` or `PAL_RESULT_TIMEOUT` respectively.
@@ -5148,7 +5125,7 @@ PAL_API PalResult PAL_CALL palWaitFence(
 /**
  * @brief Reset a fence to an unsignaled state.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_FENCE_RESET` must be supported and enabled when creating the
  * device. Otherwise behavior is undefined.
@@ -5168,7 +5145,7 @@ PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
 /**
  * @brief Checks if the provided fence is in a signaled state.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] fence Fence to check.
  *
@@ -5185,7 +5162,8 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
 /**
  * @brief Create a semaphore.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created semaphore must be destroyed using `palDestroySemaphore()`.
  *
  * @param[in] device Device that creates the semaphore.
  * @param[in] enableTimeline If true, `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported
@@ -5208,7 +5186,7 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
 /**
  * @brief Destroy a semaphore.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] semaphore Semaphore to destroy.
  *
@@ -5223,7 +5201,7 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
 /**
  * @brief Waits for a semaphore to reach the provided value.
  *
- * The graphics system must be initialized before this call.
+ *
  * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to wait on.
@@ -5247,7 +5225,7 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
 /**
  * @brief Signals a semaphore from the provided value.
  *
- * The graphics system must be initialized before this call.
+ *
  * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to signal.
@@ -5271,7 +5249,7 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
 /**
  * @brief Get the value of a semaphore.
  *
- * The graphics system must be initialized before this call.
+ *
  * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to get its value.
@@ -5293,7 +5271,8 @@ PAL_API PalResult PAL_CALL palGetSemaphoreValue(
 /**
  * @brief Create a command pool from a device.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created command pool must be destroyed using `palDestroyCommandPool()`.
  *
  * @param[in] device Device that creates the command pool.
  * @param[in] queue Queue the command pool buffers will be submitted to.
@@ -5315,7 +5294,7 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
 /**
  * @brief Destroy a command pool.
  *
- * The graphics system must be initialized before this call.
+ *
  * All command buffers allocated from the pool must be freed before this call,
  * otherwise undefined behavior.
  *
@@ -5332,7 +5311,7 @@ PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
 /**
  * @brief Reset all command buffers allocated from the provided command pool.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] pool Command pool to reset its command buffers.
  *
@@ -5348,7 +5327,7 @@ PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
 /**
  * @brief Allocate a command buffer from the provided command pool.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] device Device to allocate command buffer on.
  * @param[in] pool Command pool to allocate command buffer from.
@@ -5372,7 +5351,7 @@ PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
 /**
  * @brief Free an allocated command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer to free.
  *
@@ -5387,7 +5366,7 @@ PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
 /**
  * @brief Reset the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer to reset.
  *
@@ -5403,7 +5382,7 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
 /**
  * @brief Submit a command buffer to the provided queue for execution.
  *
- * The graphics system must be initialized before this call. The command buffer must not
+ *  The command buffer must not
  * be in a recording state.
  *
  * @param[in] queue Queue to execute the command buffer.
@@ -5423,7 +5402,7 @@ PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
 /**
  * @brief Begin recording commands to the provided command buffer.
  *
- * The graphics system must be initialized before this call. This function must be called
+ *  This function must be called
  * before any other `palCmd**` function is used.
  *
  * @param[in] cmdBuffer Command buffer to begin recording.
@@ -5443,7 +5422,7 @@ PAL_API PalResult PAL_CALL palCmdBegin(
 /**
  * @brief End recording commands to the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer to begin recording.
  *
@@ -5460,7 +5439,7 @@ PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
 /**
  * @brief Execute a secondary command buffer within a primary command buffer.
  *
- * The graphics system must be initialized before this call. The `secondaryCmdBuffer` must
+ *  The `secondaryCmdBuffer` must
  * be created with the type `PAL_COMMAND_BUFFER_TYPE_SECONDARY`.
  *
  * @param[in] primaryCmdBuffer Primary command buffer. Must be in recording state.
@@ -5477,7 +5456,7 @@ PAL_API void PAL_CALL palCmdExecuteCommandBuffer(
 /**
  * @brief Set the fragment shading rate used for draw calls.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5496,7 +5475,7 @@ PAL_API void PAL_CALL palCmdSetFragmentShadingRate(
 /**
  * @brief Dispatch mesh shader workgroups.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_MESH_SHADER` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5522,7 +5501,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasks(
 /**
  * @brief Dispatch mesh shader workgroups using parameters from a buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH` must be supported
  * and enabled by the device. Otherwise behavior is undefined.
@@ -5547,7 +5526,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirect(
 /**
  * @brief Dispatch mesh shader workgroups using parameters from buffers.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_MESH_SHADER` and `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT` must be
  * supported and enabled by the device. Otherwise behavior is undefined.
@@ -5574,7 +5553,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirectCount(
 /**
  * @brief Build or update an acceleration structure.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5593,7 +5572,7 @@ PAL_API void PAL_CALL palCmdBuildAccelerationStructure(
 /**
  * @brief Begin a rendering pass.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalRenderingInfo struct that specifies parameters.
@@ -5609,7 +5588,7 @@ PAL_API void PAL_CALL palCmdBeginRendering(
 /**
  * @brief End a rendering pass.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  *
@@ -5622,7 +5601,7 @@ PAL_API void PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
 /**
  * @brief Copy data from one buffer to the other.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] dst Destination buffer.
@@ -5642,7 +5621,7 @@ PAL_API void PAL_CALL palCmdCopyBuffer(
 /**
  * @brief Copy data from a buffer to an image.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] dstImage Destination image.
@@ -5662,7 +5641,7 @@ PAL_API void PAL_CALL palCmdCopyBufferToImage(
 /**
  * @brief Copy data from one image to the other.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] dst Destination image.
@@ -5682,7 +5661,7 @@ PAL_API void PAL_CALL palCmdCopyImage(
 /**
  * @brief Copy data from an image to a buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] dstBuffer Destination buffer.
@@ -5702,7 +5681,7 @@ PAL_API void PAL_CALL palCmdCopyImageToBuffer(
 /**
  * @brief Bind a pipeline.
  *
- * The graphics system must be initialized before this call. Every pipeline knows it types which is
+ *  Every pipeline knows it types which is
  * set at the respective creation functions. (`palCreate**Graphics/Compute/RayTracing**Pipeline`).
  *
  * @param[in] cmdBuffer Command buffer being recorded.
@@ -5719,7 +5698,7 @@ PAL_API void PAL_CALL palCmdBindPipeline(
 /**
  * @brief Set the viewport(s) used in draw commands.
  *
- * The graphics system must be initialized before this call. This always overwrites any previous
+ *  This always overwrites any previous
  * viewports that were set since the first viewport index is always 0.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
@@ -5738,7 +5717,7 @@ PAL_API void PAL_CALL palCmdSetViewport(
 /**
  * @brief Set the scissor(s) used in draw commands.
  *
- * The graphics system must be initialized before this call. This always overwrites any previous
+ *  This always overwrites any previous
  * scissors that were set since the first scissor index is always 0.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
@@ -5757,7 +5736,7 @@ PAL_API void PAL_CALL palCmdSetScissors(
 /**
  * @brief Bind vertex buffer(s) used in draw commands.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] firstSlot Index of the first vertex buffer binding slot.
@@ -5781,7 +5760,7 @@ PAL_API void PAL_CALL palCmdBindVertexBuffers(
 /**
  * @brief Bind index buffer used in draw commands.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Index buffer to bind.
@@ -5803,7 +5782,7 @@ PAL_API void PAL_CALL palCmdBindIndexBuffer(
 /**
  * @brief Issue a non-indexed draw command.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] vertexCount Number of vertices to draw.
@@ -5828,7 +5807,7 @@ PAL_API void PAL_CALL palCmdDraw(
 /**
  * @brief Issue a non-indexed draw command using buffers.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5854,7 +5833,7 @@ PAL_API void PAL_CALL palCmdDrawIndirect(
 /**
  * @brief Issue a non-indexed draw command using buffers.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5881,7 +5860,7 @@ PAL_API void PAL_CALL palCmdDrawIndirectCount(
 /**
  * @brief Issue an indexed draw command.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] indexCount Number of indices to draw.
@@ -5908,7 +5887,7 @@ PAL_API void PAL_CALL palCmdDrawIndexed(
 /**
  * @brief Issue an indexed draw command using buffers.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5933,7 +5912,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirect(
 /**
  * @brief Issue an indexed draw command using buffers.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5963,10 +5942,10 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
- * The graphics system must be initialized before this call. This function defines a
- * dependency between `oldUsageState` and `newUsageState`. It ensures that all
- * operations performed under `oldUsageState` are completed and visible before the acceleration
- * structure is accessed under `newUsageState`.
+ *  This function defines a
+ * dependency between `PalBarrierInfo::oldState` and `PalBarrierInfo::newState`. It ensures that
+ * all operations performed under the old `PalBarrierInfo::oldState` are completed and visible
+ * before the acceleration structure is accessed under `PalBarrierInfo::newState`.
  *
  * This function does not modify the acceleration structure, it only exforces execution ordering
  * and acceleration structure memory visibility.
@@ -5977,21 +5956,19 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  * Example:
  *
  * To make sure BLAS builds before TLAS access it and TLAS does not use scratch buffer
- * whilst BLAS is buidling,
- * we put a barrier to transition the BLAS to ensure it has finished building and the scratch
- * buffer is not being used. This is expressed with `oldUsageState` being
- * `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE`.
+ * whilst BLAS is buidling, we put a barrier to transition the BLAS to ensure it has finished
+ * building and the scratch buffer is not being used. This is expressed with
+ * `PalBarrierInfo::oldState` being set to `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE` and
+ * `PalBarrierInfo::srcStages` being set to `PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD`.
  *
- * `newUsageState` should be the new usage state we want after the BLAS
- * has finished building which is `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ`.
+ * `PalBarrierInfo::newState` being `PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ` and
+ * `PalBarrierInfo::dstStages` being `PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] as Acceleration structure to set barrier on.
  * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
- *
- * @note A pipeline must be bound before this call.
  *
  * @since 2.0
  * @sa palCmdImageBarrier
@@ -6005,10 +5982,10 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
 /**
  * @brief Transition an image from one usage state to another.
  *
- * The graphics system must be initialized before this call. This function defines a
- * dependency between `oldUsageState` and `newUsageState`. It ensures that all
- * operations performed under `oldUsageState` are completed and visible before the image
- * is accessed under `newUsageState`.
+ *  This function defines a
+ * dependency between `PalBarrierInfo::oldState` and `PalBarrierInfo::newState`. It ensures that all
+ * operations performed under `PalBarrierInfo::oldState` are completed and visible before the image
+ * is accessed under `PalBarrierInfo::newState`.
  *
  * This function does not modify the image, it only exforces execution ordering and image memory
  * visibility.
@@ -6017,11 +5994,12 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
  *
  * To make sure the an image is ready for presenting after a render pass,
  * we put a barrier to transition the image to ensure the render pass has finished writing
- * to the image. This is expressed with `oldUsageState` being
- * `PAL_USAGE_STATE_COLOR_ATTACHMENT`.
+ * to the image. This is expressed with `PalBarrierInfo::oldState` being
+ * `PAL_USAGE_STATE_COLOR_ATTACHMENT` and `PalBarrierInfo::srcStages` being
+ * `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`.
  *
- * `newUsageState` should be the new usage state we want after the render pass
- * has finished which is `PAL_USAGE_STATE_PRESENT`.
+ * `PalBarrierInfo::newState` being  `PAL_USAGE_STATE_PRESENT` and
+ * `PalBarrierInfo::dstStages` being `PAL_PIPELINE_STAGE_NONE`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] image Image to set barrier on.
@@ -6043,10 +6021,10 @@ PAL_API void PAL_CALL palCmdImageBarrier(
 /**
  * @brief Transition a buffer from one usage state to another.
  *
- * The graphics system must be initialized before this call. This function defines a
- * dependency between `oldUsageState` and `newUsageState`. It ensures that all
- * operations performed under `oldUsageState` are completed and visible before the buffer
- * is accessed under `newUsageState`.
+ *  This function defines a
+ * dependency between `PalBarrierInfo::oldState` and `PalBarrierInfo::newState`. It ensures that all
+ * operations performed under `PalBarrierInfo::oldState` are completed and visible before the buffer
+ * is accessed under `PalBarrierInfo::newState`.
  *
  * This function does not modify the buffer, it only exforces execution ordering and buffer memory
  * visibility.
@@ -6054,11 +6032,13 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  * Example:
  *
  * To read back data from a buffer that will be written to by a shader,
- * we put a barrier to transition the buffer to ensurethe shader has finished writing to the
- * buffer. This is expressed with `oldUsageState` being `PAL_USAGE_STATE_SHADER_WRITE`.
+ * we put a barrier to transition the buffer to ensure the shader has finished writing to the
+ * buffer. This is expressed with `PalBarrierInfo::oldState` being `PAL_USAGE_STATE_SHADER_WRITE`
+ * and `PalBarrierInfo::srcStages` being the shader stage that wrote to the buffer
+ * (eg. `PAL_PIPELINE_STAGE_COMPUTE_SHADER`).
  *
- * `newUsageState` should be the new usage state we want after the write
- * has finished which is`PAL_USAGE_STATE_TRANSFER_READ`.
+ * `PalBarrierInfo::newState` being `PAL_USAGE_STATE_TRANSFER_READ` and
+ * `PalBarrierInfo::dstStages` being `PAL_PIPELINE_STAGE_TRANSFER`.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer to set barrier on.
@@ -6078,7 +6058,7 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
 /**
  * @brief Dispatch compute shader workgroups.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] groupCountX Number of compute shader groups to dispatch on the x axis.
@@ -6101,7 +6081,7 @@ PAL_API void PAL_CALL palCmdDispatch(
 /**
  * @brief Dispatch compute shader workgroups with base offset.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_DISPATCH_BASE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6133,7 +6113,7 @@ PAL_API void PAL_CALL palCmdDispatchBase(
 /**
  * @brief Dispatch compute shader workgroups using parameters from a buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6156,7 +6136,7 @@ PAL_API void PAL_CALL palCmdDispatchIndirect(
 /**
  * @brief Dispatch rays.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6185,7 +6165,7 @@ PAL_API void PAL_CALL palCmdTraceRays(
 /**
  * @brief Dispatch rays using parameters from a buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6214,7 +6194,7 @@ PAL_API void PAL_CALL palCmdTraceRaysIndirect(
 /**
  * @brief Bind a descriptor set to the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] setIndex Index of the descriptor set to bind.
@@ -6234,7 +6214,7 @@ PAL_API void PAL_CALL palCmdBindDescriptorSet(
 /**
  * @brief Update push constant data for the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] offset Offset in bytes into the push constant range.
@@ -6256,7 +6236,7 @@ PAL_API void PAL_CALL palCmdPushConstants(
 /**
  * @brief Set the cull mode for the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6275,7 +6255,7 @@ PAL_API void PAL_CALL palCmdSetCullMode(
 /**
  * @brief Set the front face for the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6294,7 +6274,7 @@ PAL_API void PAL_CALL palCmdSetFrontFace(
 /**
  * @brief Set the primitive topology for the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6313,7 +6293,7 @@ PAL_API void PAL_CALL palCmdSetPrimitiveTopology(
 /**
  * @brief Set depth test enable for the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6332,7 +6312,7 @@ PAL_API void PAL_CALL palCmdSetDepthTestEnable(
 /**
  * @brief Set depth write enable for the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6351,7 +6331,7 @@ PAL_API void PAL_CALL palCmdSetDepthWriteEnable(
 /**
  * @brief Set depth stencil operation for the provided command buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP` must be supported and enabled by the device.
  *
@@ -6377,7 +6357,8 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
 /**
  * @brief Create an acceleration structure.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created acceleration structure must be destroyed using `palDestroyAccelerationStructure()`.
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6393,7 +6374,7 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since 2.0
- * @sa palDestroyAccelerationstructure
+ * @sa palDestroyAccelerationStructure
  */
 PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
     PalDevice* device,
@@ -6403,7 +6384,7 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
 /**
  * @brief Destroy an acceleration structure.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] as Acceleration structure to destroy.
  *
@@ -6413,12 +6394,12 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
  * @since 2.0
  * @sa palCreateAccelerationstructure
  */
-PAL_API void PAL_CALL palDestroyAccelerationstructure(PalAccelerationStructure* as);
+PAL_API void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* as);
 
 /**
  * @brief Get the build size of an acceleration structure.
  *
- * The graphics system must be initialized before this call.
+ *
  * PalAccelerationStructureBuildInfo::dst, PalAccelerationStructureBuildInfo::scratchBufferAddress
  * and PalAccelerationStructureBuildInfo::src must be set to `nullptr`.
  *
@@ -6441,7 +6422,8 @@ PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
 /**
  * @brief Create a buffer.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created buffer must be destroyed using `palDestroyBuffer()`.
  *
  * `PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS` must be supported and enabled by the devic.
  * Otherwise behavior is undefined.
@@ -6473,7 +6455,7 @@ PAL_API PalResult PAL_CALL palCreateBuffer(
 /**
  * @brief Destroy a buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] buffer buffer to destroy.
  *
@@ -6488,7 +6470,7 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
 /**
  * @brief Get memory requirements for the provided buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] buffer Buffer to query memory requirements on.
  * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
@@ -6504,7 +6486,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
 /**
  * @brief Compute size for an acceleration structure instance buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6529,7 +6511,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
 /**
  * @brief Compute requirements for an image staging buffer.
  *
- * The graphics system must be initialized before this call. This does not allocate memory
+ *  This does not allocate memory
  * for the buffer. This function is required for all image copy staging buffers.
  *
  * `PalBufferImageCopyInfo::bufferRowLength` and `PalBufferImageCopyInfo::bufferImageHeight`
@@ -6556,7 +6538,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
 /**
  * @brief Write data to an instance staging buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6580,7 +6562,7 @@ PAL_API void PAL_CALL palWriteInstanceStaging(
 /**
  * @brief Write data to an image staging buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] device The device to use.
  * @param[in] imageFormat Destination image format.
@@ -6603,7 +6585,7 @@ PAL_API void PAL_CALL palWriteImageStaging(
 /**
  * @brief Bind an allocated memory to a buffer.
  *
- * The graphics system must be initialized before this call.
+ *
  * The memory size and alignment should match the requirements of the buffer.
  * Get the requirements with palGetBufferMemoryRequirements().
  *
@@ -6627,7 +6609,7 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
 /**
  * @brief Maps buffer to CPU visible address space.
  *
- * The graphics system must be initialized before this call. The buffer must have a valid
+ *  The buffer must have a valid
  * memory bound to it before this call.
  *
  * Only `PAL_MEMORY_TYPE_CPU_UPLOAD` and `PAL_MEMORY_TYPE_CPU_READBACK` can be mapped to
@@ -6659,7 +6641,7 @@ PAL_API PalResult PAL_CALL palMapBuffer(
 /**
  * @brief Unmap buffer from CPU visible address space.
  *
- * The graphics system must be initialized before this call. The buffer must be mapped
+ *  The buffer must be mapped
  * before this call. After this call, the CPU pointer must not be used anymore.
  *
  * @param[in] buffer Pointer to buffer to unmap.
@@ -6674,7 +6656,7 @@ PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
 /**
  * @brief Get the device address of the provided buffer.
  *
- * The graphics system must be initialized before this call. Buffer must have
+ *  Buffer must have
  * `PAL_BUFFER_USAGE_DEVICE_ADDRESS` usage flag.
  *
  * @param[in] buffer Buffer to get its device address.
@@ -6690,7 +6672,8 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
 /**
  * @brief Create a descriptor set layout that defines the bindings used by descriptor sets.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created descriptor set layout must be destroyed using `palDestroyDescriptorSetLayout()`.
  *
  * This defines the layout, ordering and the number of descriptors a descriptor set uses.
  *
@@ -6718,7 +6701,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
 /**
  * @brief Destroy a descriptor set layout.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] layout Descriptor set layout to destroy.
  *
@@ -6733,7 +6716,8 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
 /**
  * @brief Create a descriptor pool to allocate descriptor sets.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created descriptor pool must be destroyed using `palDestroyDescriptorPool()`.
  *
  * @param[in] device Device that creates the descriptor pool.
  * @param[in] info Pointer to a PalDescriptorPoolCreateInfo struct that specifies parameters.
@@ -6755,7 +6739,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
 /**
  * @brief Destroy a descriptor pool.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] pool Descriptor pool to destroy.
  *
@@ -6770,7 +6754,7 @@ PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
 /**
  * @brief Reset the provided descriptor pool. This resets all allocated descriptor sets.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] pool Descriptor pool to reset.
  *
@@ -6786,7 +6770,7 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
 /**
  * @brief Allocate a descriptor set from the provided descriptor pool.
  *
- * The graphics system must be initialized before this call. The descriptor set will be
+ *  The descriptor set will be
  * allocated uninitialized therefore update it before use except the case where descriptor
  * indexing is enabled.
  *
@@ -6814,7 +6798,7 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
 /**
  * @brief Update a descriptor set with descriptors (resources).
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * If the write info has no valid resource handle, then `PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS`
  * must be supported and enabled when creating the device. Otherwise behavior is undefined.
@@ -6839,7 +6823,8 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  * @brief Create a pipeline layout. This defines the descriptor set interfaces and push
  * constant ranges.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created pipeline layout must be destroyed using `palDestroyPipelineLayout()`.
  *
  * @param[in] device Device that creates the pipeline layout.
  * @param[in] info Pointer to a PalPipelineLayoutCreateInfo struct that specifies parameters.
@@ -6861,7 +6846,7 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
 /**
  * @brief Destroy a pipeline layout.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] layout Pipeline layout to destroy.
  *
@@ -6876,7 +6861,8 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
 /**
  * @brief Create a graphics pipeline.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created pipeline must be destroyed using `palDestroyPipeline()`.
  *
  * @param[in] device Device that creates the graphics pipeline.
  * @param[in] info Pointer to a PalGraphicsPipelineCreateInfo struct that specifies parameters.
@@ -6898,7 +6884,8 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
 /**
  * @brief Create a compute pipeline.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created pipeline must be destroyed using `palDestroyPipeline()`.
  *
  * @param[in] device Device that creates the compute pipeline.
  * @param[in] info Pointer to a PalComputePipelineCreateInfo struct that specifies parameters.
@@ -6922,7 +6909,8 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
 /**
  * @brief Create a ray tracing pipeline.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created pipeline must be destroyed using `palDestroyPipeline()`.
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6949,7 +6937,7 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
 /**
  * @brief Destroy a pipeline.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] pipeline Pipeline to destroy.
  *
@@ -6966,7 +6954,8 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
 /**
  * @brief Create a shader binding table.
  *
- * The graphics system must be initialized before this call.
+ *
+ * The created shader binding table must be destroyed using `palDestroyShaderBindingTable()`.
  *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6997,7 +6986,7 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
 /**
  * @brief Destroy a shader binding table.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * @param[in] sbt Shader binding table to destroy.
  *
@@ -7012,7 +7001,7 @@ PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
 /**
  * @brief Update a shader binding table record payloads.
  *
- * The graphics system must be initialized before this call.
+ *
  *
  * This call does not update shader handles. It only updates the payload associated
  * with the record. PalShaderBindingTableRecordInfo::groupIndex is the index into

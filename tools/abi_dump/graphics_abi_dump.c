@@ -1761,12 +1761,14 @@ PalBool graphicsABIDump(uint32_t flags)
     FieldInfo graphicsDebuggerFields[] = {
         { "userData", {0, 8}, FIELD(PalGraphicsDebugger, userData) },
         { "callback", {8, 8}, FIELD(PalGraphicsDebugger, callback) },
-        { "denyGeneral", {16, 4}, FIELD(PalGraphicsDebugger, denyGeneral) },
-        { "denyValidation", {20, 4}, FIELD(PalGraphicsDebugger, denyValidation) },
-        { "denyPerformance", {24, 4}, FIELD(PalGraphicsDebugger, denyPerformance) },
-        { "denyInfoSeverity", {28, 4}, FIELD(PalGraphicsDebugger, denyInfoSeverity) },
-        { "denyWarningSeverity", {32, 4}, FIELD(PalGraphicsDebugger, denyWarningSeverity) },
-        { "denyErrorSeverity", {36, 4}, FIELD(PalGraphicsDebugger, denyErrorSeverity) }
+        { "enableGPUValidation", {16, 4}, FIELD(PalGraphicsDebugger, enableGPUValidation) },
+        { "denyGeneral", {20, 4}, FIELD(PalGraphicsDebugger, denyGeneral) },
+        { "denyValidation", {24, 4}, FIELD(PalGraphicsDebugger, denyValidation) },
+        { "denyPerformance", {28, 4}, FIELD(PalGraphicsDebugger, denyPerformance) },
+        { "denyInfoSeverity", {32, 4}, FIELD(PalGraphicsDebugger, denyInfoSeverity) },
+        { "denyWarningSeverity", {36, 4}, FIELD(PalGraphicsDebugger, denyWarningSeverity) },
+        { "denyErrorSeverity", {40, 4}, FIELD(PalGraphicsDebugger, denyErrorSeverity) },
+        { "reserved", {44, 4}, FIELD(PalGraphicsDebugger, reserved) }
     };
 
     FieldInfo graphicsBackendInfoFields[] = {
@@ -1781,7 +1783,7 @@ PalBool graphicsABIDump(uint32_t flags)
     graphicsDebugger.fields = graphicsDebuggerFields;
     graphicsDebugger.fieldCount = ARRAY_SIZE(graphicsDebuggerFields);
     graphicsDebugger.expected.alignof = 8;
-    graphicsDebugger.expected.size = 40;
+    graphicsDebugger.expected.size = 48;
     graphicsDebugger.expected.padding = 0;
     graphicsDebugger.actual = STRUCT(PalGraphicsDebugger);
 

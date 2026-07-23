@@ -15,7 +15,7 @@ PalResult PAL_CALL createAccelerationstructureVk(
 {
     VkResult result;
     AccelerationStructureVk* as = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     BufferVk* buffer = (BufferVk*)info->buffer;
 
     as = palAllocate(s_Vk.allocator, sizeof(AccelerationStructureVk), 0);
@@ -34,10 +34,10 @@ PalResult PAL_CALL createAccelerationstructureVk(
         createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     }
 
-    result = vkDevice->createAccelerationStructure(
-        vkDevice->handle,
+    result = deviceImpl->createAccelerationStructure(
+        deviceImpl->handle,
         &createInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &as->handle);
 
     if (result != VK_SUCCESS) {
@@ -48,22 +48,22 @@ PalResult PAL_CALL createAccelerationstructureVk(
     VkAccelerationStructureDeviceAddressInfoKHR addressInfo = {0};
     addressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
     addressInfo.accelerationStructure = as->handle;
-    as->address = vkDevice->getAccelerationDeviceAddress(vkDevice->handle, &addressInfo);
+    as->address = deviceImpl->getAccelerationDeviceAddress(deviceImpl->handle, &addressInfo);
 
-    as->device = vkDevice;
+    as->device = deviceImpl;
     *outAs = (PalAccelerationStructure*)as;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyAccelerationstructureVk(PalAccelerationStructure* as)
 {
-    AccelerationStructureVk* vkAs = (AccelerationStructureVk*)as;
-    vkAs->device->destroyAccelerationStructure(
-        vkAs->device->handle,
-        vkAs->handle,
-        &s_Vk.vkAllocator);
+    AccelerationStructureVk* asImpl = (AccelerationStructureVk*)as;
+    asImpl->device->destroyAccelerationStructure(
+        asImpl->device->handle,
+        asImpl->handle,
+        &s_Vk.allocatorImpl);
 
-    palFree(s_Vk.allocator, vkAs);
+    palFree(s_Vk.allocator, asImpl);
 }
 
 void PAL_CALL getAccelerationStructureBuildSizeVk(
@@ -71,7 +71,7 @@ void PAL_CALL getAccelerationStructureBuildSizeVk(
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     uint32_t* maxPrimities = nullptr;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
@@ -89,8 +89,8 @@ void PAL_CALL getAccelerationStructureBuildSizeVk(
 
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = {0};
     sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-    vkDevice->getAccelerationBuildsize(
-        vkDevice->handle,
+    deviceImpl->getAccelerationBuildsize(
+        deviceImpl->handle,
         VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
         &buildInfo,
         maxPrimities,

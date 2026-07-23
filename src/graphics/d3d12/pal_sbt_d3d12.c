@@ -16,7 +16,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     PalShaderBindingTable** outSbt)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     ShaderBindingTableD3D12* sbt = nullptr;
     PipelineD3D12* pipeline = (PipelineD3D12*)info->rayTracingPipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
@@ -71,7 +71,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     ID3D12StateObjectProperties* props = NULL;
     result = handle->lpVtbl->QueryInterface(handle, &IID_StateObjectProps, (void**)&props);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -160,8 +160,8 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     bufferDesc.SampleDesc.Count = 1;
     bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-    result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-        d3d12Device->handle,
+    result = deviceImpl->handle->lpVtbl->CreateCommittedResource(
+        deviceImpl->handle,
         &heapProps,
         0,
         &bufferDesc,
@@ -171,14 +171,14 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         (void**)&sbt->buffer);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
     // create staging buffer
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-    result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-        d3d12Device->handle,
+    result = deviceImpl->handle->lpVtbl->CreateCommittedResource(
+        deviceImpl->handle,
         &heapProps,
         0,
         &bufferDesc,
@@ -188,7 +188,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         (void**)&sbt->stagingBuffer);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -234,7 +234,7 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     void* ptr = nullptr;
     result = sbt->stagingBuffer->lpVtbl->Map(sbt->stagingBuffer, 0, nullptr, &ptr);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -348,11 +348,11 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
 
 void PAL_CALL destroyShaderBindingTableD3D12(PalShaderBindingTable* sbt)
 {
-    ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
-    d3d12Sbt->buffer->lpVtbl->Release(d3d12Sbt->buffer);
-    d3d12Sbt->stagingBuffer->lpVtbl->Unmap(d3d12Sbt->stagingBuffer, 0, nullptr);
-    d3d12Sbt->stagingBuffer->lpVtbl->Release(d3d12Sbt->stagingBuffer);
-    palFree(s_D3D12.allocator, d3d12Sbt);
+    ShaderBindingTableD3D12* sbtImpl = (ShaderBindingTableD3D12*)sbt;
+    sbtImpl->buffer->lpVtbl->Release(sbtImpl->buffer);
+    sbtImpl->stagingBuffer->lpVtbl->Unmap(sbtImpl->stagingBuffer, 0, nullptr);
+    sbtImpl->stagingBuffer->lpVtbl->Release(sbtImpl->stagingBuffer);
+    palFree(s_D3D12.allocator, sbtImpl);
 }
 
 void PAL_CALL updateShaderBindingTableD3D12(
@@ -360,8 +360,8 @@ void PAL_CALL updateShaderBindingTableD3D12(
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
-    ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
-    PipelineD3D12* pipeline = d3d12Sbt->pipeline;
+    ShaderBindingTableD3D12* sbtImpl = (ShaderBindingTableD3D12*)sbt;
+    PipelineD3D12* pipeline = sbtImpl->pipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
 
     uint64_t stride = 0;
@@ -376,35 +376,35 @@ void PAL_CALL updateShaderBindingTableD3D12(
         if (index < sbtInfo->raygenCount) {
             // raygen group
             offset = 0;
-            stride = d3d12Sbt->raygen.region.StrideInBytes;
-            startIndex = d3d12Sbt->raygen.startIndex;
+            stride = sbtImpl->raygen.region.StrideInBytes;
+            startIndex = sbtImpl->raygen.startIndex;
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount) {
             // miss group
-            offset = d3d12Sbt->miss.offset;
-            stride = d3d12Sbt->miss.region.StrideInBytes;
-            startIndex = d3d12Sbt->miss.startIndex;
+            offset = sbtImpl->miss.offset;
+            stride = sbtImpl->miss.region.StrideInBytes;
+            startIndex = sbtImpl->miss.startIndex;
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount) {
             // hit group
-            offset = d3d12Sbt->hit.offset;
-            stride = d3d12Sbt->hit.region.StrideInBytes;
-            startIndex = d3d12Sbt->hit.startIndex;
+            offset = sbtImpl->hit.offset;
+            stride = sbtImpl->hit.region.StrideInBytes;
+            startIndex = sbtImpl->hit.startIndex;
 
         } else {
             // callable group
-            offset = d3d12Sbt->callable.offset;
-            stride = d3d12Sbt->callable.region.StrideInBytes;
-            startIndex = d3d12Sbt->callable.startIndex;
+            offset = sbtImpl->callable.offset;
+            stride = sbtImpl->callable.region.StrideInBytes;
+            startIndex = sbtImpl->callable.startIndex;
         }
 
         // write payload
         uint32_t localIndex = index - startIndex;
-        uint8_t* dst = (uint8_t*)d3d12Sbt->stagingPtr + offset + (localIndex * stride);
-        memcpy(dst + d3d12Sbt->handleSize, info->localData, info->localDataSize);
+        uint8_t* dst = (uint8_t*)sbtImpl->stagingPtr + offset + (localIndex * stride);
+        memcpy(dst + sbtImpl->handleSize, info->localData, info->localDataSize);
     }
 
-    d3d12Sbt->isDirty = PAL_TRUE;
+    sbtImpl->isDirty = PAL_TRUE;
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

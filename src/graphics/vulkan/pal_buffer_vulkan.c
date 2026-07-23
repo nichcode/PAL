@@ -196,7 +196,7 @@ PalResult PAL_CALL createBufferVk(
 {
     VkResult result;
     BufferVk* buffer = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     MemoryVk* memory = nullptr;
 
     buffer = palAllocate(s_Vk.allocator, sizeof(BufferVk), 0);
@@ -217,7 +217,8 @@ PalResult PAL_CALL createBufferVk(
     createInfo.size = info->size;
     createInfo.usage = bufferUsageToVk(info->usages);
 
-    result = s_Vk.createBuffer(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &buffer->handle);
+    result =
+        s_Vk.createBuffer(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &buffer->handle);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -234,15 +235,15 @@ PalResult PAL_CALL createBufferVk(
 
         // allocate and manage memory
         VkMemoryRequirements memReq = {0};
-        s_Vk.getBufferMemoryRequirements(vkDevice->handle, buffer->handle, &memReq);
+        s_Vk.getBufferMemoryRequirements(deviceImpl->handle, buffer->handle, &memReq);
 
         VkMemoryAllocateInfo allocateInfo = {0};
         allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.allocationSize = (VkDeviceSize)memReq.size;
         VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
 
-        uint32_t memoryMask = vkDevice->memoryClassMask[memoryType] & memReq.memoryTypeBits;
-        uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, memoryMask);
+        uint32_t memoryMask = deviceImpl->memoryClassMask[memoryType] & memReq.memoryTypeBits;
+        uint32_t memoryIndex = findBestMemoryIndexVk(deviceImpl->phyDevice, memoryMask);
         if (!(memoryMask & (1u << memoryIndex))) {
             return PAL_RESULT_CODE_PLATFORM_FAILURE;
         }
@@ -255,16 +256,16 @@ PalResult PAL_CALL createBufferVk(
         }
 
         result = s_Vk.allocateMemory(
-            vkDevice->handle,
+            deviceImpl->handle,
             &allocateInfo,
-            &s_Vk.vkAllocator,
+            &s_Vk.allocatorImpl,
             &memory->handle);
 
         if (result != VK_SUCCESS) {
             return makeResultVk(result);
         }
 
-        result = s_Vk.bindBufferMemory(vkDevice->handle, buffer->handle, memory->handle, 0);
+        result = s_Vk.bindBufferMemory(deviceImpl->handle, buffer->handle, memory->handle, 0);
         if (result != VK_SUCCESS) {
             return makeResultVk(result);
         }
@@ -275,18 +276,21 @@ PalResult PAL_CALL createBufferVk(
 
     buffer->memory = memory;
     buffer->usages = info->usages;
-    buffer->device = vkDevice;
+    buffer->device = deviceImpl;
     *outBuffer = (PalBuffer*)buffer;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyBufferVk(PalBuffer* buffer)
 {
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    s_Vk.destroyBuffer(vkBuffer->device->handle, vkBuffer->handle, &s_Vk.vkAllocator);
-    if (vkBuffer->isMemoryManaged) {
-        s_Vk.freeMemory(vkBuffer->device->handle, vkBuffer->memory->handle, &s_Vk.vkAllocator);
-        palFree(s_Vk.allocator, vkBuffer->memory);
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    s_Vk.destroyBuffer(bufferImpl->device->handle, bufferImpl->handle, &s_Vk.allocatorImpl);
+    if (bufferImpl->isMemoryManaged) {
+        s_Vk.freeMemory(
+            bufferImpl->device->handle,
+            bufferImpl->memory->handle,
+            &s_Vk.allocatorImpl);
+        palFree(s_Vk.allocator, bufferImpl->memory);
     }
     palFree(s_Vk.allocator, buffer);
 }
@@ -295,14 +299,14 @@ void PAL_CALL getBufferMemoryRequirementsVk(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements)
 {
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    DeviceVk* device = vkBuffer->device;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    DeviceVk* device = bufferImpl->device;
     VkMemoryRequirements memReq = {0};
-    s_Vk.getBufferMemoryRequirements(device->handle, vkBuffer->handle, &memReq);
+    s_Vk.getBufferMemoryRequirements(device->handle, bufferImpl->handle, &memReq);
 
     requirements->alignment = (uint64_t)memReq.alignment;
     requirements->size = (uint64_t)memReq.size;
-    requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, vkBuffer->usages);
+    requirements->memoryMask = palPackUint32(memReq.memoryTypeBits, bufferImpl->usages);
     requirements->supportedMemoryTypes = 0;
 
     if ((memReq.memoryTypeBits & device->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY]) != 0) {
@@ -399,21 +403,24 @@ PalResult PAL_CALL bindBufferMemoryVk(
     uint64_t offset)
 {
     VkResult result;
-    MemoryVk* vkMemory = (MemoryVk*)memory;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
+    MemoryVk* memoryImpl = (MemoryVk*)memory;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
 
-    if (vkBuffer->memory) {
+    if (bufferImpl->memory) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    result =
-        s_Vk.bindBufferMemory(vkBuffer->device->handle, vkBuffer->handle, vkMemory->handle, offset);
+    result = s_Vk.bindBufferMemory(
+        bufferImpl->device->handle,
+        bufferImpl->handle,
+        memoryImpl->handle,
+        offset);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
 
-    vkBuffer->memory = vkMemory;
+    bufferImpl->memory = memoryImpl;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -424,10 +431,10 @@ PalResult PAL_CALL mapBufferVk(
     void** outPtr)
 {
     VkResult result;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    DeviceVk* device = vkBuffer->device;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    DeviceVk* device = bufferImpl->device;
 
-    result = s_Vk.mapMemory(device->handle, vkBuffer->memory->handle, offset, size, 0, outPtr);
+    result = s_Vk.mapMemory(device->handle, bufferImpl->memory->handle, offset, size, 0, outPtr);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -436,21 +443,21 @@ PalResult PAL_CALL mapBufferVk(
 
 void PAL_CALL unmapBufferVk(PalBuffer* buffer)
 {
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    s_Vk.unmapMemory(vkBuffer->device->handle, vkBuffer->memory->handle);
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    s_Vk.unmapMemory(bufferImpl->device->handle, bufferImpl->memory->handle);
 }
 
 PalDeviceAddress PAL_CALL getBufferDeviceAddressVk(PalBuffer* buffer)
 {
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    if (!(vkBuffer->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS)) {
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    if (!(bufferImpl->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS)) {
         return 0;
     }
 
     VkBufferDeviceAddressInfoKHR bufferInfo = {0};
-    bufferInfo.buffer = vkBuffer->handle;
+    bufferInfo.buffer = bufferImpl->handle;
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
-    return vkBuffer->device->getBufferrAddress(vkBuffer->device->handle, &bufferInfo);
+    return bufferImpl->device->getBufferrAddress(bufferImpl->device->handle, &bufferInfo);
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

@@ -67,6 +67,7 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
         // device
         !vtable1->createDevice                                  ||
         !vtable1->destroyDevice                                 ||
+        !vtable1->getDeviceLostReason                           ||
 
         // memory
         !vtable1->allocateMemory                                ||
@@ -391,6 +392,11 @@ PalResult PAL_CALL palCreateDevice(
 void PAL_CALL palDestroyDevice(PalDevice* device)
 {
     device->backend.vtbl1->destroyDevice(device);
+}
+
+uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device)
+{
+    device->backend.vtbl1->getDeviceLostReason(device);
 }
 
 PalResult PAL_CALL palAllocateMemory(
@@ -1364,7 +1370,7 @@ PalResult PAL_CALL palCreateAccelerationstructure(
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyAccelerationstructure(PalAccelerationStructure* as)
+void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* as)
 {
     as->backend.vtbl1->destroyAccelerationstructure(as);
 }

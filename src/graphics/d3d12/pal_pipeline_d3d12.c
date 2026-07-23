@@ -387,7 +387,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     const PalPipelineLayoutCreateInfo* info,
     PalPipelineLayout** outLayout)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     PipelineLayoutD3D12* layout = nullptr;
     uint32_t resourceCount = 0;
     uint32_t samplerCount = 0;
@@ -404,11 +404,11 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     D3D12_ROOT_SIGNATURE_FLAGS rootFlags = 0;
     rootFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-    if (info->descriptorSetLayoutCount > d3d12Device->limits.maxBoundDescriptorSets) {
+    if (info->descriptorSetLayoutCount > deviceImpl->limits.maxBoundDescriptorSets) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (d3d12Device->shaderModel >= PAL_MAKE_SHADER_TARGET(6, 6)) {
+    if (deviceImpl->shaderModel >= PAL_MAKE_SHADER_TARGET(6, 6)) {
         rootFlags |= D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
         rootFlags |= D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
     }
@@ -430,7 +430,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
 
     if (info->usePushConstant) {
         pushConstantSize = info->pushConstantInfo.offset + info->pushConstantInfo.size;
-        if (pushConstantSize > d3d12Device->limits.maxPushConstantSize) {
+        if (pushConstantSize > deviceImpl->limits.maxPushConstantSize) {
             return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
 
@@ -545,12 +545,12 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
     ID3DBlob* blob = nullptr;
     HRESULT result = s_D3D12.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
-    result = d3d12Device->handle->lpVtbl->CreateRootSignature(
-        d3d12Device->handle,
+    result = deviceImpl->handle->lpVtbl->CreateRootSignature(
+        deviceImpl->handle,
         0,
         blob->lpVtbl->GetBufferPointer(blob),
         blob->lpVtbl->GetBufferSize(blob),
@@ -558,7 +558,7 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
         (void**)&layout->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -581,9 +581,9 @@ PalResult PAL_CALL createPipelineLayoutD3D12(
 
 void PAL_CALL destroyPipelineLayoutD3D12(PalPipelineLayout* layout)
 {
-    PipelineLayoutD3D12* d3d12Layout = (PipelineLayoutD3D12*)layout;
-    d3d12Layout->handle->lpVtbl->Release(d3d12Layout->handle);
-    palFree(s_D3D12.allocator, d3d12Layout);
+    PipelineLayoutD3D12* layoutImpl = (PipelineLayoutD3D12*)layout;
+    layoutImpl->handle->lpVtbl->Release(layoutImpl->handle);
+    palFree(s_D3D12.allocator, layoutImpl);
 }
 
 PalResult PAL_CALL createGraphicsPipelineD3D12(
@@ -596,7 +596,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     uint32_t totalSize = 0;
     PalBool alphaToCoverageEnable = PAL_FALSE;
     PipelineD3D12* pipeline = nullptr;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     PipelineLayoutD3D12* layout = (PipelineLayoutD3D12*)info->pipelineLayout;
 
     D3D12_INPUT_ELEMENT_DESC* elementDescs = nullptr;
@@ -680,11 +680,11 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         vertexCount += layout->attributeCount;
     }
 
-    if (info->vertexLayoutCount > d3d12Device->limits.maxVertexLayouts) {
+    if (info->vertexLayoutCount > deviceImpl->limits.maxVertexLayouts) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (vertexCount > d3d12Device->limits.maxVertexAttributes) {
+    if (vertexCount > deviceImpl->limits.maxVertexAttributes) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -904,18 +904,18 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
         PalStencilOpState* back = &state->backStencilOpState;
         PalStencilOpState* front = &state->frontStencilOpState;
 
-        D3D12_DEPTH_STENCILOP_DESC* d3dBack = &depthStencilStream->desc.BackFace;
-        D3D12_DEPTH_STENCILOP_DESC* d3dFront = &depthStencilStream->desc.FrontFace;
+        D3D12_DEPTH_STENCILOP_DESC* backDesc = &depthStencilStream->desc.BackFace;
+        D3D12_DEPTH_STENCILOP_DESC* frontDesc = &depthStencilStream->desc.FrontFace;
 
-        d3dBack->StencilFunc = compareOpToD3D12(back->compareOp);
-        d3dBack->StencilDepthFailOp = stencilOpToD3D12(back->depthFailOp);
-        d3dBack->StencilFailOp = stencilOpToD3D12(back->failOp);
-        d3dBack->StencilPassOp = stencilOpToD3D12(back->passOp);
+        backDesc->StencilFunc = compareOpToD3D12(back->compareOp);
+        backDesc->StencilDepthFailOp = stencilOpToD3D12(back->depthFailOp);
+        backDesc->StencilFailOp = stencilOpToD3D12(back->failOp);
+        backDesc->StencilPassOp = stencilOpToD3D12(back->passOp);
 
-        d3dFront->StencilFunc = compareOpToD3D12(front->compareOp);
-        d3dFront->StencilDepthFailOp = stencilOpToD3D12(front->depthFailOp);
-        d3dFront->StencilFailOp = stencilOpToD3D12(front->failOp);
-        d3dFront->StencilPassOp = stencilOpToD3D12(front->passOp);
+        frontDesc->StencilFunc = compareOpToD3D12(front->compareOp);
+        frontDesc->StencilDepthFailOp = stencilOpToD3D12(front->depthFailOp);
+        frontDesc->StencilFailOp = stencilOpToD3D12(front->failOp);
+        frontDesc->StencilPassOp = stencilOpToD3D12(front->passOp);
 
         depthStencilStream->desc.DepthFunc = compareOpToD3D12(state->compareOp);
         depthStencilStream->desc.DepthEnable = state->enableDepthTest;
@@ -1018,14 +1018,14 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     streamDesc.pPipelineStateSubobjectStream = &graphicsStreamDesc;
     streamDesc.SizeInBytes = totalSize;
 
-    result = d3d12Device->handle->lpVtbl->CreatePipelineState(
-        d3d12Device->handle,
+    result = deviceImpl->handle->lpVtbl->CreatePipelineState(
+        deviceImpl->handle,
         &streamDesc,
         &IID_PipelineState,
         &pipeline->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -1052,7 +1052,7 @@ PalResult PAL_CALL createComputePipelineD3D12(
     const PalComputePipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     PipelineLayoutD3D12* layout = (PipelineLayoutD3D12*)info->pipelineLayout;
     ShaderD3D12* shader = (ShaderD3D12*)info->computeShader;
     PipelineD3D12* pipeline = nullptr;
@@ -1066,14 +1066,14 @@ PalResult PAL_CALL createComputePipelineD3D12(
     desc.CS = shader->byteCode;
     desc.pRootSignature = layout->handle;
 
-    HRESULT result = d3d12Device->handle->lpVtbl->CreateComputePipelineState(
-        d3d12Device->handle,
+    HRESULT result = deviceImpl->handle->lpVtbl->CreateComputePipelineState(
+        deviceImpl->handle,
         &desc,
         &IID_PipelineState,
         &pipeline->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -1094,19 +1094,19 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     PalPipeline** outPipeline)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     PipelineLayoutD3D12* layout = (PipelineLayoutD3D12*)info->pipelineLayout;
     PipelineD3D12* pipeline = nullptr;
 
-    if (info->maxAttributeSize > d3d12Device->limits.maxHitAttributeSize) {
+    if (info->maxAttributeSize > deviceImpl->limits.maxHitAttributeSize) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (info->maxPayloadSize > d3d12Device->limits.maxPayloadSize) {
+    if (info->maxPayloadSize > deviceImpl->limits.maxPayloadSize) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    if (info->maxRecursionDepth > d3d12Device->limits.maxRecursionDepth) {
+    if (info->maxRecursionDepth > deviceImpl->limits.maxRecursionDepth) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -1356,12 +1356,12 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         ID3DBlob* blob = nullptr;
         result = s_D3D12.serializeVersionedRootSignature(&rootDesc, &blob, nullptr);
         if (FAILED(result)) {
-            pollMessagesD3D12(d3d12Device);
+            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
 
-        result = d3d12Device->handle->lpVtbl->CreateRootSignature(
-            d3d12Device->handle,
+        result = deviceImpl->handle->lpVtbl->CreateRootSignature(
+            deviceImpl->handle,
             0,
             blob->lpVtbl->GetBufferPointer(blob),
             blob->lpVtbl->GetBufferSize(blob),
@@ -1369,7 +1369,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
             (void**)&pipeline->localRootSignature);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(d3d12Device);
+            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
 
@@ -1393,14 +1393,14 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     desc.NumSubobjects = subObjectCount;
     desc.pSubobjects = subObjects;
 
-    result = d3d12Device->handle->lpVtbl->CreateStateObject(
-        d3d12Device->handle,
+    result = deviceImpl->handle->lpVtbl->CreateStateObject(
+        deviceImpl->handle,
         &desc,
         &IID_StateObject,
         &pipeline->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
 
@@ -1422,29 +1422,29 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
 
 void PAL_CALL destroyPipelineD3D12(PalPipeline* pipeline)
 {
-    PipelineD3D12* d3dPipeline = (PipelineD3D12*)pipeline;
-    if (d3dPipeline->type == RAY_TRACING_PIPELINE) {
-        ID3D12StateObject* handle = d3dPipeline->handle;
+    PipelineD3D12* pipelineImpl = (PipelineD3D12*)pipeline;
+    if (pipelineImpl->type == RAY_TRACING_PIPELINE) {
+        ID3D12StateObject* handle = pipelineImpl->handle;
         handle->lpVtbl->Release(handle);
 
     } else {
-        ID3D12PipelineState* handle = d3dPipeline->handle;
+        ID3D12PipelineState* handle = pipelineImpl->handle;
         handle->lpVtbl->Release(handle);
     }
 
-    if (d3dPipeline->localRootSignature) {
-        d3dPipeline->localRootSignature->lpVtbl->Release(d3dPipeline->localRootSignature);
+    if (pipelineImpl->localRootSignature) {
+        pipelineImpl->localRootSignature->lpVtbl->Release(pipelineImpl->localRootSignature);
     }
 
-    if (d3dPipeline->strides) {
-        palFree(s_D3D12.allocator, d3dPipeline->strides);
+    if (pipelineImpl->strides) {
+        palFree(s_D3D12.allocator, pipelineImpl->strides);
     }
 
-    if (d3dPipeline->shaderExports) {
-        palFree(s_D3D12.allocator, d3dPipeline->shaderExports);
+    if (pipelineImpl->shaderExports) {
+        palFree(s_D3D12.allocator, pipelineImpl->shaderExports);
     }
 
-    palFree(s_D3D12.allocator, d3dPipeline);
+    palFree(s_D3D12.allocator, pipelineImpl);
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

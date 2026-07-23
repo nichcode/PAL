@@ -16,7 +16,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     PalShaderBindingTable** outSbt)
 {
     VkResult result;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     ShaderBindingTableVk* sbt = nullptr;
     PipelineVk* pipeline = (PipelineVk*)info->rayTracingPipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
@@ -39,7 +39,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     VkPhysicalDeviceProperties2KHR props = {0};
     props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
     props.pNext = &rayProps;
-    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &props);
+    s_Vk.getPhysicalDeviceProperties2(deviceImpl->phyDevice, &props);
 
     uint32_t groupHandleSize = rayProps.shaderGroupHandleSize;
     uint32_t groupHandleAlignment = rayProps.shaderGroupHandleAlignment;
@@ -119,7 +119,8 @@ PalResult PAL_CALL createShaderBindingTableVk(
     bufCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    result = s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->buffer);
+    result =
+        s_Vk.createBuffer(deviceImpl->handle, &bufCreateInfo, &s_Vk.allocatorImpl, &sbt->buffer);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -127,8 +128,11 @@ PalResult PAL_CALL createShaderBindingTableVk(
     // create staging buffer
     bufCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     sbt->stagingBufferSize = bufferSize;
-    result =
-        s_Vk.createBuffer(vkDevice->handle, &bufCreateInfo, &s_Vk.vkAllocator, &sbt->stagingBuffer);
+    result = s_Vk.createBuffer(
+        deviceImpl->handle,
+        &bufCreateInfo,
+        &s_Vk.allocatorImpl,
+        &sbt->stagingBuffer);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -136,14 +140,14 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     // allocate CPU upload memory and bind
     VkMemoryRequirements memReq = {0};
-    s_Vk.getBufferMemoryRequirements(vkDevice->handle, sbt->buffer, &memReq);
+    s_Vk.getBufferMemoryRequirements(deviceImpl->handle, sbt->buffer, &memReq);
 
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = memReq.size;
 
-    uint32_t mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
-    uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
+    uint32_t mask = deviceImpl->memoryClassMask[PAL_MEMORY_TYPE_GPU_ONLY] & memReq.memoryTypeBits;
+    uint32_t memoryIndex = findBestMemoryIndexVk(deviceImpl->phyDevice, mask);
     allocateInfo.memoryTypeIndex = memoryIndex;
 
     VkMemoryAllocateFlagsInfo allocateFlagsInfo = {0};
@@ -151,34 +155,37 @@ PalResult PAL_CALL createShaderBindingTableVk(
     allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     allocateInfo.pNext = &allocateFlagsInfo;
 
-    result =
-        s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &sbt->bufferMemory);
+    result = s_Vk.allocateMemory(
+        deviceImpl->handle,
+        &allocateInfo,
+        &s_Vk.allocatorImpl,
+        &sbt->bufferMemory);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
 
     // allocate memory for staging buffer
-    s_Vk.getBufferMemoryRequirements(vkDevice->handle, sbt->stagingBuffer, &memReq);
+    s_Vk.getBufferMemoryRequirements(deviceImpl->handle, sbt->stagingBuffer, &memReq);
     allocateInfo.allocationSize = memReq.size;
 
-    mask = vkDevice->memoryClassMask[PAL_MEMORY_TYPE_CPU_UPLOAD] & memReq.memoryTypeBits;
-    memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, mask);
+    mask = deviceImpl->memoryClassMask[PAL_MEMORY_TYPE_CPU_UPLOAD] & memReq.memoryTypeBits;
+    memoryIndex = findBestMemoryIndexVk(deviceImpl->phyDevice, mask);
     allocateInfo.memoryTypeIndex = memoryIndex;
     allocateInfo.pNext = nullptr; // we dont need the address
 
     result = s_Vk.allocateMemory(
-        vkDevice->handle,
+        deviceImpl->handle,
         &allocateInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &sbt->stagingBufferMemory);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
 
-    s_Vk.bindBufferMemory(vkDevice->handle, sbt->buffer, sbt->bufferMemory, 0);
-    s_Vk.bindBufferMemory(vkDevice->handle, sbt->stagingBuffer, sbt->stagingBufferMemory, 0);
+    s_Vk.bindBufferMemory(deviceImpl->handle, sbt->buffer, sbt->bufferMemory, 0);
+    s_Vk.bindBufferMemory(deviceImpl->handle, sbt->stagingBuffer, sbt->stagingBufferMemory, 0);
 
     // get shader group handles
     uint32_t handlesSize = totalGroups * groupHandleSize;
@@ -187,8 +194,8 @@ PalResult PAL_CALL createShaderBindingTableVk(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    result = vkDevice->getRayTracingShaderGroupHandles(
-        vkDevice->handle,
+    result = deviceImpl->getRayTracingShaderGroupHandles(
+        deviceImpl->handle,
         pipeline->handle,
         0,
         totalGroups,
@@ -201,7 +208,8 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     // copy handles into the buffer
     void* ptr = nullptr;
-    result = s_Vk.mapMemory(vkDevice->handle, sbt->stagingBufferMemory, 0, VK_WHOLE_SIZE, 0, &ptr);
+    result =
+        s_Vk.mapMemory(deviceImpl->handle, sbt->stagingBufferMemory, 0, VK_WHOLE_SIZE, 0, &ptr);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -272,7 +280,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     VkBufferDeviceAddressInfo bufferAddressInfo = {0};
     bufferAddressInfo.buffer = sbt->buffer;
     bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-    sbt->baseAddress = s_Vk.getBufferDeviceAddress(vkDevice->handle, &bufferAddressInfo);
+    sbt->baseAddress = s_Vk.getBufferDeviceAddress(deviceImpl->handle, &bufferAddressInfo);
 
     // raygen
     sbt->raygen.region.deviceAddress = sbt->baseAddress;
@@ -303,7 +311,7 @@ PalResult PAL_CALL createShaderBindingTableVk(
     sbt->callable.region.stride = callableStride;
 
     palFree(s_Vk.allocator, handles);
-    sbt->device = vkDevice;
+    sbt->device = deviceImpl;
     sbt->handleSize = groupHandleSize;
     sbt->pipeline = pipeline;
 
@@ -314,15 +322,15 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
 void PAL_CALL destroyShaderBindingTableVk(PalShaderBindingTable* sbt)
 {
-    ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
-    DeviceVk* device = vkSbt->device;
-    s_Vk.unmapMemory(device->handle, vkSbt->stagingBufferMemory);
+    ShaderBindingTableVk* sbtImpl = (ShaderBindingTableVk*)sbt;
+    DeviceVk* device = sbtImpl->device;
+    s_Vk.unmapMemory(device->handle, sbtImpl->stagingBufferMemory);
 
-    s_Vk.destroyBuffer(device->handle, vkSbt->buffer, &s_Vk.vkAllocator);
-    s_Vk.destroyBuffer(device->handle, vkSbt->stagingBuffer, &s_Vk.vkAllocator);
-    s_Vk.freeMemory(device->handle, vkSbt->bufferMemory, &s_Vk.vkAllocator);
-    s_Vk.freeMemory(device->handle, vkSbt->stagingBufferMemory, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkSbt);
+    s_Vk.destroyBuffer(device->handle, sbtImpl->buffer, &s_Vk.allocatorImpl);
+    s_Vk.destroyBuffer(device->handle, sbtImpl->stagingBuffer, &s_Vk.allocatorImpl);
+    s_Vk.freeMemory(device->handle, sbtImpl->bufferMemory, &s_Vk.allocatorImpl);
+    s_Vk.freeMemory(device->handle, sbtImpl->stagingBufferMemory, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, sbtImpl);
 }
 
 void PAL_CALL updateShaderBindingTableVk(
@@ -330,9 +338,9 @@ void PAL_CALL updateShaderBindingTableVk(
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
-    ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
-    DeviceVk* vkDevice = vkSbt->device;
-    PipelineVk* pipeline = vkSbt->pipeline;
+    ShaderBindingTableVk* sbtImpl = (ShaderBindingTableVk*)sbt;
+    DeviceVk* deviceImpl = sbtImpl->device;
+    PipelineVk* pipeline = sbtImpl->pipeline;
     ShaderBindingTableInfo* sbtInfo = &pipeline->sbtInfo;
 
     uint32_t stride = 0;
@@ -347,35 +355,35 @@ void PAL_CALL updateShaderBindingTableVk(
         if (index < sbtInfo->raygenCount) {
             // raygen group
             offset = 0;
-            stride = vkSbt->raygen.region.stride;
-            startIndex = vkSbt->raygen.startIndex;
+            stride = sbtImpl->raygen.region.stride;
+            startIndex = sbtImpl->raygen.startIndex;
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount) {
             // miss group
-            offset = vkSbt->miss.offset;
-            stride = vkSbt->miss.region.stride;
-            startIndex = vkSbt->miss.startIndex;
+            offset = sbtImpl->miss.offset;
+            stride = sbtImpl->miss.region.stride;
+            startIndex = sbtImpl->miss.startIndex;
 
         } else if (index < sbtInfo->raygenCount + sbtInfo->missCount + sbtInfo->hitCount) {
             // hit group
-            offset = vkSbt->hit.offset;
-            stride = vkSbt->hit.region.stride;
-            startIndex = vkSbt->hit.startIndex;
+            offset = sbtImpl->hit.offset;
+            stride = sbtImpl->hit.region.stride;
+            startIndex = sbtImpl->hit.startIndex;
 
         } else {
             // callable group
-            offset = vkSbt->callable.offset;
-            stride = vkSbt->callable.region.stride;
-            startIndex = vkSbt->callable.startIndex;
+            offset = sbtImpl->callable.offset;
+            stride = sbtImpl->callable.region.stride;
+            startIndex = sbtImpl->callable.startIndex;
         }
 
         // write payload
         uint32_t localIndex = index - startIndex;
-        uint8_t* dst = (uint8_t*)vkSbt->stagingPtr + offset + (localIndex * stride);
-        memcpy(dst + vkSbt->handleSize, info->localData, info->localDataSize);
+        uint8_t* dst = (uint8_t*)sbtImpl->stagingPtr + offset + (localIndex * stride);
+        memcpy(dst + sbtImpl->handleSize, info->localData, info->localDataSize);
     }
 
-    vkSbt->isDirty = PAL_TRUE;
+    sbtImpl->isDirty = PAL_TRUE;
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

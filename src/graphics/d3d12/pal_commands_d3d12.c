@@ -155,33 +155,33 @@ PalResult PAL_CALL cmdBeginD3D12(
     PalRenderingLayoutInfo* info)
 {
     HRESULT result;
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    result = d3d12CmdBuffer->allocator->lpVtbl->Reset(d3d12CmdBuffer->allocator);
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    result = cmdBufferImpl->allocator->lpVtbl->Reset(cmdBufferImpl->allocator);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12CmdBuffer->device);
+        pollMessagesD3D12(cmdBufferImpl->device);
         return makeResultD3D12(result);
     }
 
-    result = d3d12CmdBuffer->handle->lpVtbl->Reset(
-        d3d12CmdBuffer->handle,
-        d3d12CmdBuffer->allocator,
+    result = cmdBufferImpl->handle->lpVtbl->Reset(
+        cmdBufferImpl->handle,
+        cmdBufferImpl->allocator,
         nullptr);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12CmdBuffer->device);
+        pollMessagesD3D12(cmdBufferImpl->device);
         return makeResultD3D12(result);
     }
 
-    d3d12CmdBuffer->linearAllocator.offset = 0;
+    cmdBufferImpl->linearAllocator.offset = 0;
     return PAL_RESULT_SUCCESS;
 }
 
 PalResult PAL_CALL cmdEndD3D12(PalCommandBuffer* cmdBuffer)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    HRESULT result = d3d12CmdBuffer->handle->lpVtbl->Close(d3d12CmdBuffer->handle);
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    HRESULT result = cmdBufferImpl->handle->lpVtbl->Close(cmdBufferImpl->handle);
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12CmdBuffer->device);
+        pollMessagesD3D12(cmdBufferImpl->device);
         return makeResultD3D12(result);
     }
 
@@ -192,27 +192,27 @@ void PAL_CALL cmdExecuteCommandBufferD3D12(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
-    CommandBufferD3D12* d3dPrimaryCmdBuffer = (CommandBufferD3D12*)primaryCmdBuffer;
-    CommandBufferD3D12* d3dSecondaryCmdBuffer = (CommandBufferD3D12*)secondaryCmdBuffer;
+    CommandBufferD3D12* primaryCmdBufferImpl = (CommandBufferD3D12*)primaryCmdBuffer;
+    CommandBufferD3D12* secondaryCmdBufferImpl = (CommandBufferD3D12*)secondaryCmdBuffer;
 
-    d3dPrimaryCmdBuffer->handle->lpVtbl->ExecuteBundle(
-        d3dPrimaryCmdBuffer->handle,
-        (ID3D12GraphicsCommandList*)d3dSecondaryCmdBuffer->handle);
+    primaryCmdBufferImpl->handle->lpVtbl->ExecuteBundle(
+        primaryCmdBufferImpl->handle,
+        (ID3D12GraphicsCommandList*)secondaryCmdBufferImpl->handle);
 }
 
 void PAL_CALL cmdSetFragmentShadingRateD3D12(
     PalCommandBuffer* cmdBuffer,
     PalFragmentShadingRateState* state)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     D3D12_SHADING_RATE shadingRate = shadingRateToD3D12(state->rate);
     D3D12_SHADING_RATE_COMBINER combinerOps[2];
     for (int i = 0; i < 2; i++) {
         combinerOps[i] = combinerOpsToD3D12(state->combinerOps[i]);
     }
 
-    d3d12CmdBuffer->handle->lpVtbl->RSSetShadingRate(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->RSSetShadingRate(
+        cmdBufferImpl->handle,
         shadingRate,
         combinerOps);
 }
@@ -223,9 +223,9 @@ void PAL_CALL cmdDrawMeshTasksD3D12(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    d3d12CmdBuffer->handle->lpVtbl
-        ->DispatchMesh(d3d12CmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    cmdBufferImpl->handle->lpVtbl
+        ->DispatchMesh(cmdBufferImpl->handle, groupCountX, groupCountY, groupCountZ);
 }
 
 void PAL_CALL cmdDrawMeshTasksIndirectD3D12(
@@ -233,15 +233,15 @@ void PAL_CALL cmdDrawMeshTasksIndirectD3D12(
     PalBuffer* buffer,
     uint32_t drawCount)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->meshSignature,
         drawCount,
-        d3d12Buffer->handle,
+        bufferImpl->handle,
         0,
         nullptr,
         0);
@@ -253,18 +253,18 @@ void PAL_CALL cmdDrawMeshTasksIndirectCountD3D12(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    BufferD3D12* d3d12CountBuffer = (BufferD3D12*)countBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    BufferD3D12* countBufferImpl = (BufferD3D12*)countBuffer;
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->meshSignature,
         maxDrawCount,
-        d3d12Buffer->handle,
+        bufferImpl->handle,
         0,
-        d3d12CountBuffer->handle,
+        countBufferImpl->handle,
         0);
 }
 
@@ -272,24 +272,24 @@ void PAL_CALL cmdBuildAccelerationStructureD3D12(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildInfo = {0};
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
         D3D12_RAYTRACING_GEOMETRY_DESC* geometries = nullptr;
         geometries = palLinearAlloc(
-            &d3d12CmdBuffer->linearAllocator,
+            &cmdBufferImpl->linearAllocator,
             sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count,
             0);
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count);
         fillBuildInfoD3D12(PAL_FALSE, info, geometries, &buildInfo);
-        d3d12CmdBuffer->handle->lpVtbl
-            ->BuildRaytracingAccelerationStructure(d3d12CmdBuffer->handle, &buildInfo, 0, nullptr);
+        cmdBufferImpl->handle->lpVtbl
+            ->BuildRaytracingAccelerationStructure(cmdBufferImpl->handle, &buildInfo, 0, nullptr);
 
     } else {
         fillBuildInfoD3D12(PAL_FALSE, info, nullptr, &buildInfo);
-        d3d12CmdBuffer->handle->lpVtbl
-            ->BuildRaytracingAccelerationStructure(d3d12CmdBuffer->handle, &buildInfo, 0, nullptr);
+        cmdBufferImpl->handle->lpVtbl
+            ->BuildRaytracingAccelerationStructure(cmdBufferImpl->handle, &buildInfo, 0, nullptr);
     }
 }
 
@@ -297,7 +297,7 @@ void PAL_CALL cmdBeginRenderingD3D12(
     PalCommandBuffer* cmdBuffer,
     PalRenderingInfo* info)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     D3D12_RENDER_PASS_RENDER_TARGET_DESC colorAttachments[MAX_ATTACHMENTS];
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depthStencilAttachment = {0};
     D3D12_CPU_DESCRIPTOR_HANDLE colorCpuHandles[MAX_ATTACHMENTS];
@@ -437,16 +437,16 @@ void PAL_CALL cmdBeginRenderingD3D12(
         tmpDesc = &depthStencilAttachment;
     }
 
-    d3d12CmdBuffer->handle->lpVtbl->OMSetRenderTargets(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->OMSetRenderTargets(
+        cmdBufferImpl->handle,
         info->colorAttachentCount,
         colorCpuHandles,
         PAL_FALSE,
         tmpCpuHandle);
 
     D3D12_RENDER_PASS_FLAGS flags = renderingFlagToD3D12(info->flags);
-    d3d12CmdBuffer->handle->lpVtbl->BeginRenderPass(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->BeginRenderPass(
+        cmdBufferImpl->handle,
         info->colorAttachentCount,
         colorAttachments,
         tmpDesc,
@@ -455,8 +455,8 @@ void PAL_CALL cmdBeginRenderingD3D12(
 
 void PAL_CALL cmdEndRenderingD3D12(PalCommandBuffer* cmdBuffer)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    d3d12CmdBuffer->handle->lpVtbl->EndRenderPass(d3d12CmdBuffer->handle);
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    cmdBufferImpl->handle->lpVtbl->EndRenderPass(cmdBufferImpl->handle);
 }
 
 void PAL_CALL cmdCopyBufferD3D12(
@@ -465,11 +465,11 @@ void PAL_CALL cmdCopyBufferD3D12(
     PalBuffer* src,
     PalBufferCopyInfo* copyInfo)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     BufferD3D12* dstbuffer = (BufferD3D12*)dst;
     BufferD3D12* srcBuffer = (BufferD3D12*)src;
-    d3d12CmdBuffer->handle->lpVtbl->CopyBufferRegion(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->CopyBufferRegion(
+        cmdBufferImpl->handle,
         dstbuffer->handle,
         copyInfo->dstOffset,
         srcBuffer->handle,
@@ -483,7 +483,7 @@ void PAL_CALL cmdCopyBufferToImageD3D12(
     PalBuffer* srcBuffer,
     PalBufferImageCopyInfo* copyInfo)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     ImageD3D12* dst = (ImageD3D12*)dstImage;
     BufferD3D12* src = (BufferD3D12*)srcBuffer;
 
@@ -527,8 +527,8 @@ void PAL_CALL cmdCopyBufferToImageD3D12(
             uint32_t index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
 
             dstLocation.SubresourceIndex = index;
-            d3d12CmdBuffer->handle->lpVtbl->CopyTextureRegion(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->CopyTextureRegion(
+                cmdBufferImpl->handle,
                 &dstLocation,
                 copyInfo->imageOffsetX,
                 copyInfo->imageOffsetY,
@@ -545,7 +545,7 @@ void PAL_CALL cmdCopyImageD3D12(
     PalImage* src,
     PalImageCopyInfo* copyInfo)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     ImageD3D12* dstImage = (ImageD3D12*)dst;
     ImageD3D12* srcImage = (ImageD3D12*)src;
 
@@ -591,8 +591,8 @@ void PAL_CALL cmdCopyImageD3D12(
             dstLocation.SubresourceIndex = dstIndex;
             srcLocation.SubresourceIndex = srcIndex;
 
-            d3d12CmdBuffer->handle->lpVtbl->CopyTextureRegion(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->CopyTextureRegion(
+                cmdBufferImpl->handle,
                 &dstLocation,
                 copyInfo->dstOffsetX,
                 copyInfo->dstOffsetY,
@@ -609,7 +609,7 @@ void PAL_CALL cmdCopyImageToBufferD3D12(
     PalImage* srcImage,
     PalBufferImageCopyInfo* copyInfo)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     BufferD3D12* dst = (BufferD3D12*)dstBuffer;
     ImageD3D12* src = (ImageD3D12*)srcImage;
 
@@ -655,8 +655,8 @@ void PAL_CALL cmdCopyImageToBufferD3D12(
             uint32_t index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
 
             srcLocation.SubresourceIndex = index;
-            d3d12CmdBuffer->handle->lpVtbl->CopyTextureRegion(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->CopyTextureRegion(
+                cmdBufferImpl->handle,
                 &dstLocation,
                 0,
                 0,
@@ -671,45 +671,45 @@ void PAL_CALL cmdBindPipelineD3D12(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    PipelineD3D12* d3dPipeline = (PipelineD3D12*)pipeline;
-    if (d3dPipeline->type == RAY_TRACING_PIPELINE) {
-        d3d12CmdBuffer->handle->lpVtbl->SetPipelineState1(
-            d3d12CmdBuffer->handle,
-            d3dPipeline->handle);
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    PipelineD3D12* pipelineImpl = (PipelineD3D12*)pipeline;
+    if (pipelineImpl->type == RAY_TRACING_PIPELINE) {
+        cmdBufferImpl->handle->lpVtbl->SetPipelineState1(
+            cmdBufferImpl->handle,
+            pipelineImpl->handle);
 
-        d3d12CmdBuffer->handle->lpVtbl->SetComputeRootSignature(
-            d3d12CmdBuffer->handle,
-            d3dPipeline->layout->handle);
+        cmdBufferImpl->handle->lpVtbl->SetComputeRootSignature(
+            cmdBufferImpl->handle,
+            pipelineImpl->layout->handle);
 
     } else {
-        d3d12CmdBuffer->handle->lpVtbl->SetPipelineState(
-            d3d12CmdBuffer->handle,
-            d3dPipeline->handle);
+        cmdBufferImpl->handle->lpVtbl->SetPipelineState(
+            cmdBufferImpl->handle,
+            pipelineImpl->handle);
 
-        d3d12CmdBuffer->handle->lpVtbl->SetComputeRootSignature(
-            d3d12CmdBuffer->handle,
-            d3dPipeline->layout->handle);
+        cmdBufferImpl->handle->lpVtbl->SetComputeRootSignature(
+            cmdBufferImpl->handle,
+            pipelineImpl->layout->handle);
 
-        if (d3dPipeline->type == GRAPHICS_PIPELINE) {
-            d3d12CmdBuffer->handle->lpVtbl->IASetPrimitiveTopology(
-                d3d12CmdBuffer->handle,
-                d3dPipeline->topology);
+        if (pipelineImpl->type == GRAPHICS_PIPELINE) {
+            cmdBufferImpl->handle->lpVtbl->IASetPrimitiveTopology(
+                cmdBufferImpl->handle,
+                pipelineImpl->topology);
 
-            d3d12CmdBuffer->handle->lpVtbl->SetGraphicsRootSignature(
-                d3d12CmdBuffer->handle,
-                d3dPipeline->layout->handle);
+            cmdBufferImpl->handle->lpVtbl->SetGraphicsRootSignature(
+                cmdBufferImpl->handle,
+                pipelineImpl->layout->handle);
 
-            if (d3dPipeline->hasFsr) {
-                d3d12CmdBuffer->handle->lpVtbl->RSSetShadingRate(
-                    d3d12CmdBuffer->handle,
-                    d3dPipeline->shadingRate,
-                    d3dPipeline->combinerOps);
+            if (pipelineImpl->hasFsr) {
+                cmdBufferImpl->handle->lpVtbl->RSSetShadingRate(
+                    cmdBufferImpl->handle,
+                    pipelineImpl->shadingRate,
+                    pipelineImpl->combinerOps);
             }
         }
     }
 
-    d3d12CmdBuffer->pipeline = d3dPipeline;
+    cmdBufferImpl->pipeline = pipelineImpl;
 }
 
 void PAL_CALL cmdSetViewportD3D12(
@@ -717,10 +717,10 @@ void PAL_CALL cmdSetViewportD3D12(
     uint32_t count,
     PalViewport* viewports)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    D3D12_VIEWPORT d3dViewports[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    D3D12_VIEWPORT viewportsImpl[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
     for (int i = 0; i < count; i++) {
-        D3D12_VIEWPORT* tmp = &d3dViewports[i];
+        D3D12_VIEWPORT* tmp = &viewportsImpl[i];
         tmp->TopLeftX = viewports[i].x;
         tmp->TopLeftY = viewports[i].y;
         tmp->Width = viewports[i].width;
@@ -729,7 +729,7 @@ void PAL_CALL cmdSetViewportD3D12(
         tmp->MaxDepth = viewports[i].maxDepth;
     }
 
-    d3d12CmdBuffer->handle->lpVtbl->RSSetViewports(d3d12CmdBuffer->handle, count, d3dViewports);
+    cmdBufferImpl->handle->lpVtbl->RSSetViewports(cmdBufferImpl->handle, count, viewportsImpl);
 }
 
 void PAL_CALL cmdSetScissorsD3D12(
@@ -737,17 +737,17 @@ void PAL_CALL cmdSetScissorsD3D12(
     uint32_t count,
     PalRect2D* scissors)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    D3D12_RECT d3dScissors[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    D3D12_RECT scissorsImpl[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
     for (int i = 0; i < count; i++) {
-        D3D12_RECT* tmp = &d3dScissors[i];
+        D3D12_RECT* tmp = &scissorsImpl[i];
         tmp->left = scissors[i].x;
         tmp->top = scissors[i].y;
         tmp->right = scissors[i].width;
         tmp->bottom = scissors[i].height;
     }
 
-    d3d12CmdBuffer->handle->lpVtbl->RSSetScissorRects(d3d12CmdBuffer->handle, count, d3dScissors);
+    cmdBufferImpl->handle->lpVtbl->RSSetScissorRects(cmdBufferImpl->handle, count, scissorsImpl);
 }
 
 void PAL_CALL cmdBindVertexBuffersD3D12(
@@ -757,11 +757,11 @@ void PAL_CALL cmdBindVertexBuffersD3D12(
     PalBuffer** buffers,
     uint64_t* offsets)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    PipelineD3D12* pipeline = d3d12CmdBuffer->pipeline;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    PipelineD3D12* pipeline = cmdBufferImpl->pipeline;
     D3D12_VERTEX_BUFFER_VIEW* views = nullptr;
     views = palLinearAlloc(
-        &d3d12CmdBuffer->linearAllocator,
+        &cmdBufferImpl->linearAllocator,
         sizeof(D3D12_VERTEX_BUFFER_VIEW) * count,
         0);
 
@@ -773,8 +773,8 @@ void PAL_CALL cmdBindVertexBuffersD3D12(
         views[i].StrideInBytes = pipeline->strides[i];
     }
 
-    d3d12CmdBuffer->handle->lpVtbl
-        ->IASetVertexBuffers(d3d12CmdBuffer->handle, firstSlot, count, views);
+    cmdBufferImpl->handle->lpVtbl
+        ->IASetVertexBuffers(cmdBufferImpl->handle, firstSlot, count, views);
 }
 
 void PAL_CALL cmdBindIndexBufferD3D12(
@@ -783,7 +783,7 @@ void PAL_CALL cmdBindIndexBufferD3D12(
     uint64_t offset,
     PalIndexType type)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     D3D12_INDEX_BUFFER_VIEW view = {0};
     BufferD3D12* indexBuffer = (BufferD3D12*)buffer;
 
@@ -796,7 +796,7 @@ void PAL_CALL cmdBindIndexBufferD3D12(
         view.Format = DXGI_FORMAT_R32_UINT;
     }
 
-    d3d12CmdBuffer->handle->lpVtbl->IASetIndexBuffer(d3d12CmdBuffer->handle, &view);
+    cmdBufferImpl->handle->lpVtbl->IASetIndexBuffer(cmdBufferImpl->handle, &view);
 }
 
 void PAL_CALL cmdDrawD3D12(
@@ -806,9 +806,9 @@ void PAL_CALL cmdDrawD3D12(
     uint32_t firstVertex,
     uint32_t firstInstance)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    d3d12CmdBuffer->handle->lpVtbl->DrawInstanced(
-        d3d12CmdBuffer->handle,
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    cmdBufferImpl->handle->lpVtbl->DrawInstanced(
+        cmdBufferImpl->handle,
         vertexCount,
         instanceCount,
         firstVertex,
@@ -820,15 +820,15 @@ void PAL_CALL cmdDrawIndirectD3D12(
     PalBuffer* buffer,
     uint32_t count)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->drawSignature,
         count,
-        d3d12Buffer->handle,
+        bufferImpl->handle,
         0,
         nullptr,
         0);
@@ -840,18 +840,18 @@ void PAL_CALL cmdDrawIndirectCountD3D12(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    BufferD3D12* d3d12CountBuffer = (BufferD3D12*)countBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    BufferD3D12* countBufferImpl = (BufferD3D12*)countBuffer;
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->drawSignature,
         maxDrawCount,
-        d3d12Buffer->handle,
+        bufferImpl->handle,
         0,
-        d3d12CountBuffer->handle,
+        countBufferImpl->handle,
         0);
 }
 
@@ -863,9 +863,9 @@ void PAL_CALL cmdDrawIndexedD3D12(
     int32_t vertexOffset,
     uint32_t firstInstance)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    d3d12CmdBuffer->handle->lpVtbl->DrawIndexedInstanced(
-        d3d12CmdBuffer->handle,
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    cmdBufferImpl->handle->lpVtbl->DrawIndexedInstanced(
+        cmdBufferImpl->handle,
         indexCount,
         instanceCount,
         firstIndex,
@@ -878,15 +878,15 @@ void PAL_CALL cmdDrawIndexedIndirectD3D12(
     PalBuffer* buffer,
     uint32_t count)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->drawIndexedSignature,
         count,
-        d3d12Buffer->handle,
+        bufferImpl->handle,
         0,
         nullptr,
         0);
@@ -898,18 +898,18 @@ void PAL_CALL cmdDrawIndexedIndirectCountD3D12(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    BufferD3D12* d3d12CountBuffer = (BufferD3D12*)countBuffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    BufferD3D12* countBufferImpl = (BufferD3D12*)countBuffer;
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->drawIndexedSignature,
         maxDrawCount,
-        d3d12Buffer->handle,
+        bufferImpl->handle,
         0,
-        d3d12CountBuffer->handle,
+        countBufferImpl->handle,
         0);
 }
 
@@ -918,12 +918,12 @@ void PAL_CALL cmdAccelerationStructureBarrierD3D12(
     PalAccelerationStructure* as,
     PalBarrierInfo* info)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    AccelerationStructureD3D12* d3dAs = (AccelerationStructureD3D12*)as;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    AccelerationStructureD3D12* asImpl = (AccelerationStructureD3D12*)as;
     D3D12_RESOURCE_BARRIER barrier = {0};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = d3dAs->handle;
-    d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
+    barrier.UAV.pResource = asImpl->handle;
+    cmdBufferImpl->handle->lpVtbl->ResourceBarrier(cmdBufferImpl->handle, 1, &barrier);
 }
 
 void PAL_CALL cmdImageBarrierD3D12(
@@ -932,8 +932,8 @@ void PAL_CALL cmdImageBarrierD3D12(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    ImageD3D12* d3d12Image = (ImageD3D12*)image;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    ImageD3D12* imageImpl = (ImageD3D12*)image;
     D3D12_RESOURCE_STATES old, new;
     D3D12_RESOURCE_BARRIER barrier = {0};
 
@@ -943,8 +943,8 @@ void PAL_CALL cmdImageBarrierD3D12(
     // read/write barrier without transition
     if (old == new && old == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = d3d12Image->handle;
-        d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
+        barrier.UAV.pResource = imageImpl->handle;
+        cmdBufferImpl->handle->lpVtbl->ResourceBarrier(cmdBufferImpl->handle, 1, &barrier);
         return;
     }
 
@@ -959,34 +959,34 @@ void PAL_CALL cmdImageBarrierD3D12(
 
     uint32_t startLevel = subresourceRange->startMipLevel;
     uint32_t startLayer = subresourceRange->startArrayLayer;
-    uint32_t maxLevels = d3d12Image->info.mipLevelCount;
-    uint32_t maxLayers = d3d12Image->info.arrayLayerCount;
+    uint32_t maxLevels = imageImpl->info.mipLevelCount;
+    uint32_t maxLayers = imageImpl->info.arrayLayerCount;
     uint32_t barrierCount = layerCount * levelCount * planeCount;
 
     if (startLevel == 0 && levelCount == maxLevels && startLayer == 0 && layerCount == maxLayers) {
         // full resource
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = d3d12Image->handle;
+        barrier.Transition.pResource = imageImpl->handle;
         barrier.Transition.StateBefore = old;
         barrier.Transition.StateAfter = new;
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
+        cmdBufferImpl->handle->lpVtbl->ResourceBarrier(cmdBufferImpl->handle, 1, &barrier);
         return;
     }
 
     if (layerCount == 1 && layerCount == 1 && planeCount == 1) {
         // single plane
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = d3d12Image->handle;
+        barrier.Transition.pResource = imageImpl->handle;
         barrier.Transition.StateBefore = old;
         barrier.Transition.StateAfter = new;
         barrier.Transition.Subresource = startLevel + startLayer * maxLevels;
-        d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
+        cmdBufferImpl->handle->lpVtbl->ResourceBarrier(cmdBufferImpl->handle, 1, &barrier);
         return;
     }
 
     barriers = palLinearAlloc(
-        &d3d12CmdBuffer->linearAllocator,
+        &cmdBufferImpl->linearAllocator,
         sizeof(D3D12_RESOURCE_BARRIER) * barrierCount,
         0);
 
@@ -998,7 +998,7 @@ void PAL_CALL cmdImageBarrierD3D12(
 
                 D3D12_RESOURCE_BARRIER* tmp = &barriers[count++];
                 tmp->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-                tmp->Transition.pResource = d3d12Image->handle;
+                tmp->Transition.pResource = imageImpl->handle;
                 tmp->Transition.StateBefore = old;
                 tmp->Transition.StateAfter = new;
                 tmp->Transition.Subresource = index;
@@ -1006,7 +1006,7 @@ void PAL_CALL cmdImageBarrierD3D12(
         }
     }
 
-    d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, barrierCount, barriers);
+    cmdBufferImpl->handle->lpVtbl->ResourceBarrier(cmdBufferImpl->handle, barrierCount, barriers);
 }
 
 void PAL_CALL cmdBufferBarrierD3D12(
@@ -1014,10 +1014,10 @@ void PAL_CALL cmdBufferBarrierD3D12(
     PalBuffer* buffer,
     PalBarrierInfo* info)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
     D3D12_RESOURCE_STATES old, new;
-    if (!d3d12Buffer->canStateChange) {
+    if (!bufferImpl->canStateChange) {
         return;
     }
 
@@ -1027,15 +1027,15 @@ void PAL_CALL cmdBufferBarrierD3D12(
     D3D12_RESOURCE_BARRIER barrier = {0};
     if (old == new && D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = d3d12Buffer->handle;
+        barrier.UAV.pResource = bufferImpl->handle;
     } else {
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = d3d12Buffer->handle;
+        barrier.Transition.pResource = bufferImpl->handle;
         barrier.Transition.StateBefore = old;
         barrier.Transition.StateAfter = new;
     }
 
-    d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
+    cmdBufferImpl->handle->lpVtbl->ResourceBarrier(cmdBufferImpl->handle, 1, &barrier);
 }
 
 void PAL_CALL cmdDispatchD3D12(
@@ -1044,24 +1044,24 @@ void PAL_CALL cmdDispatchD3D12(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    d3d12CmdBuffer->handle->lpVtbl
-        ->Dispatch(d3d12CmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    cmdBufferImpl->handle->lpVtbl
+        ->Dispatch(cmdBufferImpl->handle, groupCountX, groupCountY, groupCountZ);
 }
 
 void PAL_CALL cmdDispatchIndirectD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->dispatchSignature,
         1, // one dispatch
-        d3d12Buffer->handle,
+        bufferImpl->handle,
         0,
         nullptr,
         0);
@@ -1075,25 +1075,25 @@ void PAL_CALL cmdTraceRaysD3D12(
     uint32_t height,
     uint32_t depth)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
-    uint64_t stride = d3d12Sbt->raygen.region.StrideInBytes;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    ShaderBindingTableD3D12* sbtImpl = (ShaderBindingTableD3D12*)sbt;
+    uint64_t stride = sbtImpl->raygen.region.StrideInBytes;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
-    raygenAddress.SizeInBytes = d3d12Sbt->raygen.region.SizeInBytes;
-    raygenAddress.StartAddress = d3d12Sbt->baseAddress + raygenIndex * stride;
+    raygenAddress.SizeInBytes = sbtImpl->raygen.region.SizeInBytes;
+    raygenAddress.StartAddress = sbtImpl->baseAddress + raygenIndex * stride;
 
     // we need to make sure the SBT is up to date
-    commitShaderbindingTableUpdateD3D12(d3d12CmdBuffer, d3d12Sbt);
+    commitShaderbindingTableUpdateD3D12(cmdBufferImpl, sbtImpl);
 
     D3D12_DISPATCH_RAYS_DESC desc = {0};
     desc.Width = width;
     desc.Height = height;
     desc.Depth = depth;
     desc.RayGenerationShaderRecord = raygenAddress;
-    desc.HitGroupTable = d3d12Sbt->hit.region;
-    desc.MissShaderTable = d3d12Sbt->miss.region;
-    desc.CallableShaderTable = d3d12Sbt->callable.region;
-    d3d12CmdBuffer->handle->lpVtbl->DispatchRays(d3d12CmdBuffer->handle, &desc);
+    desc.HitGroupTable = sbtImpl->hit.region;
+    desc.MissShaderTable = sbtImpl->miss.region;
+    desc.CallableShaderTable = sbtImpl->callable.region;
+    cmdBufferImpl->handle->lpVtbl->DispatchRays(cmdBufferImpl->handle, &desc);
 }
 
 void PAL_CALL cmdTraceRaysIndirectD3D12(
@@ -1103,18 +1103,18 @@ void PAL_CALL cmdTraceRaysIndirectD3D12(
     PalBuffer* buffer)
 {
     HRESULT result;
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    DeviceD3D12* device = d3d12CmdBuffer->device;
-    ShaderBindingTableD3D12* d3d12Sbt = (ShaderBindingTableD3D12*)sbt;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    DeviceD3D12* device = cmdBufferImpl->device;
+    ShaderBindingTableD3D12* sbtImpl = (ShaderBindingTableD3D12*)sbt;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
     D3D12_DISPATCH_RAYS_DESC desc = {0};
 
     // we need to make sure the SBT is up to date
-    commitShaderbindingTableUpdateD3D12(d3d12CmdBuffer, d3d12Sbt);
+    commitShaderbindingTableUpdateD3D12(cmdBufferImpl, sbtImpl);
 
     // BufferD3D12 is mappable
     void* ptr = nullptr;
-    result = d3d12Buffer->handle->lpVtbl->Map(d3d12Buffer->handle, 0, nullptr, &ptr);
+    result = bufferImpl->handle->lpVtbl->Map(bufferImpl->handle, 0, nullptr, &ptr);
     if (FAILED(result)) {
         return;
     }
@@ -1122,34 +1122,34 @@ void PAL_CALL cmdTraceRaysIndirectD3D12(
     // copy indirect parameters from the buffer
     PalDispatchIndirectData data = {0};
     memcpy(&data, ptr, sizeof(PalDispatchIndirectData));
-    d3d12Buffer->handle->lpVtbl->Unmap(d3d12Buffer->handle, 0, nullptr);
+    bufferImpl->handle->lpVtbl->Unmap(bufferImpl->handle, 0, nullptr);
 
     desc.Width = data.groupCountXOrWidth;
     desc.Height = data.groupCountXOrHeight;
     desc.Depth = data.groupCountXOrDepth;
 
-    uint64_t stride = d3d12Sbt->raygen.region.StrideInBytes;
+    uint64_t stride = sbtImpl->raygen.region.StrideInBytes;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE raygenAddress = {0};
-    raygenAddress.SizeInBytes = d3d12Sbt->raygen.region.SizeInBytes;
-    raygenAddress.StartAddress = d3d12Sbt->baseAddress + raygenIndex * stride;
+    raygenAddress.SizeInBytes = sbtImpl->raygen.region.SizeInBytes;
+    raygenAddress.StartAddress = sbtImpl->baseAddress + raygenIndex * stride;
 
     desc.RayGenerationShaderRecord = raygenAddress;
-    desc.HitGroupTable = d3d12Sbt->hit.region;
-    desc.MissShaderTable = d3d12Sbt->miss.region;
-    desc.CallableShaderTable = d3d12Sbt->callable.region;
+    desc.HitGroupTable = sbtImpl->hit.region;
+    desc.MissShaderTable = sbtImpl->miss.region;
+    desc.CallableShaderTable = sbtImpl->callable.region;
 
     // fill the data into the tmp upload buffer of the command buffer
     ptr = nullptr;
-    d3d12CmdBuffer->stagingBuffer->lpVtbl->Map(d3d12CmdBuffer->stagingBuffer, 0, nullptr, &ptr);
+    cmdBufferImpl->stagingBuffer->lpVtbl->Map(cmdBufferImpl->stagingBuffer, 0, nullptr, &ptr);
     memcpy(ptr, &desc, sizeof(D3D12_DISPATCH_RAYS_DESC));
-    d3d12CmdBuffer->stagingBuffer->lpVtbl->Unmap(d3d12CmdBuffer->stagingBuffer, 0, nullptr);
+    cmdBufferImpl->stagingBuffer->lpVtbl->Unmap(cmdBufferImpl->stagingBuffer, 0, nullptr);
 
     // copy to the gpu tmp buffer of the command buffer and execute with that
-    d3d12CmdBuffer->handle->lpVtbl->CopyBufferRegion(
-        d3d12CmdBuffer->handle,
-        d3d12CmdBuffer->buffer,
+    cmdBufferImpl->handle->lpVtbl->CopyBufferRegion(
+        cmdBufferImpl->handle,
+        cmdBufferImpl->buffer,
         0,
-        d3d12CmdBuffer->stagingBuffer,
+        cmdBufferImpl->stagingBuffer,
         0,
         sizeof(D3D12_DISPATCH_RAYS_DESC));
 
@@ -1159,14 +1159,14 @@ void PAL_CALL cmdTraceRaysIndirectD3D12(
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barrier.Transition.pResource = d3d12CmdBuffer->buffer;
-    d3d12CmdBuffer->handle->lpVtbl->ResourceBarrier(d3d12CmdBuffer->handle, 1, &barrier);
+    barrier.Transition.pResource = cmdBufferImpl->buffer;
+    cmdBufferImpl->handle->lpVtbl->ResourceBarrier(cmdBufferImpl->handle, 1, &barrier);
 
-    d3d12CmdBuffer->handle->lpVtbl->ExecuteIndirect(
-        d3d12CmdBuffer->handle,
+    cmdBufferImpl->handle->lpVtbl->ExecuteIndirect(
+        cmdBufferImpl->handle,
         device->raySignature,
         1,
-        d3d12CmdBuffer->buffer,
+        cmdBufferImpl->buffer,
         0,
         nullptr,
         0);
@@ -1177,10 +1177,10 @@ void PAL_CALL cmdBindDescriptorSetD3D12(
     uint32_t setIndex,
     PalDescriptorSet* set)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    PipelineD3D12* pipeline = d3d12CmdBuffer->pipeline;
-    DescriptorSetD3D12* d3dSet = (DescriptorSetD3D12*)set;
-    DescriptorPoolD3D12* pool = d3dSet->pool;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    PipelineD3D12* pipeline = cmdBufferImpl->pipeline;
+    DescriptorSetD3D12* setImpl = (DescriptorSetD3D12*)set;
+    DescriptorPoolD3D12* pool = setImpl->pool;
 
     // bind heaps
     uint32_t heapCount = 0;
@@ -1192,10 +1192,10 @@ void PAL_CALL cmdBindDescriptorSetD3D12(
     if (pool->hasSamplerHeap) {
         heaps[heapCount++] = pool->samplerHeap.handle;
     }
-    d3d12CmdBuffer->handle->lpVtbl->SetDescriptorHeaps(d3d12CmdBuffer->handle, heapCount, heaps);
+    cmdBufferImpl->handle->lpVtbl->SetDescriptorHeaps(cmdBufferImpl->handle, heapCount, heaps);
 
     // bind resource descriptor table
-    uint32_t resourceCount = d3dSet->layout->bindingCount - d3dSet->layout->samplerCount;
+    uint32_t resourceCount = setImpl->layout->bindingCount - setImpl->layout->samplerCount;
     uint32_t baseIndex = setIndex;
     if (pipeline->layout->constantIndex != UINT32_MAX) {
         // If push constant was used to create the pipeline layout
@@ -1206,20 +1206,20 @@ void PAL_CALL cmdBindDescriptorSetD3D12(
     if (resourceCount) {
         D3D12_GPU_DESCRIPTOR_HANDLE base;
         base.ptr = getDescriptorHandleD3D12(
-            d3dSet->resourceOffset,
+            setImpl->resourceOffset,
             pool->resourceHeap.incrementSize,
             pool->resourceHeap.gpuBase);
 
         if (pipeline->type == GRAPHICS_PIPELINE) {
-            d3d12CmdBuffer->handle->lpVtbl->SetGraphicsRootDescriptorTable(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->SetGraphicsRootDescriptorTable(
+                cmdBufferImpl->handle,
                 baseIndex, // base set index is resource first before sampler
                 base);
 
         } else {
             // ray tracing uses the compute path
-            d3d12CmdBuffer->handle->lpVtbl->SetComputeRootDescriptorTable(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->SetComputeRootDescriptorTable(
+                cmdBufferImpl->handle,
                 baseIndex, // base set index is resource first before sampler
                 base);
         }
@@ -1228,23 +1228,23 @@ void PAL_CALL cmdBindDescriptorSetD3D12(
     }
 
     // bind sampler descriptor table
-    if (d3dSet->layout->samplerCount) {
+    if (setImpl->layout->samplerCount) {
         D3D12_GPU_DESCRIPTOR_HANDLE base;
         base.ptr = getDescriptorHandleD3D12(
-            d3dSet->samplerOffset,
+            setImpl->samplerOffset,
             pool->samplerHeap.incrementSize,
             pool->samplerHeap.gpuBase);
 
         if (pipeline->type == GRAPHICS_PIPELINE) {
-            d3d12CmdBuffer->handle->lpVtbl->SetGraphicsRootDescriptorTable(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->SetGraphicsRootDescriptorTable(
+                cmdBufferImpl->handle,
                 baseIndex,
                 base);
 
         } else {
             // ray tracing uses the compute path
-            d3d12CmdBuffer->handle->lpVtbl->SetComputeRootDescriptorTable(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->SetComputeRootDescriptorTable(
+                cmdBufferImpl->handle,
                 baseIndex,
                 base);
         }
@@ -1257,12 +1257,12 @@ void PAL_CALL cmdPushConstantsD3D12(
     uint32_t size,
     const void* value)
 {
-    CommandBufferD3D12* d3d12CmdBuffer = (CommandBufferD3D12*)cmdBuffer;
-    PipelineD3D12* pipeline = d3d12CmdBuffer->pipeline;
+    CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    PipelineD3D12* pipeline = cmdBufferImpl->pipeline;
     if (pipeline->layout->constantIndex != UINT32_MAX) {
         if (pipeline->type == GRAPHICS_PIPELINE) {
-            d3d12CmdBuffer->handle->lpVtbl->SetGraphicsRoot32BitConstants(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->SetGraphicsRoot32BitConstants(
+                cmdBufferImpl->handle,
                 pipeline->layout->constantIndex,
                 size / 4,
                 value,
@@ -1270,8 +1270,8 @@ void PAL_CALL cmdPushConstantsD3D12(
 
         } else {
             // ray tracing uses the compute path
-            d3d12CmdBuffer->handle->lpVtbl->SetComputeRoot32BitConstants(
-                d3d12CmdBuffer->handle,
+            cmdBufferImpl->handle->lpVtbl->SetComputeRoot32BitConstants(
+                cmdBufferImpl->handle,
                 pipeline->layout->constantIndex,
                 size / 4,
                 value,

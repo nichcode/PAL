@@ -123,6 +123,11 @@ static void PAL_CALL destroyDevice(PalDevice* device)
 {
 }
 
+static uint32_t PAL_CALL getDeviceLostReason(PalDevice* device)
+{
+    return 1;
+}
+
 static PalResult PAL_CALL allocateMemory(
     PalDevice* device,
     PalMemoryType type,
@@ -669,57 +674,90 @@ PalBool customBackendTest()
 {
     // build the vtable
     PalGraphicsBackendVtable1 vtable = {0};
-    vtable.enumerateAdapters = enumerateAdapters, vtable.getAdapterInfo = getAdapterInfo,
-    vtable.getAdapterCapabilities = getAdapterCapabilities,
-    vtable.getAdapterFeatures = getAdapterFeatures,
-    vtable.getHighestSupportedShaderTarget = getHighestSupportedShaderTarget,
-    vtable.createDevice = createDevice, vtable.destroyDevice = destroyDevice,
-    vtable.allocateMemory = allocateMemory, vtable.freeMemory = freeMemory,
-    vtable.querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilities,
-    vtable.createQueue = createQueue, vtable.destroyQueue = destroyQueue,
-    vtable.waitQueue = waitQueue, vtable.canQueuePresent = canQueuePresent,
-    vtable.enumerateFormats = enumerateFormats, vtable.isFormatSupported = isFormatSupported,
-    vtable.queryFormatImageUsages = queryFormatImageUsages,
-    vtable.queryFormatSampleCount = queryFormatSampleCount, vtable.createImage = createImage,
-    vtable.destroyImage = destroyImage, vtable.getImageInfo = getImageInfo,
-    vtable.getImageMemoryRequirements = getImageMemoryRequirements,
-    vtable.bindImageMemory = bindImageMemory, vtable.createImageView = createImageView,
-    vtable.destroyImageView = destroyImageView, vtable.createSampler = createSampler,
-    vtable.destroySampler = destroySampler, vtable.createShader = createShader,
-    vtable.destroyShader = destroyShader, vtable.createFence = createFence,
-    vtable.destroyFence = destroyFence, vtable.waitFence = waitFence,
-    vtable.resetFence = resetFence, vtable.isFenceSignaled = isFenceSignaled,
-    vtable.createSemaphore = createSemaphore, vtable.destroySemaphore = destroySemaphore,
-    vtable.createCommandPool = createCommandPool, vtable.destroyCommandPool = destroyCommandPool,
-    vtable.allocateCommandBuffer = allocateCommandBuffer,
-    vtable.freeCommandBuffer = freeCommandBuffer, vtable.resetCommandBuffer = resetCommandBuffer,
-    vtable.submitCommandBuffer = submitCommandBuffer, vtable.cmdBegin = cmdBegin,
-    vtable.cmdEnd = cmdEnd, vtable.cmdExecuteCommandBuffer = cmdExecuteCommandBuffer,
-    vtable.cmdBeginRendering = cmdBeginRendering, vtable.cmdEndRendering = cmdEndRendering,
-    vtable.cmdCopyBuffer = cmdCopyBuffer, vtable.cmdCopyBufferToImage = cmdCopyBufferToImage,
-    vtable.cmdCopyImage = cmdCopyImage, vtable.cmdCopyImageToBuffer = cmdCopyImageToBuffer,
-    vtable.cmdBindPipeline = cmdBindPipeline, vtable.cmdSetViewport = cmdSetViewport,
-    vtable.cmdSetScissors = cmdSetScissors, vtable.cmdBindVertexBuffers = cmdBindVertexBuffers,
-    vtable.cmdBindIndexBuffer = cmdBindIndexBuffer, vtable.cmdDraw = cmdDraw,
-    vtable.cmdDrawIndexed = cmdDrawIndexed, vtable.cmdImageBarrier = cmdImageBarrier,
-    vtable.cmdBufferBarrier = cmdBufferBarrier, vtable.cmdDispatch = cmdDispatch,
-    vtable.cmdBindDescriptorSet = cmdBindDescriptorSet, vtable.cmdPushConstants = cmdPushConstants,
-    vtable.createBuffer = createBuffer, vtable.destroyBuffer = destroyBuffer,
-    vtable.getBufferMemoryRequirements = getBufferMemoryRequirements,
-    vtable.computeImageStagingRequirements = computeImageStagingRequirements,
-    vtable.writeImageStaging = writeImageStaging, vtable.bindBufferMemory = bindBufferMemory,
-    vtable.mapBuffer = mapBuffer, vtable.unmapBuffer = unmapBuffer,
-    vtable.createDescriptorSetLayout = createDescriptorSetLayout,
-    vtable.destroyDescriptorSetLayout = destroyDescriptorSetLayout,
-    vtable.createDescriptorPool = createDescriptorPool,
-    vtable.destroyDescriptorPool = destroyDescriptorPool,
-    vtable.resetDescriptorPool = resetDescriptorPool,
-    vtable.allocateDescriptorSet = allocateDescriptorSet,
-    vtable.updateDescriptorSet = updateDescriptorSet,
-    vtable.createPipelineLayout = createPipelineLayout,
-    vtable.destroyPipelineLayout = destroyPipelineLayout,
-    vtable.createGraphicsPipeline = createGraphicsPipeline,
-    vtable.createComputePipeline = createComputePipeline, vtable.destroyPipeline = destroyPipeline;
+    vtable.enumerateAdapters = enumerateAdapters;
+    vtable.getAdapterInfo = getAdapterInfo;
+    vtable.getAdapterCapabilities = getAdapterCapabilities;
+    vtable.getAdapterFeatures = getAdapterFeatures;
+    vtable.getHighestSupportedShaderTarget = getHighestSupportedShaderTarget;
+    vtable.createDevice = createDevice;
+    vtable.destroyDevice = destroyDevice;
+    vtable.getDeviceLostReason = getDeviceLostReason;
+    vtable.allocateMemory = allocateMemory;
+    vtable.freeMemory = freeMemory;
+    vtable.querySamplerAnisotropyCapabilities = querySamplerAnisotropyCapabilities;
+    vtable.createQueue = createQueue;
+    vtable.destroyQueue = destroyQueue;
+    vtable.waitQueue = waitQueue;
+    vtable.canQueuePresent = canQueuePresent;
+    vtable.enumerateFormats = enumerateFormats;
+    vtable.isFormatSupported = isFormatSupported;
+    vtable.queryFormatImageUsages = queryFormatImageUsages;
+    vtable.queryFormatSampleCount = queryFormatSampleCount;
+    vtable.createImage = createImage;
+    vtable.destroyImage = destroyImage;
+    vtable.getImageInfo = getImageInfo;
+    vtable.getImageMemoryRequirements = getImageMemoryRequirements;
+    vtable.bindImageMemory = bindImageMemory;
+    vtable.createImageView = createImageView;
+    vtable.destroyImageView = destroyImageView;
+    vtable.createSampler = createSampler;
+    vtable.destroySampler = destroySampler;
+    vtable.createShader = createShader;
+    vtable.destroyShader = destroyShader;
+    vtable.createFence = createFence;
+    vtable.destroyFence = destroyFence;
+    vtable.waitFence = waitFence;
+    vtable.resetFence = resetFence;
+    vtable.isFenceSignaled = isFenceSignaled;
+    vtable.createSemaphore = createSemaphore;
+    vtable.destroySemaphore = destroySemaphore;
+    vtable.createCommandPool = createCommandPool;
+    vtable.destroyCommandPool = destroyCommandPool;
+    vtable.allocateCommandBuffer = allocateCommandBuffer;
+    vtable.freeCommandBuffer = freeCommandBuffer;
+    vtable.resetCommandBuffer = resetCommandBuffer;
+    vtable.submitCommandBuffer = submitCommandBuffer;
+    vtable.cmdBegin = cmdBegin;
+    vtable.cmdEnd = cmdEnd;
+    vtable.cmdExecuteCommandBuffer = cmdExecuteCommandBuffer;
+    vtable.cmdBeginRendering = cmdBeginRendering;
+    vtable.cmdEndRendering = cmdEndRendering;
+    vtable.cmdCopyBuffer = cmdCopyBuffer;
+    vtable.cmdCopyBufferToImage = cmdCopyBufferToImage;
+    vtable.cmdCopyImage = cmdCopyImage;
+    vtable.cmdCopyImageToBuffer = cmdCopyImageToBuffer;
+    vtable.cmdBindPipeline = cmdBindPipeline;
+    vtable.cmdSetViewport = cmdSetViewport;
+    vtable.cmdSetScissors = cmdSetScissors;
+    vtable.cmdBindVertexBuffers = cmdBindVertexBuffers;
+    vtable.cmdBindIndexBuffer = cmdBindIndexBuffer;
+    vtable.cmdDraw = cmdDraw;
+    vtable.cmdDrawIndexed = cmdDrawIndexed;
+    vtable.cmdImageBarrier = cmdImageBarrier;
+    vtable.cmdBufferBarrier = cmdBufferBarrier;
+    vtable.cmdDispatch = cmdDispatch;
+    vtable.cmdBindDescriptorSet = cmdBindDescriptorSet;
+    vtable.cmdPushConstants = cmdPushConstants;
+    vtable.createBuffer = createBuffer;
+    vtable.destroyBuffer = destroyBuffer;
+    vtable.getBufferMemoryRequirements = getBufferMemoryRequirements;
+    vtable.computeImageStagingRequirements = computeImageStagingRequirements;
+    vtable.writeImageStaging = writeImageStaging;
+    vtable.bindBufferMemory = bindBufferMemory;
+    vtable.mapBuffer = mapBuffer;
+    vtable.unmapBuffer = unmapBuffer;
+    vtable.createDescriptorSetLayout = createDescriptorSetLayout;
+    vtable.destroyDescriptorSetLayout = destroyDescriptorSetLayout;
+    vtable.createDescriptorPool = createDescriptorPool;
+    vtable.destroyDescriptorPool = destroyDescriptorPool;
+    vtable.resetDescriptorPool = resetDescriptorPool;
+    vtable.allocateDescriptorSet = allocateDescriptorSet;
+    vtable.updateDescriptorSet = updateDescriptorSet;
+    vtable.createPipelineLayout = createPipelineLayout;
+    vtable.destroyPipelineLayout = destroyPipelineLayout;
+    vtable.createGraphicsPipeline = createGraphicsPipeline;
+    vtable.createComputePipeline = createComputePipeline;
+    vtable.destroyPipeline = destroyPipeline;
 
     PalGraphicsBackendInfo backendInfo = {0};
     backendInfo.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1;

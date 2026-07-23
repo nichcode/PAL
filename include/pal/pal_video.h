@@ -642,8 +642,6 @@ PAL_API void PAL_CALL palUpdateVideo();
 /**
  * @brief Get the supported features of the video system.
  *
- * The video system must be initialized before this call.
- *
  * @return video features on success or `0` on failure.
  *
  * Thread safety: Thread safe.
@@ -686,7 +684,7 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
 /**
  * @brief Get the primary connected monitor.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY` must be supported otherwise undefined behavior.
  *
  * The monitor handle must not be freed by the user, they are managed by the
@@ -705,7 +703,7 @@ PAL_API void PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
 /**
  * @brief Get information about a monitor.
  *
- * The video system must be initialized before this call.
+ *
  *
  * This function takes in a PalMonitorInfo and fills it.
  * Some of the fields are set to defaults if the operation is not supported on
@@ -726,7 +724,7 @@ PAL_API void PAL_CALL palGetMonitorInfo(
  * @brief Return a list of all supported monitor display modes for the provided
  * monitor.
  *
- * The video system must be initialized before this call.
+ *
  *
  * Call this function first with PalMonitorMode array set to `nullptr` to get the
  * number of supported monitor display modes. Allocate memory for the
@@ -750,7 +748,7 @@ PAL_API void PAL_CALL palEnumerateMonitorModes(
 /**
  * @brief Get the current monitor display mode of the provided monitor.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_MONITOR_GET_MODE` must be supported otherwise undefined behavior.
  *
  * @param[in] monitor Monitor to query its current display mode.
@@ -769,7 +767,7 @@ PAL_API void PAL_CALL palGetCurrentMonitorMode(
 /**
  * @brief Set the active display monitor mode of the provided monitor.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_MONITOR_SET_MODE` Must be supported otherwise undefined behavior.
  *
  * PAL only validates the monitor display mode pointer not the values. To be
@@ -798,7 +796,7 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
 /**
  * @brief Check if a monitor display mode is valid on the provided monitor.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE` must be supported otherwise undefined behavior.
  *
  * @param[in] monitor The monitor.
@@ -818,7 +816,7 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
 /**
  * @brief Set the orientation for a monitor.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION` must be supported otherwise undefined behavior.
  *
  * This change is temporary and is reset when the platform (OS) reboots.
@@ -840,7 +838,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
 /**
  * @brief Create a window.
  *
- * The video system must be initialized before this call.
+ *
  *
  * `PalWindowCreateInfo::fbConfigIndex` is the loop index from the drivers supported FBConfigs.
  * `PalWindowCreateInfo::fbConfigBackend` is used to tell the video system the source of
@@ -880,7 +878,7 @@ PAL_API PalResult PAL_CALL palCreateWindow(
 /**
  * @brief Destroy the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * This only destroys windows created by PAL.
  *
  * @param[in] window Pointer to the window to destroy.
@@ -895,7 +893,7 @@ PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
 /**
  * @brief Minimize a maximized or restored window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_STATE` must be supported otherwise undefined behavior.
  * If the window is already minimized, this functions does nothing.
  *
@@ -912,7 +910,7 @@ PAL_API void PAL_CALL palMinimizeWindow(PalWindow* window);
 /**
  * @brief Maximize a minimized or restored window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_STATE` must be supported otherwise undefined behavior.
  * If the window is already maximized, this functions does nothing.
  *
@@ -929,7 +927,7 @@ PAL_API void PAL_CALL palMaximizeWindow(PalWindow* window);
 /**
  * @brief Restores a window to it previous state.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_STATE` must be supported otherwise undefined behavior.
  * If the window is already restored, this functions does nothing.
  *
@@ -948,7 +946,7 @@ PAL_API void PAL_CALL palRestoreWindow(PalWindow* window);
 /**
  * @brief Show the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY` must be supported otherwise undefined behavior.
  * All windows are created hidden if not explicitly shown.
  * This does nothing if the window is already shown.
@@ -965,7 +963,7 @@ PAL_API void PAL_CALL palShowWindow(PalWindow* window);
 /**
  * @brief Hide the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY` must be supported otherwise undefined behavior.
  * This does nothing if the window is already hidden.
  *
@@ -981,7 +979,7 @@ PAL_API void PAL_CALL palHideWindow(PalWindow* window);
 /**
  * @brief Request the platform (OS) to visually flash the provided window.
  *
- * The video system must be initialized before this call.
+ *
  *
  * If `PAL_FLASH_FLAG_CAPTION` is used, `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must
  * be supported.
@@ -1003,7 +1001,7 @@ PAL_API void PAL_CALL palFlashWindow(
 /**
  * @brief Get the style of the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_STYLE` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1021,7 +1019,7 @@ PAL_API void PAL_CALL palGetWindowStyle(
 /**
  * @brief Get the monitor the provided window is currently on.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1038,7 +1036,7 @@ PAL_API void PAL_CALL palGetWindowMonitor(
 /**
  * @brief Get the title of the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_TITLE` must be supported otherwise undefined behavior.
  *
  * Set the buffer to `nullptr` to get the size of the window name in bytes.
@@ -1065,7 +1063,7 @@ PAL_API void PAL_CALL palGetWindowTitle(
 /**
  * @brief Get the position of the provided window in pixels.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_POS` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1085,7 +1083,7 @@ PAL_API void PAL_CALL palGetWindowPos(
 /**
  * @brief Get the size of the provided window in pixels.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_SIZE` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1105,7 +1103,7 @@ PAL_API void PAL_CALL palGetWindowSize(
 /**
  * @brief Get the state of the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_STATE` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1123,7 +1121,7 @@ PAL_API void PAL_CALL palGetWindowState(
  * @brief Get the state of the keycodes (layout aware keys) of the
  * keyboard.
  *
- * The video system must be initialized before this call.
+ *
  *
  * The returned pointer must not be freed. The state is updated when
  * palUpdateVideo() is called. The array must be index with PalKeycodes and
@@ -1141,7 +1139,7 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  * @brief Get the state of the scancodes (layout independent keys) of
  * the keyboard.
  *
- * The video system must be initialized before this call.
+ *
  *
  * The returned pointer must not be freed. The state is updated when
  * palUpdateVideo() is called. The array must be index with PalScancodes and
@@ -1158,7 +1156,7 @@ PAL_API const PalBool* PAL_CALL palGetScancodeState();
 /**
  * @brief Get the state of the buttons of the mouse.
  *
- * The video system must be initialized before this call.
+ *
  *
  * The returned pointer must not be freed. The state is updated when
  * palUpdateVideo() is called. The array must be index with PalMouseButton and
@@ -1175,7 +1173,7 @@ PAL_API const PalBool* PAL_CALL palGetMouseState();
 /**
  * @brief Get the relative movement of the mouse in desktop pixels.
  *
- * The video system must be initialized before this call.
+ *
  * The relative movement will be updated when palUpdateVideo() is called.
  *
  * @param[in] dx Pointer to recieve the mouse relative movement x. Can be
@@ -1195,7 +1193,7 @@ PAL_API void PAL_CALL palGetMouseDelta(
 /**
  * @brief Get the wheel delta of the mouse.
  *
- * The video system must be initialized before this call.
+ *
  * The wheel delta will be updated when palUpdateVideo() is called.
  *
  * @param[in] dx Pointer to recieve the mouse wheel delta x. Can be `nullptr`.
@@ -1213,7 +1211,7 @@ PAL_API void PAL_CALL palGetMouseWheelDelta(
 /**
  * @brief Check if the provided window is visible.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1229,7 +1227,7 @@ PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
 /**
  * @brief Get the current input-focused window per application.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS` must be supported otherwise undefined behavior.
  *
  * @return The current input-focused window on success or `nullptr` on
@@ -1244,7 +1242,7 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
 /**
  * @brief Get the native handle of the provided window.
  *
- * The video system must be initialized before this call.
+ *
  *
  * On Wayland: `::nativeHandle1`, `::nativeHandle2` and `::nativeHandle3`
  * are `xdg_surface`, `xdg_toplevel` and `wl_egl_window` respectively if available.
@@ -1263,7 +1261,7 @@ PAL_API void PAL_CALL palGetWindowHandleInfo(
 /**
  * @brief Set the opacity of the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW` must be supported otherwise undefined behavior.
  * The window must have `PAL_WINDOW_STYLE_TRANSPARENT` style.
  *
@@ -1281,7 +1279,7 @@ PAL_API void PAL_CALL palSetWindowOpacity(
 /**
  * @brief Set the style of the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_STYLE` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1299,7 +1297,7 @@ PAL_API void PAL_CALL palSetWindowStyle(
 /**
  * @brief Set the title of the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_TITLE` must be supported otherwise undefined behavior.
  * The title must be a UTF-8 encoding null terminated string.
  *
@@ -1318,7 +1316,7 @@ PAL_API void PAL_CALL palSetWindowTitle(
 /**
  * @brief Set the position of the provided window in pixels.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_POS` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1338,7 +1336,7 @@ PAL_API void PAL_CALL palSetWindowPos(
 /**
  * @brief Set the size of the provided window in pixels.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_SIZE` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1360,7 +1358,7 @@ PAL_API void PAL_CALL palSetWindowSize(
 /**
  * @brief Request input focus for the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1375,7 +1373,7 @@ PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
 /**
  * @brief Create an icon.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported otherwise undefined behavior.
  *
  * @param[in] info Pointer to a PalIconCreateInfo struct that specifies parameters.
@@ -1396,7 +1394,7 @@ PAL_API PalResult PAL_CALL palCreateIcon(
 /**
  * @brief Destroy the provided icon.
  *
- * The video system must be initialized before this call.
+ *
  *
  * @param[in] icon Pointer to the icon to destroy.
  *
@@ -1410,7 +1408,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
 /**
  * @brief Set the icon for the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1427,7 +1425,7 @@ PAL_API void PAL_CALL palSetWindowIcon(
 /**
  * @brief Create a cursor.
  *
- * The video system must be initialized before this call.
+ *
  *
  * @param[in] info Pointer to a PalCursorCreateInfo struct that specifies parameters.
  * @param[out] outCursor Pointer to a PalCursor to recieve the created cursor.
@@ -1447,7 +1445,7 @@ PAL_API PalResult PAL_CALL palCreateCursor(
 /**
  * @brief Create a system cursor.
  *
- * The video system must be initialized before this call.
+ *
  *
  * @param[in] type The system cursor type to create.
  * @param[out] outCursor Pointer to a PalCursor to recieve the created cursor.
@@ -1467,7 +1465,7 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
 /**
  * @brief Destroy the provided cursor.
  *
- * The video system must be initialized before this call.
+ *
  *
  * @param[in] cursor Pointer to the cursor to destroy.
  *
@@ -1481,7 +1479,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
 /**
  * @brief Show or hide the cursor.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY` must be supported otherwise undefined behavior.
  *
  * This affects all created cursors since the platform (OS) merges all cursors
@@ -1498,7 +1496,7 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
 /**
  * @brief Clip the cursor to the provided window.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_CLIP_CURSOR` must be supported otherwise undefined behavior.
  *
  * If the window is destroyed without unclipping the cursor, this cursor might
@@ -1520,7 +1518,7 @@ PAL_API void PAL_CALL palClipCursor(
  * @brief Get the position of the cursor relative to the provided window in
  * pixels.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_CURSOR_GET_POS` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1542,7 +1540,7 @@ PAL_API void PAL_CALL palGetCursorPos(
  * @brief Set the position of the cursor relative to the provided window in
  * pixels.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_CURSOR_SET_POS` must be supported otherwise undefined behavior.
  *
  * @param[in] window Pointer to the window.
@@ -1561,7 +1559,7 @@ PAL_API void PAL_CALL palSetCursorPos(
 /**
  * @brief Set the cursor for the provided window.
  *
- * The video system must be initialized before this call.
+ *
  *
  * @param[in] window Pointer to the window.
  * @param[in] cursor Pointer to the cursor. Set to `nullptr` to revert.
@@ -1577,7 +1575,7 @@ PAL_API void PAL_CALL palSetWindowCursor(
 /**
  * @brief Get the native application instance or display.
  *
- * The video system must be initialized before this call.
+ *
  *
  * This returns the native instance or display of the application
  * PAL video was initialized in.
@@ -1599,7 +1597,7 @@ PAL_API void* PAL_CALL palGetInstance();
 /**
  * @brief Attach a foreign or native window to PAL video system.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_FOREIGN_WINDOWS` must be supported otherwise undefined behavior.
  *
  * This function registers the provided window with PAL video system so it
@@ -1638,7 +1636,7 @@ PAL_API PalResult PAL_CALL palAttachWindow(
 /**
  * @brief Detach a foreign or native window from PAL video system.
  *
- * The video system must be initialized before this call.
+ *
  * `PAL_VIDEO_FEATURE_FOREIGN_WINDOWS` must be supported otherwise undefined behavior.
  *
  * This function unregisters the provided window from PAL video system.

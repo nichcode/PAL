@@ -417,8 +417,8 @@ PalResult PAL_CALL createDeviceVk(
     DeviceVk* device = nullptr;
     VkPhysicalDeviceProperties props = {0};
 
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapterImpl->handle;
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
 
     VkQueueFamilyProperties* queueFamilyProps = nullptr;
@@ -709,7 +709,7 @@ PalResult PAL_CALL createDeviceVk(
     createInfo.queueCreateInfoCount = queueFamilyCount;
     createInfo.pNext = next;
 
-    result = s_Vk.createDevice(phyDevice, &createInfo, &s_Vk.vkAllocator, &device->handle);
+    result = s_Vk.createDevice(phyDevice, &createInfo, &s_Vk.allocatorImpl, &device->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, queueFamilyProps);
         palFree(s_Vk.allocator, queueCreateInfos);
@@ -805,10 +805,15 @@ PalResult PAL_CALL createDeviceVk(
 
 void PAL_CALL destroyDeviceVk(PalDevice* device)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
-    s_Vk.destroyDevice(vkDevice->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkDevice->phyQueues);
-    palFree(s_Vk.allocator, vkDevice);
+    DeviceVk* deviceImpl = (DeviceVk*)device;
+    s_Vk.destroyDevice(deviceImpl->handle, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, deviceImpl->phyQueues);
+    palFree(s_Vk.allocator, deviceImpl);
+}
+
+uint32_t PAL_CALL getDeviceLostReasonVk(PalDevice* device)
+{
+    return (uint32_t)VK_ERROR_DEVICE_LOST;
 }
 
 PalResult PAL_CALL allocateMemoryVk(
@@ -820,7 +825,7 @@ PalResult PAL_CALL allocateMemoryVk(
 {
     VkResult result;
     MemoryVk* memory = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkMemoryAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize = size;
@@ -834,10 +839,10 @@ PalResult PAL_CALL allocateMemoryVk(
     uint32_t memoryTypeMask = 0;
     uint32_t usages = 0;
     palUnpackUint32(memoryMask, &memoryTypeMask, &usages);
-    uint32_t memoryClassMask = vkDevice->memoryClassMask[type] & memoryTypeMask;
+    uint32_t memoryClassMask = deviceImpl->memoryClassMask[type] & memoryTypeMask;
 
     // pick an index using the scoring system and check if the memory index is valid
-    uint32_t memoryIndex = findBestMemoryIndexVk(vkDevice->phyDevice, memoryClassMask);
+    uint32_t memoryIndex = findBestMemoryIndexVk(deviceImpl->phyDevice, memoryClassMask);
     if (!(memoryClassMask & (1u << memoryIndex))) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
@@ -849,14 +854,17 @@ PalResult PAL_CALL allocateMemoryVk(
         allocateInfo.pNext = &allocateFlagsInfo;
     }
 
-    result =
-        s_Vk.allocateMemory(vkDevice->handle, &allocateInfo, &s_Vk.vkAllocator, &memory->handle);
+    result = s_Vk.allocateMemory(
+        deviceImpl->handle,
+        &allocateInfo,
+        &s_Vk.allocatorImpl,
+        &memory->handle);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
 
-    memory->device = vkDevice;
+    memory->device = deviceImpl;
     memory->type = type;
     *outMemory = (PalMemory*)memory;
     return PAL_RESULT_SUCCESS;
@@ -864,18 +872,18 @@ PalResult PAL_CALL allocateMemoryVk(
 
 void PAL_CALL freeMemoryVk(PalMemory* memory)
 {
-    MemoryVk* vkMemory = (MemoryVk*)memory;
-    s_Vk.freeMemory(vkMemory->device->handle, vkMemory->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkMemory);
+    MemoryVk* memoryImpl = (MemoryVk*)memory;
+    s_Vk.freeMemory(memoryImpl->device->handle, memoryImpl->handle, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, memoryImpl);
 }
 
 void PAL_CALL querySamplerAnisotropyCapabilitiesVk(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceProperties props = {0};
-    s_Vk.getPhysicalDeviceProperties(vkDevice->phyDevice, &props);
+    s_Vk.getPhysicalDeviceProperties(deviceImpl->phyDevice, &props);
     caps->maxAnisotropy = props.limits.maxSamplerAnisotropy;
 }
 
@@ -883,13 +891,13 @@ void PAL_CALL queryMultiViewCapabilitiesVk(
     PalDevice* device,
     PalMultiViewCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceMultiviewPropertiesKHR props = {0};
     VkPhysicalDeviceProperties2 properties2 = {0};
     props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHR;
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     properties2.pNext = &props;
-    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
+    s_Vk.getPhysicalDeviceProperties2(deviceImpl->phyDevice, &properties2);
 
     caps->maxViewCount = props.maxMultiviewViewCount;
     if (caps->maxViewCount == 0) {
@@ -901,9 +909,9 @@ void PAL_CALL queryMultiViewportCapabilitiesVk(
     PalDevice* device,
     PalMultiViewportCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceProperties props = {0};
-    s_Vk.getPhysicalDeviceProperties(vkDevice->phyDevice, &props);
+    s_Vk.getPhysicalDeviceProperties(deviceImpl->phyDevice, &props);
     caps->maxCount = props.limits.maxViewports;
 }
 
@@ -911,13 +919,13 @@ void PAL_CALL queryDepthStencilCapabilitiesVk(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceDepthStencilResolvePropertiesKHR props = {0};
     props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES_KHR;
     properties2.pNext = &props;
-    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
+    s_Vk.getPhysicalDeviceProperties2(deviceImpl->phyDevice, &properties2);
 
     caps->supportsIndependentResolve = props.independentResolve;
     caps->supportsIndependentResolveNone = props.independentResolveNone;
@@ -961,13 +969,13 @@ void PAL_CALL queryFragmentShadingRateCapabilitiesVk(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR props = {0};
     props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR;
     properties2.pNext = &props;
-    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
+    s_Vk.getPhysicalDeviceProperties2(deviceImpl->phyDevice, &properties2);
 
     memset(caps, 0, sizeof(PalFragmentShadingRateCapabilities));
     for (int i = 0; i < PAL_FRAGMENT_SHADING_RATE_COUNT; i++) {
@@ -1000,13 +1008,13 @@ void PAL_CALL queryMeshShaderCapabilitiesVk(
     PalDevice* device,
     PalMeshShaderCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceMeshShaderPropertiesEXT props = {0};
     props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
     properties2.pNext = &props;
-    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
+    s_Vk.getPhysicalDeviceProperties2(deviceImpl->phyDevice, &properties2);
 
     caps->maxOutputPrimitives = props.maxMeshOutputPrimitives;
     caps->maxOutputVertices = props.maxMeshOutputVertices;
@@ -1026,7 +1034,7 @@ void PAL_CALL queryRayTracingCapabilitiesVk(
     PalDevice* device,
     PalRayTracingCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceProperties2 properties2 = {0};
     properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR props = {0};
@@ -1035,7 +1043,7 @@ void PAL_CALL queryRayTracingCapabilitiesVk(
     accProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
     props.pNext = &accProps;
     properties2.pNext = &props;
-    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
+    s_Vk.getPhysicalDeviceProperties2(deviceImpl->phyDevice, &properties2);
 
     caps->maxRecursionDepth = props.maxRayRecursionDepth;
     caps->maxHitAttributeSize = props.maxRayHitAttributeSize;
@@ -1051,7 +1059,7 @@ void PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     PalDevice* device,
     PalDescriptorIndexingCapabilities* caps)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT desc = {0};
     desc.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
 
@@ -1070,8 +1078,8 @@ void PAL_CALL queryDescriptorIndexingCapabilitiesVk(
     features.pNext = &desc;
     props.pNext = &accProps;
     properties2.pNext = &props;
-    s_Vk.getPhysicalDeviceFeatures2(vkDevice->phyDevice, &features);
-    s_Vk.getPhysicalDeviceProperties2(vkDevice->phyDevice, &properties2);
+    s_Vk.getPhysicalDeviceFeatures2(deviceImpl->phyDevice, &features);
+    s_Vk.getPhysicalDeviceProperties2(deviceImpl->phyDevice, &properties2);
 
     caps->flags = 0;
     if (desc.descriptorBindingPartiallyBound) {
@@ -1119,11 +1127,11 @@ PalResult PAL_CALL createQueueVk(
     PalQueueType type,
     PalQueue** outQueue)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkQueueFlags queueFlag = 0;
     QueueVk* queue = nullptr;
 
-    if (vkDevice->phyQueueCount == 0) {
+    if (deviceImpl->phyQueueCount == 0) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
@@ -1147,8 +1155,8 @@ PalResult PAL_CALL createQueueVk(
     // we index the for loop so we dont always start at the beginning, this way
     // we cycle through all queue families each time we create a queue
     PhysicalQueue* phyQueue = nullptr;
-    for (int i = vkDevice->phyQueueIndex; i < vkDevice->phyQueueCount; i++) {
-        PhysicalQueue* pq = &vkDevice->phyQueues[i];
+    for (int i = deviceImpl->phyQueueIndex; i < deviceImpl->phyQueueCount; i++) {
+        PhysicalQueue* pq = &deviceImpl->phyQueues[i];
         // check if the physical queue supports the requested operation
         // and if its not already used
         if (pq->usages & queueFlag && pq->usedUsages != queueFlag) {
@@ -1160,15 +1168,15 @@ PalResult PAL_CALL createQueueVk(
 
     if (!phyQueue) {
         // we didnt get any queue, we check if we started the loop at the beginning or mid way
-        if (vkDevice->phyQueueIndex == 0) {
+        if (deviceImpl->phyQueueIndex == 0) {
             // we searched all queue families
             return PAL_RESULT_CODE_OUT_OF_MEMORY;
 
         } else {
             // we start at the beginning and go through the queue families again
-            vkDevice->phyQueueIndex = 0;
-            for (int i = vkDevice->phyQueueIndex; i < vkDevice->phyQueueCount; i++) {
-                PhysicalQueue* pq = &vkDevice->phyQueues[i];
+            deviceImpl->phyQueueIndex = 0;
+            for (int i = deviceImpl->phyQueueIndex; i < deviceImpl->phyQueueCount; i++) {
+                PhysicalQueue* pq = &deviceImpl->phyQueues[i];
                 if (pq->usages & queueFlag && pq->usedUsages != queueFlag) {
                     pq->usedUsages |= queueFlag;
                     phyQueue = pq;
@@ -1187,26 +1195,26 @@ PalResult PAL_CALL createQueueVk(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    vkDevice->phyQueueIndex = (vkDevice->phyQueueIndex + 1) % vkDevice->phyQueueCount;
+    deviceImpl->phyQueueIndex = (deviceImpl->phyQueueIndex + 1) % deviceImpl->phyQueueCount;
     queue->phyQueue = phyQueue;
     queue->usage = queueFlag;
-    queue->device = vkDevice;
+    queue->device = deviceImpl;
     *outQueue = (PalQueue*)queue;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyQueueVk(PalQueue* queue)
 {
-    QueueVk* vkQueue = (QueueVk*)queue;
-    PhysicalQueue* phyQueue = vkQueue->phyQueue;
-    phyQueue->usedUsages &= ~vkQueue->usage;
-    palFree(s_Vk.allocator, vkQueue);
+    QueueVk* queueImpl = (QueueVk*)queue;
+    PhysicalQueue* phyQueue = queueImpl->phyQueue;
+    phyQueue->usedUsages &= ~queueImpl->usage;
+    palFree(s_Vk.allocator, queueImpl);
 }
 
 PalResult PAL_CALL waitQueueVk(PalQueue* queue)
 {
-    QueueVk* vkQueue = (QueueVk*)queue;
-    VkResult result = s_Vk.waitQueue(vkQueue->phyQueue->handle);
+    QueueVk* queueImpl = (QueueVk*)queue;
+    VkResult result = s_Vk.waitQueue(queueImpl->phyQueue->handle);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -1219,13 +1227,13 @@ PalBool PAL_CALL canQueuePresentVk(
     PalSurface* surface)
 {
     VkResult result;
-    QueueVk* vkQueue = (QueueVk*)queue;
-    PhysicalQueue* phyQueue = vkQueue->phyQueue;
-    SurfaceVk* vkSurface = (SurfaceVk*)surface;
+    QueueVk* queueImpl = (QueueVk*)queue;
+    PhysicalQueue* phyQueue = queueImpl->phyQueue;
+    SurfaceVk* surfaceImpl = (SurfaceVk*)surface;
 
     // check if the queue is a graphics queue before we check its family
     // index for presentation support.
-    if (vkQueue->usage != VK_QUEUE_GRAPHICS_BIT) {
+    if (queueImpl->usage != VK_QUEUE_GRAPHICS_BIT) {
         return PAL_FALSE;
     }
 
@@ -1233,7 +1241,7 @@ PalBool PAL_CALL canQueuePresentVk(
     result = s_Vk.checkSurfaceSupport(
         phyQueue->phyDevice,
         phyQueue->familyIndex,
-        vkSurface->handle,
+        surfaceImpl->handle,
         &supported);
 
     if (result == VK_SUCCESS && supported) {
@@ -1250,7 +1258,7 @@ PalResult PAL_CALL createShaderVk(
 {
     VkResult result;
     ShaderVk* shader = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
 
     shader = palAllocate(s_Vk.allocator, sizeof(ShaderVk), 0);
     if (!shader) {
@@ -1276,13 +1284,14 @@ PalResult PAL_CALL createShaderVk(
     createInfo.codeSize = info->codeSize;
     createInfo.pCode = (const uint32_t*)info->code;
 
-    result = s_Vk.createShader(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &shader->handle);
+    result =
+        s_Vk.createShader(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &shader->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, shader);
         return makeResultVk(result);
     }
 
-    shader->device = vkDevice;
+    shader->device = deviceImpl;
     shader->entryCount = info->entryCount;
     *outShader = (PalShader*)shader;
     return PAL_RESULT_SUCCESS;
@@ -1290,10 +1299,10 @@ PalResult PAL_CALL createShaderVk(
 
 void PAL_CALL destroyShaderVk(PalShader* shader)
 {
-    ShaderVk* vkShader = (ShaderVk*)shader;
-    s_Vk.destroyShader(vkShader->device->handle, vkShader->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkShader->entries);
-    palFree(s_Vk.allocator, vkShader);
+    ShaderVk* shaderImpl = (ShaderVk*)shader;
+    s_Vk.destroyShader(shaderImpl->device->handle, shaderImpl->handle, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, shaderImpl->entries);
+    palFree(s_Vk.allocator, shaderImpl);
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

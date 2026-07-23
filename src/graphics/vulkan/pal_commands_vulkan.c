@@ -226,7 +226,7 @@ PalResult PAL_CALL cmdBeginVk(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     VkCommandBufferBeginInfo beginInfo = {0};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -235,14 +235,14 @@ PalResult PAL_CALL cmdBeginVk(
     VkCommandBufferInheritanceRenderingInfoKHR layout = {0};
     layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR;
 
-    vkCmdBuffer->allocator.offset = 0; // reset
+    cmdBufferImpl->allocator.offset = 0; // reset
     VkFormat format = VK_FORMAT_UNDEFINED;
     VkFormat* colorAttachments = nullptr;
 
-    if (!vkCmdBuffer->primary) {
+    if (!cmdBufferImpl->primary) {
         // secondary command buffer
         colorAttachments = palLinearAlloc(
-            &vkCmdBuffer->allocator,
+            &cmdBufferImpl->allocator,
             sizeof(VkFormat) * info->colorAttachentCount,
             0);
 
@@ -274,7 +274,7 @@ PalResult PAL_CALL cmdBeginVk(
         beginInfo.pNext = &inheritanceInfo;
     }
 
-    VkResult result = s_Vk.cmdBegin(vkCmdBuffer->handle, &beginInfo);
+    VkResult result = s_Vk.cmdBegin(cmdBufferImpl->handle, &beginInfo);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -283,8 +283,8 @@ PalResult PAL_CALL cmdBeginVk(
 
 PalResult PAL_CALL cmdEndVk(PalCommandBuffer* cmdBuffer)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkResult result = s_Vk.cmdEnd(vkCmdBuffer->handle);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    VkResult result = s_Vk.cmdEnd(cmdBufferImpl->handle);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -296,9 +296,9 @@ PalResult PAL_CALL cmdExecuteCommandBufferVk(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)primaryCmdBuffer;
-    CommandBufferVk* vkCmdBuffer2 = (CommandBufferVk*)secondaryCmdBuffer;
-    s_Vk.cmdExecuteCommandBuffer(vkCmdBuffer->handle, 1, &vkCmdBuffer2->handle);
+    CommandBufferVk* primaryCmdBufferImpl = (CommandBufferVk*)primaryCmdBuffer;
+    CommandBufferVk* secondaryCmdBufferImpl = (CommandBufferVk*)secondaryCmdBuffer;
+    s_Vk.cmdExecuteCommandBuffer(primaryCmdBufferImpl->handle, 1, &secondaryCmdBufferImpl->handle);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -306,15 +306,15 @@ void PAL_CALL cmdSetFragmentShadingRateVk(
     PalCommandBuffer* cmdBuffer,
     PalFragmentShadingRateState* state)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
     VkExtent2D size = getShadingRateSizeVk(state->rate);
     VkFragmentShadingRateCombinerOpKHR combinerOps[2];
     for (int i = 0; i < 2; i++) {
         combinerOps[i] = combinerOpsToVk(state->combinerOps[i]);
     }
 
-    device->cmdSetFragmentShadingRate(vkCmdBuffer->handle, &size, combinerOps);
+    device->cmdSetFragmentShadingRate(cmdBufferImpl->handle, &size, combinerOps);
 }
 
 void PAL_CALL cmdDrawMeshTasksVk(
@@ -323,9 +323,9 @@ void PAL_CALL cmdDrawMeshTasksVk(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
-    device->cmdDrawMeshTask(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
+    device->cmdDrawMeshTask(cmdBufferImpl->handle, groupCountX, groupCountY, groupCountZ);
 }
 
 void PAL_CALL cmdDrawMeshTasksIndirectVk(
@@ -333,12 +333,13 @@ void PAL_CALL cmdDrawMeshTasksIndirectVk(
     PalBuffer* buffer,
     uint32_t drawCount)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
 
     uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    device->cmdDrawMeshTaskIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, drawCount, stride);
+    device
+        ->cmdDrawMeshTaskIndirect(cmdBufferImpl->handle, bufferImpl->handle, 0, drawCount, stride);
 }
 
 void PAL_CALL cmdDrawMeshTasksIndirectCountVk(
@@ -347,17 +348,17 @@ void PAL_CALL cmdDrawMeshTasksIndirectCountVk(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    BufferVk* vkCountBuffer = (BufferVk*)countBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    BufferVk* countBufferImpl = (BufferVk*)countBuffer;
 
     uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
     device->cmdDrawMeshTaskIndirectCount(
-        vkCmdBuffer->handle,
-        vkBuffer->handle,
+        cmdBufferImpl->handle,
+        bufferImpl->handle,
         0,
-        vkCountBuffer->handle,
+        countBufferImpl->handle,
         0,
         maxDrawCount,
         stride);
@@ -367,23 +368,23 @@ void PAL_CALL cmdBuildAccelerationStructureVk(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
 
     VkAccelerationStructureGeometryKHR* geometries = nullptr;
     VkAccelerationStructureBuildRangeInfoKHR* rangeInfos = nullptr;
     const VkAccelerationStructureBuildRangeInfoKHR** tmpRangeInfos = nullptr;
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
-    tmpRangeInfos = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(void*) * info->count, 0);
+    tmpRangeInfos = palLinearAlloc(&cmdBufferImpl->allocator, sizeof(void*) * info->count, 0);
 
     geometries = palLinearAlloc(
-        &vkCmdBuffer->allocator,
+        &cmdBufferImpl->allocator,
         sizeof(VkAccelerationStructureGeometryKHR) * info->count,
         0);
 
     rangeInfos = palLinearAlloc(
-        &vkCmdBuffer->allocator,
+        &cmdBufferImpl->allocator,
         sizeof(VkAccelerationStructureBuildRangeInfoKHR) * info->count,
         0);
 
@@ -395,15 +396,15 @@ void PAL_CALL cmdBuildAccelerationStructureVk(
         tmpRangeInfos[i] = &rangeInfos[i];
     }
 
-    vkCmdBuffer->device
-        ->cmdBuildAccelerationStructures(vkCmdBuffer->handle, 1, &buildInfo, tmpRangeInfos);
+    cmdBufferImpl->device
+        ->cmdBuildAccelerationStructures(cmdBufferImpl->handle, 1, &buildInfo, tmpRangeInfos);
 }
 
 void PAL_CALL cmdBeginRenderingVk(
     PalCommandBuffer* cmdBuffer,
     PalRenderingInfo* info)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     VkRenderingInfoKHR rendering = {0};
     rendering.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
 
@@ -412,7 +413,7 @@ void PAL_CALL cmdBeginRenderingVk(
 
     VkRenderingAttachmentInfoKHR* colorAttachments = nullptr;
     colorAttachments = palLinearAlloc(
-        &vkCmdBuffer->allocator,
+        &cmdBufferImpl->allocator,
         sizeof(VkRenderingAttachmentInfoKHR) * info->colorAttachentCount,
         0);
 
@@ -574,13 +575,13 @@ void PAL_CALL cmdBeginRenderingVk(
     }
 
     rendering.flags = renderingFlagToVk(info->flags);
-    vkCmdBuffer->device->cmdBeginRendering(vkCmdBuffer->handle, &rendering);
+    cmdBufferImpl->device->cmdBeginRendering(cmdBufferImpl->handle, &rendering);
 }
 
 void PAL_CALL cmdEndRenderingVk(PalCommandBuffer* cmdBuffer)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    vkCmdBuffer->device->cmdEndRendering(vkCmdBuffer->handle);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    cmdBufferImpl->device->cmdEndRendering(cmdBufferImpl->handle);
 }
 
 void PAL_CALL cmdCopyBufferVk(
@@ -589,7 +590,7 @@ void PAL_CALL cmdCopyBufferVk(
     PalBuffer* src,
     PalBufferCopyInfo* copyInfo)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     BufferVk* dstBuffer = (BufferVk*)dst;
     BufferVk* srcBuffer = (BufferVk*)src;
 
@@ -597,7 +598,7 @@ void PAL_CALL cmdCopyBufferVk(
     copyRegion.size = copyInfo->size;
     copyRegion.dstOffset = copyInfo->dstOffset;
     copyRegion.srcOffset = copyInfo->srcOffset;
-    s_Vk.cmdCopyBuffer(vkCmdBuffer->handle, srcBuffer->handle, dstBuffer->handle, 1, &copyRegion);
+    s_Vk.cmdCopyBuffer(cmdBufferImpl->handle, srcBuffer->handle, dstBuffer->handle, 1, &copyRegion);
 }
 
 void PAL_CALL cmdCopyBufferToImageVk(
@@ -606,7 +607,7 @@ void PAL_CALL cmdCopyBufferToImageVk(
     PalBuffer* srcBuffer,
     PalBufferImageCopyInfo* copyInfo)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     ImageVk* dst = (ImageVk*)dstImage;
     BufferVk* src = (BufferVk*)srcBuffer;
 
@@ -629,7 +630,7 @@ void PAL_CALL cmdCopyBufferToImageVk(
     copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
 
     s_Vk.cmdCopyBufferToImage(
-        vkCmdBuffer->handle,
+        cmdBufferImpl->handle,
         src->handle,
         dst->handle,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -643,7 +644,7 @@ void PAL_CALL cmdCopyImageVk(
     PalImage* src,
     PalImageCopyInfo* copyInfo)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     ImageVk* dstImage = (ImageVk*)dst;
     ImageVk* srcImage = (ImageVk*)src;
 
@@ -671,7 +672,7 @@ void PAL_CALL cmdCopyImageVk(
     copyRegion.srcSubresource.mipLevel = copyInfo->srcMipLevel;
 
     s_Vk.cmdCopyImage(
-        vkCmdBuffer->handle,
+        cmdBufferImpl->handle,
         srcImage->handle,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         dstImage->handle,
@@ -686,7 +687,7 @@ void PAL_CALL cmdCopyImageToBufferVk(
     PalImage* srcImage,
     PalBufferImageCopyInfo* copyInfo)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     BufferVk* dst = (BufferVk*)dstBuffer;
     ImageVk* src = (ImageVk*)srcImage;
 
@@ -709,7 +710,7 @@ void PAL_CALL cmdCopyImageToBufferVk(
     copyRegion.imageSubresource.mipLevel = copyInfo->ImageMipLevel;
 
     s_Vk.cmdCopyImageToBuffer(
-        vkCmdBuffer->handle,
+        cmdBufferImpl->handle,
         src->handle,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         dst->handle,
@@ -721,10 +722,10 @@ void PAL_CALL cmdBindPipelineVk(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    PipelineVk* vkPipeline = (PipelineVk*)pipeline;
-    s_Vk.cmdBindPipeline(vkCmdBuffer->handle, vkPipeline->bindPoint, vkPipeline->handle);
-    vkCmdBuffer->pipeline = vkPipeline;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    PipelineVk* pipelineImpl = (PipelineVk*)pipeline;
+    s_Vk.cmdBindPipeline(cmdBufferImpl->handle, pipelineImpl->bindPoint, pipelineImpl->handle);
+    cmdBufferImpl->pipeline = pipelineImpl;
 }
 
 void PAL_CALL cmdSetViewportVk(
@@ -732,11 +733,11 @@ void PAL_CALL cmdSetViewportVk(
     uint32_t count,
     PalViewport* viewports)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkViewport* vkViewports = nullptr;
-    vkViewports = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(VkViewport) * count, 0);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    VkViewport* viewportsImpl = nullptr;
+    viewportsImpl = palLinearAlloc(&cmdBufferImpl->allocator, sizeof(VkViewport) * count, 0);
     for (int i = 0; i < count; i++) {
-        VkViewport* tmp = &vkViewports[i];
+        VkViewport* tmp = &viewportsImpl[i];
         tmp->x = viewports[i].x;
         tmp->y = viewports[i].y;
         tmp->width = viewports[i].width;
@@ -745,7 +746,7 @@ void PAL_CALL cmdSetViewportVk(
         tmp->maxDepth = viewports[i].maxDepth;
     }
 
-    s_Vk.cmdSetViewports(vkCmdBuffer->handle, 0, count, vkViewports);
+    s_Vk.cmdSetViewports(cmdBufferImpl->handle, 0, count, viewportsImpl);
 }
 
 void PAL_CALL cmdSetScissorsVk(
@@ -753,18 +754,18 @@ void PAL_CALL cmdSetScissorsVk(
     uint32_t count,
     PalRect2D* scissors)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkRect2D* vkScissors = nullptr;
-    vkScissors = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(VkRect2D) * count, 0);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    VkRect2D* scissorsImpl = nullptr;
+    scissorsImpl = palLinearAlloc(&cmdBufferImpl->allocator, sizeof(VkRect2D) * count, 0);
     for (int i = 0; i < count; i++) {
-        VkRect2D* tmp = &vkScissors[i];
+        VkRect2D* tmp = &scissorsImpl[i];
         tmp->offset.x = scissors[i].x;
         tmp->offset.y = scissors[i].y;
         tmp->extent.width = scissors[i].width;
         tmp->extent.height = scissors[i].height;
     }
 
-    s_Vk.cmdSetScissors(vkCmdBuffer->handle, 0, count, vkScissors);
+    s_Vk.cmdSetScissors(cmdBufferImpl->handle, 0, count, scissorsImpl);
 }
 
 void PAL_CALL cmdBindVertexBuffersVk(
@@ -774,15 +775,15 @@ void PAL_CALL cmdBindVertexBuffersVk(
     PalBuffer** buffers,
     uint64_t* offsets)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    VkBuffer* vkBuffers = nullptr;
-    vkBuffers = palLinearAlloc(&vkCmdBuffer->allocator, sizeof(VkBuffer) * count, 0);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    VkBuffer* buffersImpl = nullptr;
+    buffersImpl = palLinearAlloc(&cmdBufferImpl->allocator, sizeof(VkBuffer) * count, 0);
     for (int i = 0; i < count; i++) {
         BufferVk* tmp = (BufferVk*)buffers[i];
-        vkBuffers[i] = tmp->handle;
+        buffersImpl[i] = tmp->handle;
     }
 
-    s_Vk.cmdBindVertexBuffers(vkCmdBuffer->handle, firstSlot, count, vkBuffers, offsets);
+    s_Vk.cmdBindVertexBuffers(cmdBufferImpl->handle, firstSlot, count, buffersImpl, offsets);
 }
 
 void PAL_CALL cmdBindIndexBufferVk(
@@ -791,14 +792,14 @@ void PAL_CALL cmdBindIndexBufferVk(
     uint64_t offset,
     PalIndexType type)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
     VkIndexType bufferType = VK_INDEX_TYPE_UINT32;
     if (type == PAL_INDEX_TYPE_UINT16) {
         bufferType = VK_INDEX_TYPE_UINT16;
     }
 
-    s_Vk.cmdBindIndexBuffer(vkCmdBuffer->handle, vkBuffer->handle, offset, bufferType);
+    s_Vk.cmdBindIndexBuffer(cmdBufferImpl->handle, bufferImpl->handle, offset, bufferType);
 }
 
 void PAL_CALL cmdDrawVk(
@@ -808,8 +809,8 @@ void PAL_CALL cmdDrawVk(
     uint32_t firstVertex,
     uint32_t firstInstance)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    s_Vk.cmdDraw(vkCmdBuffer->handle, vertexCount, instanceCount, firstVertex, firstInstance);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    s_Vk.cmdDraw(cmdBufferImpl->handle, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 void PAL_CALL cmdDrawIndirectVk(
@@ -817,10 +818,10 @@ void PAL_CALL cmdDrawIndirectVk(
     PalBuffer* buffer,
     uint32_t count)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
     uint32_t stride = sizeof(VkDrawIndirectCommand);
-    s_Vk.cmdDrawIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, count, stride);
+    s_Vk.cmdDrawIndirect(cmdBufferImpl->handle, bufferImpl->handle, 0, count, stride);
 }
 
 void PAL_CALL cmdDrawIndirectCountVk(
@@ -829,17 +830,17 @@ void PAL_CALL cmdDrawIndirectCountVk(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    BufferVk* vkCountBuffer = (BufferVk*)countBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    BufferVk* countBufferImpl = (BufferVk*)countBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
 
     uint32_t stride = sizeof(VkDrawIndirectCommand);
     device->cmdDrawIndirectCount(
-        vkCmdBuffer->handle,
-        vkBuffer->handle,
+        cmdBufferImpl->handle,
+        bufferImpl->handle,
         0,
-        vkCountBuffer->handle,
+        countBufferImpl->handle,
         0,
         maxDrawCount,
         stride);
@@ -853,9 +854,9 @@ void PAL_CALL cmdDrawIndexedVk(
     int32_t vertexOffset,
     uint32_t firstInstance)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
     s_Vk.cmdDrawIndexed(
-        vkCmdBuffer->handle,
+        cmdBufferImpl->handle,
         indexCount,
         instanceCount,
         firstIndex,
@@ -868,10 +869,10 @@ void PAL_CALL cmdDrawIndexedIndirectVk(
     PalBuffer* buffer,
     uint32_t count)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
     uint32_t stride = sizeof(VkDrawIndexedIndirectCommand);
-    s_Vk.cmdDrawIndexedIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0, count, stride);
+    s_Vk.cmdDrawIndexedIndirect(cmdBufferImpl->handle, bufferImpl->handle, 0, count, stride);
 }
 
 void PAL_CALL cmdDrawIndexedIndirectCountVk(
@@ -880,17 +881,17 @@ void PAL_CALL cmdDrawIndexedIndirectCountVk(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    BufferVk* vkCountBuffer = (BufferVk*)countBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    BufferVk* countBufferImpl = (BufferVk*)countBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
 
     uint32_t stride = sizeof(VkDrawIndexedIndirectCommand);
     device->cmdDrawIndexedIndirectCount(
-        vkCmdBuffer->handle,
-        vkBuffer->handle,
+        cmdBufferImpl->handle,
+        bufferImpl->handle,
         0,
-        vkCountBuffer->handle,
+        countBufferImpl->handle,
         0,
         maxDrawCount,
         stride);
@@ -901,8 +902,8 @@ void PAL_CALL cmdAccelerationStructureBarrierVk(
     PalAccelerationStructure* as,
     PalBarrierInfo* info)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    PipelineVk* pipeline = vkCmdBuffer->pipeline;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    PipelineVk* pipeline = cmdBufferImpl->pipeline;
     VkMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR;
 
@@ -918,7 +919,7 @@ void PAL_CALL cmdAccelerationStructureBarrierVk(
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.memoryBarrierCount = 1;
     dependencyInfo.pMemoryBarriers = &barrier;
-    vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
+    cmdBufferImpl->device->cmdPipelineBarrier(cmdBufferImpl->handle, &dependencyInfo);
 }
 
 void PAL_CALL cmdImageBarrierVk(
@@ -927,9 +928,9 @@ void PAL_CALL cmdImageBarrierVk(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    PipelineVk* pipeline = vkCmdBuffer->pipeline;
-    ImageVk* vkImage = (ImageVk*)image;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    PipelineVk* pipeline = cmdBufferImpl->pipeline;
+    ImageVk* imageImpl = (ImageVk*)image;
     VkImageMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
 
@@ -943,7 +944,7 @@ void PAL_CALL cmdImageBarrierVk(
     barrier.dstAccessMask = new.access;
     barrier.newLayout = new.layout;
 
-    barrier.image = vkImage->handle;
+    barrier.image = imageImpl->handle;
     barrier.subresourceRange.aspectMask = imageAspectToVk(subresourceRange->aspect);
     barrier.subresourceRange.baseArrayLayer = subresourceRange->startArrayLayer;
     barrier.subresourceRange.baseMipLevel = subresourceRange->startMipLevel;
@@ -954,7 +955,7 @@ void PAL_CALL cmdImageBarrierVk(
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.imageMemoryBarrierCount = 1;
     dependencyInfo.pImageMemoryBarriers = &barrier;
-    vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
+    cmdBufferImpl->device->cmdPipelineBarrier(cmdBufferImpl->handle, &dependencyInfo);
 }
 
 void PAL_CALL cmdBufferBarrierVk(
@@ -962,9 +963,9 @@ void PAL_CALL cmdBufferBarrierVk(
     PalBuffer* buffer,
     PalBarrierInfo* info)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    PipelineVk* pipeline = vkCmdBuffer->pipeline;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    PipelineVk* pipeline = cmdBufferImpl->pipeline;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
     VkBufferMemoryBarrier2KHR barrier = {0};
     barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
 
@@ -976,7 +977,7 @@ void PAL_CALL cmdBufferBarrierVk(
     barrier.dstStageMask = pipelineStagesToVk(info->dstStages);
     barrier.dstAccessMask = new.access;
 
-    barrier.buffer = vkBuffer->handle;
+    barrier.buffer = bufferImpl->handle;
     barrier.offset = 0;
     barrier.size = VK_WHOLE_SIZE;
 
@@ -984,7 +985,7 @@ void PAL_CALL cmdBufferBarrierVk(
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.bufferMemoryBarrierCount = 1;
     dependencyInfo.pBufferMemoryBarriers = &barrier;
-    vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
+    cmdBufferImpl->device->cmdPipelineBarrier(cmdBufferImpl->handle, &dependencyInfo);
 }
 
 void PAL_CALL cmdDispatchVk(
@@ -993,8 +994,8 @@ void PAL_CALL cmdDispatchVk(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    s_Vk.cmdDispatch(vkCmdBuffer->handle, groupCountX, groupCountY, groupCountZ);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    s_Vk.cmdDispatch(cmdBufferImpl->handle, groupCountX, groupCountY, groupCountZ);
 }
 
 void PAL_CALL cmdDispatchBaseVk(
@@ -1006,11 +1007,11 @@ void PAL_CALL cmdDispatchBaseVk(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
 
     device->cmdDispatchBase(
-        vkCmdBuffer->handle,
+        cmdBufferImpl->handle,
         baseGroupX,
         baseGroupY,
         baseGroupZ,
@@ -1023,9 +1024,9 @@ void PAL_CALL cmdDispatchIndirectVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
-    s_Vk.cmdDispatchIndirect(vkCmdBuffer->handle, vkBuffer->handle, 0);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
+    s_Vk.cmdDispatchIndirect(cmdBufferImpl->handle, bufferImpl->handle, 0);
 }
 
 void PAL_CALL cmdTraceRaysVk(
@@ -1036,24 +1037,25 @@ void PAL_CALL cmdTraceRaysVk(
     uint32_t height,
     uint32_t depth)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
-    ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
+    ShaderBindingTableVk* sbtImpl = (ShaderBindingTableVk*)sbt;
 
     VkStridedDeviceAddressRegionKHR raygenAddress = {0};
-    raygenAddress.size = vkSbt->raygen.region.size;
-    raygenAddress.stride = vkSbt->raygen.region.stride;
-    raygenAddress.deviceAddress = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
+    raygenAddress.size = sbtImpl->raygen.region.size;
+    raygenAddress.stride = sbtImpl->raygen.region.stride;
+    raygenAddress.deviceAddress =
+        sbtImpl->baseAddress + raygenIndex * sbtImpl->raygen.region.stride;
 
     // we need to make sure the SBT is up to date
-    commitShaderbindingTableUpdate(vkCmdBuffer, vkSbt);
+    commitShaderbindingTableUpdate(cmdBufferImpl, sbtImpl);
 
-    vkCmdBuffer->device->cmdTraceRays(
-        vkCmdBuffer->handle,
+    cmdBufferImpl->device->cmdTraceRays(
+        cmdBufferImpl->handle,
         &raygenAddress,
-        &vkSbt->miss.region,
-        &vkSbt->hit.region,
-        &vkSbt->callable.region,
+        &sbtImpl->miss.region,
+        &sbtImpl->hit.region,
+        &sbtImpl->callable.region,
         width,
         height,
         depth);
@@ -1065,20 +1067,25 @@ void PAL_CALL cmdTraceRaysIndirectVk(
     PalShaderBindingTable* sbt,
     PalBuffer* buffer)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    ShaderBindingTableVk* vkSbt = (ShaderBindingTableVk*)sbt;
-    BufferVk* vkBuffer = (BufferVk*)buffer;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    ShaderBindingTableVk* sbtImpl = (ShaderBindingTableVk*)sbt;
+    BufferVk* bufferImpl = (BufferVk*)buffer;
 
-    PalDeviceAddress address = vkSbt->baseAddress + raygenIndex * vkSbt->raygen.region.stride;
-    vkSbt->raygen.region.deviceAddress = address;
+    PalDeviceAddress address = sbtImpl->baseAddress + raygenIndex * sbtImpl->raygen.region.stride;
+    sbtImpl->raygen.region.deviceAddress = address;
 
     // we need to make sure the SBT is up to date
-    commitShaderbindingTableUpdate(vkCmdBuffer, vkSbt);
+    commitShaderbindingTableUpdate(cmdBufferImpl, sbtImpl);
 
     // copy user buffer data into a tmp gpu buffer abd execute with it
     VkBufferCopy copyRegion = {0};
     copyRegion.size = sizeof(VkTraceRaysIndirectCommandKHR);
-    s_Vk.cmdCopyBuffer(vkCmdBuffer->handle, vkBuffer->handle, vkCmdBuffer->buffer, 1, &copyRegion);
+    s_Vk.cmdCopyBuffer(
+        cmdBufferImpl->handle,
+        bufferImpl->handle,
+        cmdBufferImpl->buffer,
+        1,
+        &copyRegion);
 
     // put a memory barrier
     VkBufferMemoryBarrier2KHR barrier = {0};
@@ -1088,7 +1095,7 @@ void PAL_CALL cmdTraceRaysIndirectVk(
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT_KHR;
 
-    barrier.buffer = vkCmdBuffer->buffer;
+    barrier.buffer = cmdBufferImpl->buffer;
     barrier.offset = 0;
     barrier.size = VK_WHOLE_SIZE;
 
@@ -1096,20 +1103,21 @@ void PAL_CALL cmdTraceRaysIndirectVk(
     dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dependencyInfo.bufferMemoryBarrierCount = 1;
     dependencyInfo.pBufferMemoryBarriers = &barrier;
-    vkCmdBuffer->device->cmdPipelineBarrier(vkCmdBuffer->handle, &dependencyInfo);
+    cmdBufferImpl->device->cmdPipelineBarrier(cmdBufferImpl->handle, &dependencyInfo);
 
     VkDeviceAddress bufAddress = 0;
     VkBufferDeviceAddressInfoKHR bufferInfo = {0};
-    bufferInfo.buffer = vkCmdBuffer->buffer;
+    bufferInfo.buffer = cmdBufferImpl->buffer;
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
-    bufAddress = vkCmdBuffer->device->getBufferrAddress(vkCmdBuffer->device->handle, &bufferInfo);
+    bufAddress =
+        cmdBufferImpl->device->getBufferrAddress(cmdBufferImpl->device->handle, &bufferInfo);
 
-    vkCmdBuffer->device->cmdTraceRaysIndirect(
-        vkCmdBuffer->handle,
-        &vkSbt->raygen.region,
-        &vkSbt->miss.region,
-        &vkSbt->hit.region,
-        &vkSbt->callable.region,
+    cmdBufferImpl->device->cmdTraceRaysIndirect(
+        cmdBufferImpl->handle,
+        &sbtImpl->raygen.region,
+        &sbtImpl->miss.region,
+        &sbtImpl->hit.region,
+        &sbtImpl->callable.region,
         bufAddress);
 }
 
@@ -1118,17 +1126,17 @@ void PAL_CALL cmdBindDescriptorSetVk(
     uint32_t setIndex,
     PalDescriptorSet* set)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    PipelineVk* pipeline = vkCmdBuffer->pipeline;
-    DescriptorSetVk* vkSet = (DescriptorSetVk*)set;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    PipelineVk* pipeline = cmdBufferImpl->pipeline;
+    DescriptorSetVk* setImpl = (DescriptorSetVk*)set;
 
     s_Vk.cmdBindDescriptorSets(
-        vkCmdBuffer->handle,
+        cmdBufferImpl->handle,
         pipeline->bindPoint,
         pipeline->layout,
         setIndex,
         1,
-        &vkSet->handle,
+        &setImpl->handle,
         0,
         nullptr);
 }
@@ -1139,13 +1147,13 @@ void PAL_CALL cmdPushConstantsVk(
     uint64_t size,
     const void* value)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    PipelineVk* pipeline = vkCmdBuffer->pipeline;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    PipelineVk* pipeline = cmdBufferImpl->pipeline;
 
     s_Vk.cmdPushConstants(
-        vkCmdBuffer->handle,
+        cmdBufferImpl->handle,
         pipeline->layout,
-        vkCmdBuffer->device->shaderStages,
+        cmdBufferImpl->device->shaderStages,
         offset,
         size,
         value);
@@ -1155,97 +1163,97 @@ void PAL_CALL cmdSetCullModeVk(
     PalCommandBuffer* cmdBuffer,
     PalCullMode cullMode)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
 
-    VkCullModeFlags vkCullMode = 0;
+    VkCullModeFlags cullModeImpl = 0;
     switch (cullMode) {
         case PAL_CULL_MODE_BACK:
-            vkCullMode = VK_CULL_MODE_BACK_BIT;
+            cullModeImpl = VK_CULL_MODE_BACK_BIT;
 
         case PAL_CULL_MODE_FRONT:
-            vkCullMode = VK_CULL_MODE_FRONT_BIT;
+            cullModeImpl = VK_CULL_MODE_FRONT_BIT;
 
         case PAL_CULL_MODE_NONE:
-            vkCullMode = VK_CULL_MODE_NONE;
+            cullModeImpl = VK_CULL_MODE_NONE;
     }
 
-    device->cmdSetCullMode(vkCmdBuffer->handle, vkCullMode);
+    device->cmdSetCullMode(cmdBufferImpl->handle, cullModeImpl);
 }
 
 void PAL_CALL cmdSetFrontFaceVk(
     PalCommandBuffer* cmdBuffer,
     PalFrontFace frontFace)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
 
-    VkFrontFace vkFrontFace = 0;
+    VkFrontFace frontFaceImpl = 0;
     switch (frontFace) {
         case PAL_FRONT_FACE_CLOCKWISE:
-            vkFrontFace = VK_FRONT_FACE_CLOCKWISE;
+            frontFaceImpl = VK_FRONT_FACE_CLOCKWISE;
 
         case PAL_FRONT_FACE_COUNTER_CLOCKWISE:
-            vkFrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+            frontFaceImpl = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     }
 
-    device->cmdSetFrontFace(vkCmdBuffer->handle, vkFrontFace);
+    device->cmdSetFrontFace(cmdBufferImpl->handle, frontFaceImpl);
 }
 
 void PAL_CALL cmdSetPrimitiveTopologyVk(
     PalCommandBuffer* cmdBuffer,
     PalPrimitiveTopology topology)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
 
-    VkPrimitiveTopology vkTopology = 0;
+    VkPrimitiveTopology topologyImpl = 0;
     switch (topology) {
         case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST: {
-            vkTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            topologyImpl = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             break;
         }
 
         case PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP: {
-            vkTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            topologyImpl = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
             break;
         }
 
         case PAL_PRIMITIVE_TOPOLOGY_LINE_LIST: {
-            vkTopology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            topologyImpl = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             break;
         }
 
         case PAL_PRIMITIVE_TOPOLOGY_LINE_STRIP: {
-            vkTopology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            topologyImpl = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
             break;
         }
 
         case PAL_PRIMITIVE_TOPOLOGY_POINT_LIST: {
-            vkTopology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            topologyImpl = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
             break;
         }
     }
 
-    device->cmdSetPrimitiveTopology(vkCmdBuffer->handle, vkTopology);
+    device->cmdSetPrimitiveTopology(cmdBufferImpl->handle, topologyImpl);
 }
 
 void PAL_CALL cmdSetDepthTestEnableVk(
     PalCommandBuffer* cmdBuffer,
     PalBool enable)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
-    device->cmdSetDepthTestEnable(vkCmdBuffer->handle, enable);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
+    device->cmdSetDepthTestEnable(cmdBufferImpl->handle, enable);
 }
 
 void PAL_CALL cmdSetDepthWriteEnableVk(
     PalCommandBuffer* cmdBuffer,
     PalBool enable)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
-    device->cmdSetDepthWriteEnable(vkCmdBuffer->handle, enable);
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
+    device->cmdSetDepthWriteEnable(cmdBufferImpl->handle, enable);
 }
 
 void PAL_CALL cmdSetStencilOpVk(
@@ -1256,8 +1264,8 @@ void PAL_CALL cmdSetStencilOpVk(
     PalStencilOp depthFailOp,
     PalCompareOp compareOp)
 {
-    CommandBufferVk* vkCmdBuffer = (CommandBufferVk*)cmdBuffer;
-    DeviceVk* device = vkCmdBuffer->device;
+    CommandBufferVk* cmdBufferImpl = (CommandBufferVk*)cmdBuffer;
+    DeviceVk* device = cmdBufferImpl->device;
     VkStencilFaceFlags faceFlags = 0;
     if (faceMask & PAL_STENCIL_FACE_FLAG_BACK) {
         faceFlags |= VK_STENCIL_FACE_BACK_BIT;
@@ -1267,12 +1275,18 @@ void PAL_CALL cmdSetStencilOpVk(
         faceFlags |= VK_STENCIL_FACE_FRONT_BIT;
     }
 
-    VkStencilOp vkFailOp = stencilOpToVk(failOp);
-    VkStencilOp vkPassOp = stencilOpToVk(passOp);
-    VkStencilOp vkDepthFailOp = stencilOpToVk(depthFailOp);
-    VkCompareOp vkCompareOp = compareOpToVk(compareOp);
+    VkStencilOp failOpImpl = stencilOpToVk(failOp);
+    VkStencilOp passOpImpl = stencilOpToVk(passOp);
+    VkStencilOp depthFailOpImpl = stencilOpToVk(depthFailOp);
+    VkCompareOp compareOpImpl = compareOpToVk(compareOp);
 
-    device->cmdSetStencilOp(vkCmdBuffer->handle, faceFlags, failOp, passOp, depthFailOp, compareOp);
+    device->cmdSetStencilOp(
+        cmdBufferImpl->handle,
+        faceFlags,
+        failOpImpl,
+        passOpImpl,
+        depthFailOpImpl,
+        compareOpImpl);
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

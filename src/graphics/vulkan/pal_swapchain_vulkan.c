@@ -17,7 +17,7 @@ PalResult PAL_CALL createSurfaceVk(
 {
     VkResult result;
     SurfaceVk* surface = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkSurfaceKHR tmp = nullptr;
 
     surface = palAllocate(s_Vk.allocator, sizeof(SurfaceVk), 0);
@@ -38,7 +38,7 @@ PalResult PAL_CALL createSurfaceVk(
     cInfo.hinstance = windowInstance;
     cInfo.hwnd = window;
     cInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+    result = s_Vk.createWin32Surface(s_Vk.instance, &cInfo, &s_Vk.allocatorImpl, &tmp);
 
 #else
     if (instanceType == PAL_WINDOW_INSTANCE_TYPE_WIN32) {
@@ -56,7 +56,7 @@ PalResult PAL_CALL createSurfaceVk(
         cInfo.flags = 0;
         cInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
         cInfo.surface = window;
-        result = s_Vk.createWaylandSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+        result = s_Vk.createWaylandSurface(s_Vk.instance, &cInfo, &s_Vk.allocatorImpl, &tmp);
 
     } else if (instanceType == PAL_WINDOW_INSTANCE_TYPE_X11) {
         if (!s_Vk.createXlibSurface) {
@@ -67,7 +67,7 @@ PalResult PAL_CALL createSurfaceVk(
         cInfo.dpy = windowInstance;
         cInfo.window = (Window)(uintptr_t)(window);
         cInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-        result = s_Vk.createXlibSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+        result = s_Vk.createXlibSurface(s_Vk.instance, &cInfo, &s_Vk.allocatorImpl, &tmp);
 
     } else if (instanceType == PAL_WINDOW_INSTANCE_TYPE_XCB) {
         if (!s_Vk.createXcbSurface) {
@@ -78,7 +78,7 @@ PalResult PAL_CALL createSurfaceVk(
         cInfo.connection = windowInstance;
         cInfo.window = (xcb_window_t)(uintptr_t)(window);
         cInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-        result = s_Vk.createXcbSurface(s_Vk.instance, &cInfo, &s_Vk.vkAllocator, &tmp);
+        result = s_Vk.createXcbSurface(s_Vk.instance, &cInfo, &s_Vk.allocatorImpl, &tmp);
     }
 #endif // _WIN32
 
@@ -87,7 +87,7 @@ PalResult PAL_CALL createSurfaceVk(
         return makeResultVk(result);
     }
 
-    surface->device = vkDevice;
+    surface->device = deviceImpl;
     surface->handle = tmp;
     *outSurface = (PalSurface*)surface;
     return PAL_RESULT_SUCCESS;
@@ -95,9 +95,9 @@ PalResult PAL_CALL createSurfaceVk(
 
 void PAL_CALL destroySurfaceVk(PalSurface* surface)
 {
-    SurfaceVk* vkSurface = (SurfaceVk*)surface;
-    s_Vk.destroySurface(s_Vk.instance, vkSurface->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkSurface);
+    SurfaceVk* surfaceImpl = (SurfaceVk*)surface;
+    s_Vk.destroySurface(s_Vk.instance, surfaceImpl->handle, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, surfaceImpl);
 }
 
 void PAL_CALL getSurfaceCapabilitiesVk(
@@ -107,16 +107,16 @@ void PAL_CALL getSurfaceCapabilitiesVk(
 {
     int32_t formatCount = 0;
     uint32_t modeCount = 0;
-    SurfaceVk* vkSurface = (SurfaceVk*)surface;
+    SurfaceVk* surfaceImpl = (SurfaceVk*)surface;
     VkSurfaceFormatKHR* formats = nullptr;
     VkPresentModeKHR* modes = nullptr;
 
-    DeviceVk* vkDevice = (DeviceVk*)device;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkDevice->phyDevice;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)deviceImpl->phyDevice;
 
     memset(caps, 0, sizeof(PalSurfaceCapabilities));
-    s_Vk.getSurfacePresentModes(phyDevice, vkSurface->handle, &modeCount, nullptr);
-    s_Vk.getSurfaceFormats(phyDevice, vkSurface->handle, &formatCount, nullptr);
+    s_Vk.getSurfacePresentModes(phyDevice, surfaceImpl->handle, &modeCount, nullptr);
+    s_Vk.getSurfaceFormats(phyDevice, surfaceImpl->handle, &formatCount, nullptr);
 
     modes = palAllocate(s_Vk.allocator, sizeof(VkPresentModeKHR) * modeCount, 0);
     formats = palAllocate(s_Vk.allocator, sizeof(VkSurfaceFormatKHR) * formatCount, 0);
@@ -124,11 +124,11 @@ void PAL_CALL getSurfaceCapabilitiesVk(
         return;
     }
 
-    s_Vk.getSurfacePresentModes(phyDevice, vkSurface->handle, &modeCount, modes);
-    s_Vk.getSurfaceFormats(phyDevice, vkSurface->handle, &formatCount, formats);
+    s_Vk.getSurfacePresentModes(phyDevice, surfaceImpl->handle, &modeCount, modes);
+    s_Vk.getSurfaceFormats(phyDevice, surfaceImpl->handle, &formatCount, formats);
 
     VkSurfaceCapabilitiesKHR surfaceCaps;
-    s_Vk.getSurfaceCapabilities(phyDevice, vkSurface->handle, &surfaceCaps);
+    s_Vk.getSurfaceCapabilities(phyDevice, surfaceImpl->handle, &surfaceCaps);
     caps->minImageWidth = surfaceCaps.minImageExtent.width;
     caps->minImageHeight = surfaceCaps.minImageExtent.height;
     caps->maxImageWidth = surfaceCaps.maxImageExtent.width;
@@ -209,14 +209,14 @@ PalResult PAL_CALL createSwapchainVk(
     SwapchainVk* swapchain = nullptr;
     VkImage* images = nullptr;
 
-    DeviceVk* vkDevice = (DeviceVk*)device;
-    QueueVk* vkQueue = (QueueVk*)queue;
-    PhysicalQueue* phyQueue = vkQueue->phyQueue;
-    SurfaceVk* vkSurface = (SurfaceVk*)surface;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
+    QueueVk* queueImpl = (QueueVk*)queue;
+    PhysicalQueue* phyQueue = queueImpl->phyQueue;
+    SurfaceVk* surfaceImpl = (SurfaceVk*)surface;
 
     // check if the queue is a graphics queue before we check its family
     // index for presentation support.
-    if (vkQueue->usage != VK_QUEUE_GRAPHICS_BIT) {
+    if (queueImpl->usage != VK_QUEUE_GRAPHICS_BIT) {
         return PAL_RESULT_CODE_INVALID_HANDLE;
     }
 
@@ -228,7 +228,7 @@ PalResult PAL_CALL createSwapchainVk(
 
     VkSwapchainCreateInfoKHR createInfo = {0};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = vkSurface->handle;
+    createInfo.surface = surfaceImpl->handle;
     createInfo.imageArrayLayers = info->imageArrayLayerCount;
     createInfo.imageExtent.width = info->width;
     createInfo.imageExtent.height = info->height;
@@ -278,10 +278,10 @@ PalResult PAL_CALL createSwapchainVk(
     }
 
     // create swapchain
-    VkResult result = vkDevice->createSwapchain(
-        vkDevice->handle,
+    VkResult result = deviceImpl->createSwapchain(
+        deviceImpl->handle,
         &createInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &swapchain->handle);
 
     if (result != VK_SUCCESS) {
@@ -291,21 +291,21 @@ PalResult PAL_CALL createSwapchainVk(
 
     // get and cache all images
     uint32_t count = 0;
-    result = vkDevice->getSwapchainImages(vkDevice->handle, swapchain->handle, &count, nullptr);
+    result = deviceImpl->getSwapchainImages(deviceImpl->handle, swapchain->handle, &count, nullptr);
 
     swapchain->images = palAllocate(s_Vk.allocator, sizeof(ImageVk) * count, 0);
     images = palAllocate(s_Vk.allocator, sizeof(VkImage) * count, 0);
     if (!swapchain->images || !images) {
-        vkDevice->destroySwapchain(vkDevice->handle, swapchain->handle, &s_Vk.vkAllocator);
+        deviceImpl->destroySwapchain(deviceImpl->handle, swapchain->handle, &s_Vk.allocatorImpl);
         palFree(s_Vk.allocator, swapchain);
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
-    vkDevice->getSwapchainImages(vkDevice->handle, swapchain->handle, &count, images);
+    deviceImpl->getSwapchainImages(deviceImpl->handle, swapchain->handle, &count, images);
 
     // fill all images with the creation info
     for (int i = 0; i < count; i++) {
         ImageVk* image = &swapchain->images[i];
-        image->device = vkDevice;
+        image->device = deviceImpl;
         image->handle = images[i];
 
         image->info.belongsToSwapchain = PAL_TRUE;
@@ -321,8 +321,8 @@ PalResult PAL_CALL createSwapchainVk(
     }
     palFree(s_Vk.allocator, images);
 
-    swapchain->device = vkDevice;
-    swapchain->queue = vkQueue;
+    swapchain->device = deviceImpl;
+    swapchain->queue = queueImpl;
     swapchain->imageCount = count;
     *outSwapchain = (PalSwapchain*)swapchain;
     return PAL_RESULT_SUCCESS;
@@ -330,22 +330,22 @@ PalResult PAL_CALL createSwapchainVk(
 
 void PAL_CALL destroySwapchainVk(PalSwapchain* swapchain)
 {
-    SwapchainVk* vkSwapchain = (SwapchainVk*)swapchain;
-    vkSwapchain->device->destroySwapchain(
-        vkSwapchain->device->handle,
-        vkSwapchain->handle,
-        &s_Vk.vkAllocator);
+    SwapchainVk* swapchainImpl = (SwapchainVk*)swapchain;
+    swapchainImpl->device->destroySwapchain(
+        swapchainImpl->device->handle,
+        swapchainImpl->handle,
+        &s_Vk.allocatorImpl);
 
-    palFree(s_Vk.allocator, vkSwapchain->images);
-    palFree(s_Vk.allocator, vkSwapchain);
+    palFree(s_Vk.allocator, swapchainImpl->images);
+    palFree(s_Vk.allocator, swapchainImpl);
 }
 
 PalImage* PAL_CALL getSwapchainImageVk(
     PalSwapchain* swapchain,
     uint32_t index)
 {
-    SwapchainVk* vkSwapchain = (SwapchainVk*)swapchain;
-    return (PalImage*)&vkSwapchain->images[index];
+    SwapchainVk* swapchainImpl = (SwapchainVk*)swapchain;
+    return (PalImage*)&swapchainImpl->images[index];
 }
 
 PalResult PAL_CALL getNextSwapchainImageVk(
@@ -358,16 +358,16 @@ PalResult PAL_CALL getNextSwapchainImageVk(
     uint64_t timeInNanoseconds = 0;
     VkFence fenceHandle = nullptr;
     VkSemaphore semaphoreHandle = nullptr;
-    SwapchainVk* vkSwapchain = (SwapchainVk*)swapchain;
+    SwapchainVk* swapchainImpl = (SwapchainVk*)swapchain;
 
     if (info->fence) {
-        FenceVk* vkFence = (FenceVk*)info->fence;
-        fenceHandle = vkFence->handle;
+        FenceVk* fenceImpl = (FenceVk*)info->fence;
+        fenceHandle = fenceImpl->handle;
     }
 
     if (info->signalSemaphore) {
-        SemaphoreVk* vkSemaphore = (SemaphoreVk*)info->signalSemaphore;
-        semaphoreHandle = vkSemaphore->handle;
+        SemaphoreVk* semaphoreImpl = (SemaphoreVk*)info->signalSemaphore;
+        semaphoreHandle = semaphoreImpl->handle;
     }
 
     if (info->timeout) {
@@ -378,9 +378,9 @@ PalResult PAL_CALL getNextSwapchainImageVk(
         }
     }
 
-    result = vkSwapchain->device->acquireNextImage(
-        vkSwapchain->device->handle,
-        vkSwapchain->handle,
+    result = swapchainImpl->device->acquireNextImage(
+        swapchainImpl->device->handle,
+        swapchainImpl->handle,
         timeInNanoseconds,
         semaphoreHandle,
         fenceHandle,
@@ -399,12 +399,12 @@ PalResult PAL_CALL presentSwapchainVk(
     uint32_t imageIndex,
     PalSemaphore* waitSemaphore)
 {
-    SwapchainVk* vkSwapchain = (SwapchainVk*)swapchain;
+    SwapchainVk* swapchainImpl = (SwapchainVk*)swapchain;
     int32_t semaphoreCount = 0;
     VkSemaphore semaphoreHandle = nullptr;
     if (waitSemaphore) {
-        SemaphoreVk* vkSemaphore = (SemaphoreVk*)waitSemaphore;
-        semaphoreHandle = vkSemaphore->handle;
+        SemaphoreVk* semaphoreImpl = (SemaphoreVk*)waitSemaphore;
+        semaphoreHandle = semaphoreImpl->handle;
         semaphoreCount = 1;
     }
 
@@ -412,12 +412,13 @@ PalResult PAL_CALL presentSwapchainVk(
     VkPresentInfoKHR presentInfo = {0};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &vkSwapchain->handle;
+    presentInfo.pSwapchains = &swapchainImpl->handle;
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pWaitSemaphores = &semaphoreHandle;
     presentInfo.waitSemaphoreCount = semaphoreCount;
 
-    result = vkSwapchain->device->queuePresent(vkSwapchain->queue->phyQueue->handle, &presentInfo);
+    result =
+        swapchainImpl->device->queuePresent(swapchainImpl->queue->phyQueue->handle, &presentInfo);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -431,9 +432,9 @@ PalResult PAL_CALL resizeSwapchainVk(
     uint32_t newHeight)
 {
     VkResult result;
-    SwapchainVk* vkSwapchain = (SwapchainVk*)swapchain;
-    VkSwapchainKHR oldSwapchain = vkSwapchain->handle;
-    DeviceVk* device = vkSwapchain->device;
+    SwapchainVk* swapchainImpl = (SwapchainVk*)swapchain;
+    VkSwapchainKHR oldSwapchain = swapchainImpl->handle;
+    DeviceVk* device = swapchainImpl->device;
     VkImage* images = nullptr;
 
     VkSwapchainCreateInfoKHR createInfo = {0};
@@ -445,24 +446,24 @@ PalResult PAL_CALL resizeSwapchainVk(
     result = device->createSwapchain(
         device->handle,
         &createInfo,
-        &s_Vk.vkAllocator,
-        &vkSwapchain->handle);
+        &s_Vk.allocatorImpl,
+        &swapchainImpl->handle);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
 
-    uint32_t count = vkSwapchain->imageCount;
+    uint32_t count = swapchainImpl->imageCount;
     images = palAllocate(s_Vk.allocator, sizeof(VkImage) * count, 0);
     if (!images) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    device->destroySwapchain(device->handle, oldSwapchain, &s_Vk.vkAllocator);
-    device->getSwapchainImages(device->handle, vkSwapchain->handle, &count, images);
+    device->destroySwapchain(device->handle, oldSwapchain, &s_Vk.allocatorImpl);
+    device->getSwapchainImages(device->handle, swapchainImpl->handle, &count, images);
     // fill all images with the new create info
     for (int i = 0; i < count; i++) {
-        ImageVk* image = &vkSwapchain->images[i];
+        ImageVk* image = &swapchainImpl->images[i];
         image->handle = images[i];
         image->info.height = createInfo.imageExtent.height;
         image->info.width = createInfo.imageExtent.width;

@@ -39,7 +39,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     PalDescriptorSetLayout** outLayout)
 {
     VkResult result;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkDescriptorSetLayoutBinding* bindings = nullptr;
     VkDescriptorBindingFlags* bindingFlags = nullptr;
     DescriptorSetLayoutVk* layout = nullptr;
@@ -73,7 +73,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         binding->descriptorType = descriptortypeToVk(info->bindings[i].descriptorType);
 
         binding->pImmutableSamplers = nullptr;
-        binding->stageFlags = vkDevice->shaderStages;
+        binding->stageFlags = deviceImpl->shaderStages;
 
         // set descriptor indexing flags
         if (info->flags & PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND) {
@@ -97,9 +97,9 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
     }
 
     result = s_Vk.createDescriptorSetLayout(
-        vkDevice->handle,
+        deviceImpl->handle,
         &createInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &layout->handle);
 
     palFree(s_Vk.allocator, bindings);
@@ -108,7 +108,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         return makeResultVk(result);
     }
 
-    layout->device = vkDevice;
+    layout->device = deviceImpl;
     layout->flags = info->flags;
     *outLayout = (PalDescriptorSetLayout*)layout;
     return PAL_RESULT_SUCCESS;
@@ -116,10 +116,13 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
 
 void PAL_CALL destroyDescriptorSetLayoutVk(PalDescriptorSetLayout* layout)
 {
-    DescriptorSetLayoutVk* vkLayout = (DescriptorSetLayoutVk*)layout;
-    s_Vk.destroyDescriptorSetLayout(vkLayout->device->handle, vkLayout->handle, &s_Vk.vkAllocator);
+    DescriptorSetLayoutVk* layoutImpl = (DescriptorSetLayoutVk*)layout;
+    s_Vk.destroyDescriptorSetLayout(
+        layoutImpl->device->handle,
+        layoutImpl->handle,
+        &s_Vk.allocatorImpl);
 
-    palFree(s_Vk.allocator, layout);
+    palFree(s_Vk.allocator, layoutImpl);
 }
 
 PalResult PAL_CALL createDescriptorPoolVk(
@@ -128,7 +131,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
     PalDescriptorPool** outPool)
 {
     VkResult result;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     DescriptorPoolVk* pool = nullptr;
     VkDescriptorPoolSize* poolSizes = nullptr;
     uint32_t bindingSizeCount = info->bindingSizeCount;
@@ -155,8 +158,11 @@ PalResult PAL_CALL createDescriptorPoolVk(
     createInfo.poolSizeCount = bindingSizeCount;
     createInfo.pPoolSizes = poolSizes;
 
-    result =
-        s_Vk.createDescriptorPool(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &pool->handle);
+    result = s_Vk.createDescriptorPool(
+        deviceImpl->handle,
+        &createInfo,
+        &s_Vk.allocatorImpl,
+        &pool->handle);
 
     palFree(s_Vk.allocator, poolSizes);
     if (result != VK_SUCCESS) {
@@ -164,7 +170,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
         return makeResultVk(result);
     }
 
-    pool->device = vkDevice;
+    pool->device = deviceImpl;
     pool->flags = info->flags;
     *outPool = (PalDescriptorPool*)pool;
     return PAL_RESULT_SUCCESS;
@@ -172,15 +178,15 @@ PalResult PAL_CALL createDescriptorPoolVk(
 
 void PAL_CALL destroyDescriptorPoolVk(PalDescriptorPool* pool)
 {
-    DescriptorPoolVk* vkPool = (DescriptorPoolVk*)pool;
-    s_Vk.destroyDescriptorPool(vkPool->device->handle, vkPool->handle, &s_Vk.vkAllocator);
+    DescriptorPoolVk* poolImpl = (DescriptorPoolVk*)pool;
+    s_Vk.destroyDescriptorPool(poolImpl->device->handle, poolImpl->handle, &s_Vk.allocatorImpl);
     palFree(s_Vk.allocator, pool);
 }
 
 PalResult PAL_CALL resetDescriptorPoolVk(PalDescriptorPool* pool)
 {
-    DescriptorPoolVk* vkPool = (DescriptorPoolVk*)pool;
-    s_Vk.resetDescriptorPool(vkPool->device->handle, vkPool->handle, 0);
+    DescriptorPoolVk* poolImpl = (DescriptorPoolVk*)pool;
+    s_Vk.resetDescriptorPool(poolImpl->device->handle, poolImpl->handle, 0);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -191,9 +197,9 @@ PalResult PAL_CALL allocateDescriptorSetVk(
     PalDescriptorSet** outSet)
 {
     VkResult result;
-    DeviceVk* vkDevice = (DeviceVk*)device;
-    DescriptorPoolVk* vkPool = (DescriptorPoolVk*)pool;
-    DescriptorSetLayoutVk* vkLayout = (DescriptorSetLayoutVk*)layout;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
+    DescriptorPoolVk* poolImpl = (DescriptorPoolVk*)pool;
+    DescriptorSetLayoutVk* layoutImpl = (DescriptorSetLayoutVk*)layout;
     DescriptorSetVk* set = nullptr;
 
     set = palAllocate(s_Vk.allocator, sizeof(DescriptorSetVk), 0);
@@ -203,18 +209,18 @@ PalResult PAL_CALL allocateDescriptorSetVk(
 
     VkDescriptorSetAllocateInfo allocateInfo = {0};
     allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocateInfo.descriptorPool = vkPool->handle;
+    allocateInfo.descriptorPool = poolImpl->handle;
     allocateInfo.descriptorSetCount = 1;
-    allocateInfo.pSetLayouts = &vkLayout->handle;
+    allocateInfo.pSetLayouts = &layoutImpl->handle;
 
-    result = s_Vk.allocateDescriptorSet(vkDevice->handle, &allocateInfo, &set->handle);
+    result = s_Vk.allocateDescriptorSet(deviceImpl->handle, &allocateInfo, &set->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, set);
         return makeResultVk(result);
     }
 
-    set->pool = vkPool;
-    set->device = vkDevice;
+    set->pool = poolImpl;
+    set->device = deviceImpl;
     *outSet = (PalDescriptorSet*)set;
     return PAL_RESULT_SUCCESS;
 }
@@ -225,7 +231,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
     PalDescriptorSetWriteInfo* infos)
 {
     VkResult result;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     VkWriteDescriptorSet* writes = nullptr;
     VkDescriptorBufferInfo* bufferInfos = nullptr;
     VkDescriptorImageInfo* imageInfos = nullptr;
@@ -314,9 +320,9 @@ PalResult PAL_CALL updateDescriptorSetVk(
 
                 if (info->bufferInfos) {
                     PalDescriptorBufferInfo* tmp = &info->bufferInfos[j];
-                    BufferVk* vkBuffer = (BufferVk*)tmp->buffer;
+                    BufferVk* bufferImpl = (BufferVk*)tmp->buffer;
 
-                    bufferInfo->buffer = vkBuffer->handle;
+                    bufferInfo->buffer = bufferImpl->handle;
                     bufferInfo->offset = tmp->offset;
                     bufferInfo->range = tmp->size;
                 }
@@ -334,29 +340,29 @@ PalResult PAL_CALL updateDescriptorSetVk(
                 if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLER) {
                     if (info->samplerInfos) {
                         PalDescriptorSamplerInfo* tmp = &info->samplerInfos[j];
-                        SamplerVk* vkSampler = (SamplerVk*)tmp->sampler;
-                        imageInfo->sampler = vkSampler->handle;
+                        SamplerVk* samplerImpl = (SamplerVk*)tmp->sampler;
+                        imageInfo->sampler = samplerImpl->handle;
                         imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     }
 
                 } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                     if (info->imageViewInfos) {
                         PalDescriptorImageViewInfo* tmp = &info->imageViewInfos[j];
-                        ImageViewVk* vkImageView = (ImageViewVk*)tmp->imageView;
+                        ImageViewVk* imageViewImpl = (ImageViewVk*)tmp->imageView;
 
                         imageInfo->sampler = nullptr;
                         imageInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                        imageInfo->imageView = vkImageView->handle;
+                        imageInfo->imageView = imageViewImpl->handle;
                     }
 
                 } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                     if (info->imageViewInfos) {
                         PalDescriptorImageViewInfo* tmp = &info->imageViewInfos[j];
-                        ImageViewVk* vkImageView = (ImageViewVk*)tmp->imageView;
+                        ImageViewVk* imageViewImpl = (ImageViewVk*)tmp->imageView;
 
                         imageInfo->sampler = nullptr;
                         imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        imageInfo->imageView = vkImageView->handle;
+                        imageInfo->imageView = imageViewImpl->handle;
                     }
                 }
             }
@@ -382,7 +388,7 @@ PalResult PAL_CALL updateDescriptorSetVk(
         }
     }
 
-    s_Vk.updateDescriptorSet(vkDevice->handle, count, writes, 0, nullptr);
+    s_Vk.updateDescriptorSet(deviceImpl->handle, count, writes, 0, nullptr);
     palFree(s_Vk.allocator, writes);
     palFree(s_Vk.allocator, bufferInfos);
     palFree(s_Vk.allocator, imageInfos);

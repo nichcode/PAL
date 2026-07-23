@@ -14,7 +14,7 @@ PalResult PAL_CALL createFenceD3D12(
     PalFence** outFence)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     FenceD3D12* fence = nullptr;
 
     fence = palAllocate(s_D3D12.allocator, sizeof(FenceD3D12), 0);
@@ -22,11 +22,11 @@ PalResult PAL_CALL createFenceD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    result = d3d12Device->handle->lpVtbl
-                 ->CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, (void**)&fence->handle);
+    result = deviceImpl->handle->lpVtbl
+                 ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&fence->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         palFree(s_D3D12.allocator, fence);
         return makeResultD3D12(result);
     }
@@ -41,7 +41,7 @@ PalResult PAL_CALL createFenceD3D12(
     }
 
     fence->canReset = PAL_FALSE;
-    if (d3d12Device->canFenceReset) {
+    if (deviceImpl->canFenceReset) {
         fence->canReset = PAL_TRUE;
     }
 
@@ -53,10 +53,10 @@ PalResult PAL_CALL createFenceD3D12(
 
 void PAL_CALL destroyFenceD3D12(PalFence* fence)
 {
-    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
-    d3d12Fence->handle->lpVtbl->Release(d3d12Fence->handle);
-    CloseHandle(d3d12Fence->event);
-    palFree(s_D3D12.allocator, d3d12Fence);
+    FenceD3D12* fenceImpl = (FenceD3D12*)fence;
+    fenceImpl->handle->lpVtbl->Release(fenceImpl->handle);
+    CloseHandle(fenceImpl->event);
+    palFree(s_D3D12.allocator, fenceImpl);
 }
 
 PalResult PAL_CALL waitFenceD3D12(
@@ -64,13 +64,13 @@ PalResult PAL_CALL waitFenceD3D12(
     uint64_t timeout)
 {
     HRESULT result;
-    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
+    FenceD3D12* fenceImpl = (FenceD3D12*)fence;
     DWORD ret = 0;
-    uint64_t value = d3d12Fence->value;
-    HANDLE event = d3d12Fence->event;
+    uint64_t value = fenceImpl->value;
+    HANDLE event = fenceImpl->event;
 
-    if (d3d12Fence->handle->lpVtbl->GetCompletedValue(d3d12Fence->handle) < value) {
-        result = d3d12Fence->handle->lpVtbl->SetEventOnCompletion(d3d12Fence->handle, value, event);
+    if (fenceImpl->handle->lpVtbl->GetCompletedValue(fenceImpl->handle) < value) {
+        result = fenceImpl->handle->lpVtbl->SetEventOnCompletion(fenceImpl->handle, value, event);
 
         if (FAILED(result)) {
             return makeResultD3D12(result);
@@ -92,16 +92,16 @@ PalResult PAL_CALL waitFenceD3D12(
 
 PalResult PAL_CALL resetFenceD3D12(PalFence* fence)
 {
-    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
-    d3d12Fence->handle->lpVtbl->Signal(d3d12Fence->handle, 0);
-    d3d12Fence->value = 0;
+    FenceD3D12* fenceImpl = (FenceD3D12*)fence;
+    fenceImpl->handle->lpVtbl->Signal(fenceImpl->handle, 0);
+    fenceImpl->value = 0;
     return PAL_RESULT_SUCCESS;
 }
 
 PalBool PAL_CALL isFenceSignaledD3D12(PalFence* fence)
 {
-    FenceD3D12* d3d12Fence = (FenceD3D12*)fence;
-    if (d3d12Fence->handle->lpVtbl->GetCompletedValue(d3d12Fence->handle) == 0) {
+    FenceD3D12* fenceImpl = (FenceD3D12*)fence;
+    if (fenceImpl->handle->lpVtbl->GetCompletedValue(fenceImpl->handle) == 0) {
         return PAL_FALSE;
     }
     return PAL_TRUE;
@@ -113,7 +113,7 @@ PalResult PAL_CALL createSemaphoreD3D12(
     PalSemaphore** outSemaphore)
 {
     HRESULT result;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     SemaphoreD3D12* semaphore = nullptr;
 
     semaphore = palAllocate(s_D3D12.allocator, sizeof(SemaphoreD3D12), 0);
@@ -125,11 +125,11 @@ PalResult PAL_CALL createSemaphoreD3D12(
         semaphore->isTimeline = PAL_TRUE;
     }
 
-    result = d3d12Device->handle->lpVtbl
-                 ->CreateFence(d3d12Device->handle, 0, 0, &IID_Fence, (void**)&semaphore->handle);
+    result = deviceImpl->handle->lpVtbl
+                 ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&semaphore->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(d3d12Device);
+        pollMessagesD3D12(deviceImpl);
         palFree(s_D3D12.allocator, semaphore);
         return makeResultD3D12(result);
     }
@@ -151,10 +151,10 @@ PalResult PAL_CALL createSemaphoreD3D12(
 
 void PAL_CALL destroySemaphoreD3D12(PalSemaphore* semaphore)
 {
-    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
-    d3d12Semaphore->handle->lpVtbl->Release(d3d12Semaphore->handle);
-    CloseHandle(d3d12Semaphore->event);
-    palFree(s_D3D12.allocator, d3d12Semaphore);
+    SemaphoreD3D12* semaphoreImpl = (SemaphoreD3D12*)semaphore;
+    semaphoreImpl->handle->lpVtbl->Release(semaphoreImpl->handle);
+    CloseHandle(semaphoreImpl->event);
+    palFree(s_D3D12.allocator, semaphoreImpl);
 }
 
 PalResult PAL_CALL waitSemaphoreD3D12(
@@ -164,12 +164,12 @@ PalResult PAL_CALL waitSemaphoreD3D12(
 {
     HRESULT result;
     DWORD ret = 0;
-    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
+    SemaphoreD3D12* semaphoreImpl = (SemaphoreD3D12*)semaphore;
 
-    HANDLE event = d3d12Semaphore->event;
-    if (d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle) < value) {
-        result = d3d12Semaphore->handle->lpVtbl->SetEventOnCompletion(
-            d3d12Semaphore->handle,
+    HANDLE event = semaphoreImpl->event;
+    if (semaphoreImpl->handle->lpVtbl->GetCompletedValue(semaphoreImpl->handle) < value) {
+        result = semaphoreImpl->handle->lpVtbl->SetEventOnCompletion(
+            semaphoreImpl->handle,
             value,
             event);
 
@@ -196,8 +196,8 @@ PalResult PAL_CALL signalSemaphoreD3D12(
     PalQueue* queue,
     uint64_t value)
 {
-    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
-    HRESULT result = d3d12Semaphore->handle->lpVtbl->Signal(d3d12Semaphore->handle, value);
+    SemaphoreD3D12* semaphoreImpl = (SemaphoreD3D12*)semaphore;
+    HRESULT result = semaphoreImpl->handle->lpVtbl->Signal(semaphoreImpl->handle, value);
     if (FAILED(result)) {
         return makeResultD3D12(result);
     }
@@ -209,8 +209,8 @@ PalResult PAL_CALL getSemaphoreValueD3D12(
     PalSemaphore* semaphore,
     uint64_t* value)
 {
-    SemaphoreD3D12* d3d12Semaphore = (SemaphoreD3D12*)semaphore;
-    *value = d3d12Semaphore->handle->lpVtbl->GetCompletedValue(d3d12Semaphore->handle);
+    SemaphoreD3D12* semaphoreImpl = (SemaphoreD3D12*)semaphore;
+    *value = semaphoreImpl->handle->lpVtbl->GetCompletedValue(semaphoreImpl->handle);
     return PAL_RESULT_SUCCESS;
 }
 

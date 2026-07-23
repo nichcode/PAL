@@ -791,8 +791,8 @@ PalBool rayTracingTest()
     fclose(file);
     palUnmapBuffer(stagingBuffer);
 
-    palDestroyAccelerationstructure(blas);
-    palDestroyAccelerationstructure(tlas);
+    palDestroyAccelerationStructure(blas);
+    palDestroyAccelerationStructure(tlas);
 
     palDestroyFence(fence);
     palDestroyPipeline(pipeline);

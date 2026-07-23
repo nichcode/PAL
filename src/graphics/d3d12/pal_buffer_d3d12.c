@@ -56,7 +56,7 @@ PalResult PAL_CALL createBufferD3D12(
 {
     HRESULT result;
     BufferD3D12* buffer = nullptr;
-    DeviceD3D12* d3d12Device = (DeviceD3D12*)device;
+    DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
 
     buffer = palAllocate(s_D3D12.allocator, sizeof(BufferD3D12), 0);
     if (!buffer) {
@@ -118,8 +118,8 @@ PalResult PAL_CALL createBufferD3D12(
             }
         }
 
-        result = d3d12Device->handle->lpVtbl->CreateCommittedResource(
-            d3d12Device->handle,
+        result = deviceImpl->handle->lpVtbl->CreateCommittedResource(
+            deviceImpl->handle,
             &heapProps,
             0,
             &buffer->desc,
@@ -129,14 +129,14 @@ PalResult PAL_CALL createBufferD3D12(
             (void**)&buffer->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(d3d12Device);
+            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
 
         buffer->isMemoryManaged = PAL_TRUE;
     }
 
-    buffer->device = d3d12Device;
+    buffer->device = deviceImpl;
     buffer->usages = info->usages;
     buffer->size = info->size;
     *outBuffer = (PalBuffer*)buffer;
@@ -145,26 +145,26 @@ PalResult PAL_CALL createBufferD3D12(
 
 void PAL_CALL destroyBufferD3D12(PalBuffer* buffer)
 {
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    if (d3d12Buffer->isMemoryManaged) {
-        d3d12Buffer->handle->lpVtbl->Release(d3d12Buffer->handle);
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    if (bufferImpl->isMemoryManaged) {
+        bufferImpl->handle->lpVtbl->Release(bufferImpl->handle);
     }
-    palFree(s_D3D12.allocator, d3d12Buffer);
+    palFree(s_D3D12.allocator, bufferImpl);
 }
 
 void PAL_CALL getBufferMemoryRequirementsD3D12(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements)
 {
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    ID3D12Device5* device = d3d12Buffer->device->handle;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    ID3D12Device5* device = bufferImpl->device->handle;
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
     allocationInfo =
-        *device->lpVtbl->GetResourceAllocationInfo(device, &__ret, 0, 1, &d3d12Buffer->desc);
+        *device->lpVtbl->GetResourceAllocationInfo(device, &__ret, 0, 1, &bufferImpl->desc);
 
-    requirements->supportedMemoryTypes = getSupportedMemoryTypes(d3d12Buffer->usages);
+    requirements->supportedMemoryTypes = getSupportedMemoryTypes(bufferImpl->usages);
     requirements->alignment = allocationInfo.Alignment;
     requirements->size = allocationInfo.SizeInBytes;
 }
@@ -251,42 +251,42 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
     uint64_t offset)
 {
     HRESULT result;
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    DeviceD3D12* device = d3d12Buffer->device;
-    MemoryD3D12* d3d12Memory = (MemoryD3D12*)memory;
-    if (d3d12Buffer->isMemoryManaged) {
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    DeviceD3D12* device = bufferImpl->device;
+    MemoryD3D12* memoryImpl = (MemoryD3D12*)memory;
+    if (bufferImpl->isMemoryManaged) {
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
     D3D12_RESOURCE_STATES state = 0;
-    d3d12Buffer->canStateChange = PAL_TRUE;
-    if (d3d12Memory->type == PAL_MEMORY_TYPE_CPU_UPLOAD) {
+    bufferImpl->canStateChange = PAL_TRUE;
+    if (memoryImpl->type == PAL_MEMORY_TYPE_CPU_UPLOAD) {
         state = D3D12_RESOURCE_STATE_GENERIC_READ;
-        d3d12Buffer->canStateChange = PAL_FALSE;
+        bufferImpl->canStateChange = PAL_FALSE;
 
-    } else if (d3d12Memory->type == PAL_MEMORY_TYPE_CPU_UPLOAD) {
+    } else if (memoryImpl->type == PAL_MEMORY_TYPE_CPU_UPLOAD) {
         state = D3D12_RESOURCE_STATE_COPY_DEST;
-        d3d12Buffer->canStateChange = PAL_FALSE;
+        bufferImpl->canStateChange = PAL_FALSE;
     }
 
-    if (d3d12Buffer->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
+    if (bufferImpl->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE) {
         state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-        d3d12Buffer->canStateChange = PAL_FALSE;
+        bufferImpl->canStateChange = PAL_FALSE;
     }
 
-    if (d3d12Buffer->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
+    if (bufferImpl->usages & PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH) {
         state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     }
 
     result = device->handle->lpVtbl->CreatePlacedResource(
         device->handle,
-        d3d12Memory->handle,
+        memoryImpl->handle,
         offset,
-        &d3d12Buffer->desc,
+        &bufferImpl->desc,
         state,
         nullptr,
         &IID_Resource,
-        (void**)&d3d12Buffer->handle);
+        (void**)&bufferImpl->handle);
 
     if (FAILED(result)) {
         pollMessagesD3D12(device);
@@ -302,9 +302,9 @@ PalResult PAL_CALL mapBufferD3D12(
     uint64_t size,
     void** outPtr)
 {
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
     void* ptr = nullptr;
-    HRESULT result = d3d12Buffer->handle->lpVtbl->Map(d3d12Buffer->handle, 0, nullptr, &ptr);
+    HRESULT result = bufferImpl->handle->lpVtbl->Map(bufferImpl->handle, 0, nullptr, &ptr);
     if (FAILED(result)) {
         return makeResultD3D12(result);
     }
@@ -315,15 +315,15 @@ PalResult PAL_CALL mapBufferD3D12(
 
 void PAL_CALL unmapBufferD3D12(PalBuffer* buffer)
 {
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    d3d12Buffer->handle->lpVtbl->Unmap(d3d12Buffer->handle, 0, nullptr);
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    bufferImpl->handle->lpVtbl->Unmap(bufferImpl->handle, 0, nullptr);
 }
 
 PalDeviceAddress PAL_CALL getBufferDeviceAddressD3D12(PalBuffer* buffer)
 {
-    BufferD3D12* d3d12Buffer = (BufferD3D12*)buffer;
-    if (d3d12Buffer->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
-        return d3d12Buffer->handle->lpVtbl->GetGPUVirtualAddress(d3d12Buffer->handle);
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    if (bufferImpl->usages & PAL_BUFFER_USAGE_DEVICE_ADDRESS) {
+        return bufferImpl->handle->lpVtbl->GetGPUVirtualAddress(bufferImpl->handle);
     }
     return 0;
 }

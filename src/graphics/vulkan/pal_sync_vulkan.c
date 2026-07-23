@@ -15,7 +15,7 @@ PalResult PAL_CALL createFenceVk(
 {
     VkResult result;
     FenceVk* fence = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
 
     fence = palAllocate(s_Vk.allocator, sizeof(FenceVk), 0);
     if (!fence) {
@@ -28,29 +28,29 @@ PalResult PAL_CALL createFenceVk(
         createInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     }
 
-    result = s_Vk.createFence(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &fence->handle);
+    result = s_Vk.createFence(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &fence->handle);
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, fence);
         return makeResultVk(result);
     }
 
-    fence->device = vkDevice;
+    fence->device = deviceImpl;
     *outFence = (PalFence*)fence;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroyFenceVk(PalFence* fence)
 {
-    FenceVk* vkFence = (FenceVk*)fence;
-    s_Vk.destroyFence(vkFence->device->handle, vkFence->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkFence);
+    FenceVk* fenceImpl = (FenceVk*)fence;
+    s_Vk.destroyFence(fenceImpl->device->handle, fenceImpl->handle, &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, fenceImpl);
 }
 
 PalResult PAL_CALL waitFenceVk(
     PalFence* fence,
     uint64_t timeout)
 {
-    FenceVk* vkFence = (FenceVk*)fence;
+    FenceVk* fenceImpl = (FenceVk*)fence;
     VkResult result;
     uint64_t timeInNano = 0;
     if (timeout) {
@@ -61,7 +61,7 @@ PalResult PAL_CALL waitFenceVk(
         }
     }
 
-    result = s_Vk.waitFence(vkFence->device->handle, 1, &vkFence->handle, PAL_TRUE, timeInNano);
+    result = s_Vk.waitFence(fenceImpl->device->handle, 1, &fenceImpl->handle, PAL_TRUE, timeInNano);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -71,8 +71,8 @@ PalResult PAL_CALL waitFenceVk(
 
 PalResult PAL_CALL resetFenceVk(PalFence* fence)
 {
-    FenceVk* vkFence = (FenceVk*)fence;
-    VkResult result = s_Vk.resetFence(vkFence->device->handle, 1, &vkFence->handle);
+    FenceVk* fenceImpl = (FenceVk*)fence;
+    VkResult result = s_Vk.resetFence(fenceImpl->device->handle, 1, &fenceImpl->handle);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -82,8 +82,8 @@ PalResult PAL_CALL resetFenceVk(PalFence* fence)
 
 PalBool PAL_CALL isFenceSignaledVk(PalFence* fence)
 {
-    FenceVk* vkFence = (FenceVk*)fence;
-    VkResult result = s_Vk.isFenceSignaled(vkFence->device->handle, vkFence->handle);
+    FenceVk* fenceImpl = (FenceVk*)fence;
+    VkResult result = s_Vk.isFenceSignaled(fenceImpl->device->handle, fenceImpl->handle);
     if (result == VK_SUCCESS) {
         return PAL_TRUE;
 
@@ -99,7 +99,7 @@ PalResult PAL_CALL createSemaphoreVk(
 {
     VkResult result;
     SemaphoreVk* semaphore = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
 
     semaphore = palAllocate(s_Vk.allocator, sizeof(SemaphoreVk), 0);
     if (!semaphore) {
@@ -121,24 +121,30 @@ PalResult PAL_CALL createSemaphoreVk(
     }
 
     createInfo.pNext = next;
-    result =
-        s_Vk.createSemaphore(vkDevice->handle, &createInfo, &s_Vk.vkAllocator, &semaphore->handle);
+    result = s_Vk.createSemaphore(
+        deviceImpl->handle,
+        &createInfo,
+        &s_Vk.allocatorImpl,
+        &semaphore->handle);
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, semaphore);
         return makeResultVk(result);
     }
 
-    semaphore->device = vkDevice;
+    semaphore->device = deviceImpl;
     *outSemaphore = (PalSemaphore*)semaphore;
     return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL destroySemaphoreVk(PalSemaphore* semaphore)
 {
-    SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
-    s_Vk.destroySemaphore(vkSemaphore->device->handle, vkSemaphore->handle, &s_Vk.vkAllocator);
-    palFree(s_Vk.allocator, vkSemaphore);
+    SemaphoreVk* semaphoreImpl = (SemaphoreVk*)semaphore;
+    s_Vk.destroySemaphore(
+        semaphoreImpl->device->handle,
+        semaphoreImpl->handle,
+        &s_Vk.allocatorImpl);
+    palFree(s_Vk.allocator, semaphoreImpl);
 }
 
 PalResult PAL_CALL waitSemaphoreVk(
@@ -148,8 +154,8 @@ PalResult PAL_CALL waitSemaphoreVk(
 {
     VkResult result;
     uint64_t timeInNano = 0;
-    SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
-    if (!vkSemaphore->isTimeline) {
+    SemaphoreVk* semaphoreImpl = (SemaphoreVk*)semaphore;
+    if (!semaphoreImpl->isTimeline) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
@@ -164,10 +170,11 @@ PalResult PAL_CALL waitSemaphoreVk(
     VkSemaphoreWaitInfo waitInfo = {0};
     waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
     waitInfo.semaphoreCount = 1;
-    waitInfo.pSemaphores = &vkSemaphore->handle;
+    waitInfo.pSemaphores = &semaphoreImpl->handle;
     waitInfo.pValues = &value;
 
-    result = vkSemaphore->device->waitSemaphore(vkSemaphore->device->handle, &waitInfo, timeInNano);
+    result =
+        semaphoreImpl->device->waitSemaphore(semaphoreImpl->device->handle, &waitInfo, timeInNano);
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
@@ -182,17 +189,17 @@ PalResult PAL_CALL signalSemaphoreVk(
     uint64_t value)
 {
     VkResult result;
-    SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
-    if (!vkSemaphore->isTimeline) {
+    SemaphoreVk* semaphoreImpl = (SemaphoreVk*)semaphore;
+    if (!semaphoreImpl->isTimeline) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
     VkSemaphoreSignalInfo signalInfo = {0};
     signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
-    signalInfo.semaphore = vkSemaphore->handle;
+    signalInfo.semaphore = semaphoreImpl->handle;
     signalInfo.value = value;
 
-    result = vkSemaphore->device->signalSemaphore(vkSemaphore->device->handle, &signalInfo);
+    result = semaphoreImpl->device->signalSemaphore(semaphoreImpl->device->handle, &signalInfo);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -204,10 +211,10 @@ PalResult PAL_CALL getSemaphoreValueVk(
     PalSemaphore* semaphore,
     uint64_t* value)
 {
-    SemaphoreVk* vkSemaphore = (SemaphoreVk*)semaphore;
-    VkResult result = vkSemaphore->device->getSemaphoreValue(
-        vkSemaphore->device->handle,
-        vkSemaphore->handle,
+    SemaphoreVk* semaphoreImpl = (SemaphoreVk*)semaphore;
+    VkResult result = semaphoreImpl->device->getSemaphoreValue(
+        semaphoreImpl->device->handle,
+        semaphoreImpl->handle,
         value);
 
     if (result != VK_SUCCESS) {

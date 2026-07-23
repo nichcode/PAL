@@ -1529,12 +1529,12 @@ PalResult PAL_CALL initGraphicsVk(
     }
 
     // vk allocator
-    s_Vk.vkAllocator.pfnAllocation = allocateVk;
-    s_Vk.vkAllocator.pfnFree = freeVk;
-    s_Vk.vkAllocator.pfnReallocation = reallocVk;
+    s_Vk.allocatorImpl.pfnAllocation = allocateVk;
+    s_Vk.allocatorImpl.pfnFree = freeVk;
+    s_Vk.allocatorImpl.pfnReallocation = reallocVk;
 
     VkInstance instance = nullptr;
-    result = s_Vk.createInstance(&instanceCreateInfo, &s_Vk.vkAllocator, &instance);
+    result = s_Vk.createInstance(&instanceCreateInfo, &s_Vk.allocatorImpl, &instance);
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -1612,7 +1612,7 @@ PalResult PAL_CALL initGraphicsVk(
                 instance,
                 "vkDestroyDebugUtilsMessengerEXT");
 
-        s_Vk.createMessenger(instance, &debugCreateInfo, &s_Vk.vkAllocator, &s_Vk.messenger);
+        s_Vk.createMessenger(instance, &debugCreateInfo, &s_Vk.allocatorImpl, &s_Vk.messenger);
     }
     // clang-format on
 
@@ -1624,10 +1624,10 @@ PalResult PAL_CALL initGraphicsVk(
 void PAL_CALL shutdownGraphicsVk()
 {
     if (s_Vk.messenger) {
-        s_Vk.destroyMessenger(s_Vk.instance, s_Vk.messenger, &s_Vk.vkAllocator);
+        s_Vk.destroyMessenger(s_Vk.instance, s_Vk.messenger, &s_Vk.allocatorImpl);
     }
 
-    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.vkAllocator);
+    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocatorImpl);
     freeLibrary(s_Vk.handle);
     if (s_Vk.adapters) {
         palFree(s_Vk.allocator, s_Vk.adapters);

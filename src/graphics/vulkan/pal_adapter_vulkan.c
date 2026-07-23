@@ -151,8 +151,8 @@ void PAL_CALL getAdapterInfoVk(
     PalAdapter* adapter,
     PalAdapterInfo* info)
 {
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapterImpl->handle;
     VkPhysicalDeviceProperties props = {0};
     VkPhysicalDeviceMemoryProperties memProps = {0};
 
@@ -210,8 +210,8 @@ void PAL_CALL getAdapterCapabilitiesVk(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapterImpl->handle;
 
     VkPhysicalDeviceProperties props = {0};
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
@@ -330,8 +330,8 @@ PalAdapterFeatures PAL_CALL getAdapterFeaturesVk(PalAdapter* adapter)
     uint32_t extensionCount = 0;
     VkPhysicalDeviceProperties props = {0};
 
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapterImpl->handle;
 
     // get supported extensions
     s_Vk.getPhysicalDeviceProperties(phyDevice, &props);
@@ -690,9 +690,9 @@ uint32_t PAL_CALL getHighestSupportedShaderTargetVk(
         return 0;
     }
 
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
     VkPhysicalDeviceProperties props = {0};
-    s_Vk.getPhysicalDeviceProperties(vkAdapter->handle, &props);
+    s_Vk.getPhysicalDeviceProperties(adapterImpl->handle, &props);
 
     if (props.apiVersion >= VK_API_VERSION_1_3) {
         return PAL_MAKE_SHADER_TARGET(1, 6);
@@ -716,8 +716,8 @@ void PAL_CALL enumerateFormatsVk(
     PalFormatInfo* outFormats)
 {
     int32_t fmtCount = 0;
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapterImpl->handle;
     VkFormatProperties props = {0};
 
     for (int i = 0; i < PAL_FORMAT_COUNT; i++) {
@@ -746,8 +746,8 @@ PalBool PAL_CALL isFormatSupportedVk(
     PalAdapter* adapter,
     PalFormat format)
 {
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapterImpl->handle;
     VkFormatProperties props = {0};
 
     VkFormat fmt = formatToVk(format);
@@ -762,8 +762,8 @@ PalImageUsages PAL_CALL queryFormatImageUsagesVk(
     PalAdapter* adapter,
     PalFormat format)
 {
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
-    VkPhysicalDevice phyDevice = (VkPhysicalDevice)vkAdapter->handle;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
+    VkPhysicalDevice phyDevice = (VkPhysicalDevice)adapterImpl->handle;
     VkFormatProperties props = {0};
 
     VkFormat fmt = formatToVk(format);
@@ -780,31 +780,31 @@ PalSampleCount PAL_CALL queryFormatSampleCountVk(
     PalFormat format)
 {
     VkResult result;
-    AdapterVk* vkAdapter = (AdapterVk*)adapter;
+    AdapterVk* adapterImpl = (AdapterVk*)adapter;
     VkFormatProperties props = {0};
     VkImageFormatProperties formatProps = {0};
 
     VkFormat fmt = formatToVk(format);
-    s_Vk.getPhysicalDeviceFormatProperties(vkAdapter->handle, fmt, &props);
+    s_Vk.getPhysicalDeviceFormatProperties(adapterImpl->handle, fmt, &props);
     if (props.optimalTilingFeatures == 0) {
         return PAL_SAMPLE_COUNT_1;
     }
 
-    VkImageUsageFlags vkImageUsage = 0;
+    VkImageUsageFlags imageUsageImpl = 0;
     PalImageUsages imageUsages = imageUsageFromVk(props.optimalTilingFeatures);
     PalBool isDepth = (imageUsages & PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT) != 0;
     if (isDepth) {
-        vkImageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageUsageImpl = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     } else {
-        vkImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        imageUsageImpl = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
 
     result = s_Vk.getPhysicalDeviceImageFormatProperties(
-        vkAdapter->handle,
+        adapterImpl->handle,
         fmt,
         VK_IMAGE_TYPE_2D,
         VK_IMAGE_TILING_OPTIMAL,
-        vkImageUsage,
+        imageUsageImpl,
         0,
         &formatProps);
 

@@ -140,7 +140,7 @@ PalResult PAL_CALL createPipelineLayoutVk(
     PalPipelineLayout** outLayout)
 {
     VkResult result;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     PipelineLayoutVk* layout = nullptr;
     VkPushConstantRange pushConstantRange = {0};
     VkDescriptorSetLayout* descriptorLayouts = nullptr;
@@ -173,16 +173,16 @@ PalResult PAL_CALL createPipelineLayoutVk(
 
     if (info->usePushConstant) {
         pushConstantRange.size = info->pushConstantInfo.size;
-        pushConstantRange.stageFlags = vkDevice->shaderStages;
+        pushConstantRange.stageFlags = deviceImpl->shaderStages;
         pushConstantRange.offset = info->pushConstantInfo.offset;
         createInfo.pushConstantRangeCount = 1;
         createInfo.pPushConstantRanges = &pushConstantRange;
     }
 
     result = s_Vk.createPipelineLayout(
-        vkDevice->handle,
+        deviceImpl->handle,
         &createInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &layout->handle);
 
     if (info->descriptorSetLayoutCount) {
@@ -194,7 +194,7 @@ PalResult PAL_CALL createPipelineLayoutVk(
         return makeResultVk(result);
     }
 
-    layout->device = vkDevice;
+    layout->device = deviceImpl;
     *outLayout = (PalPipelineLayout*)layout;
     return PAL_RESULT_SUCCESS;
 }
@@ -205,7 +205,7 @@ void PAL_CALL destroyPipelineLayoutVk(PalPipelineLayout* layout)
     s_Vk.destroyPipelineLayout(
         pipelineLayout->device->handle,
         pipelineLayout->handle,
-        &s_Vk.vkAllocator);
+        &s_Vk.allocatorImpl);
 
     palFree(s_Vk.allocator, layout);
 }
@@ -217,7 +217,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
 {
     VkResult result;
     PipelineVk* pipeline = nullptr;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     PipelineLayoutVk* layout = (PipelineLayoutVk*)info->pipelineLayout;
 
     VkPipelineShaderStageCreateInfo* shaderStages = nullptr;
@@ -406,27 +406,27 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     dynamicStates[dynCount++] = VK_DYNAMIC_STATE_DEPTH_BIAS;
     dynamicStates[dynCount++] = VK_DYNAMIC_STATE_STENCIL_REFERENCE;
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE) {
+    if (deviceImpl->features & PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE) {
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_CULL_MODE_EXT;
     }
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE) {
+    if (deviceImpl->features & PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE) {
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_FRONT_FACE_EXT;
     }
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
+    if (deviceImpl->features & PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY) {
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT;
     }
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE) {
+    if (deviceImpl->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE) {
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT;
     }
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE) {
+    if (deviceImpl->features & PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE) {
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT;
     }
 
-    if (vkDevice->features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
+    if (deviceImpl->features & PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP) {
         dynamicStates[dynCount++] = VK_DYNAMIC_STATE_STENCIL_OP_EXT;
     }
 
@@ -516,18 +516,18 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         PalStencilOpState* back = &state->backStencilOpState;
         PalStencilOpState* front = &state->frontStencilOpState;
 
-        VkStencilOpState* vkBack = &depthStencilState.back;
-        VkStencilOpState* vkFront = &depthStencilState.front;
+        VkStencilOpState* backImpl = &depthStencilState.back;
+        VkStencilOpState* frontImpl = &depthStencilState.front;
 
-        vkBack->compareOp = compareOpToVk(back->compareOp);
-        vkBack->depthFailOp = stencilOpToVk(back->depthFailOp);
-        vkBack->failOp = stencilOpToVk(back->failOp);
-        vkBack->passOp = stencilOpToVk(back->passOp);
+        backImpl->compareOp = compareOpToVk(back->compareOp);
+        backImpl->depthFailOp = stencilOpToVk(back->depthFailOp);
+        backImpl->failOp = stencilOpToVk(back->failOp);
+        backImpl->passOp = stencilOpToVk(back->passOp);
 
-        vkFront->compareOp = compareOpToVk(front->compareOp);
-        vkFront->depthFailOp = stencilOpToVk(front->depthFailOp);
-        vkFront->failOp = stencilOpToVk(front->failOp);
-        vkFront->passOp = stencilOpToVk(front->passOp);
+        frontImpl->compareOp = compareOpToVk(front->compareOp);
+        frontImpl->depthFailOp = stencilOpToVk(front->depthFailOp);
+        frontImpl->failOp = stencilOpToVk(front->failOp);
+        frontImpl->passOp = stencilOpToVk(front->passOp);
 
         depthStencilState.depthCompareOp = compareOpToVk(state->compareOp);
         depthStencilState.depthTestEnable = state->enableDepthTest;
@@ -635,11 +635,11 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     createInfo.pNext = &dynRendering;
 
     result = s_Vk.createGraphicsPipeline(
-        vkDevice->handle,
+        deviceImpl->handle,
         0,
         1,
         &createInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &pipeline->handle);
 
     if (result != VK_SUCCESS) {
@@ -659,7 +659,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     }
 
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    pipeline->device = vkDevice;
+    pipeline->device = deviceImpl;
     pipeline->layout = layout->handle;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -670,7 +670,7 @@ PalResult PAL_CALL createComputePipelineVk(
     const PalComputePipelineCreateInfo* info,
     PalPipeline** outPipeline)
 {
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     PipelineLayoutVk* layout = (PipelineLayoutVk*)info->pipelineLayout;
     ShaderVk* shader = (ShaderVk*)info->computeShader;
     PipelineVk* pipeline = nullptr;
@@ -690,11 +690,11 @@ PalResult PAL_CALL createComputePipelineVk(
     createInfo.stage.pName = shader->entries[0].entryName;
 
     VkResult result = s_Vk.createComputePipeline(
-        vkDevice->handle,
+        deviceImpl->handle,
         nullptr,
         1,
         &createInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &pipeline->handle);
 
     if (result != VK_SUCCESS) {
@@ -703,7 +703,7 @@ PalResult PAL_CALL createComputePipelineVk(
     }
 
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-    pipeline->device = vkDevice;
+    pipeline->device = deviceImpl;
     pipeline->layout = layout->handle;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -715,13 +715,13 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     PalPipeline** outPipeline)
 {
     VkResult result;
-    DeviceVk* vkDevice = (DeviceVk*)device;
+    DeviceVk* deviceImpl = (DeviceVk*)device;
     PipelineLayoutVk* layout = (PipelineLayoutVk*)info->pipelineLayout;
     PipelineVk* pipeline = nullptr;
     VkPipelineShaderStageCreateInfo* shaderStages = nullptr;
     VkRayTracingShaderGroupCreateInfoKHR* groups = nullptr;
 
-    if (info->maxPayloadSize > vkDevice->limits.maxPayloadSize) {
+    if (info->maxPayloadSize > deviceImpl->limits.maxPayloadSize) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -850,13 +850,13 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     createInfo.maxPipelineRayRecursionDepth = info->maxRecursionDepth;
     createInfo.layout = layout->handle;
 
-    result = vkDevice->createRayTracingPipeline(
-        vkDevice->handle,
+    result = deviceImpl->createRayTracingPipeline(
+        deviceImpl->handle,
         nullptr,
         nullptr,
         1,
         &createInfo,
-        &s_Vk.vkAllocator,
+        &s_Vk.allocatorImpl,
         &pipeline->handle);
 
     palFree(s_Vk.allocator, groups);
@@ -867,7 +867,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
     }
 
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-    pipeline->device = vkDevice;
+    pipeline->device = deviceImpl;
     pipeline->layout = layout->handle;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
@@ -875,8 +875,8 @@ PalResult PAL_CALL createRayTracingPipelineVk(
 
 void PAL_CALL destroyPipelineVk(PalPipeline* pipeline)
 {
-    PipelineVk* vkPipeline = (PipelineVk*)pipeline;
-    s_Vk.destroyPipeline(vkPipeline->device->handle, vkPipeline->handle, &s_Vk.vkAllocator);
+    PipelineVk* pipelineImpl = (PipelineVk*)pipeline;
+    s_Vk.destroyPipeline(pipelineImpl->device->handle, pipelineImpl->handle, &s_Vk.allocatorImpl);
     palFree(s_Vk.allocator, pipeline);
 }
 
