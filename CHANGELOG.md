@@ -83,8 +83,15 @@
 - `palGetClosestGLFBConfig()` now takes `count` paramter as `uint32_t`.
 - `palGetMouseWheelDelta()` now takes `dx` and `dy` paramters as `float`.
 - `palJoinThread()` now takes `retval` paramters as `void**`.
-- These function now returns `void` instead of `PalResult` and does not do runtime 
-validation anymore: invalid arguments, feature not supported results in undefined behavior:
+- `palUnpackUint32()` now takes `data` paramters as `uint64_t`.
+- `palUnpackInt32()` now takes `data` paramters as `uint64_t`.
+- `palUnpackPointer()` now takes `data` paramters as `uint64_t`.
+- `palUnpackFloat()` now takes `data` paramters as `uint64_t`.
+- `palPackUint32()` now returns `uint64_t` instead of `int64_t`.
+- `palPackInt32()` now returns `uint64_t` instead of `int64_t`.
+- `palPackPointer()` now returns `uint64_t` instead of `int64_t`.
+- `palPackFloat()` now returns `uint64_t` instead of `int64_t`.
+- These function now returns `void` instead of `PalResult` and does not do runtime validation anymore:
   - `palGetPlatformInfo()`
   - `palGetCPUInfo()`
   - `palGetThreadName()`

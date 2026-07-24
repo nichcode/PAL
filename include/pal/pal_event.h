@@ -322,9 +322,9 @@ typedef PalBool(PAL_CALL* PalPollFn)(
     PalEvent* outEvent);
 
 struct PalEvent {
-    int64_t data;      /**< First data payload.*/
-    int64_t data2;     /**< Second data payload.*/
-    int32_t userId;    /**< You can have user events upto int32_t max.*/
+    uint64_t data;     /**< First data payload.*/
+    uint64_t data2;    /**< Second data payload.*/
+    uint32_t userId;   /**< User event id.*/
     PalEventType type; /**< (eg. `PAL_EVENT_TYPE_WINDOW_MOVE`).*/
 };
 
