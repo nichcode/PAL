@@ -21,201 +21,312 @@
 #define PAL_DECORATION_MODE_COUNT 2
 
 /**
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_WINDOW_CLOSE
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0
 
 /**
- * event.data : lower 32 bits = width, upper 32 bits = height
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackUint32()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_WINDOW_SIZE
+ * 
+ * data:
+ *  bits 0-31: width
+ *  bits 32-63: height
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackUint32(event.data, &width, &height)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1
 
 /**
- * event.data : lower 32 bits = x, upper 32 bits = y
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackInt32()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_WINDOW_MOVE
+ * 
+ * data:
+ *  bits 0-31: x
+ *  bits 32-63: y
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackInt32(event.data, &x, &y)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_MOVE 2
 
 /**
- * event.data : state(minimized, maximized, restored).
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_WINDOW_STATE
+ * 
+ * data:
+ *  bits 0-31: state (minimized, maximized, restored).
+ *  bits 32-63: unused
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_STATE 3
 
 /**
- * event.data : `PAL_TRUE` for focus gained or `PAL_FALSE` for focus lost.
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_WINDOW_FOCUS
+ * 
+ * data:
+ *  bits 0-31: focus gained (`PAL_TRUE`/`PAL_FALSE`).
+ *  bits 32-63: unused
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_FOCUS 4
 
 /**
- * event.data : `PAL_TRUE` for visible or `PAL_FALSE` for hidden.
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_WINDOW_VISIBILITY
+ * 
+ * data:
+ *  bits 0-31: visibility (`PAL_TRUE`/`PAL_FALSE`).
+ *  bits 32-63: unused
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_VISIBILITY 5
 
 /**
- * event.data2 : window
+ * PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN 6
 
 /**
- * event.data2 : window
+ * PAL_EVENT_TYPE_WINDOW_MODAL_END
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_MODAL_END 7
 
 /**
- * event.data2 : window
+ * PAL_EVENT_TYPE_MONITOR_DPI_CHANGED
+ * 
+ * data:
+ *  bits 0-31: dpi
+ *  bits 32-63: unused
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_MONITOR_DPI_CHANGED 8
 
 /**
- * event.data2 : window
+ * PAL_EVENT_TYPE_MONITOR_LIST_CHANGED
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_MONITOR_LIST_CHANGED 9
 
 /**
- * event.data : lower 32 bits = keycode, upper 32 bits = scancode
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackUint32()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_KEYDOWN
+ * 
+ * data:
+ *  bits 0-31: keycode
+ *  bits 32-63: scancode
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackUint32(event.data, &keycode, &scancode)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_KEYDOWN 10
 
 /**
- * event.data : lower 32 bits = keycode, upper 32 bits = scancode
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackUint32()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_KEYREPEAT
+ * 
+ * data:
+ *  bits 0-31: keycode
+ *  bits 32-63: scancode
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackUint32(event.data, &keycode, &scancode)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_KEYREPEAT 11
 
 /**
- * event.data : lower 32 bits = keycode, upper 32 bits = scancode
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackUint32()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_KEYUP
+ * 
+ * data:
+ *  bits 0-31: keycode
+ *  bits 32-63: scancode
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackUint32(event.data, &keycode, &scancode)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_KEYUP 12
 
 /**
- * event.data : lower 32 bits = button, upper 32 bits = serial
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_MOUSE_BUTTONDOWN
+ * 
+ * data:
+ *  bits 0-31: button
+ *  bits 32-63: serial
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackUint32(event.data, &button, &serial)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_MOUSE_BUTTONDOWN 13
 
 /**
- * event.data : lower 32 bits = button, upper 32 bits = serial
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_MOUSE_BUTTONUP
+ * 
+ * data:
+ *  bits 0-31: button
+ *  bits 32-63: serial
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackUint32(event.data, &button, &serial)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_MOUSE_BUTTONUP 14
 
 /**
- * event.data : lower 32 bits = x, upper 32 bits = y
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackInt32()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_MOUSE_MOVE
+ * 
+ * data:
+ *  bits 0-31: x
+ *  bits 32-63: y
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackInt32(event.data, &x, &y)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_MOUSE_MOVE 15
 
 /**
- * event.data : lower 32 bits = dx, upper 32 bits = dy
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackFloat()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_MOUSE_DELTA
+ * 
+ * data:
+ *  bits 0-31: dx
+ *  bits 32-63: dy
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackFloat(event.data, &dx, &dy)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_MOUSE_DELTA 16
 
 /**
- * event.data : lower 32 bits = dx, upper 32 bits = dy
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackFloat()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_MOUSE_WHEEL
+ * 
+ * data:
+ *  bits 0-31: dx
+ *  bits 32-63: dy
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * palUnpackFloat(event.data, &dx, &dy)
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_MOUSE_WHEEL 17
 
 /**
- * event.userId : User event ID or type.
- *
- * Use inline helpers:
- * - palPackInt32()
- * - palPackUint32()
- * - palPackPointer()
- * - palUnpackInt32()
- * - palUnpackUint32()
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_USER
+ * 
+ * userId:
+ *  User event ID or type.
+ * 
+ * Helpers:
+ * palPackInt32()
+ * palPackUint32()
+ * palPackPointer()
+ * palUnpackInt32()
+ * palUnpackUint32()
+ * palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_USER 18
 
 /**
- * event.data : codepoint
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_KEYCHAR
+ * 
+ * data:
+ *  bits 0-31: codepoint
+ *  bits 32-63: unused
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_KEYCHAR 19
 
 /**
- * event.data : negotiated decorations mode
- *
- * event.data2 : window
- *
- * Use inline helpers:
- * - palUnpackPointer()
+ * PAL_EVENT_TYPE_WINDOW_DECORATION_MODE
+ * 
+ * data:
+ *  bits 0-31: decorations mode
+ *  bits 32-63: unused
+ * 
+ * data2:
+ *  window
+ * 
+ * Helpers:
+ * window = palUnpackPointer(event.data2)
  */
 #define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20
 

@@ -9,16 +9,16 @@ PAL_BUILD_TEST_APPLICATION = true
 PAL_BUILD_ABI_DUMP = true
 
 -- build system module
-PAL_BUILD_SYSTEM_MODULE = false
+PAL_BUILD_SYSTEM_MODULE = true
 
 -- build thread module
-PAL_BUILD_THREAD_MODULE = false
+PAL_BUILD_THREAD_MODULE = true
 
 -- build video module
-PAL_BUILD_VIDEO_MODULE = false
+PAL_BUILD_VIDEO_MODULE = true
 
 -- build opengl module
-PAL_BUILD_OPENGL_MODULE = false
+PAL_BUILD_OPENGL_MODULE = true
 
 -- build graphics module
 PAL_BUILD_GRAPHICS_MODULE = true
