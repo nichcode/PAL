@@ -7,7 +7,9 @@
 
 typedef PalBool (*TestFn)();
 
-void registerTest(TestFn func, const char* name);
+void registerTest(
+    TestFn func,
+    const char* name);
 void runTests();
 
 static PalBool readFile(
@@ -37,7 +39,9 @@ static PalBool readFile(
     return PAL_TRUE;
 }
 
-static inline void logResult(PalResult result, const char* msg)
+static inline void logResult(
+    PalResult result,
+    const char* msg)
 {
     char buffer[256];
     palFormatResult(result, 256, buffer);

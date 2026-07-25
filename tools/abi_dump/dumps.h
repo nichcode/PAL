@@ -53,7 +53,7 @@ typedef struct {
 
 typedef struct {
     const char* name;
-    FieldInfo* fields; 
+    FieldInfo* fields;
     uint32_t fieldCount;
     StructBase expected;
     StructBase actual;
@@ -91,7 +91,7 @@ static PalBool checkABI(
         }
     }
 
-    fieldSize += 2; // add 6 spaces
+    fieldSize += 2;                                                     // add 6 spaces
     uint32_t seperatorSize = fieldSize + expectedSize + actualSize + 4; // add 4 spaces
     for (int i = 0; i < seperatorSize; i++) {
         seperator[i] = '=';
@@ -112,15 +112,15 @@ static PalBool checkABI(
         palLog(nullptr, "Alignment: (%u, %u)", info->expected.alignof, info->actual.alignof);
         palLog(nullptr, "Padding:   (%02u, %02u)", info->expected.padding, info->actual.padding);
         palLog(nullptr, seperator);
-        
+
         palLog(
-            nullptr, 
-            "%-*s %-*s %-*s", 
-            fieldSize, 
-            "Field", 
-            expectedSize, 
-            "Expected", 
-            actualSize, 
+            nullptr,
+            "%-*s %-*s %-*s",
+            fieldSize,
+            "Field",
+            expectedSize,
+            "Expected",
+            actualSize,
             "Actual");
 
         palLog(nullptr, seperator);
@@ -138,8 +138,9 @@ static PalBool checkABI(
         // clang-format on
 
         if (flags & DUMP_FLAG_VERBOSE) {
-            palLog(nullptr, 
-                "%-*s (%03u, %03u)    (%03u, %03u)", 
+            palLog(
+                nullptr,
+                "%-*s (%03u, %03u)    (%03u, %03u)",
                 fieldSize,
                 field->name,
                 field->expected.offset,
