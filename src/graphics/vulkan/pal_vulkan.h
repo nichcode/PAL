@@ -9,16 +9,16 @@
 #define _PAL_VULKAN_H
 
 #if PAL_HAS_VULKAN_BACKEND
+#include "graphics/pal_linear_allocator.h"
 #include "pal/pal_graphics.h"
 #include <vulkan/vulkan_core.h>
-#include "graphics/pal_linear_allocator.h"
 
 typedef struct _XDisplay Display;
 typedef unsigned long Window;
 typedef struct xcb_connection_t xcb_connection_t;
 typedef uint32_t xcb_window_t;
-typedef struct HINSTANCE__ *HINSTANCE;
-typedef struct HWND__ *HWND;
+typedef struct HINSTANCE__* HINSTANCE;
+typedef struct HWND__* HWND;
 
 typedef VkFlags VkWaylandSurfaceCreateFlagsKHR;
 typedef VkFlags VkXlibSurfaceCreateFlagsKHR;
@@ -26,59 +26,59 @@ typedef VkFlags VkXcbSurfaceCreateFlagsKHR;
 typedef VkFlags VkWin32SurfaceCreateFlagsKHR;
 
 typedef struct VkWaylandSurfaceCreateInfoKHR {
-    VkStructureType                   sType;
-    const void*                       pNext;
-    VkWaylandSurfaceCreateFlagsKHR    flags;
-    struct wl_display*                display;
-    struct wl_surface*                surface;
+    VkStructureType sType;
+    const void* pNext;
+    VkWaylandSurfaceCreateFlagsKHR flags;
+    struct wl_display* display;
+    struct wl_surface* surface;
 } VkWaylandSurfaceCreateInfoKHR;
 
 typedef struct VkXlibSurfaceCreateInfoKHR {
-    VkStructureType                sType;
-    const void*                    pNext;
-    VkXlibSurfaceCreateFlagsKHR    flags;
-    Display*                       dpy;
-    Window                         window;
+    VkStructureType sType;
+    const void* pNext;
+    VkXlibSurfaceCreateFlagsKHR flags;
+    Display* dpy;
+    Window window;
 } VkXlibSurfaceCreateInfoKHR;
 
 typedef struct VkXcbSurfaceCreateInfoKHR {
-    VkStructureType               sType;
-    const void*                   pNext;
-    VkXcbSurfaceCreateFlagsKHR    flags;
-    xcb_connection_t*             connection;
-    xcb_window_t                  window;
+    VkStructureType sType;
+    const void* pNext;
+    VkXcbSurfaceCreateFlagsKHR flags;
+    xcb_connection_t* connection;
+    xcb_window_t window;
 } VkXcbSurfaceCreateInfoKHR;
 
 typedef struct VkWin32SurfaceCreateInfoKHR {
-    VkStructureType                 sType;
-    const void*                     pNext;
-    VkWin32SurfaceCreateFlagsKHR    flags;
-    HINSTANCE                       hinstance;
-    HWND                            hwnd;
+    VkStructureType sType;
+    const void* pNext;
+    VkWin32SurfaceCreateFlagsKHR flags;
+    HINSTANCE hinstance;
+    HWND hwnd;
 } VkWin32SurfaceCreateInfoKHR;
 
-typedef VkResult (VKAPI_PTR *PFN_vkCreateWaylandSurfaceKHR)(
-    VkInstance, 
-    const VkWaylandSurfaceCreateInfoKHR*, 
-    const VkAllocationCallbacks*, 
+typedef VkResult(VKAPI_PTR* PFN_vkCreateWaylandSurfaceKHR)(
+    VkInstance,
+    const VkWaylandSurfaceCreateInfoKHR*,
+    const VkAllocationCallbacks*,
     VkSurfaceKHR*);
 
-typedef VkResult (VKAPI_PTR *PFN_vkCreateXlibSurfaceKHR)(
-    VkInstance, 
-    const VkXlibSurfaceCreateInfoKHR*, 
-    const VkAllocationCallbacks*, 
+typedef VkResult(VKAPI_PTR* PFN_vkCreateXlibSurfaceKHR)(
+    VkInstance,
+    const VkXlibSurfaceCreateInfoKHR*,
+    const VkAllocationCallbacks*,
     VkSurfaceKHR*);
 
-typedef VkResult (VKAPI_PTR *PFN_vkCreateXcbSurfaceKHR)(
-    VkInstance, 
-    const VkXcbSurfaceCreateInfoKHR*, 
-    const VkAllocationCallbacks*, 
+typedef VkResult(VKAPI_PTR* PFN_vkCreateXcbSurfaceKHR)(
+    VkInstance,
+    const VkXcbSurfaceCreateInfoKHR*,
+    const VkAllocationCallbacks*,
     VkSurfaceKHR*);
 
-typedef VkResult (VKAPI_PTR *PFN_vkCreateWin32SurfaceKHR)(
-    VkInstance, 
-    const VkWin32SurfaceCreateInfoKHR*, 
-    const VkAllocationCallbacks*, 
+typedef VkResult(VKAPI_PTR* PFN_vkCreateWin32SurfaceKHR)(
+    VkInstance,
+    const VkWin32SurfaceCreateInfoKHR*,
+    const VkAllocationCallbacks*,
     VkSurfaceKHR*);
 
 typedef struct {

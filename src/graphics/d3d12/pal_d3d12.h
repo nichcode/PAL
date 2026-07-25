@@ -9,12 +9,12 @@
 #define _PAL_D3D12_H
 
 #if PAL_HAS_D3D12_BACKEND
-#include "pal/pal_graphics.h"
-#include <windows.h>
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <d3d12sdklayers.h>
 #include "graphics/pal_linear_allocator.h"
+#include "pal/pal_graphics.h"
+#include <d3d12.h>
+#include <d3d12sdklayers.h>
+#include <dxgi1_6.h>
+#include <windows.h>
 
 #define MAX_RTV 1024
 #define MAX_DSV 512
@@ -29,12 +29,12 @@
 #define DESC_TYPE_SRV 2
 #define DESC_TYPE_UAV 3
 
-typedef HRESULT (WINAPI* PFN_CreateDXGIFactory2)(
+typedef HRESULT(WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
     REFIID,
     void**);
 
-typedef HRESULT (__stdcall *PFN_D3D12SerializeVersionedRootSignature)(
+typedef HRESULT(__stdcall* PFN_D3D12SerializeVersionedRootSignature)(
     const D3D12_VERSIONED_ROOT_SIGNATURE_DESC*,
     ID3DBlob**,
     ID3DBlob**);
@@ -389,8 +389,8 @@ void fillBuildInfoD3D12(
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC* buildInfo);
 
 void getDescriptorTierLimitsD3D12(
-    void* device, 
-    PalResourceCapabilities* caps, 
+    void* device,
+    PalResourceCapabilities* caps,
     PalDescriptorIndexingCapabilities* descCaps);
 
 void fillSubresourceD3D12(

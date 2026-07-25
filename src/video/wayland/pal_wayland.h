@@ -14,14 +14,14 @@
 
 #include "pal/pal_video.h"
 #include "video/pal_video_egl.h"
-#include <wayland-client.h>
-#include <wayland-util.h>
-#include <wayland-cursor.h>
 #include <fcntl.h>
+#include <linux/input-event-codes.h>
 #include <locale.h>
 #include <poll.h>
 #include <sys/mman.h>
-#include <linux/input-event-codes.h>
+#include <wayland-client.h>
+#include <wayland-cursor.h>
+#include <wayland-util.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
@@ -171,7 +171,7 @@ typedef struct {
     int monitorCount;
     PalWindowState state;
     PalWindow* window;
-    
+
     struct xdg_surface* xdgSurface;
     struct xdg_toplevel* xdgToplevel;
     struct wl_buffer* buffer;

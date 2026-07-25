@@ -7,12 +7,12 @@
 
 ### Features
 
-- Added a graphics system API (`pal_graphics.h`).
-- Added `palGetResultCode()` to get the result code from a result value.
-- Added `palGetResultSource()` to get the result source from a result value.
-- Added `palGetResultNativeCode()` to get the result native code from a result value.
-- Added `palGetSupportedGLAPIs()` to check supported opengl api types.
-- Added type `PalResultCode` with values:
+- Added a graphics system API (`pal_graphics.h`). (#4)
+- Added `palGetResultCode()` to get the result code from a result value. (#4)
+- Added `palGetResultSource()` to get the result source from a result value. (#4)
+- Added `palGetResultNativeCode()` to get the result native code from a result value. (#4)
+- Added `palGetSupportedGLAPIs()` to check supported opengl api types. (#4)
+- Added type `PalResultCode` with values: (#4)
   - `PAL_RESULT_CODE_INVALID_ARGUMENT`
   - `PAL_RESULT_CODE_OUT_OF_MEMORY`
   - `PAL_RESULT_CODE_PLATFORM_FAILURE`
@@ -22,7 +22,7 @@
   - `PAL_RESULT_CODE_INVALID_OPERATION`
   - `PAL_RESULT_CODE_DEVICE_LOST`
   - `PAL_RESULT_CODE_OUT_OF_DATE`
-- Added type `PalResultSource` with values:
+- Added type `PalResultSource` with values: (#4)
   - `PAL_RESULT_SOURCE_NONE`
   - `PAL_RESULT_SOURCE_WIN32`
   - `PAL_RESULT_SOURCE_POSIX`
@@ -30,68 +30,68 @@
   - `PAL_RESULT_SOURCE_VULKAN`
   - `PAL_RESULT_SOURCE_D3D12`
   - `PAL_RESULT_SOURCE_METAL`
-- Added type `PalGLBackend` with values:
+- Added type `PalGLBackend` with values: (#4)
   - `PAL_GL_BACKEND_EGL`
   - `PAL_GL_BACKEND_GLX`
   - `PAL_GL_BACKEND_WGL`
-- Added type `PalGLAPI` with values:
+- Added type `PalGLAPI` with values: (#4)
   - `PAL_GL_API_OPENGL`
   - `PAL_GL_API_OPENGL_ES`
-- Added `_COUNT` constants to all type groups (eg. `PAL_EVENT_TYPE_COUNT`).
-- Added `PAL_GL_GRAPHICS_CARD_NAME_SIZE`,`PAL_GL_VENDOR_NAME_SIZE` and `PAL_GL_VERSION_NAME_SIZE` constants.
+- Added `_COUNT` constants to all type groups (eg. `PAL_EVENT_TYPE_COUNT`). (#4)
+- Added `PAL_GL_GRAPHICS_CARD_NAME_SIZE`,`PAL_GL_VENDOR_NAME_SIZE` and `PAL_GL_VERSION_NAME_SIZE` constants. (#4)
 
 ### Changes
 
-- `palGetVersion()` now returns `void` and takes a pointer to the struct.
-- `palFormatResult()` now takes two additional parameters
-- Converted all enum types to fixed-width integer types and their values to standalone constants (eg. `PalResult` to `uint64_t`).
-- Removed all previous `PalResult` values except: `PAL_RESULT_SUCCESS`
-- Removed `palGLSetInstance()` function.
-- Removed `palGLGetBackend()` function.
-- Removed `palGetVideoFeaturesEx()` function and `PalVideoFeatures64` enum.
-- Removed `palGetWindowHandleInfoEx()` function and `PalWindowHandleInfoEX` struct.
-- Removed `palGetRawMouseWheelDelta()` function.
-- Removed `palSetPreferredInstance()` function.
-- Removed `palSetFBConfig()` function.
-- Removed `PAL_FBCONFIG_BACKEND_GLES`.
-- `palInitGL()` now takes two additional parameters.
-- `palEnumerateGLFBConfigs()` no longer takes the `glWindow` and `count` now as `uint32_t`
-- `palInitVideo()` now takes an additional parameter.
-- `palGetWindowHandleInfo()` now returns `PalResult` and takes a pointer to the struct.
-- `PalGLInfo` now has `backend` and `api` fields.
-- Renamed `nativeDisplay` to `nativeInstance` in `PalWindowHandleInfo`.
-- Renamed `display` to `instance` in `PalGLWindow`.
-- `PalWindowHandleInfo` now has `nativeHandle1`, `nativeHandle2` and `nativeHandle3` fields.
-- `PalWindowCreateInfo` now has `state`, `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields.
-- Removed `maximized` and `minimized` in `PalWindowCreateInfo`.
-- Removed `UintXX` and `IntXX` types in favor of standard `uintXX_t` and `intXX_t`.
-- Removed `_MAX` constants from all type groups (eg. `PAL_EVENT_MAX`).
-- Replaced standard `bool` type and `true`/`false` constants with `PalBool` type and `PAL_TRUE`/`PAL_FALSE`.
-- Renamed `PalGLRelease` to `PalGLReleaseBehavior`.
-- Renamed `palGLGetProcAddress()` to `palGetGLProcAddress()`.
-- Renamed event type constants from `PAL_EVENT_**` to `PAL_EVENT_TYPE_**`.
-- Renamed dispatch mode constants from `PAL_DISPATCH_**` to `PAL_DISPATCH_MODE_**`.
-- Renamed platform type constants from `PAL_PLATFORM_**` to `PAL_PLATFORM_TYPE_**`.
-- Renamed platform api type constants from `PAL_PLATFORM_API_**` to `PAL_PLATFORM_API_TYPE_**`.
-- Renamed cursor type constants from `PAL_CURSOR_**` to `PAL_CURSOR_TYPE_**`.
-- Renamed flash flag constants from `PAL_FLASH_**` to `PAL_FLASH_FLAG_**`.
-- Renamed fbConfig backend type constants from `PAL_FBCONFIG_BACKEND_**` to `PAL_FBCONFIG_BACKEND_**`.
-- Renamed `PalFlashFlag` to `PalFlashFlags`.
-- `palGetMouseDelta()` now takes `dx` and `dy` paramters as `float`.
-- `palEnumerateMonitors()` now takes `count` paramter as `uint32_t`.
-- `palEnumerateMonitorModes()` now takes `count` paramter as `uint32_t`.
-- `palGetClosestGLFBConfig()` now takes `count` paramter as `uint32_t`.
-- `palGetMouseWheelDelta()` now takes `dx` and `dy` paramters as `float`.
-- `palJoinThread()` now takes `retval` paramters as `void**`.
-- `palUnpackUint32()` now takes `data` paramters as `uint64_t`.
-- `palUnpackInt32()` now takes `data` paramters as `uint64_t`.
-- `palUnpackPointer()` now takes `data` paramters as `uint64_t`.
-- `palUnpackFloat()` now takes `data` paramters as `uint64_t`.
-- `palPackUint32()` now returns `uint64_t` instead of `int64_t`.
-- `palPackInt32()` now returns `uint64_t` instead of `int64_t`.
-- `palPackPointer()` now returns `uint64_t` instead of `int64_t`.
-- `palPackFloat()` now returns `uint64_t` instead of `int64_t`.
-- These function now returns `void` instead of `PalResult` and does not do runtime validation anymore:
+- `palGetVersion()` now returns `void` and takes a pointer to the struct. (#4)
+- `palFormatResult()` now takes two additional parameters (#4)
+- Converted all enum types to fixed-width integer types and their values to standalone constants (eg. `PalResult` to `uint64_t`). (#4)
+- Removed all previous `PalResult` values except: `PAL_RESULT_SUCCESS` (#4)
+- Removed `palGLSetInstance()` function. (#4)
+- Removed `palGLGetBackend()` function. (#4)
+- Removed `palGetVideoFeaturesEx()` function and `PalVideoFeatures64` enum. (#4)
+- Removed `palGetWindowHandleInfoEx()` function and `PalWindowHandleInfoEX` struct. (#4)
+- Removed `palGetRawMouseWheelDelta()` function. (#4)
+- Removed `palSetPreferredInstance()` function. (#4)
+- Removed `palSetFBConfig()` function. (#4)
+- Removed `PAL_FBCONFIG_BACKEND_GLES`. (#4)
+- `palInitGL()` now takes two additional parameters. (#4)
+- `palEnumerateGLFBConfigs()` no longer takes the `glWindow` and `count` now as `uint32_t` (#4)
+- `palInitVideo()` now takes an additional parameter. (#4)
+- `palGetWindowHandleInfo()` now returns `PalResult` and takes a pointer to the struct. (#4)
+- `PalGLInfo` now has `backend` and `api` fields. (#4)
+- Renamed `nativeDisplay` to `nativeInstance` in `PalWindowHandleInfo`. (#4)
+- Renamed `display` to `instance` in `PalGLWindow`. (#4)
+- `PalWindowHandleInfo` now has `nativeHandle1`, `nativeHandle2` and `nativeHandle3` fields. (#4)
+- `PalWindowCreateInfo` now has `state`, `appName`, `instanceName`, `fbConfigBackend` and `fbConfigIndex` fields. (#4)
+- Removed `maximized` and `minimized` in `PalWindowCreateInfo`. (#4)
+- Removed `UintXX` and `IntXX` types in favor of standard `uintXX_t` and `intXX_t`. (#4)
+- Removed `_MAX` constants from all type groups (eg. `PAL_EVENT_MAX`). (#4)
+- Replaced standard `bool` type and `true`/`false` constants with `PalBool` type and `PAL_TRUE`/`PAL_FALSE`. (#4)
+- Renamed `PalGLRelease` to `PalGLReleaseBehavior`. (#4)
+- Renamed `palGLGetProcAddress()` to `palGetGLProcAddress()`. (#4)
+- Renamed event type constants from `PAL_EVENT_**` to `PAL_EVENT_TYPE_**`. (#4)
+- Renamed dispatch mode constants from `PAL_DISPATCH_**` to `PAL_DISPATCH_MODE_**`. (#4)
+- Renamed platform type constants from `PAL_PLATFORM_**` to `PAL_PLATFORM_TYPE_**`. (#4)
+- Renamed platform api type constants from `PAL_PLATFORM_API_**` to `PAL_PLATFORM_API_TYPE_**`. (#4)
+- Renamed cursor type constants from `PAL_CURSOR_**` to `PAL_CURSOR_TYPE_**`. (#4)
+- Renamed flash flag constants from `PAL_FLASH_**` to `PAL_FLASH_FLAG_**`. (#4)
+- Renamed fbConfig backend type constants from `PAL_FBCONFIG_BACKEND_**` to `PAL_FBCONFIG_BACKEND_**`. (#4)
+- Renamed `PalFlashFlag` to `PalFlashFlags`. (#4)
+- `palGetMouseDelta()` now takes `dx` and `dy` paramters as `float`. (#4)
+- `palEnumerateMonitors()` now takes `count` paramter as `uint32_t`. (#4)
+- `palEnumerateMonitorModes()` now takes `count` paramter as `uint32_t`. (#4)
+- `palGetClosestGLFBConfig()` now takes `count` paramter as `uint32_t`. (#4)
+- `palGetMouseWheelDelta()` now takes `dx` and `dy` paramters as `float`. (#4)
+- `palJoinThread()` now takes `retval` paramters as `void**`. (#4)
+- `palUnpackUint32()` now takes `data` paramters as `uint64_t`. (#4)
+- `palUnpackInt32()` now takes `data` paramters as `uint64_t`. (#4)
+- `palUnpackPointer()` now takes `data` paramters as `uint64_t`. (#4)
+- `palUnpackFloat()` now takes `data` paramters as `uint64_t`. (#4)
+- `palPackUint32()` now returns `uint64_t` instead of `int64_t`. (#4)
+- `palPackInt32()` now returns `uint64_t` instead of `int64_t`. (#4)
+- `palPackPointer()` now returns `uint64_t` instead of `int64_t`. (#4)
+- `palPackFloat()` now returns `uint64_t` instead of `int64_t`. (#4)
+- These function now returns `void` instead of `PalResult` and does not do runtime validation anymore: (#4)
   - `palGetPlatformInfo()`
   - `palGetCPUInfo()`
   - `palGetThreadName()`

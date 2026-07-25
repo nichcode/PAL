@@ -38,7 +38,7 @@ typedef void* EGLNativeDisplayType;
 #define EGL_OPENGL_BIT 0x0008
 #define EGL_OPENGL_ES_BIT 0x0001
 #define EGL_OPENGL_ES_API 0x30A0
-#define EGL_CLIENT_APIS   0x308D
+#define EGL_CLIENT_APIS 0x308D
 #define EGL_NO_CONTEXT EGL_CAST(EGLContext, 0)
 #define EGL_NO_DISPLAY EGL_CAST(EGLDisplay, 0)
 #define EGL_NO_SURFACE EGL_CAST(EGLSurface, 0)
@@ -178,9 +178,9 @@ typedef EGLSurface (*eglCreateWindowSurfaceFn)(
     const EGLint*);
 
 typedef const GLubyte* (*glGetStringFn)(GLenum);
-typedef void(*glClearFn)(uint32_t);
+typedef void (*glClearFn)(uint32_t);
 
-typedef void(*glClearColorFn)(
+typedef void (*glClearColorFn)(
     float,
     float,
     float,

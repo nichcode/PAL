@@ -19,8 +19,8 @@ typedef struct {
 } PalLinearAllocator;
 
 static void* palLinearAlloc(
-    PalLinearAllocator* allocator, 
-    uint64_t size, 
+    PalLinearAllocator* allocator,
+    uint64_t size,
     uint64_t alignment)
 {
     uint64_t defAlign = alignment;

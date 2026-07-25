@@ -15,7 +15,7 @@
 PalEventQueue* createDefaultEventQueue(const PalAllocator* allocator);
 
 void destroyDefaultEventQueue(
-    const PalAllocator* allocator, 
+    const PalAllocator* allocator,
     PalEventQueue* queue);
 
 #endif // _PAL_DEFAULT_QUEUE_H

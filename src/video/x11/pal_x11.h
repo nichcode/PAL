@@ -505,7 +505,7 @@ typedef struct {
     PalEventDriver* eventDriver;
     WindowData* windowData;
     MonitorData* monitorData;
-   
+
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
     XGetWindowAttributesFn getWindowAttributes;
