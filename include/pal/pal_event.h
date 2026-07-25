@@ -22,10 +22,10 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_CLOSE
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -33,14 +33,14 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_SIZE
- * 
+ *
  * data:
  *  bits 0-31: width
  *  bits 32-63: height
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackUint32(event.data, &width, &height)
  * window = palUnpackPointer(event.data2)
@@ -49,14 +49,14 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_MOVE
- * 
+ *
  * data:
  *  bits 0-31: x
  *  bits 32-63: y
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackInt32(event.data, &x, &y)
  * window = palUnpackPointer(event.data2)
@@ -65,14 +65,14 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_STATE
- * 
+ *
  * data:
  *  bits 0-31: state (minimized, maximized, restored).
  *  bits 32-63: unused
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -80,14 +80,14 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_FOCUS
- * 
+ *
  * data:
  *  bits 0-31: focus gained (`PAL_TRUE`/`PAL_FALSE`).
  *  bits 32-63: unused
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -95,14 +95,14 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_VISIBILITY
- * 
+ *
  * data:
  *  bits 0-31: visibility (`PAL_TRUE`/`PAL_FALSE`).
  *  bits 32-63: unused
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -110,10 +110,10 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -121,10 +121,10 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_MODAL_END
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -132,14 +132,14 @@
 
 /**
  * PAL_EVENT_TYPE_MONITOR_DPI_CHANGED
- * 
+ *
  * data:
  *  bits 0-31: dpi
  *  bits 32-63: unused
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -147,10 +147,10 @@
 
 /**
  * PAL_EVENT_TYPE_MONITOR_LIST_CHANGED
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -158,14 +158,14 @@
 
 /**
  * PAL_EVENT_TYPE_KEYDOWN
- * 
+ *
  * data:
  *  bits 0-31: keycode
  *  bits 32-63: scancode
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackUint32(event.data, &keycode, &scancode)
  * window = palUnpackPointer(event.data2)
@@ -174,14 +174,14 @@
 
 /**
  * PAL_EVENT_TYPE_KEYREPEAT
- * 
+ *
  * data:
  *  bits 0-31: keycode
  *  bits 32-63: scancode
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackUint32(event.data, &keycode, &scancode)
  * window = palUnpackPointer(event.data2)
@@ -190,14 +190,14 @@
 
 /**
  * PAL_EVENT_TYPE_KEYUP
- * 
+ *
  * data:
  *  bits 0-31: keycode
  *  bits 32-63: scancode
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackUint32(event.data, &keycode, &scancode)
  * window = palUnpackPointer(event.data2)
@@ -206,14 +206,14 @@
 
 /**
  * PAL_EVENT_TYPE_MOUSE_BUTTONDOWN
- * 
+ *
  * data:
  *  bits 0-31: button
  *  bits 32-63: serial
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackUint32(event.data, &button, &serial)
  * window = palUnpackPointer(event.data2)
@@ -222,14 +222,14 @@
 
 /**
  * PAL_EVENT_TYPE_MOUSE_BUTTONUP
- * 
+ *
  * data:
  *  bits 0-31: button
  *  bits 32-63: serial
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackUint32(event.data, &button, &serial)
  * window = palUnpackPointer(event.data2)
@@ -238,14 +238,14 @@
 
 /**
  * PAL_EVENT_TYPE_MOUSE_MOVE
- * 
+ *
  * data:
  *  bits 0-31: x
  *  bits 32-63: y
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackInt32(event.data, &x, &y)
  * window = palUnpackPointer(event.data2)
@@ -254,14 +254,14 @@
 
 /**
  * PAL_EVENT_TYPE_MOUSE_DELTA
- * 
+ *
  * data:
  *  bits 0-31: dx
  *  bits 32-63: dy
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackFloat(event.data, &dx, &dy)
  * window = palUnpackPointer(event.data2)
@@ -270,14 +270,14 @@
 
 /**
  * PAL_EVENT_TYPE_MOUSE_WHEEL
- * 
+ *
  * data:
  *  bits 0-31: dx
  *  bits 32-63: dy
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * palUnpackFloat(event.data, &dx, &dy)
  * window = palUnpackPointer(event.data2)
@@ -286,10 +286,10 @@
 
 /**
  * PAL_EVENT_TYPE_USER
- * 
+ *
  * userId:
  *  User event ID or type.
- * 
+ *
  * Helpers:
  * palPackInt32()
  * palPackUint32()
@@ -302,14 +302,14 @@
 
 /**
  * PAL_EVENT_TYPE_KEYCHAR
- * 
+ *
  * data:
  *  bits 0-31: codepoint
  *  bits 32-63: unused
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
@@ -317,14 +317,14 @@
 
 /**
  * PAL_EVENT_TYPE_WINDOW_DECORATION_MODE
- * 
+ *
  * data:
  *  bits 0-31: decorations mode
  *  bits 32-63: unused
- * 
+ *
  * data2:
  *  window
- * 
+ *
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
