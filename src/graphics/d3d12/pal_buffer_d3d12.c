@@ -8,7 +8,7 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
-#define align(v, a) (v + a - 1) & ~(a - 1)
+#define _ALIGN(v, a) (v + a - 1) & ~(a - 1)
 
 static uint32_t getSupportedMemoryTypes(PalBufferUsages usages)
 {
@@ -184,7 +184,7 @@ void PAL_CALL computeImageStagingRequirementsD3D12(
     PalImageStagingRequirements* requirements)
 {
     uint32_t imageFormatSize = getFormatSizeD3D12(imageFormat);
-    uint32_t rowPitch = align((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    uint32_t rowPitch = _ALIGN((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
     uint32_t bufferImageHeight = 0;
     if (copyInfo->bufferImageHeight) {
         bufferImageHeight = copyInfo->bufferImageHeight;

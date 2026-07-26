@@ -85,7 +85,7 @@ static PalBool checkABI(
 
     for (uint32_t i = 0; i < info->fieldCount; i++) {
         FieldInfo* field = &info->fields[i];
-        uint32_t size = strlen(field->name);
+        uint32_t size = (uint32_t)strlen(field->name);
         if (size > fieldSize) {
             fieldSize = size;
         }

@@ -21,7 +21,7 @@
 #include <windows.h>
 
 #define DLL_HANDLE HMODULE
-#define LOAD_DLL(path) LoadLibraryA("PAL2.dll")
+#define LOAD_DLL LoadLibraryA("PAL2.dll")
 #define FREE_DLL(handle) FreeLibrary(handle)
 #define GET_FUNC(handle, name) GetProcAddress(handle, name)
 
@@ -59,7 +59,7 @@ static PalBool checkPALVersion(uint32_t flags)
         return PAL_FALSE;
     }
 
-    getVersion = GET_FUNC(handle, "palGetVersion");
+    getVersion = (GetVersionFn)GET_FUNC(handle, "palGetVersion");
     if (!getVersion) {
         palLog(nullptr, "Failed to load palGetVersion in PAL library");
         FREE_DLL(handle);

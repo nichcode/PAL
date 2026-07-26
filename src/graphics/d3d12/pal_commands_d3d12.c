@@ -8,7 +8,7 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
-#define align(v, a) (v + a - 1) & ~(a - 1)
+#define _ALIGN(v, a) (v + a - 1) & ~(a - 1)
 
 static D3D12_RENDER_PASS_FLAGS renderingFlagToD3D12(PalRenderingFlags flags)
 {
@@ -503,7 +503,7 @@ void PAL_CALL cmdCopyBufferToImageD3D12(
     footPrint->Footprint.Format = formatToD3D12(dst->info.format);
 
     uint32_t imageFormatSize = getFormatSizeD3D12(dst->info.format);
-    uint64_t rowPitch = align((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    uint64_t rowPitch = _ALIGN((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
     footPrint->Footprint.RowPitch = (UINT)rowPitch;
 
     uint32_t planeCount = 1;
@@ -628,7 +628,7 @@ void PAL_CALL cmdCopyImageToBufferD3D12(
     srcLocation.pResource = src->handle;
 
     uint32_t imageFormatSize = getFormatSizeD3D12(src->info.format);
-    uint64_t rowPitch = align((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
+    uint64_t rowPitch = _ALIGN((uint64_t)copyInfo->imageWidth * imageFormatSize, TEXTURE_PITCH);
     footPrint->Footprint.RowPitch = (UINT)rowPitch;
 
     D3D12_BOX box = {0};

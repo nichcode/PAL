@@ -50,7 +50,7 @@ PalBool computeTest()
     }
 
     // enumerate all available adapters
-    int32_t adapterCount = 0;
+    uint32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get adapters");
@@ -144,7 +144,7 @@ PalBool computeTest()
     }
 
     // create a compute shader
-    uint64_t bytecodeSize = 0;
+    uint32_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* source = nullptr;
 

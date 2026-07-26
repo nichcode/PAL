@@ -8,7 +8,7 @@
 #if PAL_HAS_VULKAN_BACKEND
 #include "pal_vulkan.h"
 
-#define align(v, a) (v + a - 1) & ~(a - 1)
+#define _ALIGN(v, a) (v + a - 1) & ~(a - 1)
 
 PalResult PAL_CALL createShaderBindingTableVk(
     PalDevice* device,
@@ -78,10 +78,10 @@ PalResult PAL_CALL createShaderBindingTableVk(
 
     // get strides
     uint32_t callableStride = 0;
-    uint32_t raygenStride = align(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
-    uint32_t missStride = align(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
-    uint32_t hitStride = align(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
-    callableStride = align(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
+    uint32_t raygenStride = _ALIGN(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
+    uint32_t missStride = _ALIGN(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
+    uint32_t hitStride = _ALIGN(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
+    callableStride = _ALIGN(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
 
     // get region size
     uint32_t raygenRegionSize = raygenStride * sbtInfo->raygenCount;
@@ -96,19 +96,19 @@ PalResult PAL_CALL createShaderBindingTableVk(
     uint32_t hitOffset = 0;
     uint32_t callableOffset = 0;
 
-    raygenOffset = align(offset, groupBaseAlignment);
+    raygenOffset = _ALIGN(offset, groupBaseAlignment);
     offset = raygenOffset + raygenRegionSize;
 
-    missOffset = align(offset, groupBaseAlignment);
+    missOffset = _ALIGN(offset, groupBaseAlignment);
     offset = missOffset + missRegionSize;
 
-    hitOffset = align(offset, groupBaseAlignment);
+    hitOffset = _ALIGN(offset, groupBaseAlignment);
     offset = hitOffset + hitRegionSize;
 
-    callableOffset = align(offset, groupBaseAlignment);
+    callableOffset = _ALIGN(offset, groupBaseAlignment);
     offset = callableOffset + callableRegionSize;
 
-    uint32_t bufferSize = align(offset, groupBaseAlignment);
+    uint32_t bufferSize = _ALIGN(offset, groupBaseAlignment);
 
     // create gpu buffer
     VkBufferCreateInfo bufCreateInfo = {0};

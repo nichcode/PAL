@@ -299,7 +299,7 @@ PalResult PAL_CALL palEnumerateAdapters(
     PalResult result = 0;
     int totalCount = 0;
     int index = 0;
-    int _count = 0;
+    uint32_t _count = 0;
 
     for (int i = 0; i < s_Graphics.backendCount; i++) {
         BackendData* backend = &s_Graphics.backends[i];
@@ -396,7 +396,7 @@ void PAL_CALL palDestroyDevice(PalDevice* device)
 
 uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device)
 {
-    device->backend.vtbl1->getDeviceLostReason(device);
+    return (uint32_t)device->backend.vtbl1->getDeviceLostReason(device);
 }
 
 PalResult PAL_CALL palAllocateMemory(
@@ -521,7 +521,7 @@ PalBool PAL_CALL palCanQueuePresent(
     PalQueue* queue,
     PalSurface* surface)
 {
-    queue->backend.vtbl1->canQueuePresent(queue, surface);
+    return queue->backend.vtbl1->canQueuePresent(queue, surface);
 }
 
 PalResult PAL_CALL palWaitQueue(PalQueue* queue)
@@ -545,21 +545,21 @@ PalBool PAL_CALL palIsFormatSupported(
     PalAdapter* adapter,
     PalFormat format)
 {
-    adapter->backend.vtbl1->isFormatSupported(adapter, format);
+    return adapter->backend.vtbl1->isFormatSupported(adapter, format);
 }
 
 PalImageUsages PAL_CALL palQueryFormatImageUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
-    adapter->backend.vtbl1->queryFormatImageUsages(adapter, format);
+    return adapter->backend.vtbl1->queryFormatImageUsages(adapter, format);
 }
 
 PalSampleCount PAL_CALL palQueryFormatSampleCount(
     PalAdapter* adapter,
     PalFormat format)
 {
-    adapter->backend.vtbl1->queryFormatSampleCount(adapter, format);
+    return adapter->backend.vtbl1->queryFormatSampleCount(adapter, format);
 }
 
 // ==================================================
@@ -611,7 +611,7 @@ PalResult PAL_CALL palBindImageMemory(
     PalMemory* memory,
     uint64_t offset)
 {
-    image->backend.vtbl1->bindImageMemory(image, memory, offset);
+    return image->backend.vtbl1->bindImageMemory(image, memory, offset);
 }
 
 // ==================================================
@@ -992,12 +992,12 @@ PalResult PAL_CALL palCmdBegin(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info)
 {
-    cmdBuffer->backend.vtbl1->cmdBegin(cmdBuffer, info);
+    return cmdBuffer->backend.vtbl1->cmdBegin(cmdBuffer, info);
 }
 
 PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer)
 {
-    cmdBuffer->backend.vtbl1->cmdEnd(cmdBuffer);
+    return cmdBuffer->backend.vtbl1->cmdEnd(cmdBuffer);
 }
 
 void PAL_CALL palCmdExecuteCommandBuffer(

@@ -150,7 +150,7 @@ PalBool descriptorIndexingTest()
     }
 
     // enumerate all available adapters
-    int32_t adapterCount = 0;
+    uint32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get adapters");
@@ -630,7 +630,7 @@ PalBool descriptorIndexingTest()
     }
 
     // create shaders
-    uint64_t bytecodeSize = 0;
+    uint32_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* sources[2];
     PalShaderEntryInfo entries[2];

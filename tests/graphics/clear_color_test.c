@@ -104,7 +104,7 @@ PalBool clearColorTest()
     }
 
     // enumerate all available adapters
-    int32_t adapterCount = 0;
+    uint32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get adapters");

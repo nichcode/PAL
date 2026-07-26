@@ -8,7 +8,7 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
-#define align(v, a) (v + a - 1) & ~(a - 1)
+#define _ALIGN(v, a) (v + a - 1) & ~(a - 1)
 
 #if INTPTR_MAX == INT64_MAX
 #define PTR_SIZE 8
@@ -1344,7 +1344,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     if (localRootSize) {
         D3D12_ROOT_PARAMETER1 parameter = {0};
         parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        parameter.Constants.Num32BitValues = align(localRootSize, 4) / 4;
+        parameter.Constants.Num32BitValues = _ALIGN(localRootSize, 4) / 4;
         parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootDesc = {0};

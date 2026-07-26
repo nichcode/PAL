@@ -8,7 +8,7 @@
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
 
-#define align(v, a) (v + a - 1) & ~(a - 1)
+#define _ALIGN(v, a) (v + a - 1) & ~(a - 1)
 
 PalResult PAL_CALL createShaderBindingTableD3D12(
     PalDevice* device,
@@ -116,10 +116,10 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     uint32_t hitStride = 0;
     uint32_t callableStride = 0;
 
-    raygenStride = align(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
-    missStride = align(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
-    hitStride = align(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
-    callableStride = align(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
+    raygenStride = _ALIGN(groupHandleSize + sbtInfo->raygenDataSize, groupHandleAlignment);
+    missStride = _ALIGN(groupHandleSize + sbtInfo->missDataSize, groupHandleAlignment);
+    hitStride = _ALIGN(groupHandleSize + sbtInfo->hitDataSize, groupHandleAlignment);
+    callableStride = _ALIGN(groupHandleSize + sbtInfo->callableDataSize, groupHandleAlignment);
 
     // get region size
     uint32_t raygenRegionSize = raygenStride * sbtInfo->raygenCount;
@@ -134,18 +134,18 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     uint32_t hitOffset = 0;
     uint32_t callableOffset = 0;
 
-    raygenOffset = align(offset, groupBaseAlignment);
+    raygenOffset = _ALIGN(offset, groupBaseAlignment);
     offset = raygenOffset + raygenRegionSize;
 
-    missOffset = align(offset, groupBaseAlignment);
+    missOffset = _ALIGN(offset, groupBaseAlignment);
     offset = missOffset + missRegionSize;
 
-    hitOffset = align(offset, groupBaseAlignment);
+    hitOffset = _ALIGN(offset, groupBaseAlignment);
     offset = hitOffset + hitRegionSize;
 
-    callableOffset = align(offset, groupBaseAlignment);
+    callableOffset = _ALIGN(offset, groupBaseAlignment);
     offset = callableOffset + callableRegionSize;
-    uint32_t bufferSize = align(offset, groupBaseAlignment);
+    uint32_t bufferSize = _ALIGN(offset, groupBaseAlignment);
 
     // create gpu buffer
     D3D12_HEAP_PROPERTIES heapProps = {0};

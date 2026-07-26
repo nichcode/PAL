@@ -138,7 +138,7 @@ PalResult PAL_CALL palEnumerateMonitors(
 
 void PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor)
 {
-    return s_Backend->getPrimaryMonitor(outMonitor);
+    s_Backend->getPrimaryMonitor(outMonitor);
 }
 
 void PAL_CALL palGetMonitorInfo(
@@ -164,7 +164,7 @@ void PAL_CALL palGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    return s_Backend->getCurrentMonitorMode(monitor, mode);
+    s_Backend->getCurrentMonitorMode(monitor, mode);
 }
 
 PalResult PAL_CALL palSetMonitorMode(
@@ -201,7 +201,7 @@ PalResult PAL_CALL palCreateWindow(
 
 void PAL_CALL palDestroyWindow(PalWindow* window)
 {
-    return s_Backend->destroyWindow(window);
+    s_Backend->destroyWindow(window);
 }
 
 void PAL_CALL palMinimizeWindow(PalWindow* window)

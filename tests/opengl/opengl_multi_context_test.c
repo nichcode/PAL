@@ -67,7 +67,7 @@ PalBool openglMultiContextTest()
     }
 
     // enumerate supported opengl framebuffer configs
-    int32_t fbCount = 0;
+    uint32_t fbCount = 0;
     result = palEnumerateGLFBConfigs(&fbCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to query GL FBConfigs");

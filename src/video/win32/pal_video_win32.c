@@ -287,7 +287,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
-                    event.data = palPackFloat(s_Mouse.WheelX, 0);
+                    event.data = palPackFloat((float)s_Mouse.WheelX, 0);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -305,7 +305,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
-                    event.data = palPackFloat(0, s_Mouse.WheelY);
+                    event.data = palPackFloat(0, (float)s_Mouse.WheelY);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }

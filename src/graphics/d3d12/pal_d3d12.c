@@ -694,7 +694,7 @@ void fillBuildInfoD3D12(
                 tmp->Triangles.Transform3x4 = tmpData->transformBufferAddress;
 
                 tmp->Triangles.IndexBuffer = tmpData->indexBufferAddress;
-                tmp->Triangles.IndexCount = info->geometries[i].primitiveCount * 3;
+                tmp->Triangles.IndexCount = (UINT)info->geometries[i].primitiveCount * 3;
                 if (tmpData->indexType == PAL_INDEX_TYPE_UINT16) {
                     if (tmp->Triangles.IndexBuffer) {
                         tmp->Triangles.IndexFormat = DXGI_FORMAT_R16_FLOAT;

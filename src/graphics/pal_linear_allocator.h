@@ -10,7 +10,7 @@
 
 #include "pal2/pal_core.h"
 
-#define align(v, a) (v + a - 1) & ~(a - 1)
+#define _ALIGN(v, a) (v + a - 1) & ~(a - 1)
 
 typedef struct {
     uint8_t* memory;
@@ -23,12 +23,12 @@ static void* palLinearAlloc(
     uint64_t size,
     uint64_t alignment)
 {
-    uint64_t defAlign = alignment;
+    uint64_t defaultAlign = alignment;
     if (alignment == 0) {
-        defAlign = 16;
+        defaultAlign = 16;
     }
 
-    uint64_t offset = align(allocator->offset, defAlign);
+    uint64_t offset = _ALIGN(allocator->offset, defaultAlign);
     if (offset + size > allocator->size) {
         // allocate a bigger block
         void* block = palAllocate(nullptr, allocator->size * 2, 0);

@@ -558,7 +558,7 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 if (info->bufferInfos) {
                     PalDescriptorBufferInfo* bufferInfo = &info->bufferInfos[j];
                     BufferD3D12* buffer = (BufferD3D12*)bufferInfo->buffer;
-                    desc.SizeInBytes = bufferInfo->size;
+                    desc.SizeInBytes = (UINT)bufferInfo->size;
                     address = buffer->handle->lpVtbl->GetGPUVirtualAddress(buffer->handle);
                     desc.BufferLocation = address + bufferInfo->offset;
                 }
@@ -580,16 +580,16 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
 
                     uint32_t stride = 4;
                     if (bufferInfo->stride) {
-                        stride = bufferInfo->stride;
-                        desc.Buffer.StructureByteStride = bufferInfo->stride;
+                        stride = (UINT)bufferInfo->stride;
+                        desc.Buffer.StructureByteStride = stride;
                     } else {
                         desc.Format = DXGI_FORMAT_R32_TYPELESS;
                         desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
                     }
 
                     handle = buffer->handle;
-                    desc.Buffer.FirstElement = bufferInfo->offset / stride;
-                    desc.Buffer.NumElements = bufferInfo->size / stride;
+                    desc.Buffer.FirstElement = (UINT)bufferInfo->offset / stride;
+                    desc.Buffer.NumElements = (UINT)bufferInfo->size / stride;
                 }
 
                 deviceImpl->handle->lpVtbl

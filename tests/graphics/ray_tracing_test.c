@@ -58,7 +58,7 @@ PalBool rayTracingTest()
     }
 
     // enumerate all available adapters
-    int32_t adapterCount = 0;
+    uint32_t adapterCount = 0;
     result = palEnumerateAdapters(&adapterCount, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to get adapters");
@@ -167,7 +167,7 @@ PalBool rayTracingTest()
     }
 
     // create ray tracing shaders
-    uint64_t bytecodeSize = 0;
+    uint32_t bytecodeSize = 0;
     void* bytecode = nullptr;
     const char* source = nullptr;
     PalShaderEntryInfo entries[3];
@@ -360,7 +360,7 @@ PalBool rayTracingTest()
     tlasBuildInfo.buildMode = PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD;
 
     // get the build sizes for tlas
-    uint32_t blasScratchSize = buildSizes.scratchBufferSize;
+    uint32_t blasScratchSize = (uint32_t)buildSizes.scratchBufferSize;
     palGetAccelerationStructureBuildSize(device, &tlasBuildInfo, &buildSizes);
 
     // create the tlas buffer and tlas

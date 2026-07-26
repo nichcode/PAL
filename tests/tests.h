@@ -15,7 +15,7 @@ void runTests();
 static PalBool readFile(
     const char* filename,
     void* buffer,
-    uint64_t* size)
+    uint32_t* size)
 {
     FILE* file = fopen(filename, "rb");
     if (!file) {
@@ -23,13 +23,13 @@ static PalBool readFile(
     }
 
     fseek(file, 0, SEEK_END);
-    uint64_t tmpSize = ftell(file);
+    uint32_t tmpSize = (uint32_t)ftell(file);
     fseek(file, 0, SEEK_SET);
 
     if (buffer) {
         tmpSize = *size;
         size_t read = fread(buffer, 1, tmpSize, file);
-        if (read != tmpSize) {
+        if ((uint32_t)read != tmpSize) {
             return PAL_FALSE;
         }
     }
