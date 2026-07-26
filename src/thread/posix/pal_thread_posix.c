@@ -125,10 +125,9 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
         } else if (param.sched_priority == 0) {
             return PAL_THREAD_PRIORITY_NORMAL;
         }
-
-    } else {
-        return PAL_THREAD_PRIORITY_HIGH;
     }
+    
+    return PAL_THREAD_PRIORITY_HIGH;
 }
 
 uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)

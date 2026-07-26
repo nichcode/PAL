@@ -263,6 +263,7 @@ void* openDisplayWin32()
 #ifdef _WIN32
     return GetModuleHandleW(nullptr);
 #endif // _WIN32
+    return nullptr;
 }
 
 void closeDisplayWin32(void* instance)

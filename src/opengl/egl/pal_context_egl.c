@@ -45,6 +45,7 @@ static ContextData* findContextData(PalGLContext* context)
             return &s_Egl.contextData[i];
         }
     }
+    return nullptr;
 }
 
 static void freeContextData(PalGLContext* context)

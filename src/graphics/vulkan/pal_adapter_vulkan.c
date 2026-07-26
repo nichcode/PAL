@@ -65,9 +65,9 @@ PalResult PAL_CALL enumerateAdaptersVk(
     uint32_t* count,
     PalAdapter** outAdapters)
 {
-    int deviceCount = 0;
+    uint32_t deviceCount = 0;
     int adapterCount = 0;
-    int extCount = 0;
+    uint32_t extCount = 0;
     VkResult ret;
     VkExtensionProperties* exts = nullptr;
     VkPhysicalDeviceProperties props = {0};
@@ -102,7 +102,6 @@ PalResult PAL_CALL enumerateAdaptersVk(
 
             PalBool found = PAL_FALSE;
             s_Vk.enumerateDeviceExtensionProperties(phyDevice, nullptr, &extCount, exts);
-
             for (int i = 0; i < extCount; i++) {
                 const char* ext = exts[i].extensionName;
                 if (strcmp(ext, "VK_KHR_dynamic_rendering") == 0) {

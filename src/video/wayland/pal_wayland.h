@@ -53,11 +53,6 @@ typedef struct wl_proxy* (*wl_proxy_marshal_flags_fn)(
 
 typedef uint32_t (*wl_proxy_get_version_fn)(struct wl_proxy*);
 
-typedef int (*wl_proxy_add_listener_fn)(
-    struct wl_proxy*,
-    void (**)(void),
-    void*);
-
 typedef int (*wl_display_get_error_fn)(struct wl_display*);
 typedef int (*wl_display_dispatch_pending_fn)(struct wl_display*);
 typedef int (*wl_display_flush_fn)(struct wl_display*);

@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 static int xErrorHandler(
-    Display*,
+    Display* display,
     XErrorEvent* e)
 {
     // this is use for simple success and failure
@@ -305,7 +305,7 @@ PalResult xCreateWindow(
             s_X11Atoms.UTF8_STRING,
             8, // unsigned char
             PropModeReplace,
-            info->title,
+            (const unsigned char*)info->title,
             strlen(info->title));
 
     } else {
@@ -756,7 +756,7 @@ void xSetWindowOpacity(
     PalWindow* window,
     float opacity)
 {
-    unsigned long value = (unsigned long)(opacity * 0xFFFFFFFFUL + 0.5f);
+    uint32_t value = (uint32_t)(opacity * (float)0xFFFFFFFFUL + 0.5f);
     s_X11.changeProperty(
         s_X11.display,
         FROM_PAL_HANDLE(Window, window),
@@ -783,7 +783,7 @@ void xSetWindowTitle(
             s_X11Atoms.UTF8_STRING,
             8, // unsigned char
             PropModeReplace,
-            title,
+            (const unsigned char*)title,
             strlen(title));
 
     } else {

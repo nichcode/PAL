@@ -46,7 +46,9 @@ typedef XVisualInfo* (*GLXGetVisualFromFBConfigFn)(
     Display*,
     GLXFBConfig);
 
-typedef XVisualInfo* (*GLXGetProcAddressFn)(const unsigned char*);
+typedef void (*GLXProc)();
+
+typedef GLXProc (*GLXGetProcAddressFn)(const unsigned char*);
 
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
@@ -348,15 +350,6 @@ typedef XWMHints* (*XGetWMHintsFn)(
     Display*,
     Window);
 
-typedef Cursor (*XCreatePixmapCursorFn)(
-    Display*,
-    Pixmap,
-    Pixmap,
-    XColor*,
-    XColor*,
-    unsigned int,
-    unsigned int);
-
 typedef int (*XSetInputFocusFn)(
     Display*,
     Window,
@@ -417,7 +410,7 @@ typedef int (*XCloseIMFn)(XIM);
 
 typedef XIC (*XCreateICFn)(
     XIM,
-    ...) _X_SENTINEL(0);
+    ...);
 
 typedef void (*XDestroyICFn)(XIC);
 

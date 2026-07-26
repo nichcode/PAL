@@ -105,7 +105,7 @@ void PAL_CALL getSurfaceCapabilitiesVk(
     PalSurface* surface,
     PalSurfaceCapabilities* caps)
 {
-    int32_t formatCount = 0;
+    uint32_t formatCount = 0;
     uint32_t modeCount = 0;
     SurfaceVk* surfaceImpl = (SurfaceVk*)surface;
     VkSurfaceFormatKHR* formats = nullptr;

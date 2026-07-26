@@ -377,6 +377,12 @@ workspace(workspaceName)
             if (_OPTIONS["compiler"] == "clang") then
                 toolset("clang")
 
+                buildoptions {
+                    -- warnings
+                    "-Wno-switch",        -- for switch statements
+                    "-Wno-switch-enum"    -- for switch statements
+                }
+
                 intellisenseMode = "linux-clang-x64"
                 compilerPath = "/usr/bin/clang"
             else

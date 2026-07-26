@@ -278,6 +278,8 @@ static int getWindowMonitorDPI(WindowData* data)
             return info->dpi;
         }
     }
+
+    return 96;
 }
 
 void sendWMEvent(
@@ -929,12 +931,16 @@ PalResult xInitVideo(
     // we load GLX
     s_X11.glxHandle = dlopen("libGL.so.1", RTLD_LAZY);
     if (s_X11.glxHandle) {
-        GLXGetProcAddressFn load = nullptr;
-        load = (GLXGetProcAddressFn)dlsym(s_X11.glxHandle, "glXGetProcAddress");
-        s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)load("glXGetFBConfigs");
-        s_X11.glxGetFBConfigAttrib = (GLXGetFBConfigAttribFn)load("glXGetFBConfigAttrib");
-        s_X11.glxGetVisualFromFBConfig =
-            (GLXGetVisualFromFBConfigFn)load("glXGetVisualFromFBConfig");
+        GLXGetProcAddressFn loadFunc = nullptr;
+        loadFunc = (GLXGetProcAddressFn)dlsym(s_X11.glxHandle, "glXGetProcAddress");
+        s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)loadFunc(
+            (const unsigned char*)"glXGetFBConfigs");
+
+        s_X11.glxGetFBConfigAttrib = (GLXGetFBConfigAttribFn)loadFunc(
+            (const unsigned char*)"glXGetFBConfigAttrib");
+
+        s_X11.glxGetVisualFromFBConfig = (GLXGetVisualFromFBConfigFn)loadFunc(
+            (const unsigned char*)"glXGetVisualFromFBConfig");
     }
 
     // load EGL

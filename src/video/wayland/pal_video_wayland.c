@@ -488,9 +488,9 @@ static void outputGeometry(
     struct wl_output* output,
     int32_t x,
     int32_t y,
-    int32_t, // we dont need physical size
-    int32_t, // we dont need physical size
-    int32_t, // we dont need subpixel
+    int32_t tmp, // we dont need physical size
+    int32_t tmp2, // we dont need physical size
+    int32_t tmp3, // we dont need subpixel
     const char* make,
     const char* model,
     int32_t transform)
@@ -714,7 +714,7 @@ static void pointerHandleLeave(
     struct wl_surface* surface)
 {
     if (s_Wl.pointerSurface == surface) {
-        s_Wl.pointerSurface == nullptr;
+        s_Wl.pointerSurface = nullptr;
     }
 }
 
@@ -939,7 +939,7 @@ static void keyboardHandleLeave(
     struct wl_surface* surface)
 {
     if (s_Wl.keyboardSurface == surface) {
-        s_Wl.keyboardSurface == nullptr;
+        s_Wl.keyboardSurface = nullptr;
     }
 }
 

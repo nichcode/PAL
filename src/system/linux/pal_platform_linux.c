@@ -33,8 +33,8 @@ void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
     }
 
     char line[256];
-    char name[15];
-    char version[15];
+    char name[16];
+    char version[16];
     // parse version and name from the release file
     while (fgets(line, sizeof(line), file)) {
         if (strncmp(line, "NAME=", 5) == 0) {

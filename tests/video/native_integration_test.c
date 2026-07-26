@@ -175,7 +175,7 @@ void setWindowTitleX11(PalWindowHandleInfo* windowInfo)
             s_UTF8_STRING,
             8, // unsigned char
             PropModeReplace,
-            title,
+            (const unsigned char*)title,
             strlen(title));
 
     } else {
