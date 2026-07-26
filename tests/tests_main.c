@@ -1,5 +1,4 @@
 
-#include "pal/pal_config.h" // for systems reflection
 #include "tests.h"
 
 // clang-format off
@@ -9,50 +8,70 @@ int main(int argc, char** argv)
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     // core
-    registerTest("Logger Test", loggerTest);
-    registerTest("Time Test", timeTest);
-    registerTest("User Event Test", userEventTest);
-    registerTest("Event Test", eventTest);
+    registerTest(loggerTest, "Logger Test");
+    registerTest(timeTest, "Time Test");
 
-#if PAL_HAS_SYSTEM
-    registerTest("System Test", systemTest);
-#endif // PAL_HAS_SYSTEM
+    // event
+    registerTest(eventTest, "Event test");
+    registerTest(userEventTest, "User Event Test");
 
-#if PAL_HAS_THREAD
-    registerTest("Thread Test", threadTest);
-    registerTest("TLS Test", tlsTest);
-    registerTest("Mutex Test", mutexTest);
-    registerTest("Condvar Test", condvarTest);
-#endif // PAL_HAS_THREAD
+#if PAL_HAS_SYSTEM_MODULE == 1
+    registerTest(platformTest, "Platform Test");
+    registerTest(cpuTest, "CPU Test");
+#endif // PAL_HAS_SYSTEM_MODULE
 
-#if PAL_HAS_VIDEO
-    registerTest("Video Test", videoTest);
-    registerTest("Monitor Test", monitorTest);
-    registerTest("Monitor Mode Test", monitorModeTest);
-    registerTest("Window Test", windowTest);
-    registerTest("Icon Test", iconTest);
-    registerTest("Cursor Test", cursorTest);
-    registerTest("Input Window Test", inputWindowTest);
-    registerTest("System Cursor Test", systemCursorTest);
-    registerTest("Attach Window Test", attachWindowTest);
-    registerTest("Character Event Test", charEventTest);
-    registerTest("Native Integration Test", nativeIntegrationTest);
-    registerTest("Native Instance Test", nativeInstanceTest);
-    registerTest("Custom Decoration Test", customDecorationTest);
-#endif // PAL_HAS_VIDEO
+#if PAL_HAS_THREAD_MODULE == 1
+    registerTest(threadTest, "Thread Test");
+    registerTest(tlsTest, "TLS Test");
+    registerTest(mutexTest, "Mutex Test");
+    registerTest(condvarTest, "Condvar Test");
+#endif // PAL_HAS_THREAD_MODULE
 
-    // This test can run without video system so long as your have a valid
-    // window
-#if PAL_HAS_OPENGL && PAL_HAS_VIDEO
-    registerTest("Opengl Test", openglTest);
-    registerTest("Opengl FBConfig Test", openglFBConfigTest);
-    registerTest("Opengl Context Test", openglContextTest);
-    registerTest("Opengl Multi Context Test", openglMultiContextTest);
-#endif // PAL_HAS_OPENGL
+#if PAL_HAS_VIDEO_MODULE == 1
+    registerTest(videoTest, "Video Test");
+    registerTest(monitorTest, "Monitor Test");
+    registerTest(monitorModeTest, "Monitor Mode Test");
+    registerTest(windowTest, "Window Test");
+    registerTest(iconTest, "Icon Test");
+    registerTest(cursorTest, "Cursor Test");
+    registerTest(inputWindowTest, "Input Window Test");
+    registerTest(systemCursorTest, "System Cursor Test");
+    registerTest(attachWindowTest, "Attach Window Test");
+    registerTest(charEventTest, "Char Event Test");
+    registerTest(nativeIntegrationTest, "Native Integration Test");
+    registerTest(nativeInstanceTest, "Native Instance Test");
+    registerTest(customDecorationTest, "Custom Decoration Test");
+#endif // PAL_HAS_VIDEO_MODULE
 
-#if PAL_HAS_OPENGL && PAL_HAS_VIDEO && PAL_HAS_THREAD
-    registerTest("Multi Thread OpenGL Test", multiThreadOpenGlTest);
-#endif //
+    // This test can run without video system so long as your have a valid window
+#if PAL_HAS_OPENGL_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1
+    registerTest(openglTest, "Opengl Test");
+    registerTest(openglFBConfigTest, "Opengl FBConfig Test");
+    registerTest(openglContextTest, "Context Test");
+    registerTest(openglMultiContextTest, "Opengl Multi Context Test");
+#endif // PAL_HAS_OPENGL_MODULE
+
+#if PAL_HAS_OPENGL_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1 && PAL_HAS_THREAD_MODULE == 1
+    registerTest(multiThreadOpenGlTest, "Multi Thread Opengl Test");
+#endif // PAL_HAS_OPENGL_MODULE
+
+#if PAL_HAS_GRAPHICS_MODULE == 1
+    registerTest(graphicsTest, "Graphics Test");
+    registerTest(computeTest, "Compute Test");
+    registerTest(rayTracingTest, "Ray Tracing Test");
+    registerTest(multiDescriptorSetTest, "Multi Descriptor Set Test");
+    registerTest(customBackendTest, "Custom Backend Test");
+#endif // PAL_HAS_GRAPHICS_MODULE
+
+#if PAL_HAS_GRAPHICS_MODULE == 1 && PAL_HAS_VIDEO_MODULE == 1 && PAL_HAS_SYSTEM_MODULE == 1
+    registerTest(clearColorTest, "Clear Color Test");
+    registerTest(triangleTest, "Triangle Test");
+    registerTest(meshTest, "Mesh Test");
+    registerTest(textureTest, "Texture Test");
+    registerTest(geometryTest, "Geometry Test");
+    registerTest(indirectDrawTest, "Indirect Draw Test");
+    registerTest(descriptorIndexingTest, "Descriptor Indexing Test");
+#endif // PAL_HAS_GRAPHICS_MODULE
 
     runTests();
     return 0;

@@ -4,159 +4,84 @@
 ![Language: C99](https://img.shields.io/badge/language-C99-green.svg)
 
 ## Overview
+PAL is a lightweight, low-level, explicit cross-platform abstraction layer in C over
+platform and graphics APIs with support for modular builds and custom backends. 
+PAL is stateless and transparent. Queries return current state, 
+reflecting changes made through native API calls.
 
-PAL is a lightweight, low-level, cross-platform abstraction layer in **C**, designed to be **explicit** and as close to the **OS** as possible — similar in philosophy to Vulkan. It gives you precise control without hidden behavior, making it ideal for developers who want performance and predictability.
+PAL supports Windows, Linux, Vulkan and D3D12. Both Wayland and X11 are supported on Linux.
 
-PAL is transparent. All queries — window size, position, monitor info, and more — reflect the current platform state. Using PAL is like working directly with the OS: it applies no hidden logic, makes no assumptions, and leaves behavior fully in your control.
+PAL is released under the [Zlib License](https://opensource.org/licenses/Zlib).
 
-The goal is very simple, write low-level cross-platform code without having per platform files
-all over the place. Example: `renderer_vulkan`, `renderer_d3d12`, `window_win32`, etc.
-PAL makes it possible to safely mix native API with its API in a very straight forward way. This is one of the main reasons why PAL exists.
+## Building PAL
+PAL is written in C99 and uses Premake as its build system. PAL supports Windows Vista and later. PAL can be built with GCC, Clang and MSVC. Build options are configure with [pal_config.lua](./pal_config.lua). `true` to enable or `false` to disable a build option. It is recommended to not disable `PAL_BUILD_ABI_DUMP` build option.
 
-This approach gives you total control: you handle events, manage resources, and cache state explicitly. PAL provides the building blocks; how you use them — whether for simple applications or advanced frameworks — is entirely up to you.
+X11 needs XRandR (1.2+) and libXcursor. 
 
-Example – Get Window Size
-```c
-// Direct query from the platform — not cached by PAL
-palGetWindowSize(window, &w, &h);
-```
-> Note: palGetWindowSize queries the OS directly. If your application needs continuous updates (e.g., window moves or resizes frequently), it is more efficient to listen to PAL events rather than repeatedly querying the OS. This ensures your app stays performant.
+See below on how to generate project files for each compiler and toolset. PAL generates **.vscode** folder when generating GNU Make projects.
 
----
-
-## Why PAL?
-
-While libraries like SDL or GLFW focus on simplifying development 
-through high-level abstractions. **PAL is different:**
-
-- ✅ **Explicit**: You decide how memory, events, and handles are managed.
-- ✅ **Low Overhead**: PAL is close to raw OS calls, ensuring performance.
-- ✅ **Modular**: Pick only the subsystems you need (video, event, threading, OpenGL, etc.).
-- ✅ **Extendable**: Plug in your own backends (event queue, allocator, etc.).
-- ✅ **Transparent**: Exposes raw OS handles when you need them.
-
----
-
-## Quick Start
-
-Here’s the smallest program that opens a PAL window:
-
-```c
-#include "pal/pal_video.h"
-
-int main() {
-    PalEventDriver* driver = nullptr;
-    PalEventDriverCreateInfo info = {0};
-    palCreateEventDriver(&info, &driver);
-
-    palInitVideo(nullptr, driver);
-
-    PalWindow* window = nullptr;
-    PalWindowCreateInfo w = {0};
-    w.width = 640; 
-    w.height = 480; 
-    w.title = "Hello PAL";
-    w.show = true;
-    palCreateWindow(&w, &window);
-
-    while (1) {
-        palUpdateVideo();
-        PalEvent e;
-        while (palPollEvent(driver, &e)) {
-            if (e.type == PAL_EVENT_WINDOW_CLOSE) return 0;
-        }
-    }
-}
-```
-
-➡️ Build and run this, and you’ll get a cross-platform window managed entirely by PAL.
-
-For more detailed examples, see the [tests folder](./tests) tests folder, which contains full usage scenarios and validation cases.
-
----
-
-## Philosophy
-- PAL is a thin layer over the OS, not a framework or library.
-- Queries return the current platform state, reflecting any changes made through direct OS calls.
-- Developers are responsible for state tracking, caching, and event handling.
-- PAL enables cross-platform consistency while preserving full OS behavior and control.
-- Advanced users can build libraries or frameworks on top of PAL.
-- Minimal overhead (close to raw OS calls)  
-- Explicit API (no hidden behavior or defaults)  
-- Event system supporting both polling and callbacks  
-- Written in C for easy integration  
-- Stateless: Opaque handles, no internal caching  
-- No lowest common denominator: exposes platform capabilities directly  
-- Modular builds: include only the subsystems you need
-
----
-
-## Supported Platforms
-- Windows (Vista+)
-- Linux (X11)
-- Linux (Wayland)
-
-## Planned Platforms
-- macOS (Cocoa)
-- Android
-- iOS
-
-## Dependencies
-- Standard C library
-- Platform SDKs (Win32, X11, Cocoa, etc.)
-- [Make for Windows](https://www.gnu.org/software/make/) (if not using Visual Studio)
-- XRandR (1.2+) for X11
-- libXcursor for X11
-
-## Compilers
-- GCC
-- Clang
-- MSVC
-
----
-
-## Build
-
-PAL is written in **C99** and uses **Premake** as its build system. Configure modules via [pal_config.lua](./pal_config.lua).  
-See [pal_config.h](./include/pal/pal_config.h) to see the reflection of modules that will be built.
-
-**Windows**
+### Windows
+GNU Make (GCC):
 ```bash
-premake\premake5.exe gmake2        # generate Makefiles (default: GCC)
-premake\premake5.exe gmake2 --compiler=clang
+premake\premake5.exe gmake
+```
 
-premake\premake5.exe vs2022        # generate Visual Studio project (default: MSVC)
+GNU Make (Clang):
+```bash
+premake\premake5.exe gmake --compiler=clang
+```
+
+Visual Studio 2022 (MSVC)
+```bash
+premake\premake5.exe vs2022
+```
+
+Visual Studio 2022 (Clang)
+```bash
 premake\premake5.exe vs2022 --compiler=clang
 ```
 
-**Linux**
+Visual Studio 2026 (MSVC)
 ```bash
-./premake/premake5 gmake        # generate Makefiles (default: GCC)
+premake\premake5.exe vs2026
 ```
 
-Enable tests in `pal_config.lua` by setting `PAL_BUILD_TESTS = true`.
+Visual Studio 2026 (Clang)
+```bash
+premake\premake5.exe vs2026 --compiler=clang
+```
 
----
+### Linux
+GNU Make (GCC):
+```bash
+./premake/premake5 gmake
+```
 
-## Modules
+GNU Make (Clang):
+```bash
+./premake/premake5 gmake --compiler=clang
+```
 
-- `pal_core` - memory, log, time, version
-- `pal_video` - windows, monitors, mouse, keyboard
-- `pal_event` - event queue, event callback
-- `pal_thread` - threads, synchronization
-- `pal_opengl` - framebuffer configs, context
+## Verify PAL ABI
+If the ABI dump tool was enabled when geenrating the projects, build the project and run the command below to verify that your C99 compiler conforms to the PAL ABI. The command below use the release build. Replace **Release** with **Debug** if using debug build.
 
-### Planned Modules
-- `pal_graphics` - Vulkan, D3D12, Metal, Custom
-- `pal_network`
-- `pal_audio`
-- `pal_hid`
-- `pal_filesystem`
+### Windows
+```bash
+cd bin
+cd Release
+abi-dump.exe --quick
+```
 
----
+### Linux
+```bash
+cd bin
+cd Release
+./abi-dump --quick
+```
+
+To view additional commands, run the abi dump tool with `--help`.
 
 ## Documentation
-
 PAL uses [Doxygen](https://www.doxygen.nl/) for generating API documentation.
 
 ```bash
@@ -166,14 +91,7 @@ doxygen doxyfile
 
 The generated HTML docs will be available in `docs/html/`.
 
----
-
 ## Contributing
-
-Contributions are welcome! Please open an issue or pull request.
-
----
-
-## License
-
-PAL is released under the [Zlib License](https://opensource.org/licenses/Zlib).
+Contributions are welcome! Please open an issue or pull request.  
+See  [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for how and what to contribute.  
+Thanks for contributing to PAL.

@@ -1,7 +1,10 @@
 
 BasedOnStyle: LLVM # use LLVM defauls
 IndentWidth: 4
-ColumnLimit: 80
+ColumnLimit: 100
+UseTab: Never
+UseCRLF: false
+LineEnding: LF
 
 # reset if not set
 AllowShortFunctionsOnASingleLine: None

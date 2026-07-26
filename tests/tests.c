@@ -1,44 +1,44 @@
 
 #include "tests.h"
 
-#define MAX_TESTS 32 // will change
+#define MAX_TESTS 64 // will change
 
 typedef struct {
     TestFn func;
     const char* name;
 } TestEntry;
 
-typedef struct {
-    TestEntry tests[MAX_TESTS];
-    Int32 count;
-} Tests;
-
-static Tests s_Test;
+static uint32_t s_Count = 0;
+static TestEntry s_Test[MAX_TESTS];
 static const char* s_FailedString = "FAILED";
 static const char* s_PassedString = "PASSED";
 
 void registerTest(
-    const char* name,
-    TestFn func)
+    TestFn func,
+    const char* name)
 {
-    TestEntry* entry = &s_Test.tests[s_Test.count++];
-    entry->func = func;
-    entry->name = name;
+    TestEntry entry = {func, name};
+    s_Test[s_Count++] = entry;
 }
 
 void runTests()
 {
-    bool status = false;
+    PalBool status = PAL_FALSE;
     const char* statusString = nullptr;
-    for (Int32 i = 0; i < s_Test.count; i++) {
-        status = s_Test.tests[i].func();
+    for (int32_t i = 0; i < s_Count; i++) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, s_Test[i].name);
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
 
+        status = s_Test[i].func();
         if (status) {
             statusString = s_PassedString;
         } else {
             statusString = s_FailedString;
         }
 
-        palLog(nullptr, "%s: %s", s_Test.tests[i].name, statusString);
+        palLog(nullptr, statusString);
     }
 }

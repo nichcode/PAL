@@ -2,55 +2,108 @@
 #ifndef _TESTS_H
 #define _TESTS_H
 
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
+#include <stdio.h>
 
-typedef bool (*TestFn)();
+typedef PalBool (*TestFn)();
 
 void registerTest(
-    const char* name,
-    TestFn func);
-
+    TestFn func,
+    const char* name);
 void runTests();
 
+static PalBool readFile(
+    const char* filename,
+    void* buffer,
+    uint32_t* size)
+{
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        return PAL_FALSE;
+    }
+
+    fseek(file, 0, SEEK_END);
+    uint32_t tmpSize = (uint32_t)ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    if (buffer) {
+        tmpSize = *size;
+        size_t read = fread(buffer, 1, tmpSize, file);
+        if ((uint32_t)read != tmpSize) {
+            return PAL_FALSE;
+        }
+    }
+
+    fclose(file);
+    *size = tmpSize;
+    return PAL_TRUE;
+}
+
+static inline void logResult(
+    PalResult result,
+    const char* msg)
+{
+    char buffer[256];
+    palFormatResult(result, 256, buffer);
+    palLog(nullptr, "%s \n %s", msg, buffer);
+}
+
 // core tests
-bool loggerTest();
-bool timeTest();
-bool userEventTest();
-bool eventTest();
+PalBool loggerTest();
+PalBool timeTest();
+PalBool userEventTest();
+PalBool eventTest();
 
 // system tests
-bool systemTest();
+PalBool platformTest();
+PalBool cpuTest();
 
 // system tests
-bool threadTest();
-bool tlsTest();
-bool mutexTest();
-bool condvarTest();
+PalBool threadTest();
+PalBool tlsTest();
+PalBool mutexTest();
+PalBool condvarTest();
 
 // video test
-bool videoTest();
-bool monitorTest();
-bool monitorModeTest();
-bool windowTest();
-bool iconTest();
-bool cursorTest();
-bool inputWindowTest();
-bool systemCursorTest();
-bool attachWindowTest();
-bool charEventTest();
-bool nativeIntegrationTest();
-bool nativeInstanceTest();
-bool customDecorationTest();
+PalBool videoTest();
+PalBool monitorTest();
+PalBool monitorModeTest();
+PalBool windowTest();
+PalBool iconTest();
+PalBool cursorTest();
+PalBool inputWindowTest();
+PalBool systemCursorTest();
+PalBool attachWindowTest();
+PalBool charEventTest();
+PalBool nativeIntegrationTest();
+PalBool nativeInstanceTest();
+PalBool customDecorationTest();
 
 // opengl test
-bool openglTest();
+PalBool openglTest();
 
 // opengl and video test
-bool openglFBConfigTest();
-bool openglContextTest();
-bool openglMultiContextTest();
+PalBool openglFBConfigTest();
+PalBool openglContextTest();
+PalBool openglMultiContextTest();
 
 // opengl, video and thread
-bool multiThreadOpenGlTest();
+PalBool multiThreadOpenGlTest();
+
+// graphics
+PalBool graphicsTest();
+PalBool computeTest();
+PalBool rayTracingTest();
+PalBool multiDescriptorSetTest();
+PalBool customBackendTest();
+
+// graphics and video
+PalBool clearColorTest();
+PalBool triangleTest();
+PalBool meshTest();
+PalBool textureTest();
+PalBool geometryTest();
+PalBool indirectDrawTest();
+PalBool descriptorIndexingTest();
 
 #endif // _TESTS_H
