@@ -35,7 +35,7 @@
 #define GET_FUNC(handle, name) dlsym(handle, name)
 #endif // _WIN32
 
-typedef void (PAL_CALL* GetVersionFn)(PalVersion* version);
+typedef void(PAL_CALL* GetVersionFn)(PalVersion* version);
 
 static int logDumpStatus(PalBool status)
 {
@@ -84,10 +84,10 @@ static PalBool checkPALVersion(uint32_t flags)
             if (flags & DUMP_FLAG_VERBOSE) {
                 palLog(nullptr, "Expected PAL Version: 2.0.0");
                 palLog(
-                    nullptr, 
-                    "Actual PAL Version: %d.%d.%d", 
-                    version.major, 
-                    version.minor, 
+                    nullptr,
+                    "Actual PAL Version: %d.%d.%d",
+                    version.major,
+                    version.minor,
                     version.build);
 
                 palLog(nullptr, "Target Library: PAL2");

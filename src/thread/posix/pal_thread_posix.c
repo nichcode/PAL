@@ -126,7 +126,7 @@ PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread)
             return PAL_THREAD_PRIORITY_NORMAL;
         }
     }
-    
+
     return PAL_THREAD_PRIORITY_HIGH;
 }
 

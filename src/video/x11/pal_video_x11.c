@@ -933,14 +933,14 @@ PalResult xInitVideo(
     if (s_X11.glxHandle) {
         GLXGetProcAddressFn loadFunc = nullptr;
         loadFunc = (GLXGetProcAddressFn)dlsym(s_X11.glxHandle, "glXGetProcAddress");
-        s_X11.glxGetFBConfigs = (GLXGetFBConfigsFn)loadFunc(
-            (const unsigned char*)"glXGetFBConfigs");
+        s_X11.glxGetFBConfigs =
+            (GLXGetFBConfigsFn)loadFunc((const unsigned char*)"glXGetFBConfigs");
 
-        s_X11.glxGetFBConfigAttrib = (GLXGetFBConfigAttribFn)loadFunc(
-            (const unsigned char*)"glXGetFBConfigAttrib");
+        s_X11.glxGetFBConfigAttrib =
+            (GLXGetFBConfigAttribFn)loadFunc((const unsigned char*)"glXGetFBConfigAttrib");
 
-        s_X11.glxGetVisualFromFBConfig = (GLXGetVisualFromFBConfigFn)loadFunc(
-            (const unsigned char*)"glXGetVisualFromFBConfig");
+        s_X11.glxGetVisualFromFBConfig =
+            (GLXGetVisualFromFBConfigFn)loadFunc((const unsigned char*)"glXGetVisualFromFBConfig");
     }
 
     // load EGL

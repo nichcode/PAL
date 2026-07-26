@@ -488,7 +488,7 @@ static void outputGeometry(
     struct wl_output* output,
     int32_t x,
     int32_t y,
-    int32_t tmp, // we dont need physical size
+    int32_t tmp,  // we dont need physical size
     int32_t tmp2, // we dont need physical size
     int32_t tmp3, // we dont need subpixel
     const char* make,
