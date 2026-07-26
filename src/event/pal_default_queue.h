@@ -8,7 +8,7 @@
 #ifndef _PAL_DEFAULT_QUEUE_H
 #define _PAL_DEFAULT_QUEUE_H
 
-#include "pal/pal_event.h"
+#include "pal2/pal_event.h"
 
 #define MAX_EVENTS 512
 

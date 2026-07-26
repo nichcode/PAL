@@ -10,7 +10,7 @@
 
 #if PAL_HAS_VULKAN_BACKEND
 #include "graphics/pal_linear_allocator.h"
-#include "pal/pal_graphics.h"
+#include "pal2/pal_graphics.h"
 #include <vulkan/vulkan_core.h>
 
 typedef struct _XDisplay Display;

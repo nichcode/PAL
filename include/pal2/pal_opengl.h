@@ -66,7 +66,7 @@
  * @struct PalGLContext
  * @brief Opaque handle to an opengl context.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct PalGLContext PalGLContext;
 
@@ -77,7 +77,7 @@ typedef struct PalGLContext PalGLContext;
  * All opengl extensions follow the format `PAL_GL_EXTENSION_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint64_t PalGLExtensions;
 
@@ -88,7 +88,7 @@ typedef uint64_t PalGLExtensions;
  * All opengl profiles follow the format `PAL_GL_PROFILE_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalGLProfile;
 
@@ -99,7 +99,7 @@ typedef uint32_t PalGLProfile;
  * All context reset behavior follow the format `PAL_GL_CONTEXT_RESET_**`
  * for consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalGLContextReset;
 
@@ -110,7 +110,7 @@ typedef uint32_t PalGLContextReset;
  * All opengl context release behavior follow the format
  * `PAL_GL_RELEASE_BEHAVIOR_**` for consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalGLReleaseBehavior;
 
@@ -138,7 +138,7 @@ typedef uint32_t PalGLAPI;
  * @struct PalGLInfo
  * @brief Information about the opengl driver.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalGLExtensions extensions;                        /**< Supported extensions.*/
@@ -155,7 +155,7 @@ typedef struct {
  * @struct PalGLFBConfig
  * @brief Information about an opengl framebuffer.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalBool doubleBuffer; /**< If `PAL_TRUE` double buffering is supported.*/
@@ -178,7 +178,7 @@ typedef struct {
  * This can be allocated statically or dynamically since its used for
  * holding native handles. The handles will not be copied.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     void* instance; /**< (HINSTANCE on Win32 or wl_display on Wayland)*/
@@ -191,7 +191,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     const PalGLWindow* window;     /**< Window to create context for.*/
@@ -229,7 +229,7 @@ typedef struct {
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palShutdownGL
  */
 PAL_API PalResult PAL_CALL palInitGL(
@@ -245,7 +245,7 @@ PAL_API PalResult PAL_CALL palInitGL(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palInitGL
  */
 PAL_API void PAL_CALL palShutdownGL();
@@ -260,7 +260,7 @@ PAL_API void PAL_CALL palShutdownGL();
  *
  * Thread safety: Thread-safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
 
@@ -283,7 +283,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palInitGL
  */
 PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
@@ -305,7 +305,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,
@@ -333,7 +333,7 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palDestroyGLContext
  */
 PAL_API PalResult PAL_CALL palCreateGLContext(
@@ -350,7 +350,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * Thread safety: Thread safe if the `context` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palCreateGLContext
  */
 PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
@@ -374,7 +374,7 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * Thread safety: Thread safe, but only one thread may have the
  * current context at a time.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalResult PAL_CALL palMakeContextCurrent(
     PalGLWindow* glWindow,
@@ -391,7 +391,7 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palInitGL
  */
 PAL_API void* PAL_CALL palGetGLProcAddress(const char* name);
@@ -411,7 +411,7 @@ PAL_API void* PAL_CALL palGetGLProcAddress(const char* name);
  * Thread safety: Must only be called from a thread that has a
  * bound context.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palMakeContextCurrent
  */
 PAL_API PalResult PAL_CALL palSwapBuffers(
@@ -430,7 +430,7 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  * Thread safety: Must only be called from a thread with a bound
  * context.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palMakeContextCurrent
  */
 PAL_API void PAL_CALL palSetSwapInterval(int32_t interval);

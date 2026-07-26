@@ -7,7 +7,7 @@
 
 ### Features
 
-- Added a graphics system API (`pal_graphics.h`). (#4)
+- Added a graphics system API (`pal2/pal_graphics.h`). (#4)
 - Added `palGetResultCode()` to get the result code from a result value. (#4)
 - Added `palGetResultSource()` to get the result source from a result value. (#4)
 - Added `palGetResultNativeCode()` to get the result native code from a result value. (#4)
@@ -42,6 +42,7 @@
 
 ### Changes
 
+- Moved all public header files to `pal2` directory (eg. `pal2/pal_video.h`). (#4)
 - `palGetVersion()` now returns `void` and takes a pointer to the struct. (#4)
 - `palFormatResult()` now takes two additional parameters (#4)
 - Converted all enum types to fixed-width integer types and their values to standalone constants (eg. `PalResult` to `uint64_t`). (#4)

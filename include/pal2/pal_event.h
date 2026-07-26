@@ -14,7 +14,7 @@
 #ifndef _PAL_EVENT_H
 #define _PAL_EVENT_H
 
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0
 #define PAL_DECORATION_MODE_SERVER_SIDE 1
@@ -341,7 +341,7 @@
  * @struct PalEventDriver
  * @brief Opaque handle to an event driver.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct PalEventDriver PalEventDriver;
 
@@ -349,7 +349,7 @@ typedef struct PalEventDriver PalEventDriver;
  * @struct PalEvent
  * @brief A single event.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct PalEvent PalEvent;
 
@@ -360,7 +360,7 @@ typedef struct PalEvent PalEvent;
  * All decoration types follow the format `PAL_DECORATION_MODE_**` for
  * consistency and API use.
  *
- * @since 1.3
+ * @since 2.0
  */
 typedef uint32_t PalDecorationMode;
 
@@ -371,7 +371,7 @@ typedef uint32_t PalDecorationMode;
  * All event types follow the format `PAL_EVENT_TYPE_**` for consistency and
  * API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalEventType;
 
@@ -382,7 +382,7 @@ typedef uint32_t PalEventType;
  * All dispatch modes follow the format `PAL_DISPATCH_MODE_**` for consistency
  * and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalDispatchMode;
 
@@ -393,7 +393,7 @@ typedef uint32_t PalDispatchMode;
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[in] event Pointer to the event.
  *
- * @since 1.0
+ * @since 2.0
  * @sa PalPushFn
  */
 typedef void(PAL_CALL* PalEventCallback)(
@@ -407,7 +407,7 @@ typedef void(PAL_CALL* PalEventCallback)(
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[in] event Pointer to the event to push.
  *
- * @since 1.0
+ * @since 2.0
  * @sa PalEventCallback
  */
 typedef void(PAL_CALL* PalPushFn)(
@@ -425,7 +425,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[out] outEvent Pointer to the PalEvent to recieve the event.
  *
- * @since 1.0
+ * @since 2.0
  * @sa PalPushFn
  */
 typedef PalBool(PAL_CALL* PalPollFn)(
@@ -445,7 +445,7 @@ struct PalEvent {
  *
  * Provides user-defined event queue push and poll functions.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalPushFn push; /**< Push function pointer.*/
@@ -459,7 +459,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     const PalAllocator* allocator; /**< Set to `nullptr` to use default.*/
@@ -488,7 +488,7 @@ typedef struct {
  * thread safe and `outEventDriver` is per thread. The default allocator is
  * thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palDestroyEventDriver
  */
 PAL_API PalResult PAL_CALL palCreateEventDriver(
@@ -503,7 +503,7 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
  * Thread safety: Thread safe if the allocator used to create
  * the event driver is thread safe and `eventDriver` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palCreateEventDriver
  */
 PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
@@ -524,7 +524,7 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * Thread safety: Thread safe if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palGetEventDispatchMode
  */
 PAL_API void PAL_CALL palSetEventDispatchMode(
@@ -544,7 +544,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  * Thread safety: Thread safe if multiple threads are not
  * simultaneously setting dispatch mode on the same `eventDriver`.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palSetEventDispatchMode
  */
 PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
@@ -568,7 +568,7 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * safe or every thread has its own `eventDriver`. The default event queue is
  * not thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palPollEvent
  */
 PAL_API void PAL_CALL palPushEvent(
@@ -591,7 +591,7 @@ PAL_API void PAL_CALL palPushEvent(
  * safe or every thread has its own `eventDriver`. The default event queue is
  * not thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palPushEvent
  */
 PAL_API PalBool PAL_CALL palPollEvent(

@@ -8,7 +8,7 @@
 #include "pal_platform.h"
 
 #if _PAL_HAS_POSIX
-#include "pal/pal_thread.h"
+#include "pal2/pal_thread.h"
 #include <pthread.h>
 
 PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor)

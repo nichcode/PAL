@@ -21,4 +21,4 @@ project "abi-dump"
         "%{wks.location}/tools/abi_dump" 
     }
     
-    links { "PAL" }
+    links { "PAL2" }

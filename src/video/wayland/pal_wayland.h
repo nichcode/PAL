@@ -12,7 +12,7 @@
 
 #define MAX_SPAN_MONITORS 4
 
-#include "pal/pal_video.h"
+#include "pal2/pal_video.h"
 #include "video/pal_video_egl.h"
 #include <fcntl.h>
 #include <linux/input-event-codes.h>

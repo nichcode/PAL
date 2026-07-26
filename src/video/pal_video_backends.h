@@ -7,7 +7,7 @@
 #ifndef _PAL_VIDEO_BACKENDS_H
 #define _PAL_VIDEO_BACKENDS_H
 
-#include "pal/pal_video.h"
+#include "pal2/pal_video.h"
 
 // clang-format off
 typedef struct {

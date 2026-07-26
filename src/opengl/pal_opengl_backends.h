@@ -8,7 +8,7 @@
 #ifndef _PAL_OPENGL_BACKENDS_H
 #define _PAL_OPENGL_BACKENDS_H
 
-#include "pal/pal_opengl.h"
+#include "pal2/pal_opengl.h"
 #include "pal_platform.h"
 
 // clang-format off

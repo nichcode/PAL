@@ -9,7 +9,7 @@
 
 #if _PAL_HAS_POSIX
 #define _POSIX_C_SOURCE 200112L
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 #include <stdlib.h>
 
 void* PAL_CALL palAllocate(

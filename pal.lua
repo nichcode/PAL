@@ -1,7 +1,7 @@
 
 dofile("pal_config.lua")
 
-project "PAL"
+project "PAL2"
     if PAL_BUILD_STATIC_LIBRARY then
         kind "StaticLib"
     else

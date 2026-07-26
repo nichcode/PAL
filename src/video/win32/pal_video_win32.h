@@ -22,7 +22,7 @@
 #define UNICODE
 #endif // UNICODE
 
-#include "pal/pal_video.h"
+#include "pal2/pal_video.h"
 #include <windows.h>
 
 #define PAL_VIDEO_CLASS L"PALVideoClass"

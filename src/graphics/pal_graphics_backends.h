@@ -8,7 +8,7 @@
 #ifndef _PAL_GRAPHICS_BACKENDS_H
 #define _PAL_GRAPHICS_BACKENDS_H
 
-#include "pal/pal_graphics.h"
+#include "pal2/pal_graphics.h"
 
 // clang-format off
 typedef struct {

@@ -6,7 +6,7 @@
  */
 
 #ifdef _WIN32
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <malloc.h>

@@ -79,6 +79,8 @@ cd Release
 ./abi-dump --quick
 ```
 
+To view additional commands, run the abi dump tool with `--help`.
+
 ## Documentation
 PAL uses [Doxygen](https://www.doxygen.nl/) for generating API documentation.
 

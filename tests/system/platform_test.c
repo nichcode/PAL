@@ -1,5 +1,5 @@
 
-#include "pal/pal_system.h"
+#include "pal2/pal_system.h"
 #include "tests.h"
 
 static inline const char* platformToString(PalPlatformType type)

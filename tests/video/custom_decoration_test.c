@@ -2,7 +2,7 @@
 #ifdef __linux__
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200112L // for linux
-#include "pal/pal_video.h"
+#include "pal2/pal_video.h"
 #include "tests.h"
 
 #include <dlfcn.h>
@@ -834,7 +834,7 @@ static void PAL_CALL onEvent(
 }
 
 #else
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 #endif // __linux__
 
 PalBool customDecorationTest()

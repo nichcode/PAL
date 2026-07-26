@@ -62,7 +62,7 @@
  * All CPU achitectures follow the format `PAL_CPU_ARCH_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalCpuArch;
 
@@ -73,7 +73,7 @@ typedef uint32_t PalCpuArch;
  * All CPU features sets follow the format `PAL_CPU_FEATURE_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint64_t PalCpuFeatures;
 
@@ -87,7 +87,7 @@ typedef uint64_t PalCpuFeatures;
  * All platform types follow the format `PAL_PLATFORM_TYPE_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalPlatformType;
 
@@ -101,7 +101,7 @@ typedef uint32_t PalPlatformType;
  * All platform API types follow the format `PAL_PLATFORM_API_TYPE_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalPlatformApiType;
 
@@ -109,7 +109,7 @@ typedef uint32_t PalPlatformApiType;
  * @struct PalPlatformInfo
  * @brief Information about a platform (OS).
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalPlatformType type;              /**< (eg. `PAL_PLATFORM_TYPE_WINDOWS`).*/
@@ -124,7 +124,7 @@ typedef struct {
  * @struct PalCPUInfo
  * @brief Information about a CPU.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalCpuFeatures features;               /**< Supported CPU features (instructions).*/
@@ -148,7 +148,7 @@ typedef struct {
  *
  * Thread safety: Thread-safe if `info` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
 
@@ -165,7 +165,7 @@ PAL_API void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
  * Thread safety: Thread-safe if the proivded allocator is
  * thread safe and `info` is per thread. The default allocator is thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API void PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,

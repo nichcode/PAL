@@ -1,5 +1,5 @@
 
-#include "pal/pal_graphics.h"
+#include "pal2/pal_graphics.h"
 #include "tests.h"
 
 // we use the same fields for each of our handles so we just typedef a base handle struct

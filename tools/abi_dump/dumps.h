@@ -8,7 +8,7 @@
 #ifndef _DUMPS_H
 #define _DUMPS_H
 
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 #include <stddef.h>
 
 static const char* s_FailedString = "FAILED";

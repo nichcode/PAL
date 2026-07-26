@@ -5,7 +5,7 @@
     Licensed under the Zlib license. See LICENSE file in root.
  */
 
-#include "pal/pal_opengl.h"
+#include "pal2/pal_opengl.h"
 
 #ifndef _PAL_EGL_H
 #define _PAL_EGL_H

@@ -19,7 +19,7 @@
 #define UNICODE
 #endif // UNICODE
 
-#include "pal/pal_system.h"
+#include "pal2/pal_system.h"
 #include <string.h>
 #include <windows.h>
 

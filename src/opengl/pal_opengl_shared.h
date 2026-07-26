@@ -8,7 +8,7 @@
 #ifndef _PAL_OPENGL_SHARED_H
 #define _PAL_OPENGL_SHARED_H
 
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 
 PalBool checkString(
     const char* string,

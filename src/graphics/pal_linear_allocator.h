@@ -8,7 +8,7 @@
 #ifndef _PAL_LINEAR_ALLOCATOR_H
 #define _PAL_LINEAR_ALLOCATOR_H
 
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 
 #define align(v, a) (v + a - 1) & ~(a - 1)
 

@@ -12,7 +12,7 @@
 #if _PAL_HAS_POSIX
 
 #define _POSIX_C_SOURCE 200112L
-#include "pal/pal_thread.h"
+#include "pal2/pal_thread.h"
 #include <errno.h>
 #include <pthread.h>
 #include <time.h>

@@ -6,7 +6,7 @@
  */
 
 #include "dumps.h"
-#include "pal/pal_event.h"
+#include "pal2/pal_event.h"
 
 PalBool eventABIDump(uint32_t flags)
 {

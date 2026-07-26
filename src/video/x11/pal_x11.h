@@ -13,7 +13,7 @@
 #define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
 
-#include "pal/pal_video.h"
+#include "pal2/pal_video.h"
 #include "video/pal_video_egl.h"
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>

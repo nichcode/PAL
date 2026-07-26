@@ -8,7 +8,7 @@
 #ifndef _PAL_FORMAT_H
 #define _PAL_FORMAT_H
 
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 #include <stdarg.h>
 #include <stdio.h>
 

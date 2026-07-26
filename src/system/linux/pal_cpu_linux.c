@@ -6,7 +6,7 @@
 
 #ifdef __linux__
 #define _POSIX_C_SOURCE 200112L
-#include "pal/pal_system.h"
+#include "pal2/pal_system.h"
 #include <stdio.h>
 #include <sys/utsname.h>
 #include <unistd.h>

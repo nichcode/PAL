@@ -94,4 +94,4 @@ project "tests"
         "%{wks.location}/tests" 
     }
     
-    links { "PAL" }
+    links { "PAL2" }

@@ -103,7 +103,7 @@ typedef uint32_t PalBool;
  * Example: `PAL_RESULT_SOURCE_WIN32` means the native code was retrieved from win32
  * (`GetLastError()`).
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint64_t PalResult;
 
@@ -141,7 +141,7 @@ typedef uint16_t PalResultSource;
  *
  * @return Pointer to the allocated memory on success or `nullptr` on failure.
  *
- * @since 1.0
+ * @since 2.0
  * @sa PalFreeFn
  */
 typedef void*(PAL_CALL* PalAllocateFn)(
@@ -156,7 +156,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn.
  *
- * @since 1.0
+ * @since 2.0
  * @sa PalAllocateFn
  */
 typedef void(PAL_CALL* PalFreeFn)(
@@ -170,7 +170,7 @@ typedef void(PAL_CALL* PalFreeFn)(
  * @param userData Optional pointer to user data passed from ::PalLogger. Can be `nullptr`.
  * @param msg Null-terminated UTF-8 log message.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palLog
  */
 typedef void(PAL_CALL* PalLogCallback)(
@@ -181,7 +181,7 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @struct PalVersion
  * @brief Describes the version of PAL.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     uint32_t major; /**< Major version (breaking changes).*/
@@ -197,7 +197,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalAllocateFn allocate; /**< Allocate function pointer.*/
@@ -213,7 +213,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     PalLogCallback callback; /**< Callback function pointer.*/
@@ -231,7 +231,7 @@ typedef struct {
  *
  * Thread safety: Thread safe if buffer is per thread.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API void PAL_CALL palFormatResult(
     PalResult result,
@@ -245,7 +245,7 @@ PAL_API void PAL_CALL palFormatResult(
  *
  * Thread safety: Thread safe if version is per thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palGetVersionString
  */
 PAL_API void PAL_CALL palGetVersion(PalVersion* version);
@@ -257,7 +257,7 @@ PAL_API void PAL_CALL palGetVersion(PalVersion* version);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palGetVersion
  */
 PAL_API const char* PAL_CALL palGetVersionString();
@@ -274,7 +274,7 @@ PAL_API const char* PAL_CALL palGetVersionString();
  * Thread safety: Thread safe if the provided allocator is thread safe. The default allocator
  * is thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palFree
  */
 PAL_API void* PAL_CALL palAllocate(
@@ -291,7 +291,7 @@ PAL_API void* PAL_CALL palAllocate(
  * Thread safety: Thread safe if the provided allocator is thread
  * safe. The default allocator is thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palAllocate
  */
 PAL_API void PAL_CALL palFree(
@@ -309,7 +309,7 @@ PAL_API void PAL_CALL palFree(
  * callbacks may be invoked concurrently. The user must ensure the callback
  * implementation is thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palFormatResult
  */
 PAL_API void PAL_CALL palLog(
@@ -324,7 +324,7 @@ PAL_API void PAL_CALL palLog(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palGetPerformanceFrequency
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceCounter();
@@ -336,7 +336,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter();
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palGetPerformanceCounter
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency();
@@ -417,7 +417,7 @@ static inline PalResult PAL_CALL palMakeResult(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palUnpackUint32
  */
 static inline uint64_t PAL_CALL palPackUint32(
@@ -434,7 +434,7 @@ static inline uint64_t PAL_CALL palPackUint32(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palUnpackInt32
  */
 static inline uint64_t PAL_CALL palPackInt32(
@@ -451,7 +451,7 @@ static inline uint64_t PAL_CALL palPackInt32(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palUnpackPointer
  */
 static inline uint64_t PAL_CALL palPackPointer(void* ptr)
@@ -466,7 +466,7 @@ static inline uint64_t PAL_CALL palPackPointer(void* ptr)
  *
  * Thread safety: Thread safe.
  *
- * @since 1.3
+ * @since 2.0
  * @sa palUnpackFloat
  */
 static inline uint64_t PAL_CALL palPackFloat(
@@ -493,7 +493,7 @@ static inline uint64_t PAL_CALL palPackFloat(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palPackUint32
  */
 static inline void PAL_CALL palUnpackUint32(
@@ -519,7 +519,7 @@ static inline void PAL_CALL palUnpackUint32(
  * Thread safety: Thread-safe if `outLow` and `outHigh` are
  * thread local.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palPackInt32
  */
 static inline void PAL_CALL palUnpackInt32(
@@ -543,7 +543,7 @@ static inline void PAL_CALL palUnpackInt32(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palPackPointer
  */
 static inline void* PAL_CALL palUnpackPointer(uint64_t data)
@@ -560,7 +560,7 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
  * Thread safety: Thread-safe if `outLow` and `outHigh` are
  * thread local.
  *
- * @since 1.3
+ * @since 2.0
  * @sa palPackFloat
  */
 static inline void PAL_CALL palUnpackFloat(

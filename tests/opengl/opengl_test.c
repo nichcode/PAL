@@ -1,6 +1,6 @@
 
-#include "pal/pal_opengl.h"
-#include "pal/pal_video.h"
+#include "pal2/pal_opengl.h"
+#include "pal2/pal_video.h"
 #include "tests.h"
 
 PalBool openglTest()

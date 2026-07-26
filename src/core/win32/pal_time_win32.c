@@ -19,7 +19,7 @@
 #define UNICODE
 #endif // UNICODE
 
-#include "pal/pal_core.h"
+#include "pal2/pal_core.h"
 #include <windows.h>
 
 uint64_t PAL_CALL palGetPerformanceCounter()

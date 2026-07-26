@@ -1,5 +1,5 @@
 
-#include "pal/pal_thread.h"
+#include "pal2/pal_thread.h"
 #include "tests.h"
 
 #define MAX_COUNTER 10000

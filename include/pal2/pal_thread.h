@@ -30,7 +30,7 @@
  * @struct PalThread
  * @brief Opaque handle to a thread.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct PalThread PalThread;
 
@@ -38,7 +38,7 @@ typedef struct PalThread PalThread;
  * @typedef PalTLSId
  * @brief Opaque handle to a Thread Local Storage.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalTLSId;
 
@@ -46,7 +46,7 @@ typedef uint32_t PalTLSId;
  * @struct PalMutex
  * @brief Opaque handle to a mutex.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct PalMutex PalMutex;
 
@@ -54,7 +54,7 @@ typedef struct PalMutex PalMutex;
  * @struct PalCondVar
  * @brief Opaque handle to a condition variable.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct PalCondVar PalCondVar;
 
@@ -65,7 +65,7 @@ typedef struct PalCondVar PalCondVar;
  * All thread features follow the format `PAL_THREAD_FEATURE_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalThreadFeatures;
 
@@ -76,7 +76,7 @@ typedef uint32_t PalThreadFeatures;
  * All thread priority types follow the format `PAL_THREAD_PRIORITY_**` for
  * consistency and API use.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef uint32_t PalThreadPriority;
 
@@ -88,7 +88,7 @@ typedef uint32_t PalThreadPriority;
  *
  * @return The return value of the thread as a pointer.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef void* (*PalThreadFn)(void* arg);
 
@@ -100,7 +100,7 @@ typedef void* (*PalThreadFn)(void* arg);
  *
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef void (*PaTlsDestructorFn)(void* userData);
 
@@ -110,7 +110,7 @@ typedef void (*PaTlsDestructorFn)(void* userData);
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 1.0
+ * @since 2.0
  */
 typedef struct {
     uint64_t stackSize;            /**< Set to 0 to use default*/
@@ -140,7 +140,7 @@ typedef struct {
  * thread safe and `outThread` is per thread. The default allocator is
  * thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palDetachThread
  */
 PAL_API PalResult PAL_CALL palCreateThread(
@@ -161,7 +161,7 @@ PAL_API PalResult PAL_CALL palCreateThread(
  *
  * Thread safety: Thread safe if `retval` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalResult PAL_CALL palJoinThread(
     PalThread* thread,
@@ -180,7 +180,7 @@ PAL_API PalResult PAL_CALL palJoinThread(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API void PAL_CALL palDetachThread(PalThread* thread);
 
@@ -191,7 +191,7 @@ PAL_API void PAL_CALL palDetachThread(PalThread* thread);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API void PAL_CALL palSleep(uint64_t milliseconds);
 
@@ -201,7 +201,7 @@ PAL_API void PAL_CALL palSleep(uint64_t milliseconds);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API void PAL_CALL palYield();
 
@@ -212,7 +212,7 @@ PAL_API void PAL_CALL palYield();
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalThread* PAL_CALL palGetCurrentThread();
 
@@ -225,7 +225,7 @@ PAL_API PalThread* PAL_CALL palGetCurrentThread();
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
 
@@ -240,7 +240,7 @@ PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
 
@@ -255,7 +255,7 @@ PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
 
@@ -282,7 +282,7 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @note On MacOS: Thread names are limited to 64 characters including the null
  * terminator.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palSetThreadName
  */
 PAL_API void PAL_CALL palGetThreadName(
@@ -306,7 +306,7 @@ PAL_API void PAL_CALL palGetThreadName(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalResult PAL_CALL palSetThreadPriority(
     PalThread* thread,
@@ -332,7 +332,7 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  */
 PAL_API PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
@@ -358,7 +358,7 @@ PAL_API PalResult PAL_CALL palSetThreadAffinity(
  * @note On MacOS: Thread names are limited to 64 characters including the null
  * terminator.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palGetThreadName
  */
 PAL_API PalResult PAL_CALL palSetThreadName(
@@ -379,7 +379,7 @@ PAL_API PalResult PAL_CALL palSetThreadName(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palDestroyTLS
  */
 PAL_API PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor);
@@ -391,7 +391,7 @@ PAL_API PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palCreateTL
  */
 PAL_API void PAL_CALL palDestroyTLS(PalTLSId id);
@@ -405,7 +405,7 @@ PAL_API void PAL_CALL palDestroyTLS(PalTLSId id);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palSetTLS
  */
 PAL_API void* PAL_CALL palGetTLS(PalTLSId id);
@@ -418,7 +418,7 @@ PAL_API void* PAL_CALL palGetTLS(PalTLSId id);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palGetTLS
  */
 PAL_API void PAL_CALL palSetTLS(
@@ -437,7 +437,7 @@ PAL_API void PAL_CALL palSetTLS(
  * Thread safety: Thread safe if the provided allocator is
  * thread safe and `outMutex` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palDestroyMutex
  */
 PAL_API PalResult PAL_CALL palCreateMutex(
@@ -455,7 +455,7 @@ PAL_API PalResult PAL_CALL palCreateMutex(
  * Thread safety: Thread safe if the allocator used to create
  * the mutex is thread safe and `mutex` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palCreateMutex
  */
 PAL_API void PAL_CALL palDestroyMutex(PalMutex* mutex);
@@ -467,7 +467,7 @@ PAL_API void PAL_CALL palDestroyMutex(PalMutex* mutex);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palUnlockMutex
  */
 PAL_API void PAL_CALL palLockMutex(PalMutex* mutex);
@@ -481,7 +481,7 @@ PAL_API void PAL_CALL palLockMutex(PalMutex* mutex);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palLockMutex
  */
 PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
@@ -500,7 +500,7 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
  * Thread safety: Thread safe if the provided allocator is
  * thread safe and `outCondVar` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palDestroyCondVar
  */
 PAL_API PalResult PAL_CALL palCreateCondVar(
@@ -519,7 +519,7 @@ PAL_API PalResult PAL_CALL palCreateCondVar(
  * Thread safety: Thread safe if the allocator used to create
  * the condition varibale is thread safe and `condVar` is per thread.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palCreateCondVar
  */
 PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condVar);
@@ -541,7 +541,7 @@ PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condVar);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palWaitCondVarTimeout
  */
 PAL_API PalResult PAL_CALL palWaitCondVar(
@@ -561,7 +561,7 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palWaitCondVar
  */
 PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
@@ -576,7 +576,7 @@ PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palBroadcastCondVar
  */
 PAL_API void PAL_CALL palSignalCondVar(PalCondVar* condVar);
@@ -588,7 +588,7 @@ PAL_API void PAL_CALL palSignalCondVar(PalCondVar* condVar);
  *
  * Thread safety: Thread safe.
  *
- * @since 1.0
+ * @since 2.0
  * @sa palSignalCondVar
  */
 PAL_API void PAL_CALL palBroadcastCondVar(PalCondVar* condVar);

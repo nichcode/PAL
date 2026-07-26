@@ -6,7 +6,7 @@
  */
 
 #include "dumps.h"
-#include "pal/pal_graphics.h"
+#include "pal2/pal_graphics.h"
 
 static PalBool adapterDump(uint32_t flags)
 {

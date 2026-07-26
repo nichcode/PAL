@@ -1,5 +1,5 @@
 
-#include "pal/pal_event.h"
+#include "pal2/pal_event.h"
 #include "tests.h"
 
 #define MAX_ITERATIONS 10

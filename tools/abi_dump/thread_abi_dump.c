@@ -6,7 +6,7 @@
  */
 
 #include "dumps.h"
-#include "pal/pal_thread.h"
+#include "pal2/pal_thread.h"
 
 PalBool threadABIDump(uint32_t flags)
 {

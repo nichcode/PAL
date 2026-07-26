@@ -6,7 +6,7 @@
  */
 
 #include "dumps.h"
-#include "pal/pal_video.h"
+#include "pal2/pal_video.h"
 
 PalBool videoABIDump(uint32_t flags)
 {

@@ -22,7 +22,7 @@
 #define UNICODE
 #endif // UNICODE
 
-#include "pal/pal_thread.h"
+#include "pal2/pal_thread.h"
 #include <windows.h>
 
 struct PalMutex {

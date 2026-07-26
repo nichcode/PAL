@@ -22,7 +22,7 @@
 #define UNICODE
 #endif // UNICODE
 
-#include "pal/pal_opengl.h"
+#include "pal2/pal_opengl.h"
 #include <windows.h>
 
 #define PAL_GL_CLASS L"PALGLClass"

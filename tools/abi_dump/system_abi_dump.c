@@ -6,7 +6,7 @@
  */
 
 #include "dumps.h"
-#include "pal/pal_system.h"
+#include "pal2/pal_system.h"
 
 PalBool systemABIDump(uint32_t flags)
 {

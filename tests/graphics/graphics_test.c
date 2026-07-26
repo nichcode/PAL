@@ -1,5 +1,5 @@
 
-#include "pal/pal_graphics.h"
+#include "pal2/pal_graphics.h"
 #include "tests.h"
 
 PalBool graphicsTest()

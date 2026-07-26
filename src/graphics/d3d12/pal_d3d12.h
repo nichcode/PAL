@@ -10,7 +10,7 @@
 
 #if PAL_HAS_D3D12_BACKEND
 #include "graphics/pal_linear_allocator.h"
-#include "pal/pal_graphics.h"
+#include "pal2/pal_graphics.h"
 #include <d3d12.h>
 #include <d3d12sdklayers.h>
 #include <dxgi1_6.h>

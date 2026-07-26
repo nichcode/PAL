@@ -1,7 +1,7 @@
 
-#include "pal/pal_graphics.h"
-#include "pal/pal_system.h"
-#include "pal/pal_video.h"
+#include "pal2/pal_graphics.h"
+#include "pal2/pal_system.h"
+#include "pal2/pal_video.h"
 #include "tests.h"
 
 #define WINDOW_WIDTH 640

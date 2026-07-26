@@ -6,7 +6,7 @@
  */
 
 #include "dumps.h"
-#include "pal/pal_opengl.h"
+#include "pal2/pal_opengl.h"
 
 PalBool openglABIDump(uint32_t flags)
 {

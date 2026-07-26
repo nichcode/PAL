@@ -1,5 +1,5 @@
 
-#include "pal/pal_thread.h"
+#include "pal2/pal_thread.h"
 #include "tests.h"
 
 // data every thread will have its own copy of

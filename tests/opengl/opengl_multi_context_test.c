@@ -1,6 +1,6 @@
 
-#include "pal/pal_opengl.h"
-#include "pal/pal_video.h" // for window
+#include "pal2/pal_opengl.h"
+#include "pal2/pal_video.h" // for window
 #include "tests.h"
 
 static const char* g_BoolsToSting[2] = {"False", "True"};
