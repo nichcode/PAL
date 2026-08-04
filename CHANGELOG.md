@@ -4,7 +4,7 @@
 <!-- =========================================================== -->
 
 ## 2.0.1
-- Fixed a bug where an internal backend failing to initialize also caused the graphics system to fail.
+- Fixed a bug where an internal backend failing to initialize also caused the graphics system to fail. (#5)
 
 <!-- ===========================================================-->
 <!-- PAL V2.0.0 -->
