@@ -50,6 +50,13 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
     uint32_t* count,
     PalAdapter** outAdapters)
 {
+    if (!s_D3D12.factory) {
+        if (!outAdapters) {
+            *count = 0;
+        }
+        return PAL_RESULT_SUCCESS;
+    }
+
     uint32_t adapterCount = 0;
     IDXGIAdapter* adapter = nullptr;
     IDXGIAdapter4* dxAdapters[32];

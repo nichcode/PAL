@@ -65,6 +65,13 @@ PalResult PAL_CALL enumerateAdaptersVk(
     uint32_t* count,
     PalAdapter** outAdapters)
 {
+    if (!s_Vk.instance) {
+        if (!outAdapters) {
+            *count = 0;
+        }
+        return PAL_RESULT_SUCCESS;
+    }
+
     uint32_t deviceCount = 0;
     int adapterCount = 0;
     uint32_t extCount = 0;

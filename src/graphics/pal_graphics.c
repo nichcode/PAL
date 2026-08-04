@@ -41,15 +41,9 @@ PAL_HANDLE(PalSurface)
 PAL_HANDLE(PalShaderBindingTable)
 
 typedef struct {
-    int32_t count;
-    int32_t startIndex;
-    PalGraphicsVtable base;
-} BackendData;
-
-typedef struct {
     int32_t backendCount;
     const PalAllocator* allocator;
-    BackendData backends[MAX_BACKENDS];
+    PalGraphicsVtable backends[MAX_BACKENDS];
 } Graphics;
 
 static Graphics s_Graphics = {0};
@@ -178,21 +172,26 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
     return PAL_TRUE;
 }
 
-static PalBool addBackend(const PalGraphicsBackendInfo* backendInfo)
+static PalBool addBackend(
+    const void* infoOrVtable,
+    PalBool custom)
 {
-    BackendData* backendData = &s_Graphics.backends[s_Graphics.backendCount++];
-    backendData->startIndex = 0;
-    backendData->count = 0;
+    PalGraphicsVtable* backend = &s_Graphics.backends[s_Graphics.backendCount++];
+    memset(backend, 0, sizeof(PalGraphicsVtable));
 
-    // populate our internal vtable
-    if (backendInfo->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1) {
-        // validate that all version 1 required pointers are set
-        const PalGraphicsBackendVtable1* vtable1 = (PalGraphicsBackendVtable1*)backendInfo->vtable;
-        if (!validateVtableVersion1(vtable1)) {
-            return PAL_FALSE;
+    if (custom) {
+        const PalGraphicsBackendInfo* info = infoOrVtable;
+        if (info->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1) {
+            // validate that all version 1 required pointers are set
+            const PalGraphicsBackendVtable1* vtable1 = (PalGraphicsBackendVtable1*)info->vtable;
+            if (!validateVtableVersion1(vtable1)) {
+                return PAL_FALSE;
+            }
+            backend->vtbl1 = vtable1;
         }
-        memset(&backendData->base, 0, sizeof(PalGraphicsVtable));
-        backendData->base.vtbl1 = vtable1;
+
+    } else {
+        backend->vtbl1 = infoOrVtable;
     }
 
     return PAL_TRUE;
@@ -204,53 +203,21 @@ PalResult PAL_CALL palInitGraphics(
     uint32_t customBackendCount,
     const PalGraphicsBackendInfo* customBackends)
 {
-    PalResult result;
-    BackendData* attachedBackend = nullptr;
-#ifdef _WIN32
+#if PAL_HAS_VULKAN_BACKEND
+    if (initGraphicsVk(debugger, allocator)) {
+        addBackend(&s_VkBackend1, PAL_FALSE);
+    }
+#endif // PAL_HAS_VULKAN_BACKEND
+
 #if PAL_HAS_D3D12_BACKEND
-    result = initGraphicsD3D12(debugger, allocator);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
+    if (initGraphicsD3D12(debugger, allocator)) {
+        addBackend(&s_D3D12Backend1, PAL_FALSE);
     }
-
-    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    attachedBackend->base.vtbl1 = &s_D3D12Backend1;
-    attachedBackend->startIndex = 0;
-    attachedBackend->count = 0;
 #endif // PAL_HAS_D3D12_BACKEND
-
-#if PAL_HAS_VULKAN_BACKEND
-    result = initGraphicsVk(debugger, allocator);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-
-    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    attachedBackend->base.vtbl1 = &s_VkBackend1;
-    attachedBackend->startIndex = 0;
-    attachedBackend->count = 0;
-#endif // PAL_HAS_VULKAN_BACKEND
-
-#elif defined(__linux__)
-    // vulkan
-#if PAL_HAS_VULKAN_BACKEND
-    result = initGraphicsVk(debugger, allocator);
-    if (result != PAL_RESULT_SUCCESS) {
-        return result;
-    }
-
-    attachedBackend = &s_Graphics.backends[s_Graphics.backendCount++];
-    attachedBackend->base.vtbl1 = &s_VkBackend1;
-    attachedBackend->startIndex = 0;
-    attachedBackend->count = 0;
-#endif // PAL_HAS_VULKAN_BACKEND
-#else
-    // metal or andriod
-#endif // _WIN32
 
     // custom backends
     for (uint32_t i = 0; i < customBackendCount; i++) {
-        if (!addBackend(&customBackends[i])) {
+        if (!addBackend(&customBackends[i], PAL_TRUE)) {
             return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
     }
@@ -261,24 +228,13 @@ PalResult PAL_CALL palInitGraphics(
 
 void PAL_CALL palShutdownGraphics()
 {
-#ifdef _WIN32
+#if PAL_HAS_VULKAN_BACKEND
+    shutdownGraphicsVk();
+#endif // PAL_HAS_VULKAN_BACKEND
+
 #if PAL_HAS_D3D12_BACKEND
     shutdownGraphicsD3D12();
 #endif // PAL_HAS_D3D12_BACKEND
-
-#if PAL_HAS_VULKAN_BACKEND
-    shutdownGraphicsVk();
-#endif // PAL_HAS_VULKAN_BACKEND
-
-#elif defined(__linux__)
-    // vulkan
-#if PAL_HAS_VULKAN_BACKEND
-    shutdownGraphicsVk();
-#endif // PAL_HAS_VULKAN_BACKEND
-
-#else
-    // metal or andriod
-#endif // _WIN32
 
     memset(&s_Graphics, 0, sizeof(s_Graphics));
 }
@@ -296,44 +252,35 @@ PalResult PAL_CALL palEnumerateAdapters(
     }
 
     // enumerate all adapters for both custom and PAL backends
-    PalResult result = 0;
-    int totalCount = 0;
-    int index = 0;
-    uint32_t _count = 0;
-
+    PalResult result;
+    uint32_t offset = 0;
+    uint32_t adapterCount = 0;
     for (int i = 0; i < s_Graphics.backendCount; i++) {
-        BackendData* backend = &s_Graphics.backends[i];
+        PalGraphicsVtable* backend = &s_Graphics.backends[i];
+        uint32_t backendAdapterCount = 0;
+        result = backend->vtbl1->enumerateAdapters(&backendAdapterCount, nullptr);
+        if (result == PAL_RESULT_SUCCESS) {
+            adapterCount += backendAdapterCount;
+        }
+
         if (outAdapters) {
             // offset into the array so all backends write at the correct index
-            PalAdapter** adapters = &outAdapters[backend->startIndex];
-            _count = backend->count;
-            result = backend->base.vtbl1->enumerateAdapters(&_count, adapters);
-            // break if a backend fails
-            if (result != PAL_RESULT_SUCCESS) {
-                return result;
-            }
+            PalAdapter** adapters = &outAdapters[offset];
+            result = backend->vtbl1->enumerateAdapters(&backendAdapterCount, adapters);
+            if (result == PAL_RESULT_SUCCESS) {
+                for (int j = 0; j < backendAdapterCount; j++) {
+                    PalAdapter* tmp = adapters[j];
+                    tmp->backend.vtbl1 = backend->vtbl1;
+                }
 
-            for (int j = 0; j < _count; j++) {
-                PalAdapter* tmp = adapters[j];
-                tmp->backend.vtbl1 = backend->base.vtbl1;
+                // update offset since the backend provided adapters
+                offset += backendAdapterCount;
             }
-
-        } else {
-            result = backend->base.vtbl1->enumerateAdapters(&_count, nullptr);
-            // break if a backend fails
-            if (result != PAL_RESULT_SUCCESS) {
-                return result;
-            }
-
-            backend->startIndex = totalCount;
-            backend->count = _count;
-            totalCount += _count;
-            _count = 0;
         }
     }
 
     if (!outAdapters) {
-        *count = totalCount;
+        *count = adapterCount;
     }
     return PAL_RESULT_SUCCESS;
 }
