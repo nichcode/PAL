@@ -81,6 +81,17 @@ cd Release
 
 To view additional commands, run the abi dump tool with `--help`.
 
+## Examples
+PAL tests are blueprints that can be copy-paste with little code changes. See below for some examples:
+- [Triangle Example](./tests/graphics/triangle_test.c)
+- [Texture Example](./tests/graphics/texture_test.c)
+- [Compute Example](./tests/graphics/compute_test.c)
+- [Mesh Example](./tests/graphics/mesh_test.c)
+- [Ray Tracing Example](./tests/graphics/ray_tracing_test.c)
+- [Custom Graphics Backend Example](./tests/graphics/custom_backend_test.c)
+- [Window Example](./tests/video/window_test.c)
+- [Input Window Example](./tests/video/input_window_test.c)
+
 ## Documentation
 PAL uses [Doxygen](https://www.doxygen.nl/) for generating API documentation.
 
