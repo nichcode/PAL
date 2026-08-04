@@ -26,14 +26,9 @@
 
 #include <windows.h>
 #define VK_LIB_NAME "vulkan-1.dll"
-#define RESULT_SOURCE PAL_RESULT_SOURCE_WIN32
 #elif defined(__linux__)
 #include <dlfcn.h>
 #define VK_LIB_NAME "libvulkan.so"
-#define RESULT_SOURCE PAL_RESULT_SOURCE_POSIX
-#else
-// Android
-#define VK_LIB_NAME ""
 #endif // _WIN32
 
 #if _PAL_HAS_POSIX
@@ -1009,14 +1004,21 @@ VkBool32 VKAPI_CALL debugCallbackVk(
     return VK_FALSE;
 }
 
-PalResult PAL_CALL initGraphicsVk(
+PalBool PAL_CALL initGraphicsVk(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
 {
     // load vulkan
     s_Vk.handle = loadLibrary(VK_LIB_NAME);
     if (!s_Vk.handle) {
-        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, RESULT_SOURCE, getNativeCode());
+        if (debugger && debugger->callback) {
+            debugger->callback(
+                debugger->userData,
+                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
+                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+                "Failed to load Vulkan");
+        }
+        return PAL_FALSE;
     }
 
     // clang-format off
@@ -1386,7 +1388,13 @@ PalResult PAL_CALL initGraphicsVk(
             VkLayerProperties* props = nullptr;
             props = palAllocate(s_Vk.allocator, sizeof(VkLayerProperties) * layerCount, 0);
             if (!props) {
-                return PAL_RESULT_CODE_OUT_OF_MEMORY;
+                debugger->callback(
+                    debugger->userData,
+                    PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
+                    PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+                    "Out of memory");
+
+                return PAL_FALSE;
             }
 
             s_Vk.enumerateInstanceLayerProperties(&layerCount, props);
@@ -1436,13 +1444,29 @@ PalResult PAL_CALL initGraphicsVk(
     const char* extensions[8];
     result = s_Vk.enumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
     if (result != VK_SUCCESS) {
-        return makeResultVk(result);
+        if (debugger && debugger->callback) {
+            debugger->callback(
+                debugger->userData,
+                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
+                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+                "Failed to enumerate vulkan instance extension properties");
+        }
+
+        return PAL_FALSE;
     }
 
     VkExtensionProperties* extensionProps = nullptr;
     extensionProps = palAllocate(s_Vk.allocator, sizeof(VkExtensionProperties) * extCount, 0);
     if (!extensionProps) {
-        return PAL_RESULT_SUCCESS;
+        if (debugger && debugger->callback) {
+            debugger->callback(
+                debugger->userData,
+                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
+                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+                "Out of memory");
+        }
+
+        return PAL_FALSE;
     }
 
     PalBool hasXlib = PAL_FALSE;
@@ -1536,7 +1560,15 @@ PalResult PAL_CALL initGraphicsVk(
     VkInstance instance = nullptr;
     result = s_Vk.createInstance(&instanceCreateInfo, &s_Vk.allocatorImpl, &instance);
     if (result != VK_SUCCESS) {
-        return makeResultVk(result);
+        if (debugger && debugger->callback) {
+            debugger->callback(
+                debugger->userData,
+                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
+                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+                "Failed to create vulkan instance - Check Driver ICD");
+        }
+
+        return PAL_FALSE;
     }
 
     // clang-format off
@@ -1618,21 +1650,23 @@ PalResult PAL_CALL initGraphicsVk(
 
     s_Vk.adapters = nullptr;
     s_Vk.instance = instance;
-    return PAL_RESULT_SUCCESS;
+    return PAL_TRUE;
 }
 
 void PAL_CALL shutdownGraphicsVk()
 {
-    if (s_Vk.messenger) {
-        s_Vk.destroyMessenger(s_Vk.instance, s_Vk.messenger, &s_Vk.allocatorImpl);
-    }
+    if (s_Vk.instance) {
+        if (s_Vk.messenger) {
+            s_Vk.destroyMessenger(s_Vk.instance, s_Vk.messenger, &s_Vk.allocatorImpl);
+        }
 
-    s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocatorImpl);
-    freeLibrary(s_Vk.handle);
-    if (s_Vk.adapters) {
-        palFree(s_Vk.allocator, s_Vk.adapters);
+        s_Vk.destroyInstance(s_Vk.instance, &s_Vk.allocatorImpl);
+        freeLibrary(s_Vk.handle);
+        if (s_Vk.adapters) {
+            palFree(s_Vk.allocator, s_Vk.adapters);
+        }
+        memset(&s_Vk, 0, sizeof(s_Vk));
     }
-    memset(&s_Vk, 0, sizeof(s_Vk));
 }
 
 #endif // PAL_HAS_VULKAN_BACKEND

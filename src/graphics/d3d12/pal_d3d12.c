@@ -974,6 +974,7 @@ void getDescriptorTierLimitsD3D12(
 
     if (caps) {
         *caps = tmp;
+
     } else {
         descCaps->maxPerStageSampledImages = tmp.maxPerStageSampledImages;
         descCaps->maxPerSetSampledImages = tmp.maxPerSetSampledImages;
@@ -1051,7 +1052,7 @@ void pollMessagesD3D12(DeviceD3D12* device)
     queue->lpVtbl->ClearStoredMessages(queue);
 }
 
-PalResult PAL_CALL initGraphicsD3D12(
+PalBool PAL_CALL initGraphicsD3D12(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)
 {
@@ -1059,10 +1060,14 @@ PalResult PAL_CALL initGraphicsD3D12(
     s_D3D12.handle = LoadLibraryA("d3d12.dll");
     s_D3D12.dxgi = LoadLibraryA("dxgi.dll");
     if (!s_D3D12.handle || !s_D3D12.dxgi) {
-        return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE,
-            PAL_RESULT_SOURCE_WIN32,
-            GetLastError());
+        if (debugger && debugger->callback) {
+            debugger->callback(
+                debugger->userData,
+                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
+                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+                "Failed to load D3D12");
+        }
+        return PAL_FALSE;
     }
 
     // clang-format off
@@ -1137,27 +1142,36 @@ PalResult PAL_CALL initGraphicsD3D12(
     s_D3D12.adapterCount = 0;
     HRESULT result = s_D3D12.createDXGIFactory(0, &IID_Factory, (void**)&s_D3D12.factory);
     if (FAILED(result)) {
-        return makeResultD3D12(result);
+        if (debugger && debugger->callback) {
+            debugger->callback(
+                debugger->userData,
+                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
+                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
+                "Failed to create DXGI Factory");
+        }
+        return PAL_FALSE;
     }
 
     s_D3D12.allocator = allocator;
-    return PAL_RESULT_SUCCESS;
+    return PAL_TRUE;
 }
 
 void PAL_CALL shutdownGraphicsD3D12()
 {
-    for (int i = 0; i < s_D3D12.adapterCount; i++) {
-        s_D3D12.adapters[i].handle->lpVtbl->Release(s_D3D12.adapters[i].handle);
-    }
+    if (s_D3D12.factory) {
+        for (int i = 0; i < s_D3D12.adapterCount; i++) {
+            s_D3D12.adapters[i].handle->lpVtbl->Release(s_D3D12.adapters[i].handle);
+        }
 
-    s_D3D12.factory->lpVtbl->Release(s_D3D12.factory);
-    FreeLibrary(s_D3D12.handle);
-    FreeLibrary(s_D3D12.dxgi);
+        s_D3D12.factory->lpVtbl->Release(s_D3D12.factory);
+        FreeLibrary(s_D3D12.handle);
+        FreeLibrary(s_D3D12.dxgi);
 
-    if (s_D3D12.adapters) {
-        palFree(s_D3D12.allocator, s_D3D12.adapters);
+        if (s_D3D12.adapters) {
+            palFree(s_D3D12.allocator, s_D3D12.adapters);
+        }
+        memset(&s_D3D12, 0, sizeof(s_D3D12));
     }
-    memset(&s_D3D12, 0, sizeof(s_D3D12));
 }
 
 #endif // PAL_HAS_D3D12_BACKEND

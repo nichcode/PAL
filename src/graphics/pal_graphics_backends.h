@@ -20,7 +20,7 @@ typedef struct {
 // ==================================================
 
 #if PAL_HAS_VULKAN_BACKEND
-PalResult PAL_CALL initGraphicsVk(
+PalBool PAL_CALL initGraphicsVk(
     const PalGraphicsDebugger* debugger, 
     const PalAllocator* allocator);
 
@@ -749,7 +749,7 @@ static PalGraphicsBackendVtable1 s_VkBackend1 = {
 // ==================================================
 
 #if PAL_HAS_D3D12_BACKEND
-PalResult PAL_CALL initGraphicsD3D12(
+PalBool PAL_CALL initGraphicsD3D12(
     const PalGraphicsDebugger* debugger, 
     const PalAllocator* allocator);
 
