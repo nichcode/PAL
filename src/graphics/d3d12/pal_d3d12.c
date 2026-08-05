@@ -1065,7 +1065,7 @@ PalBool PAL_CALL initGraphicsD3D12(
                 debugger->userData,
                 PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
                 PAL_DEBUG_MESSAGE_TYPE_GENERAL,
-                "Failed to load D3D12");
+                "Failed to load D3D12 runtime");
         }
         return PAL_FALSE;
     }

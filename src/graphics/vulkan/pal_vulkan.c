@@ -1444,14 +1444,6 @@ PalBool PAL_CALL initGraphicsVk(
     const char* extensions[8];
     result = s_Vk.enumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
     if (result != VK_SUCCESS) {
-        if (debugger && debugger->callback) {
-            debugger->callback(
-                debugger->userData,
-                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
-                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
-                "Failed to enumerate vulkan instance extension properties");
-        }
-
         return PAL_FALSE;
     }
 
@@ -1560,14 +1552,6 @@ PalBool PAL_CALL initGraphicsVk(
     VkInstance instance = nullptr;
     result = s_Vk.createInstance(&instanceCreateInfo, &s_Vk.allocatorImpl, &instance);
     if (result != VK_SUCCESS) {
-        if (debugger && debugger->callback) {
-            debugger->callback(
-                debugger->userData,
-                PAL_DEBUG_MESSAGE_SEVERITY_ERROR,
-                PAL_DEBUG_MESSAGE_TYPE_GENERAL,
-                "Failed to create vulkan instance - Check Driver ICD");
-        }
-
         return PAL_FALSE;
     }
 
