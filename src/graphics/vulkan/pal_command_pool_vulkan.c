@@ -34,6 +34,7 @@ PalResult PAL_CALL createCommandPoolVk(
     }
 
     pool->device = deviceImpl;
+    pool->queue = queueImpl;
     *outPool = (PalCommandPool*)pool;
     return PAL_RESULT_SUCCESS;
 }

@@ -22,7 +22,7 @@ static PalBool adapterDump(uint32_t flags)
         { "apiType", {40, 4}, FIELD(PalAdapterInfo, apiType) },
         { "name", {44, 128}, FIELD(PalAdapterInfo, name) },
         { "backendName", {172, 32}, FIELD(PalAdapterInfo, backendName) },
-        { "reserved", {204, 4}, FIELD(PalAdapterInfo, reserved) }
+        { "vtableVersion", {204, 4}, FIELD(PalAdapterInfo, vtableVersion) }
     };
 
     FieldInfo imageCapFields[] = {

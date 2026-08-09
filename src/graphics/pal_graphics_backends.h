@@ -13,6 +13,7 @@
 // clang-format off
 typedef struct {
     const PalGraphicsBackendVtable1* vtbl1;
+    const PalGraphicsBackendVtable2* vtbl2;
 } PalGraphicsVtable;
 
 // ==================================================
@@ -405,10 +406,21 @@ void PAL_CALL cmdImageBarrierVk(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info);
 
+void PAL_CALL cmdImageBarrier2Vk(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
+    PalBarrierInfo2* info);
+
 void PAL_CALL cmdBufferBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBarrierInfo* info);
+
+void PAL_CALL cmdBufferBarrier2Vk(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBarrierInfo2* info);
 
 void PAL_CALL cmdDispatchVk(
     PalCommandBuffer* cmdBuffer,
@@ -607,7 +619,7 @@ void PAL_CALL updateShaderBindingTableVk(
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos);
 
-static PalGraphicsBackendVtable1 s_VkBackend1 = {
+static const PalGraphicsBackendVtable1 s_VkBackend1 = {
     .enumerateAdapters = enumerateAdaptersVk,
     .getAdapterInfo = getAdapterInfoVk,
     .getAdapterCapabilities = getAdapterCapabilitiesVk,
@@ -741,6 +753,11 @@ static PalGraphicsBackendVtable1 s_VkBackend1 = {
     .createShaderBindingTable = createShaderBindingTableVk,
     .destroyShaderBindingTable = destroyShaderBindingTableVk,
     .updateShaderBindingTable = updateShaderBindingTableVk};
+
+static const PalGraphicsBackendVtable2 s_VkBackend2 = {
+    .vtable1 = s_VkBackend1,
+    .cmdImageBarrier = cmdImageBarrier2Vk,
+    .cmdBufferBarrier = cmdBufferBarrier2Vk};
 
 #endif // PAL_HAS_VULKAN_BACKEND
 
@@ -1134,10 +1151,21 @@ void PAL_CALL cmdImageBarrierD3D12(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info);
 
+void PAL_CALL cmdImageBarrier2D3D12(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
+    PalBarrierInfo2* info);
+
 void PAL_CALL cmdBufferBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBarrierInfo* info);
+
+void PAL_CALL cmdBufferBarrier2D3D12(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBarrierInfo2* info);
 
 void PAL_CALL cmdDispatchD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1299,7 +1327,7 @@ void PAL_CALL updateShaderBindingTableD3D12(
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos);
 
-static PalGraphicsBackendVtable1 s_D3D12Backend1 = {
+static const PalGraphicsBackendVtable1 s_D3D12Backend1 = {
     .enumerateAdapters = enumerateAdaptersD3D12,
     .getAdapterInfo = getAdapterInfoD3D12,
     .getAdapterCapabilities = getAdapterCapabilitiesD3D12,
@@ -1433,6 +1461,11 @@ static PalGraphicsBackendVtable1 s_D3D12Backend1 = {
     .createShaderBindingTable = createShaderBindingTableD3D12,
     .destroyShaderBindingTable = destroyShaderBindingTableD3D12,
     .updateShaderBindingTable = updateShaderBindingTableD3D12};
+
+static const PalGraphicsBackendVtable2 s_D3D12Backend2 = {
+    .vtable1 = s_D3D12Backend1,
+    .cmdImageBarrier = cmdImageBarrier2D3D12,
+    .cmdBufferBarrier = cmdBufferBarrier2D3D12}; 
 
 #endif // PAL_HAS_D3D12_BACKEND
 

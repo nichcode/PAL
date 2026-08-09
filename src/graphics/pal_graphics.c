@@ -48,152 +48,169 @@ typedef struct {
 
 static Graphics s_Graphics = {0};
 
-static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable1)
+static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable)
 {
     // validate required functions
     // clang-format off
-    if (!vtable1->enumerateAdapters                             ||
-        !vtable1->getAdapterInfo                                ||
-        !vtable1->getAdapterCapabilities                        ||
-        !vtable1->getAdapterFeatures                            ||
-        !vtable1->getHighestSupportedShaderTarget               ||
+    if (!vtable->enumerateAdapters                             ||
+        !vtable->getAdapterInfo                                ||
+        !vtable->getAdapterCapabilities                        ||
+        !vtable->getAdapterFeatures                            ||
+        !vtable->getHighestSupportedShaderTarget               ||
 
         // device
-        !vtable1->createDevice                                  ||
-        !vtable1->destroyDevice                                 ||
-        !vtable1->getDeviceLostReason                           ||
+        !vtable->createDevice                                  ||
+        !vtable->destroyDevice                                 ||
+        !vtable->getDeviceLostReason                           ||
 
         // memory
-        !vtable1->allocateMemory                                ||
-        !vtable1->freeMemory                                    ||
+        !vtable->allocateMemory                                ||
+        !vtable->freeMemory                                    ||
 
         // queue
-        !vtable1->createQueue                                   ||
-        !vtable1->destroyQueue                                  ||
-        !vtable1->waitQueue                                     ||
-        !vtable1->canQueuePresent                               ||
+        !vtable->createQueue                                   ||
+        !vtable->destroyQueue                                  ||
+        !vtable->waitQueue                                     ||
+        !vtable->canQueuePresent                               ||
 
         // formats
-        !vtable1->enumerateFormats                              ||
-        !vtable1->isFormatSupported                             ||
-        !vtable1->queryFormatImageUsages                        ||
-        !vtable1->queryFormatSampleCount                        ||
+        !vtable->enumerateFormats                              ||
+        !vtable->isFormatSupported                             ||
+        !vtable->queryFormatImageUsages                        ||
+        !vtable->queryFormatSampleCount                        ||
 
         // image
-        !vtable1->createImage                                   ||
-        !vtable1->destroyImage                                  ||
-        !vtable1->getImageInfo                                  ||
-        !vtable1->getImageMemoryRequirements                    ||
-        !vtable1->bindImageMemory                               ||
+        !vtable->createImage                                   ||
+        !vtable->destroyImage                                  ||
+        !vtable->getImageInfo                                  ||
+        !vtable->getImageMemoryRequirements                    ||
+        !vtable->bindImageMemory                               ||
 
         // image view
-        !vtable1->createImageView                               ||
-        !vtable1->destroyImageView                              ||
+        !vtable->createImageView                               ||
+        !vtable->destroyImageView                              ||
 
         // sampler
-        !vtable1->createSampler                                 ||
-        !vtable1->destroySampler                                ||
+        !vtable->createSampler                                 ||
+        !vtable->destroySampler                                ||
 
         // shader
-        !vtable1->createShader                                  ||
-        !vtable1->destroyShader                                 ||
+        !vtable->createShader                                  ||
+        !vtable->destroyShader                                 ||
 
         // fence
-        !vtable1->createFence                                   ||
-        !vtable1->destroyFence                                  ||
-        !vtable1->waitFence                                     ||
-        !vtable1->isFenceSignaled                               ||
+        !vtable->createFence                                   ||
+        !vtable->destroyFence                                  ||
+        !vtable->waitFence                                     ||
+        !vtable->isFenceSignaled                               ||
 
         // semaphore
-        !vtable1->createSemaphore                               ||
-        !vtable1->destroySemaphore                              ||
+        !vtable->createSemaphore                               ||
+        !vtable->destroySemaphore                              ||
 
         // command pool and command buffer
-        !vtable1->createCommandPool                             ||
-        !vtable1->destroyCommandPool                            ||
-        !vtable1->allocateCommandBuffer                         ||
-        !vtable1->freeCommandBuffer                             ||
-        !vtable1->resetCommandBuffer                            ||
-        !vtable1->submitCommandBuffer                           ||
+        !vtable->createCommandPool                             ||
+        !vtable->destroyCommandPool                            ||
+        !vtable->allocateCommandBuffer                         ||
+        !vtable->freeCommandBuffer                             ||
+        !vtable->resetCommandBuffer                            ||
+        !vtable->submitCommandBuffer                           ||
 
         // command recording
-        !vtable1->cmdBegin                                      ||
-        !vtable1->cmdEnd                                        ||
-        !vtable1->cmdExecuteCommandBuffer                       ||
-        !vtable1->cmdBeginRendering                             ||
-        !vtable1->cmdEndRendering                               ||
-        !vtable1->cmdCopyBuffer                                 ||
-        !vtable1->cmdCopyBufferToImage                          ||
-        !vtable1->cmdCopyImage                                  ||
-        !vtable1->cmdCopyImageToBuffer                          ||
-        !vtable1->cmdBindPipeline                               ||
-        !vtable1->cmdSetViewport                                ||
-        !vtable1->cmdSetScissors                                ||
-        !vtable1->cmdBindVertexBuffers                          ||
-        !vtable1->cmdBindIndexBuffer                            ||
-        !vtable1->cmdDraw                                       ||
-        !vtable1->cmdDrawIndexed                                ||
-        !vtable1->cmdImageBarrier                               ||
-        !vtable1->cmdBufferBarrier                              ||
-        !vtable1->cmdDispatch                                   ||
-        !vtable1->cmdBindDescriptorSet                          ||
-        !vtable1->cmdPushConstants                              ||
+        !vtable->cmdBegin                                      ||
+        !vtable->cmdEnd                                        ||
+        !vtable->cmdExecuteCommandBuffer                       ||
+        !vtable->cmdBeginRendering                             ||
+        !vtable->cmdEndRendering                               ||
+        !vtable->cmdCopyBuffer                                 ||
+        !vtable->cmdCopyBufferToImage                          ||
+        !vtable->cmdCopyImage                                  ||
+        !vtable->cmdCopyImageToBuffer                          ||
+        !vtable->cmdBindPipeline                               ||
+        !vtable->cmdSetViewport                                ||
+        !vtable->cmdSetScissors                                ||
+        !vtable->cmdBindVertexBuffers                          ||
+        !vtable->cmdBindIndexBuffer                            ||
+        !vtable->cmdDraw                                       ||
+        !vtable->cmdDrawIndexed                                ||
+        !vtable->cmdImageBarrier                               ||
+        !vtable->cmdBufferBarrier                              ||
+        !vtable->cmdDispatch                                   ||
+        !vtable->cmdBindDescriptorSet                          ||
+        !vtable->cmdPushConstants                              ||
 
         // buffer
-        !vtable1->createBuffer                                  ||
-        !vtable1->destroyBuffer                                 ||
-        !vtable1->getBufferMemoryRequirements                   ||
-        !vtable1->computeImageStagingRequirements               ||
-        !vtable1->writeImageStaging                             ||
-        !vtable1->bindBufferMemory                              ||
-        !vtable1->mapBuffer                                     ||
-        !vtable1->unmapBuffer                                   ||
+        !vtable->createBuffer                                  ||
+        !vtable->destroyBuffer                                 ||
+        !vtable->getBufferMemoryRequirements                   ||
+        !vtable->computeImageStagingRequirements               ||
+        !vtable->writeImageStaging                             ||
+        !vtable->bindBufferMemory                              ||
+        !vtable->mapBuffer                                     ||
+        !vtable->unmapBuffer                                   ||
 
         // descriptors
-        !vtable1->createDescriptorSetLayout                     ||
-        !vtable1->destroyDescriptorSetLayout                    ||
-        !vtable1->createDescriptorPool                          ||
-        !vtable1->destroyDescriptorPool                         ||
-        !vtable1->resetDescriptorPool                           ||
-        !vtable1->allocateDescriptorSet                         ||
-        !vtable1->updateDescriptorSet                           ||
+        !vtable->createDescriptorSetLayout                     ||
+        !vtable->destroyDescriptorSetLayout                    ||
+        !vtable->createDescriptorPool                          ||
+        !vtable->destroyDescriptorPool                         ||
+        !vtable->resetDescriptorPool                           ||
+        !vtable->allocateDescriptorSet                         ||
+        !vtable->updateDescriptorSet                           ||
 
         // pipeline layout
-        !vtable1->createPipelineLayout                          ||
-        !vtable1->destroyPipelineLayout                         ||
+        !vtable->createPipelineLayout                          ||
+        !vtable->destroyPipelineLayout                         ||
 
         // pipeline
-        !vtable1->createGraphicsPipeline                        ||
-        !vtable1->createComputePipeline                         ||
-        !vtable1->destroyPipeline) {
+        !vtable->createGraphicsPipeline                        ||
+        !vtable->createComputePipeline                         ||
+        !vtable->destroyPipeline) {
         return PAL_FALSE;
     }
     // clang-format on
     return PAL_TRUE;
 }
 
+static PalBool validateVtableVersion2(const PalGraphicsBackendVtable2* vtable)
+{
+    // validate required functions
+    if (!vtable->cmdBufferBarrier || !vtable->cmdImageBarrier) {
+        return PAL_FALSE;
+    }
+    return PAL_TRUE;
+}
+
 static PalBool addBackend(
-    const void* infoOrVtable,
+    const PalGraphicsBackendInfo* info,
     PalBool custom)
 {
     PalGraphicsVtable* backend = &s_Graphics.backends[s_Graphics.backendCount++];
     memset(backend, 0, sizeof(PalGraphicsVtable));
 
-    if (custom) {
-        const PalGraphicsBackendInfo* info = infoOrVtable;
-        if (info->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1) {
-            // validate that all version 1 required pointers are set
-            const PalGraphicsBackendVtable1* vtable1 = (PalGraphicsBackendVtable1*)info->vtable;
-            if (!validateVtableVersion1(vtable1)) {
+    if (info->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1) {
+        const PalGraphicsBackendVtable1* vtable = (PalGraphicsBackendVtable1*)info->vtable;
+        if (custom) {
+            if (!validateVtableVersion1(vtable)) {
                 return PAL_FALSE;
             }
-            backend->vtbl1 = vtable1;
         }
+        backend->vtbl1 = vtable;
 
-    } else {
-        backend->vtbl1 = infoOrVtable;
+    } else if (info->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2) {
+        const PalGraphicsBackendVtable2* vtable = (PalGraphicsBackendVtable2*)info->vtable;
+        if (custom) {
+            if (!validateVtableVersion1(&vtable->vtable1)) {
+                return PAL_FALSE;
+            }
+
+            if (!validateVtableVersion2(vtable)) {
+                return PAL_FALSE;
+            }
+        }
+        backend->vtbl1 = &vtable->vtable1;
+        backend->vtbl2 = vtable;
     }
-
     return PAL_TRUE;
 }
 
@@ -204,14 +221,22 @@ PalResult PAL_CALL palInitGraphics(
     const PalGraphicsBackendInfo* customBackends)
 {
 #if PAL_HAS_VULKAN_BACKEND
+    PalGraphicsBackendInfo info = {0};
+    info.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
+    info.vtable = &s_VkBackend2;
+
     if (initGraphicsVk(debugger, allocator)) {
-        addBackend(&s_VkBackend1, PAL_FALSE);
+        addBackend(&info, PAL_FALSE);
     }
 #endif // PAL_HAS_VULKAN_BACKEND
 
 #if PAL_HAS_D3D12_BACKEND
+    PalGraphicsBackendInfo info = {0};
+    info.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
+    info.vtable = &s_D3D12Backend2;
+
     if (initGraphicsD3D12(debugger, allocator)) {
-        addBackend(&s_D3D12Backend1, PAL_FALSE);
+        addBackend(&info, PAL_FALSE);
     }
 #endif // PAL_HAS_D3D12_BACKEND
 
@@ -1290,6 +1315,23 @@ void PAL_CALL palCmdSetStencilOp(
 {
     cmdBuffer->backend.vtbl1
         ->cmdSetStencilOp(cmdBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+}
+
+void PAL_CALL palCmdImageBarrier2(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
+    PalBarrierInfo2* info)
+{
+    cmdBuffer->backend.vtbl2->cmdImageBarrier(cmdBuffer, image, subresourceRange, info);
+}
+
+void PAL_CALL palCmdBufferBarrier2(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBarrierInfo2* info)
+{
+    cmdBuffer->backend.vtbl2->cmdBufferBarrier(cmdBuffer, buffer, info);
 }
 
 // ==================================================
