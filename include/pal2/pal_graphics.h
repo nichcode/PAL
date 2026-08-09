@@ -656,6 +656,14 @@
 #define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0
 
 /**
+ * Required implementations:
+ * - PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 required functions.
+ * - cmdImageBarrier2
+ * - cmdBufferBarrier2
+ */
+#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2 1
+
+/**
  * @struct PalAdapter
  * @brief Opaque handle to an adapter (GPU).
  *
@@ -1572,7 +1580,7 @@ typedef struct {
     PalAdapterApiType apiType;                       /**< (eg. `PAL_ADAPTER_API_TYPE_VULKAN`).*/
     char name[PAL_ADAPTER_NAME_SIZE];                /**< Adapter name.*/
     char backendName[PAL_ADAPTER_BACKEND_NAME_SIZE]; /**< Adapter backend name.*/
-    uint32_t reserved;                               /**< 0 for now.*/
+    PalGraphicsBackendVtableVersion vtableVersion;   /**< Backend version of the adapter.*/
 } PalAdapterInfo;
 
 /**
@@ -2425,6 +2433,22 @@ typedef struct {
     PalPipelineStages srcStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
     PalPipelineStages dstStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_OUTPUT`).*/
 } PalBarrierInfo;
+
+/**
+ * @struct PalBarrierInfo2
+ * @brief Extended information about a barrier.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 2.1
+ */
+typedef struct {
+    PalUsageState oldState;      /**< (eg. `PAL_USAGE_STATE_COLOR_ATTACHMENT`).*/
+    PalUsageState newState;      /**< (eg. `PAL_USAGE_STATE_PRESENT`).*/
+    PalPipelineStages srcStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
+    PalPipelineStages dstStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_OUTPUT`).*/
+    PalCommandBuffer* dstCommandBuffer;   /**< Acquire queue command buffer.*/
+} PalBarrierInfo2;
 
 /**
  * @struct PalPushConstantInfo
@@ -4101,6 +4125,39 @@ typedef struct {
 } PalGraphicsBackendVtable1;
 
 /**
+ * @struct PalGraphicsBackendVtable2
+ * @brief Version 2 dispatch table for PAL graphics system backends.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since 2.1
+ */
+typedef struct {
+    const PalGraphicsBackendVtable1 vtable1; /**< PalGraphicsBackendVtable1.*/
+
+    /**
+     * Backend implementation of ::palCmdImageBarrier2.
+     *
+     * Must obey the rules and semantics documented in palCmdImageBarrier2().
+     */
+    void(PAL_CALL* cmdImageBarrier)(
+        PalCommandBuffer* cmdBuffer,
+        PalImage* image,
+        PalImageSubresourceRange* subresourceRange,
+        PalBarrierInfo2* info);
+
+    /**
+     * Backend implementation of ::palCmdBufferBarrier2.
+     *
+     * Must obey the rules and semantics documented in palCmdBufferBarrier2().
+     */
+    void(PAL_CALL* cmdBufferBarrier)(
+        PalCommandBuffer* cmdBuffer,
+        PalBuffer* buffer,
+        PalBarrierInfo2* info);
+} PalGraphicsBackendVtable2;
+
+/**
  * @brief Initialize the graphics system.
  *
  * The debugger, allocator and custom backends will not not copied, therefore the pointers must
@@ -5553,8 +5610,6 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirectCount(
 /**
  * @brief Build or update an acceleration structure.
  *
- *
- *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
@@ -5860,8 +5915,6 @@ PAL_API void PAL_CALL palCmdDrawIndirectCount(
 /**
  * @brief Issue an indexed draw command.
  *
- *
- *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] indexCount Number of indices to draw.
  * @param[in] instanceCount Number of instances to draw.
@@ -5887,8 +5940,6 @@ PAL_API void PAL_CALL palCmdDrawIndexed(
 /**
  * @brief Issue an indexed draw command using buffers.
  *
- *
- *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
@@ -5911,8 +5962,6 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirect(
 
 /**
  * @brief Issue an indexed draw command using buffers.
- *
- *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -5982,7 +6031,7 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
 /**
  * @brief Transition an image from one usage state to another.
  *
- *  This function defines a
+ * This function defines a
  * dependency between `PalBarrierInfo::oldState` and `PalBarrierInfo::newState`. It ensures that all
  * operations performed under `PalBarrierInfo::oldState` are completed and visible before the image
  * is accessed under `PalBarrierInfo::newState`.
@@ -6017,6 +6066,36 @@ PAL_API void PAL_CALL palCmdImageBarrier(
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info);
+
+/**
+ * @brief Transition an image from one usage state to another 
+ * and optionally transfer ownership from one queue to another.
+ * 
+ * The adapter used to create the command buffer's device must support
+ * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
+ * 
+ * `PalBarrierInfo2::srcQueue` and `PalBarrierInfo2::dstQueue` specify the queues involved
+ * in the ownership transfer. The image must be owned by the source queue
+ * provided.
+ * 
+ * If both queues are the same, no queue ownership transfer is performed but the barrier
+ * will be set.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] image Image to set barrier on.
+ * @param[in] subresourceRange Subresource range of the image.
+ * @param[in] info Pointer to a PalBarrierInfo2 struct that specifies parameters.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 2.1
+ * @sa palCmdBufferBarrier2
+ */
+PAL_API void PAL_CALL palCmdImageBarrier2(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
+    PalBarrierInfo2* info);
 
 /**
  * @brief Transition a buffer from one usage state to another.
@@ -6056,9 +6135,35 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
     PalBarrierInfo* info);
 
 /**
+ * @brief Transition a buffer from one usage state to another
+ * and optionally transfer ownership from one queue to another.
+ *
+ * The adapter used to create the command buffer's device must support
+ * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
+ * 
+ * `PalBarrierInfo2::srcQueue` and `PalBarrierInfo2::dstQueue` specify the queues involved
+ * in the ownership transfer. The buffer must be owned by the source queue
+ * provided.
+ * 
+ * If both queues are the same, no queue ownership transfer is performed but the barrier
+ * will be set.
+ *
+ * @param[in] cmdBuffer Command buffer being recorded.
+ * @param[in] buffer Buffer to set barrier on.
+ * @param[in] info Pointer to a PalBarrierInfo2 struct that specifies parameters.
+ *
+ * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ *
+ * @since 2.1
+ * @sa palCmdImageBarrier2
+ */
+PAL_API void PAL_CALL palCmdBufferBarrier2(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBarrierInfo2* info);
+
+/**
  * @brief Dispatch compute shader workgroups.
- *
- *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] groupCountX Number of compute shader groups to dispatch on the x axis.
@@ -6080,8 +6185,6 @@ PAL_API void PAL_CALL palCmdDispatch(
 
 /**
  * @brief Dispatch compute shader workgroups with base offset.
- *
- *
  *
  * `PAL_ADAPTER_FEATURE_DISPATCH_BASE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6113,8 +6216,6 @@ PAL_API void PAL_CALL palCmdDispatchBase(
 /**
  * @brief Dispatch compute shader workgroups using parameters from a buffer.
  *
- *
- *
  * `PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
@@ -6135,9 +6236,7 @@ PAL_API void PAL_CALL palCmdDispatchIndirect(
 
 /**
  * @brief Dispatch rays.
- *
- *
- *
+ * 
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
@@ -6164,8 +6263,6 @@ PAL_API void PAL_CALL palCmdTraceRays(
 
 /**
  * @brief Dispatch rays using parameters from a buffer.
- *
- *
  *
  * `PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6194,8 +6291,6 @@ PAL_API void PAL_CALL palCmdTraceRaysIndirect(
 /**
  * @brief Bind a descriptor set to the provided command buffer.
  *
- *
- *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] setIndex Index of the descriptor set to bind.
  * @param[in] set Descriptor set to bind. Must be compatible with `layout`.
@@ -6213,8 +6308,6 @@ PAL_API void PAL_CALL palCmdBindDescriptorSet(
 
 /**
  * @brief Update push constant data for the provided command buffer.
- *
- *
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] offset Offset in bytes into the push constant range.
@@ -6236,8 +6329,6 @@ PAL_API void PAL_CALL palCmdPushConstants(
 /**
  * @brief Set the cull mode for the provided command buffer.
  *
- *
- *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
@@ -6253,9 +6344,7 @@ PAL_API void PAL_CALL palCmdSetCullMode(
     PalCullMode cullMode);
 
 /**
- * @brief Set the front face for the provided command buffer.
- *
- *
+ * @brief Set the front face for the provided command buffer.s
  *
  * `PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
@@ -6953,7 +7042,6 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
 
 /**
  * @brief Create a shader binding table.
- *
  *
  * The created shader binding table must be destroyed using `palDestroyShaderBindingTable()`.
  *

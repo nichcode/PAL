@@ -1280,4 +1280,31 @@ void PAL_CALL cmdPushConstantsD3D12(
     }
 }
 
+void PAL_CALL cmdImageBarrier2D3D12(
+    PalCommandBuffer* cmdBuffer,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
+    PalBarrierInfo2* info)
+{
+    PalBarrierInfo barrierInfo = {0};
+    barrierInfo.oldState = info->oldState;
+    barrierInfo.srcStages = info->srcStages;
+    barrierInfo.newState = info->newState;
+    barrierInfo.dstStages = info->dstStages;
+    cmdImageBarrier2D3D12(cmdBuffer, image, subresourceRange, &barrierInfo);
+}
+
+void PAL_CALL cmdBufferBarrier2D3D12(
+    PalCommandBuffer* cmdBuffer,
+    PalBuffer* buffer,
+    PalBarrierInfo2* info)
+{
+    PalBarrierInfo barrierInfo = {0};
+    barrierInfo.oldState = info->oldState;
+    barrierInfo.srcStages = info->srcStages;
+    barrierInfo.newState = info->newState;
+    barrierInfo.dstStages = info->dstStages;
+    cmdBufferBarrier2D3D12(cmdBuffer, buffer, &barrierInfo);
+}
+
 #endif // PAL_HAS_D3D12_BACKEND

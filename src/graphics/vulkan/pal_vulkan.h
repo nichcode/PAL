@@ -244,6 +244,7 @@ typedef struct {
 typedef struct {
     void* reserved;
     DeviceVk* device;
+    QueueVk* queue;
     VkCommandPool handle;
 } CommandPoolVk;
 
