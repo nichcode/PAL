@@ -190,6 +190,7 @@ typedef struct {
 typedef struct {
     void* reserved;
     VkQueueFlags usage;
+    PalPipelineStages supportedStages;
     DeviceVk* device;
     PhysicalQueue* phyQueue;
 } QueueVk;

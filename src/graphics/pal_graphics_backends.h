@@ -106,6 +106,18 @@ PalBool PAL_CALL canQueuePresentVk(
     PalQueue* queue,
     PalSurface* surface);
 
+PalBool PAL_CALL canQueueShareOwnershipVk(
+    PalQueue* a,
+    PalQueue* b);
+   
+PalBool PAL_CALL canQueueUseUsageStateVk(
+    PalQueue* queue,
+    PalUsageState state);
+
+PalBool PAL_CALL canQueueUsePipelineStagesVk(
+    PalQueue* queue,
+    PalPipelineStages stages);
+
 PalResult PAL_CALL waitQueueVk(PalQueue* queue);
 
 void PAL_CALL enumerateFormatsVk(
@@ -756,8 +768,11 @@ static const PalGraphicsBackendVtable1 s_VkBackend1 = {
 
 static const PalGraphicsBackendVtable2 s_VkBackend2 = {
     .vtable1 = s_VkBackend1,
-    .cmdImageBarrier = cmdImageBarrier2Vk,
-    .cmdBufferBarrier = cmdBufferBarrier2Vk};
+    .canQueueShareOwnership = canQueueShareOwnershipVk,
+    .canQueueUseUsageState = canQueueUseUsageStateVk,
+    .canQueueUsePipelineStages = canQueueUsePipelineStagesVk,
+    .cmdImageBarrier2 = cmdImageBarrier2Vk,
+    .cmdBufferBarrier2 = cmdBufferBarrier2Vk};
 
 #endif // PAL_HAS_VULKAN_BACKEND
 
@@ -850,6 +865,18 @@ void PAL_CALL destroyQueueD3D12(PalQueue* queue);
 PalBool PAL_CALL canQueuePresentD3D12(
     PalQueue* queue,
     PalSurface* surface);
+
+PalBool PAL_CALL canQueueShareOwnershipD3D12(
+    PalQueue* a,
+    PalQueue* b);
+   
+PalBool PAL_CALL canQueueUseUsageStateD3D12(
+    PalQueue* queue,
+    PalUsageState state);
+
+PalBool PAL_CALL canQueueUsePipelineStagesD3D12(
+    PalQueue* queue,
+    PalPipelineStages stages);
 
 PalResult PAL_CALL waitQueueD3D12(PalQueue* queue);
 
@@ -1464,8 +1491,11 @@ static const PalGraphicsBackendVtable1 s_D3D12Backend1 = {
 
 static const PalGraphicsBackendVtable2 s_D3D12Backend2 = {
     .vtable1 = s_D3D12Backend1,
-    .cmdImageBarrier = cmdImageBarrier2D3D12,
-    .cmdBufferBarrier = cmdBufferBarrier2D3D12}; 
+    .canQueueShareOwnership = canQueueShareOwnershipD3D12,
+    .canQueueUseUsageState = canQueueUseUsageStateD3D12,
+    .canQueueUsePipelineStages = canQueueUsePipelineStagesD3D12,
+    .cmdImageBarrier2 = cmdImageBarrier2D3D12,
+    .cmdBufferBarrier2 = cmdBufferBarrier2D3D12};
 
 #endif // PAL_HAS_D3D12_BACKEND
 
