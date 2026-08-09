@@ -658,6 +658,9 @@
 /**
  * Required implementations:
  * - PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 required functions.
+ * - canQueueShareOwnership
+ * - canQueueUseUsageState
+ * - canQueueUsePipelineStages
  * - cmdImageBarrier2
  * - cmdBufferBarrier2
  */
@@ -2447,7 +2450,7 @@ typedef struct {
     PalUsageState newState;      /**< (eg. `PAL_USAGE_STATE_PRESENT`).*/
     PalPipelineStages srcStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
     PalPipelineStages dstStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_OUTPUT`).*/
-    PalCommandBuffer* dstCommandBuffer;   /**< Acquire queue command buffer.*/
+    PalCommandBuffer* dstCmdBuffer;   /**< Acquire queue command buffer.*/
 } PalBarrierInfo2;
 
 /**
@@ -4136,11 +4139,38 @@ typedef struct {
     const PalGraphicsBackendVtable1 vtable1; /**< PalGraphicsBackendVtable1.*/
 
     /**
+     * Backend implementation of ::palCanQueueShareOwnership.
+     *
+     * Must obey the rules and semantics documented in palCanQueueShareOwnership().
+     */
+    PalBool(PAL_CALL* canQueueShareOwnership)(
+        PalQueue* a,
+        PalQueue* b);
+
+    /**
+     * Backend implementation of ::palCanQueueUseUsageState.
+     *
+     * Must obey the rules and semantics documented in palCanQueueUseUsageState().
+     */
+    PalBool(PAL_CALL* canQueueUseUsageState)(
+        PalQueue* queue,
+        PalUsageState state);
+
+    /**
+     * Backend implementation of ::palCanQueueUsePipelineStages.
+     *
+     * Must obey the rules and semantics documented in palCanQueueUsePipelineStages().
+     */
+    PalBool(PAL_CALL* canQueueUsePipelineStages)(
+        PalQueue* queue,
+        PalPipelineStages stages);
+
+    /**
      * Backend implementation of ::palCmdImageBarrier2.
      *
      * Must obey the rules and semantics documented in palCmdImageBarrier2().
      */
-    void(PAL_CALL* cmdImageBarrier)(
+    void(PAL_CALL* cmdImageBarrier2)(
         PalCommandBuffer* cmdBuffer,
         PalImage* image,
         PalImageSubresourceRange* subresourceRange,
@@ -4151,7 +4181,7 @@ typedef struct {
      *
      * Must obey the rules and semantics documented in palCmdBufferBarrier2().
      */
-    void(PAL_CALL* cmdBufferBarrier)(
+    void(PAL_CALL* cmdBufferBarrier2)(
         PalCommandBuffer* cmdBuffer,
         PalBuffer* buffer,
         PalBarrierInfo2* info);
@@ -4586,7 +4616,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  * @param[in] queue Queue to query.
  * @param[in] surface Surface to check presentation support for.
  *
- * @return True if queue can present otherwise `PAL_FALSE` if queue can not present.
+ * @return `PAL_TRUE` if queue can present otherwise `PAL_FALSE`.
  *
  * Thread safety: Must only be called from the main thread.
  *
@@ -4596,6 +4626,65 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 PAL_API PalBool PAL_CALL palCanQueuePresent(
     PalQueue* queue,
     PalSurface* surface);
+
+/**
+ * @brief Check if two queues can share resources without requiring ownership transfer.
+ * 
+ * The adapter used to create the queue's device must support
+ * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
+ *
+ * @param[in] a First queue
+ * @param[in] b Second queue.
+ * 
+ * @return `PAL_TRUE` if both queues can share resources otherwise `PAL_FALSE`.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since 2.1
+ */
+PAL_API PalBool PAL_CALL palCanQueueShareOwnership(
+    PalQueue* a,
+    PalQueue* b);
+   
+/**
+ * @brief Check if a queue can use the provided usage state.
+ * 
+ * The adapter used to create the queue's device must support
+ * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
+ *
+ * @param[in] queue The queue to query.
+ * @param[in] state The usage state.
+ * 
+ * @return `PAL_TRUE` if the queue can use the usage state otherwise `PAL_FALSE`.
+ *
+ * Thread safety: Thread safe.
+ * 
+ * @sa palCanQueueUsePipelineStages
+ * @since 2.1
+ */
+PAL_API PalBool PAL_CALL palCanQueueUseUsageState(
+    PalQueue* queue,
+    PalUsageState state);
+
+/**
+ * @brief Check if a queue can use the provided pipeline stages.
+ * 
+ * The adapter used to create the queue's device must support
+ * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
+ *
+ * @param[in] queue The queue to query.
+ * @param[in] stages The pipeline stages.
+ * 
+ * @return `PAL_TRUE` if the queue can use the pipeline stages otherwise `PAL_FALSE`.
+ *
+ * Thread safety: Thread safe.
+ * 
+ * @sa palCanQueueUseUsageState
+ * @since 2.1
+ */
+PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
+    PalQueue* queue,
+    PalPipelineStages stages);
 
 /**
  * @brief Blocks indefinitely until the queue becomes idle.
@@ -6074,11 +6163,11 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  * The adapter used to create the command buffer's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  * 
- * `PalBarrierInfo2::srcQueue` and `PalBarrierInfo2::dstQueue` specify the queues involved
- * in the ownership transfer. The image must be owned by the source queue
+ * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved
+ * in the ownership transfer. The image must be owned by the source command buffer
  * provided.
  * 
- * If both queues are the same, no queue ownership transfer is performed but the barrier
+ * If both command buffers are the same, no queue ownership transfer is performed but the barrier
  * will be set.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
@@ -6100,10 +6189,10 @@ PAL_API void PAL_CALL palCmdImageBarrier2(
 /**
  * @brief Transition a buffer from one usage state to another.
  *
- *  This function defines a
- * dependency between `PalBarrierInfo::oldState` and `PalBarrierInfo::newState`. It ensures that all
- * operations performed under `PalBarrierInfo::oldState` are completed and visible before the buffer
- * is accessed under `PalBarrierInfo::newState`.
+ * This function defines a dependency between `PalBarrierInfo::oldState` and 
+ * `PalBarrierInfo::newState`. It ensures that all operations performed under 
+ * `PalBarrierInfo::oldState` are completed and visible before the buffer is accessed 
+ * under `PalBarrierInfo::newState`.
  *
  * This function does not modify the buffer, it only exforces execution ordering and buffer memory
  * visibility.
@@ -6141,11 +6230,11 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
  * The adapter used to create the command buffer's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  * 
- * `PalBarrierInfo2::srcQueue` and `PalBarrierInfo2::dstQueue` specify the queues involved
- * in the ownership transfer. The buffer must be owned by the source queue
+ * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved
+ * in the ownership transfer. The buffer must be owned by the source command buffer
  * provided.
  * 
- * If both queues are the same, no queue ownership transfer is performed but the barrier
+ * If both command buffers are the same, no queue ownership transfer is performed but the barrier
  * will be set.
  *
  * @param[in] cmdBuffer Command buffer being recorded.

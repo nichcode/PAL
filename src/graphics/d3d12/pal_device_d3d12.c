@@ -624,6 +624,27 @@ PalBool PAL_CALL canQueuePresentD3D12(
     return PAL_FALSE;
 }
 
+PalBool PAL_CALL canQueueShareOwnershipD3D12(
+    PalQueue* a,
+    PalQueue* b)
+{
+    // TODO: implement
+}
+   
+PalBool PAL_CALL canQueueUseUsageStateD3D12(
+    PalQueue* queue,
+    PalUsageState state)
+{
+    // TODO: implement
+}
+
+PalBool PAL_CALL canQueueUsePipelineStagesD3D12(
+    PalQueue* queue,
+    PalPipelineStages stages)
+{
+    // TODO: implement
+}
+
 PalResult PAL_CALL createShaderD3D12(
     PalDevice* device,
     const PalShaderCreateInfo* info,

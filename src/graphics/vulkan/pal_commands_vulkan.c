@@ -964,7 +964,7 @@ void PAL_CALL cmdImageBarrier2Vk(
 {
     ImageVk* imageImpl = (ImageVk*)image;
     CommandBufferVk* srcCmdBufferImpl = (CommandBufferVk*)cmdBuffer;
-    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)info->dstCommandBuffer;
+    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)info->dstCmdBuffer;
     uint32_t srcQueueFamily = srcCmdBufferImpl->pool->queue->phyQueue->familyIndex;
     uint32_t dstQueueFamily = dstCmdBufferImpl->pool->queue->phyQueue->familyIndex;
 
@@ -1065,7 +1065,7 @@ void PAL_CALL cmdBufferBarrier2Vk(
 {
     BufferVk* bufferImpl = (BufferVk*)buffer;
     CommandBufferVk* srcCmdBufferImpl = (CommandBufferVk*)cmdBuffer;
-    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)info->dstCommandBuffer;
+    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)info->dstCmdBuffer;
     uint32_t srcQueueFamily = srcCmdBufferImpl->pool->queue->phyQueue->familyIndex;
     uint32_t dstQueueFamily = dstCmdBufferImpl->pool->queue->phyQueue->familyIndex;
 

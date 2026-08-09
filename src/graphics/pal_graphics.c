@@ -175,9 +175,15 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable)
 static PalBool validateVtableVersion2(const PalGraphicsBackendVtable2* vtable)
 {
     // validate required functions
-    if (!vtable->cmdBufferBarrier || !vtable->cmdImageBarrier) {
+    // clang-format off
+    if (!vtable->canQueueShareOwnership    || 
+        !vtable->canQueueUseUsageState     ||
+        !vtable->canQueueUsePipelineStages ||
+        !vtable->cmdImageBarrier2          ||
+        !vtable->cmdBufferBarrier2) {
         return PAL_FALSE;
     }
+    // clang-format on
     return PAL_TRUE;
 }
 
@@ -494,6 +500,27 @@ PalBool PAL_CALL palCanQueuePresent(
     PalSurface* surface)
 {
     return queue->backend.vtbl1->canQueuePresent(queue, surface);
+}
+
+PalBool PAL_CALL palCanQueueShareOwnership(
+    PalQueue* a,
+    PalQueue* b)
+{
+    return a->backend.vtbl2->canQueueShareOwnership(a, b);
+}
+   
+PalBool PAL_CALL palCanQueueUseUsageState(
+    PalQueue* queue,
+    PalUsageState state)
+{
+    return queue->backend.vtbl2->canQueueUseUsageState(queue, state);
+}
+
+PalBool PAL_CALL palCanQueueUsePipelineStages(
+    PalQueue* queue,
+    PalPipelineStages stages)
+{
+    return queue->backend.vtbl2->canQueueUsePipelineStages(queue, stages);
 }
 
 PalResult PAL_CALL palWaitQueue(PalQueue* queue)
@@ -1323,7 +1350,7 @@ void PAL_CALL palCmdImageBarrier2(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo2* info)
 {
-    cmdBuffer->backend.vtbl2->cmdImageBarrier(cmdBuffer, image, subresourceRange, info);
+    cmdBuffer->backend.vtbl2->cmdImageBarrier2(cmdBuffer, image, subresourceRange, info);
 }
 
 void PAL_CALL palCmdBufferBarrier2(
@@ -1331,7 +1358,7 @@ void PAL_CALL palCmdBufferBarrier2(
     PalBuffer* buffer,
     PalBarrierInfo2* info)
 {
-    cmdBuffer->backend.vtbl2->cmdBufferBarrier(cmdBuffer, buffer, info);
+    cmdBuffer->backend.vtbl2->cmdBufferBarrier2(cmdBuffer, buffer, info);
 }
 
 // ==================================================
