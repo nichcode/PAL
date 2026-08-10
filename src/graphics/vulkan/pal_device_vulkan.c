@@ -1231,6 +1231,8 @@ PalResult PAL_CALL createQueueVk(
     queue->phyQueue = phyQueue;
     queue->usage = queueFlag;
     queue->device = deviceImpl;
+    queue->supportedStages = stages;
+
     *outQueue = (PalQueue*)queue;
     return PAL_RESULT_SUCCESS;
 }

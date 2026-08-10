@@ -759,6 +759,8 @@ PalBool customBackendTest()
     vtable.createComputePipeline = createComputePipeline;
     vtable.destroyPipeline = destroyPipeline;
 
+    // We are still keeping the custom backend at version 1 so we dont have to implement
+    // the required V2 functions
     PalGraphicsBackendInfo backendInfo = {0};
     backendInfo.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1;
     backendInfo.vtable = &vtable;

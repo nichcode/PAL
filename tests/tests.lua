@@ -73,7 +73,8 @@ project "tests"
             "graphics/compute_test.c",
             "graphics/ray_tracing_test.c",
             "graphics/multi_descriptor_set_test.c",
-            "graphics/custom_backend_test.c"
+            "graphics/custom_backend_test.c",
+            "graphics/queue_ownership_test.c"
         }
     end
 

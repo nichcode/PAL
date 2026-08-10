@@ -89,6 +89,7 @@ PAL tests are blueprints that can be copy-paste with little code changes. See be
 - [Mesh Example](./tests/graphics/mesh_test.c)
 - [Ray Tracing Example](./tests/graphics/ray_tracing_test.c)
 - [Custom Graphics Backend Example](./tests/graphics/custom_backend_test.c)
+- [Queue Ownership Example](./tests/graphics/queue_ownership_test.c)
 - [Window Example](./tests/video/window_test.c)
 - [Input Window Example](./tests/video/input_window_test.c)
 

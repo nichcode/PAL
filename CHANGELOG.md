@@ -1,5 +1,22 @@
 
 <!-- ===========================================================-->
+<!-- PAL V2.1.0 -->
+<!-- =========================================================== -->
+
+## 2.1.0
+
+### Features
+
+- Added `palCmdImageBarrier2()` to transfer image ownership between two queues.
+- Added `palCmdBufferBarrier2()` to transfer buffer ownership between two queues.
+- Added `palCanQueueShareOwnership()` to check if two queues can share resource ownership.
+- Added `palCanQueueUseUsageState()` to check if a queue can use a usage state.
+- Added `palCanQueueUsePipelineStages()` to check if a queue can use a pipeline stage(s).
+- Added `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` constant to extend the graphics backend vtable.
+- Added struct `PalBarrierInfo2`.
+- Added struct `PalGraphicsBackendVtable2`.
+
+<!-- ===========================================================-->
 <!-- PAL V2.0.1 -->
 <!-- =========================================================== -->
 
