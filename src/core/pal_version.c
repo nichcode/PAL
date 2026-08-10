@@ -8,9 +8,9 @@
 #include "pal2/pal_core.h"
 
 #define PAL_VERSION_MAJOR 2
-#define PAL_VERSION_MINOR 0
+#define PAL_VERSION_MINOR 1
 #define PAL_VERSION_BUILD 0
-#define PAL_VERSION_STRING "2.0.0"
+#define PAL_VERSION_STRING "2.1.0"
 
 void PAL_CALL palGetVersion(PalVersion* version)
 {

@@ -518,6 +518,7 @@ PalResult PAL_CALL createQueueD3D12(
     DeviceD3D12* deviceImpl = (DeviceD3D12*)device;
     QueueD3D12* queue = nullptr;
     D3D12_COMMAND_QUEUE_DESC desc = {0};
+    PalPipelineStages stages = 0;
 
     switch (type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
@@ -526,6 +527,14 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeComputeQueues--;
+
+            stages = PAL_PIPELINE_STAGE_TRANSFER;
+            stages |= PAL_PIPELINE_STAGE_COMPUTE_SHADER;
+            stages |= PAL_PIPELINE_STAGE_INDIRECT_INPUT;
+
+            stages |= PAL_PIPELINE_STAGE_HOST;
+            stages |= PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+            stages |= PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD;
             break;
         }
 
@@ -535,6 +544,30 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeGraphicsQueues--;
+
+            stages = PAL_PIPELINE_STAGE_TRANSFER;
+            stages |= PAL_PIPELINE_STAGE_VERTEX_SHADER;
+            stages |= PAL_PIPELINE_STAGE_FRAGMENT_SHADER;
+
+            stages |= PAL_PIPELINE_STAGE_GEOMETRY_SHADER;
+            stages |= PAL_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER;
+            stages |= PAL_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER;
+            stages |= PAL_PIPELINE_STAGE_TASK_SHADER;
+
+            stages |= PAL_PIPELINE_STAGE_MESH_SHADER;
+            stages |= PAL_PIPELINE_STAGE_VERTEX_INPUT;
+            stages |= PAL_PIPELINE_STAGE_INDEX_INPUT;
+            stages |= PAL_PIPELINE_STAGE_EARLY_DEPTH_STENCIL;
+
+            stages |= PAL_PIPELINE_STAGE_LATE_DEPTH_STENCIL;
+            stages |= PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
+            stages |= PAL_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT;
+            stages |= PAL_PIPELINE_STAGE_INDIRECT_INPUT;
+
+            stages |= PAL_PIPELINE_STAGE_HOST;
+            stages |= PAL_PIPELINE_STAGE_COMPUTE_SHADER;
+            stages |= PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+            stages |= PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD;
             break;
         }
 
@@ -544,6 +577,8 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeCopyQueues--;
+
+            stages = PAL_PIPELINE_STAGE_TRANSFER;
             break;
         }
     }
@@ -585,6 +620,8 @@ PalResult PAL_CALL createQueueD3D12(
 
     queue->fenceValue = 0;
     queue->type = type;
+    queue->supportedStages = stages;
+
     *outQueue = (PalQueue*)queue;
     return PAL_RESULT_SUCCESS;
 }
@@ -628,21 +665,85 @@ PalBool PAL_CALL canQueueShareOwnershipD3D12(
     PalQueue* a,
     PalQueue* b)
 {
-    // TODO: implement
+    QueueD3D12* queueImplA = (QueueD3D12*)a;
+    QueueD3D12* queueImplB = (QueueD3D12*)b;
+    if (queueImplA->handle && queueImplB->handle) {
+        return PAL_TRUE;
+    }
+
+    return PAL_FALSE;
 }
    
 PalBool PAL_CALL canQueueUseUsageStateD3D12(
     PalQueue* queue,
     PalUsageState state)
 {
-    // TODO: implement
+    QueueD3D12* queueImpl = (QueueD3D12*)queue;
+    if (queueImpl->type == PAL_QUEUE_TYPE_COPY) {
+        switch (state) {
+            case PAL_USAGE_STATE_TRANSFER_READ:
+            case PAL_USAGE_STATE_TRANSFER_WRITE: {
+                return PAL_TRUE;
+            }
+        }
+        return PAL_FALSE;
+
+    } else if (queueImpl->type == PAL_QUEUE_TYPE_COMPUTE) {
+        switch (state) {
+            case PAL_USAGE_STATE_TRANSFER_READ:
+            case PAL_USAGE_STATE_TRANSFER_WRITE:
+            case PAL_USAGE_STATE_HOST_READ:
+            case PAL_USAGE_STATE_HOST_WRITE:
+            case PAL_USAGE_STATE_INDIRECT_READ:
+            case PAL_USAGE_STATE_UNIFORM_READ:
+            case PAL_USAGE_STATE_SHADER_READ:
+            case PAL_USAGE_STATE_SHADER_WRITE:
+            case PAL_USAGE_STATE_STORAGE_READ:
+            case PAL_USAGE_STATE_STORAGE_WRITE:
+            case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ:
+            case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE: {
+                return PAL_TRUE;
+            }
+        }
+        return PAL_FALSE;
+
+    } else if (queueImpl->type == PAL_QUEUE_TYPE_GRAPHICS) {
+        switch (state) {
+            case PAL_USAGE_STATE_TRANSFER_READ:
+            case PAL_USAGE_STATE_TRANSFER_WRITE:
+            case PAL_USAGE_STATE_HOST_READ:
+            case PAL_USAGE_STATE_HOST_WRITE:
+            case PAL_USAGE_STATE_INDIRECT_READ:
+            case PAL_USAGE_STATE_UNIFORM_READ:
+            case PAL_USAGE_STATE_SHADER_READ:
+            case PAL_USAGE_STATE_SHADER_WRITE:
+            case PAL_USAGE_STATE_STORAGE_READ:
+            case PAL_USAGE_STATE_STORAGE_WRITE:
+            case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ:
+            case PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE:
+            case PAL_USAGE_STATE_PRESENT:
+            case PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE:
+            case PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ:
+            case PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE:
+            case PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ:
+            case PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE:
+            case PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ:
+            case PAL_USAGE_STATE_VERTEX_READ:
+            case PAL_USAGE_STATE_INDEX_READ: {
+                return PAL_TRUE;
+            }
+        }
+        return PAL_FALSE;
+    }
+    return PAL_FALSE;
 }
 
 PalBool PAL_CALL canQueueUsePipelineStagesD3D12(
     PalQueue* queue,
     PalPipelineStages stages)
 {
-    // TODO: implement
+    QueueD3D12* queueImpl = (QueueD3D12*)queue;
+    return (queueImpl->supportedStages & stages) == stages;
 }
 
 PalResult PAL_CALL createShaderD3D12(

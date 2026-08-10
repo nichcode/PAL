@@ -172,6 +172,7 @@ typedef struct {
 typedef struct {
     void* reserved;
     uint32_t fenceValue;
+    PalPipelineStages supportedStages;
     PalQueueType type;
     ID3D12Fence* fence;
     HANDLE fenceEvent;
