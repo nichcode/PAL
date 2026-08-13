@@ -580,7 +580,6 @@ PalBool descriptorIndexingTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffers[0];
     submitInfo.fence = fence;
-    submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
 
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {

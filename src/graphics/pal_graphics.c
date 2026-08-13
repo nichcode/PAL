@@ -13,7 +13,7 @@
 #define MAX_BACKENDS (PAL_MAX_CUSTOM_BACKENDS + 2)
 #define PAL_HANDLE(name)                                                                           \
     struct name {                                                                                  \
-        PalGraphicsVtable backend;                                                                 \
+        PalGraphicsVtable* backend;                                                                 \
     };
 
 PAL_HANDLE(PalAdapter)
@@ -174,6 +174,10 @@ static PalBool validateVtableVersion1(const PalGraphicsBackendVtable1* vtable)
 
 static PalBool validateVtableVersion2(const PalGraphicsBackendVtable2* vtable)
 {
+    if (!validateVtableVersion1(vtable->vtable1)) {
+        return PAL_FALSE;
+    }
+
     // validate required functions
     // clang-format off
     if (!vtable->canQueueShareOwnership    || 
@@ -206,15 +210,11 @@ static PalBool addBackend(
     } else if (info->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2) {
         const PalGraphicsBackendVtable2* vtable = (PalGraphicsBackendVtable2*)info->vtable;
         if (custom) {
-            if (!validateVtableVersion1(&vtable->vtable1)) {
-                return PAL_FALSE;
-            }
-
             if (!validateVtableVersion2(vtable)) {
                 return PAL_FALSE;
             }
         }
-        backend->vtbl1 = &vtable->vtable1;
+        backend->vtbl1 = vtable->vtable1;
         backend->vtbl2 = vtable;
     }
     return PAL_TRUE;
@@ -227,22 +227,22 @@ PalResult PAL_CALL palInitGraphics(
     const PalGraphicsBackendInfo* customBackends)
 {
 #if PAL_HAS_VULKAN_BACKEND
-    PalGraphicsBackendInfo info = {0};
-    info.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
-    info.vtable = &s_VkBackend2;
+    PalGraphicsBackendInfo vkInfo = {0};
+    vkInfo.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
+    vkInfo.vtable = &s_VkBackend2;
 
     if (initGraphicsVk(debugger, allocator)) {
-        addBackend(&info, PAL_FALSE);
+        addBackend(&vkInfo, PAL_FALSE);
     }
 #endif // PAL_HAS_VULKAN_BACKEND
 
 #if PAL_HAS_D3D12_BACKEND
-    PalGraphicsBackendInfo info = {0};
-    info.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
-    info.vtable = &s_D3D12Backend2;
+    PalGraphicsBackendInfo d3d12Info = {0};
+    d3d12Info.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
+    d3d12Info.vtable = &s_D3D12Backend2;
 
     if (initGraphicsD3D12(debugger, allocator)) {
-        addBackend(&info, PAL_FALSE);
+        addBackend(&d3d12Info, PAL_FALSE);
     }
 #endif // PAL_HAS_D3D12_BACKEND
 
@@ -301,7 +301,7 @@ PalResult PAL_CALL palEnumerateAdapters(
             if (result == PAL_RESULT_SUCCESS) {
                 for (int j = 0; j < backendAdapterCount; j++) {
                     PalAdapter* tmp = adapters[j];
-                    tmp->backend.vtbl1 = backend->vtbl1;
+                    tmp->backend = backend;
                 }
 
                 // update offset since the backend provided adapters
@@ -320,26 +320,26 @@ void PAL_CALL palGetAdapterInfo(
     PalAdapter* adapter,
     PalAdapterInfo* info)
 {
-    adapter->backend.vtbl1->getAdapterInfo(adapter, info);
+    adapter->backend->vtbl1->getAdapterInfo(adapter, info);
 }
 
 void PAL_CALL palGetAdapterCapabilities(
     PalAdapter* adapter,
     PalAdapterCapabilities* caps)
 {
-    adapter->backend.vtbl1->getAdapterCapabilities(adapter, caps);
+    adapter->backend->vtbl1->getAdapterCapabilities(adapter, caps);
 }
 
 PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter)
 {
-    return adapter->backend.vtbl1->getAdapterFeatures(adapter);
+    return adapter->backend->vtbl1->getAdapterFeatures(adapter);
 }
 
 uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
     PalAdapter* adapter,
     PalShaderFormats shaderFormat)
 {
-    return adapter->backend.vtbl1->getHighestSupportedShaderTarget(adapter, shaderFormat);
+    return adapter->backend->vtbl1->getHighestSupportedShaderTarget(adapter, shaderFormat);
 }
 
 // ==================================================
@@ -357,7 +357,7 @@ PalResult PAL_CALL palCreateDevice(
 
     PalDevice* device = nullptr;
     PalResult result;
-    result = adapter->backend.vtbl1->createDevice(adapter, features, &device);
+    result = adapter->backend->vtbl1->createDevice(adapter, features, &device);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -369,12 +369,12 @@ PalResult PAL_CALL palCreateDevice(
 
 void PAL_CALL palDestroyDevice(PalDevice* device)
 {
-    device->backend.vtbl1->destroyDevice(device);
+    device->backend->vtbl1->destroyDevice(device);
 }
 
 uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device)
 {
-    return (uint32_t)device->backend.vtbl1->getDeviceLostReason(device);
+    return (uint32_t)device->backend->vtbl1->getDeviceLostReason(device);
 }
 
 PalResult PAL_CALL palAllocateMemory(
@@ -390,7 +390,7 @@ PalResult PAL_CALL palAllocateMemory(
 
     PalMemory* memory = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->allocateMemory(device, type, memoryMask, size, &memory);
+    result = device->backend->vtbl1->allocateMemory(device, type, memoryMask, size, &memory);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -402,7 +402,7 @@ PalResult PAL_CALL palAllocateMemory(
 
 void PAL_CALL palFreeMemory(PalMemory* memory)
 {
-    memory->backend.vtbl1->freeMemory(memory);
+    memory->backend->vtbl1->freeMemory(memory);
 }
 
 // ==================================================
@@ -413,56 +413,56 @@ void PAL_CALL palQuerySamplerAnisotropyCapabilities(
     PalDevice* device,
     PalSamplerAnisotropyCapabilities* caps)
 {
-    device->backend.vtbl1->querySamplerAnisotropyCapabilities(device, caps);
+    device->backend->vtbl1->querySamplerAnisotropyCapabilities(device, caps);
 }
 
 void PAL_CALL palQueryMultiViewCapabilities(
     PalDevice* device,
     PalMultiViewCapabilities* caps)
 {
-    device->backend.vtbl1->queryMultiViewCapabilities(device, caps);
+    device->backend->vtbl1->queryMultiViewCapabilities(device, caps);
 }
 
 void PAL_CALL palQueryMultiViewportCapabilities(
     PalDevice* device,
     PalMultiViewportCapabilities* caps)
 {
-    device->backend.vtbl1->queryMultiViewportCapabilities(device, caps);
+    device->backend->vtbl1->queryMultiViewportCapabilities(device, caps);
 }
 
 void PAL_CALL palQueryDepthStencilCapabilities(
     PalDevice* device,
     PalDepthStencilCapabilities* caps)
 {
-    device->backend.vtbl1->queryDepthStencilCapabilities(device, caps);
+    device->backend->vtbl1->queryDepthStencilCapabilities(device, caps);
 }
 
 void PAL_CALL palQueryFragmentShadingRateCapabilities(
     PalDevice* device,
     PalFragmentShadingRateCapabilities* caps)
 {
-    device->backend.vtbl1->queryFragmentShadingRateCapabilities(device, caps);
+    device->backend->vtbl1->queryFragmentShadingRateCapabilities(device, caps);
 }
 
 void PAL_CALL palQueryMeshShaderCapabilities(
     PalDevice* device,
     PalMeshShaderCapabilities* caps)
 {
-    device->backend.vtbl1->queryMeshShaderCapabilities(device, caps);
+    device->backend->vtbl1->queryMeshShaderCapabilities(device, caps);
 }
 
 void PAL_CALL palQueryRayTracingCapabilities(
     PalDevice* device,
     PalRayTracingCapabilities* caps)
 {
-    device->backend.vtbl1->queryRayTracingCapabilities(device, caps);
+    device->backend->vtbl1->queryRayTracingCapabilities(device, caps);
 }
 
 void PAL_CALL palQueryDescriptorIndexingCapabilities(
     PalDevice* device,
     PalDescriptorIndexingCapabilities* caps)
 {
-    device->backend.vtbl1->queryDescriptorIndexingCapabilities(device, caps);
+    device->backend->vtbl1->queryDescriptorIndexingCapabilities(device, caps);
 }
 
 // ==================================================
@@ -480,7 +480,7 @@ PalResult PAL_CALL palCreateQueue(
 
     PalQueue* queue = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createQueue(device, type, &queue);
+    result = device->backend->vtbl1->createQueue(device, type, &queue);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -492,40 +492,40 @@ PalResult PAL_CALL palCreateQueue(
 
 void PAL_CALL palDestroyQueue(PalQueue* queue)
 {
-    queue->backend.vtbl1->destroyQueue(queue);
+    queue->backend->vtbl1->destroyQueue(queue);
 }
 
 PalBool PAL_CALL palCanQueuePresent(
     PalQueue* queue,
     PalSurface* surface)
 {
-    return queue->backend.vtbl1->canQueuePresent(queue, surface);
+    return queue->backend->vtbl1->canQueuePresent(queue, surface);
 }
 
 PalBool PAL_CALL palCanQueueShareOwnership(
     PalQueue* a,
     PalQueue* b)
 {
-    return a->backend.vtbl2->canQueueShareOwnership(a, b);
+    return a->backend->vtbl2->canQueueShareOwnership(a, b);
 }
    
 PalBool PAL_CALL palCanQueueUseUsageState(
     PalQueue* queue,
     PalUsageState state)
 {
-    return queue->backend.vtbl2->canQueueUseUsageState(queue, state);
+    return queue->backend->vtbl2->canQueueUseUsageState(queue, state);
 }
 
 PalBool PAL_CALL palCanQueueUsePipelineStages(
     PalQueue* queue,
     PalPipelineStages stages)
 {
-    return queue->backend.vtbl2->canQueueUsePipelineStages(queue, stages);
+    return queue->backend->vtbl2->canQueueUsePipelineStages(queue, stages);
 }
 
 PalResult PAL_CALL palWaitQueue(PalQueue* queue)
 {
-    return queue->backend.vtbl1->waitQueue(queue);
+    return queue->backend->vtbl1->waitQueue(queue);
 }
 
 // ==================================================
@@ -537,28 +537,28 @@ void PAL_CALL palEnumerateFormats(
     uint32_t* count,
     PalFormatInfo* outFormats)
 {
-    adapter->backend.vtbl1->enumerateFormats(adapter, count, outFormats);
+    adapter->backend->vtbl1->enumerateFormats(adapter, count, outFormats);
 }
 
 PalBool PAL_CALL palIsFormatSupported(
     PalAdapter* adapter,
     PalFormat format)
 {
-    return adapter->backend.vtbl1->isFormatSupported(adapter, format);
+    return adapter->backend->vtbl1->isFormatSupported(adapter, format);
 }
 
 PalImageUsages PAL_CALL palQueryFormatImageUsages(
     PalAdapter* adapter,
     PalFormat format)
 {
-    return adapter->backend.vtbl1->queryFormatImageUsages(adapter, format);
+    return adapter->backend->vtbl1->queryFormatImageUsages(adapter, format);
 }
 
 PalSampleCount PAL_CALL palQueryFormatSampleCount(
     PalAdapter* adapter,
     PalFormat format)
 {
-    return adapter->backend.vtbl1->queryFormatSampleCount(adapter, format);
+    return adapter->backend->vtbl1->queryFormatSampleCount(adapter, format);
 }
 
 // ==================================================
@@ -576,7 +576,7 @@ PalResult PAL_CALL palCreateImage(
 
     PalImage* image = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createImage(device, info, &image);
+    result = device->backend->vtbl1->createImage(device, info, &image);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -588,21 +588,21 @@ PalResult PAL_CALL palCreateImage(
 
 void PAL_CALL palDestroyImage(PalImage* image)
 {
-    image->backend.vtbl1->destroyImage(image);
+    image->backend->vtbl1->destroyImage(image);
 }
 
 void PAL_CALL palGetImageInfo(
     PalImage* image,
     PalImageInfo* info)
 {
-    image->backend.vtbl1->getImageInfo(image, info);
+    image->backend->vtbl1->getImageInfo(image, info);
 }
 
 void PAL_CALL palGetImageMemoryRequirements(
     PalImage* image,
     PalMemoryRequirements* requirements)
 {
-    image->backend.vtbl1->getImageMemoryRequirements(image, requirements);
+    image->backend->vtbl1->getImageMemoryRequirements(image, requirements);
 }
 
 PalResult PAL_CALL palBindImageMemory(
@@ -610,7 +610,7 @@ PalResult PAL_CALL palBindImageMemory(
     PalMemory* memory,
     uint64_t offset)
 {
-    return image->backend.vtbl1->bindImageMemory(image, memory, offset);
+    return image->backend->vtbl1->bindImageMemory(image, memory, offset);
 }
 
 // ==================================================
@@ -629,7 +629,7 @@ PalResult PAL_CALL palCreateImageView(
 
     PalImageView* imageView = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createImageView(device, image, info, &imageView);
+    result = device->backend->vtbl1->createImageView(device, image, info, &imageView);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -641,7 +641,7 @@ PalResult PAL_CALL palCreateImageView(
 
 void PAL_CALL palDestroyImageView(PalImageView* imageView)
 {
-    imageView->backend.vtbl1->destroyImageView(imageView);
+    imageView->backend->vtbl1->destroyImageView(imageView);
 }
 
 // ==================================================
@@ -659,7 +659,7 @@ PalResult PAL_CALL palCreateSampler(
 
     PalSampler* sampler = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createSampler(device, info, &sampler);
+    result = device->backend->vtbl1->createSampler(device, info, &sampler);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -671,7 +671,7 @@ PalResult PAL_CALL palCreateSampler(
 
 void PAL_CALL palDestroySampler(PalSampler* sampler)
 {
-    sampler->backend.vtbl1->destroySampler(sampler);
+    sampler->backend->vtbl1->destroySampler(sampler);
 }
 
 // ==================================================
@@ -691,7 +691,7 @@ PalResult PAL_CALL palCreateSurface(
 
     PalSurface* surface = nullptr;
     PalResult ret;
-    ret = device->backend.vtbl1
+    ret = device->backend->vtbl1
               ->createSurface(device, window, windowInstance, instanceType, &surface);
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
@@ -704,7 +704,7 @@ PalResult PAL_CALL palCreateSurface(
 
 void PAL_CALL palDestroySurface(PalSurface* surface)
 {
-    surface->backend.vtbl1->destroySurface(surface);
+    surface->backend->vtbl1->destroySurface(surface);
 }
 
 void PAL_CALL palGetSurfaceCapabilities(
@@ -712,7 +712,7 @@ void PAL_CALL palGetSurfaceCapabilities(
     PalSurface* surface,
     PalSurfaceCapabilities* caps)
 {
-    device->backend.vtbl1->getSurfaceCapabilities(device, surface, caps);
+    device->backend->vtbl1->getSurfaceCapabilities(device, surface, caps);
 }
 
 // ==================================================
@@ -732,14 +732,14 @@ PalResult PAL_CALL palCreateSwapchain(
 
     PalResult result;
     PalSwapchain* swapchain = nullptr;
-    result = device->backend.vtbl1->createSwapchain(device, queue, surface, info, &swapchain);
+    result = device->backend->vtbl1->createSwapchain(device, queue, surface, info, &swapchain);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
 
     // set the backend for all swapchain images
     for (int i = 0; i < info->imageCount; i++) {
-        PalImage* image = device->backend.vtbl1->getSwapchainImage(swapchain, i);
+        PalImage* image = device->backend->vtbl1->getSwapchainImage(swapchain, i);
         image->backend = device->backend;
     }
 
@@ -750,14 +750,14 @@ PalResult PAL_CALL palCreateSwapchain(
 
 void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain)
 {
-    swapchain->backend.vtbl1->destroySwapchain(swapchain);
+    swapchain->backend->vtbl1->destroySwapchain(swapchain);
 }
 
 PalImage* PAL_CALL palGetSwapchainImage(
     PalSwapchain* swapchain,
     uint32_t index)
 {
-    return swapchain->backend.vtbl1->getSwapchainImage(swapchain, index);
+    return swapchain->backend->vtbl1->getSwapchainImage(swapchain, index);
 }
 
 PalResult PAL_CALL palGetNextSwapchainImage(
@@ -765,7 +765,7 @@ PalResult PAL_CALL palGetNextSwapchainImage(
     PalSwapchainNextImageInfo* info,
     uint32_t* outIndex)
 {
-    return swapchain->backend.vtbl1->getNextSwapchainImage(swapchain, info, outIndex);
+    return swapchain->backend->vtbl1->getNextSwapchainImage(swapchain, info, outIndex);
 }
 
 PalResult PAL_CALL palPresentSwapchain(
@@ -773,7 +773,7 @@ PalResult PAL_CALL palPresentSwapchain(
     uint32_t imageIndex,
     PalSemaphore* waitSemaphore)
 {
-    return swapchain->backend.vtbl1->presentSwapchain(swapchain, imageIndex, waitSemaphore);
+    return swapchain->backend->vtbl1->presentSwapchain(swapchain, imageIndex, waitSemaphore);
 }
 
 PalResult PAL_CALL palResizeSwapchain(
@@ -781,7 +781,7 @@ PalResult PAL_CALL palResizeSwapchain(
     uint32_t newWidth,
     uint32_t newHeight)
 {
-    return swapchain->backend.vtbl1->resizeSwapchain(swapchain, newWidth, newHeight);
+    return swapchain->backend->vtbl1->resizeSwapchain(swapchain, newWidth, newHeight);
 }
 
 // ==================================================
@@ -799,7 +799,7 @@ PalResult PAL_CALL palCreateShader(
 
     PalShader* shader = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createShader(device, info, &shader);
+    result = device->backend->vtbl1->createShader(device, info, &shader);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -811,7 +811,7 @@ PalResult PAL_CALL palCreateShader(
 
 void PAL_CALL palDestroyShader(PalShader* shader)
 {
-    shader->backend.vtbl1->destroyShader(shader);
+    shader->backend->vtbl1->destroyShader(shader);
 }
 
 // ==================================================
@@ -829,7 +829,7 @@ PalResult PAL_CALL palCreateFence(
 
     PalFence* fence = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createFence(device, signaled, &fence);
+    result = device->backend->vtbl1->createFence(device, signaled, &fence);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -841,24 +841,24 @@ PalResult PAL_CALL palCreateFence(
 
 void PAL_CALL palDestroyFence(PalFence* fence)
 {
-    fence->backend.vtbl1->destroyFence(fence);
+    fence->backend->vtbl1->destroyFence(fence);
 }
 
 PalResult PAL_CALL palWaitFence(
     PalFence* fence,
     uint64_t timeout)
 {
-    return fence->backend.vtbl1->waitFence(fence, timeout);
+    return fence->backend->vtbl1->waitFence(fence, timeout);
 }
 
 PalResult PAL_CALL palResetFence(PalFence* fence)
 {
-    return fence->backend.vtbl1->resetFence(fence);
+    return fence->backend->vtbl1->resetFence(fence);
 }
 
 PalBool PAL_CALL palIsFenceSignaled(PalFence* fence)
 {
-    return fence->backend.vtbl1->isFenceSignaled(fence);
+    return fence->backend->vtbl1->isFenceSignaled(fence);
 }
 
 // ==================================================
@@ -876,7 +876,7 @@ PalResult PAL_CALL palCreateSemaphore(
 
     PalSemaphore* semaphore = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createSemaphore(device, enableTimeline, &semaphore);
+    result = device->backend->vtbl1->createSemaphore(device, enableTimeline, &semaphore);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -888,7 +888,7 @@ PalResult PAL_CALL palCreateSemaphore(
 
 void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore)
 {
-    semaphore->backend.vtbl1->destroySemaphore(semaphore);
+    semaphore->backend->vtbl1->destroySemaphore(semaphore);
 }
 
 PalResult PAL_CALL palWaitSemaphore(
@@ -896,7 +896,7 @@ PalResult PAL_CALL palWaitSemaphore(
     uint64_t value,
     uint64_t timeout)
 {
-    return semaphore->backend.vtbl1->waitSemaphore(semaphore, value, timeout);
+    return semaphore->backend->vtbl1->waitSemaphore(semaphore, value, timeout);
 }
 
 PalResult PAL_CALL palSignalSemaphore(
@@ -904,14 +904,14 @@ PalResult PAL_CALL palSignalSemaphore(
     PalQueue* queue,
     uint64_t value)
 {
-    return semaphore->backend.vtbl1->signalSemaphore(semaphore, queue, value);
+    return semaphore->backend->vtbl1->signalSemaphore(semaphore, queue, value);
 }
 
 PalResult PAL_CALL palGetSemaphoreValue(
     PalSemaphore* semaphore,
     uint64_t* value)
 {
-    return semaphore->backend.vtbl1->getSemaphoreValue(semaphore, value);
+    return semaphore->backend->vtbl1->getSemaphoreValue(semaphore, value);
 }
 
 // ==================================================
@@ -929,7 +929,7 @@ PalResult PAL_CALL palCreateCommandPool(
 
     PalCommandPool* pool = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->createCommandPool(device, queue, &pool);
+    result = device->backend->vtbl1->createCommandPool(device, queue, &pool);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -941,7 +941,7 @@ PalResult PAL_CALL palCreateCommandPool(
 
 void PAL_CALL palDestroyCommandPool(PalCommandPool* pool)
 {
-    pool->backend.vtbl1->destroyCommandPool(pool);
+    pool->backend->vtbl1->destroyCommandPool(pool);
 }
 
 PalResult PAL_CALL palAllocateCommandBuffer(
@@ -956,7 +956,7 @@ PalResult PAL_CALL palAllocateCommandBuffer(
 
     PalCommandBuffer* cmdBuffer = nullptr;
     PalResult result;
-    result = device->backend.vtbl1->allocateCommandBuffer(device, pool, type, &cmdBuffer);
+    result = device->backend->vtbl1->allocateCommandBuffer(device, pool, type, &cmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -968,19 +968,19 @@ PalResult PAL_CALL palAllocateCommandBuffer(
 
 void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
-    cmdBuffer->backend.vtbl1->freeCommandBuffer(cmdBuffer);
+    cmdBuffer->backend->vtbl1->freeCommandBuffer(cmdBuffer);
 }
 
 PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer)
 {
-    return cmdBuffer->backend.vtbl1->resetCommandBuffer(cmdBuffer);
+    return cmdBuffer->backend->vtbl1->resetCommandBuffer(cmdBuffer);
 }
 
 PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalCommandBufferSubmitInfo* info)
 {
-    return queue->backend.vtbl1->submitCommandBuffer(queue, info);
+    return queue->backend->vtbl1->submitCommandBuffer(queue, info);
 }
 
 // ==================================================
@@ -991,26 +991,26 @@ PalResult PAL_CALL palCmdBegin(
     PalCommandBuffer* cmdBuffer,
     PalRenderingLayoutInfo* info)
 {
-    return cmdBuffer->backend.vtbl1->cmdBegin(cmdBuffer, info);
+    return cmdBuffer->backend->vtbl1->cmdBegin(cmdBuffer, info);
 }
 
 PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer)
 {
-    return cmdBuffer->backend.vtbl1->cmdEnd(cmdBuffer);
+    return cmdBuffer->backend->vtbl1->cmdEnd(cmdBuffer);
 }
 
 void PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
-    primaryCmdBuffer->backend.vtbl1->cmdExecuteCommandBuffer(primaryCmdBuffer, secondaryCmdBuffer);
+    primaryCmdBuffer->backend->vtbl1->cmdExecuteCommandBuffer(primaryCmdBuffer, secondaryCmdBuffer);
 }
 
 void PAL_CALL palCmdSetFragmentShadingRate(
     PalCommandBuffer* cmdBuffer,
     PalFragmentShadingRateState* state)
 {
-    cmdBuffer->backend.vtbl1->cmdSetFragmentShadingRate(cmdBuffer, state);
+    cmdBuffer->backend->vtbl1->cmdSetFragmentShadingRate(cmdBuffer, state);
 }
 
 void PAL_CALL palCmdDrawMeshTasks(
@@ -1019,7 +1019,7 @@ void PAL_CALL palCmdDrawMeshTasks(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawMeshTasks(cmdBuffer, groupCountX, groupCountY, groupCountZ);
+    cmdBuffer->backend->vtbl1->cmdDrawMeshTasks(cmdBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
 void PAL_CALL palCmdDrawMeshTasksIndirect(
@@ -1027,7 +1027,7 @@ void PAL_CALL palCmdDrawMeshTasksIndirect(
     PalBuffer* buffer,
     uint32_t drawCount)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawMeshTasksIndirect(cmdBuffer, buffer, drawCount);
+    cmdBuffer->backend->vtbl1->cmdDrawMeshTasksIndirect(cmdBuffer, buffer, drawCount);
 }
 
 void PAL_CALL palCmdDrawMeshTasksIndirectCount(
@@ -1036,7 +1036,7 @@ void PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    cmdBuffer->backend.vtbl1
+    cmdBuffer->backend->vtbl1
         ->cmdDrawMeshTasksIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
@@ -1044,19 +1044,19 @@ void PAL_CALL palCmdBuildAccelerationStructure(
     PalCommandBuffer* cmdBuffer,
     PalAccelerationStructureBuildInfo* info)
 {
-    cmdBuffer->backend.vtbl1->cmdBuildAccelerationStructure(cmdBuffer, info);
+    cmdBuffer->backend->vtbl1->cmdBuildAccelerationStructure(cmdBuffer, info);
 }
 
 void PAL_CALL palCmdBeginRendering(
     PalCommandBuffer* cmdBuffer,
     PalRenderingInfo* info)
 {
-    cmdBuffer->backend.vtbl1->cmdBeginRendering(cmdBuffer, info);
+    cmdBuffer->backend->vtbl1->cmdBeginRendering(cmdBuffer, info);
 }
 
 void PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer)
 {
-    cmdBuffer->backend.vtbl1->cmdEndRendering(cmdBuffer);
+    cmdBuffer->backend->vtbl1->cmdEndRendering(cmdBuffer);
 }
 
 void PAL_CALL palCmdCopyBuffer(
@@ -1065,7 +1065,7 @@ void PAL_CALL palCmdCopyBuffer(
     PalBuffer* src,
     PalBufferCopyInfo* copyInfo)
 {
-    cmdBuffer->backend.vtbl1->cmdCopyBuffer(cmdBuffer, dst, src, copyInfo);
+    cmdBuffer->backend->vtbl1->cmdCopyBuffer(cmdBuffer, dst, src, copyInfo);
 }
 
 void PAL_CALL palCmdCopyBufferToImage(
@@ -1074,7 +1074,7 @@ void PAL_CALL palCmdCopyBufferToImage(
     PalBuffer* srcBuffer,
     PalBufferImageCopyInfo* copyInfo)
 {
-    cmdBuffer->backend.vtbl1->cmdCopyBufferToImage(cmdBuffer, dstImage, srcBuffer, copyInfo);
+    cmdBuffer->backend->vtbl1->cmdCopyBufferToImage(cmdBuffer, dstImage, srcBuffer, copyInfo);
 }
 
 void PAL_CALL palCmdCopyImage(
@@ -1083,7 +1083,7 @@ void PAL_CALL palCmdCopyImage(
     PalImage* src,
     PalImageCopyInfo* copyInfo)
 {
-    cmdBuffer->backend.vtbl1->cmdCopyImage(cmdBuffer, dst, src, copyInfo);
+    cmdBuffer->backend->vtbl1->cmdCopyImage(cmdBuffer, dst, src, copyInfo);
 }
 
 void PAL_CALL palCmdCopyImageToBuffer(
@@ -1092,14 +1092,14 @@ void PAL_CALL palCmdCopyImageToBuffer(
     PalImage* srcImage,
     PalBufferImageCopyInfo* copyInfo)
 {
-    cmdBuffer->backend.vtbl1->cmdCopyImageToBuffer(cmdBuffer, dstBuffer, srcImage, copyInfo);
+    cmdBuffer->backend->vtbl1->cmdCopyImageToBuffer(cmdBuffer, dstBuffer, srcImage, copyInfo);
 }
 
 void PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
     PalPipeline* pipeline)
 {
-    cmdBuffer->backend.vtbl1->cmdBindPipeline(cmdBuffer, pipeline);
+    cmdBuffer->backend->vtbl1->cmdBindPipeline(cmdBuffer, pipeline);
 }
 
 void PAL_CALL palCmdSetViewport(
@@ -1107,7 +1107,7 @@ void PAL_CALL palCmdSetViewport(
     uint32_t count,
     PalViewport* viewports)
 {
-    cmdBuffer->backend.vtbl1->cmdSetViewport(cmdBuffer, count, viewports);
+    cmdBuffer->backend->vtbl1->cmdSetViewport(cmdBuffer, count, viewports);
 }
 
 void PAL_CALL palCmdSetScissors(
@@ -1115,7 +1115,7 @@ void PAL_CALL palCmdSetScissors(
     uint32_t count,
     PalRect2D* scissors)
 {
-    cmdBuffer->backend.vtbl1->cmdSetScissors(cmdBuffer, count, scissors);
+    cmdBuffer->backend->vtbl1->cmdSetScissors(cmdBuffer, count, scissors);
 }
 
 void PAL_CALL palCmdBindVertexBuffers(
@@ -1125,7 +1125,7 @@ void PAL_CALL palCmdBindVertexBuffers(
     PalBuffer** buffers,
     uint64_t* offsets)
 {
-    cmdBuffer->backend.vtbl1->cmdBindVertexBuffers(cmdBuffer, firstSlot, count, buffers, offsets);
+    cmdBuffer->backend->vtbl1->cmdBindVertexBuffers(cmdBuffer, firstSlot, count, buffers, offsets);
 }
 
 void PAL_CALL palCmdBindIndexBuffer(
@@ -1134,7 +1134,7 @@ void PAL_CALL palCmdBindIndexBuffer(
     uint64_t offset,
     PalIndexType type)
 {
-    cmdBuffer->backend.vtbl1->cmdBindIndexBuffer(cmdBuffer, buffer, offset, type);
+    cmdBuffer->backend->vtbl1->cmdBindIndexBuffer(cmdBuffer, buffer, offset, type);
 }
 
 void PAL_CALL palCmdDraw(
@@ -1144,7 +1144,7 @@ void PAL_CALL palCmdDraw(
     uint32_t firstVertex,
     uint32_t firstInstance)
 {
-    cmdBuffer->backend.vtbl1
+    cmdBuffer->backend->vtbl1
         ->cmdDraw(cmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
@@ -1153,7 +1153,7 @@ void PAL_CALL palCmdDrawIndirect(
     PalBuffer* buffer,
     uint32_t count)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawIndirect(cmdBuffer, buffer, count);
+    cmdBuffer->backend->vtbl1->cmdDrawIndirect(cmdBuffer, buffer, count);
 }
 
 void PAL_CALL palCmdDrawIndirectCount(
@@ -1162,7 +1162,7 @@ void PAL_CALL palCmdDrawIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
+    cmdBuffer->backend->vtbl1->cmdDrawIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
 void PAL_CALL palCmdDrawIndexed(
@@ -1173,7 +1173,7 @@ void PAL_CALL palCmdDrawIndexed(
     int32_t vertexOffset,
     uint32_t firstInstance)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawIndexed(
+    cmdBuffer->backend->vtbl1->cmdDrawIndexed(
         cmdBuffer,
         indexCount,
         instanceCount,
@@ -1187,7 +1187,7 @@ void PAL_CALL palCmdDrawIndexedIndirect(
     PalBuffer* buffer,
     uint32_t count)
 {
-    cmdBuffer->backend.vtbl1->cmdDrawIndexedIndirect(cmdBuffer, buffer, count);
+    cmdBuffer->backend->vtbl1->cmdDrawIndexedIndirect(cmdBuffer, buffer, count);
 }
 
 void PAL_CALL palCmdDrawIndexedIndirectCount(
@@ -1196,7 +1196,7 @@ void PAL_CALL palCmdDrawIndexedIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    cmdBuffer->backend.vtbl1
+    cmdBuffer->backend->vtbl1
         ->cmdDrawIndexedIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
 }
 
@@ -1205,7 +1205,7 @@ void PAL_CALL palCmdAccelerationStructureBarrier(
     PalAccelerationStructure* as,
     PalBarrierInfo* info)
 {
-    cmdBuffer->backend.vtbl1->cmdAccelerationStructureBarrier(cmdBuffer, as, info);
+    cmdBuffer->backend->vtbl1->cmdAccelerationStructureBarrier(cmdBuffer, as, info);
 }
 
 void PAL_CALL palCmdImageBarrier(
@@ -1214,7 +1214,7 @@ void PAL_CALL palCmdImageBarrier(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info)
 {
-    cmdBuffer->backend.vtbl1->cmdImageBarrier(cmdBuffer, image, subresourceRange, info);
+    cmdBuffer->backend->vtbl1->cmdImageBarrier(cmdBuffer, image, subresourceRange, info);
 }
 
 void PAL_CALL palCmdBufferBarrier(
@@ -1222,7 +1222,7 @@ void PAL_CALL palCmdBufferBarrier(
     PalBuffer* buffer,
     PalBarrierInfo* info)
 {
-    cmdBuffer->backend.vtbl1->cmdBufferBarrier(cmdBuffer, buffer, info);
+    cmdBuffer->backend->vtbl1->cmdBufferBarrier(cmdBuffer, buffer, info);
 }
 
 void PAL_CALL palCmdDispatch(
@@ -1231,7 +1231,7 @@ void PAL_CALL palCmdDispatch(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    cmdBuffer->backend.vtbl1->cmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
+    cmdBuffer->backend->vtbl1->cmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
 void PAL_CALL palCmdDispatchBase(
@@ -1243,7 +1243,7 @@ void PAL_CALL palCmdDispatchBase(
     uint32_t groupCountY,
     uint32_t groupCountZ)
 {
-    cmdBuffer->backend.vtbl1->cmdDispatchBase(
+    cmdBuffer->backend->vtbl1->cmdDispatchBase(
         cmdBuffer,
         baseGroupX,
         baseGroupY,
@@ -1257,7 +1257,7 @@ void PAL_CALL palCmdDispatchIndirect(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer)
 {
-    cmdBuffer->backend.vtbl1->cmdDispatchIndirect(cmdBuffer, buffer);
+    cmdBuffer->backend->vtbl1->cmdDispatchIndirect(cmdBuffer, buffer);
 }
 
 void PAL_CALL palCmdTraceRays(
@@ -1268,7 +1268,7 @@ void PAL_CALL palCmdTraceRays(
     uint32_t height,
     uint32_t depth)
 {
-    cmdBuffer->backend.vtbl1->cmdTraceRays(cmdBuffer, sbt, raygenIndex, width, height, depth);
+    cmdBuffer->backend->vtbl1->cmdTraceRays(cmdBuffer, sbt, raygenIndex, width, height, depth);
 }
 
 void PAL_CALL palCmdTraceRaysIndirect(
@@ -1277,7 +1277,7 @@ void PAL_CALL palCmdTraceRaysIndirect(
     PalShaderBindingTable* sbt,
     PalBuffer* buffer)
 {
-    cmdBuffer->backend.vtbl1->cmdTraceRaysIndirect(cmdBuffer, raygenIndex, sbt, buffer);
+    cmdBuffer->backend->vtbl1->cmdTraceRaysIndirect(cmdBuffer, raygenIndex, sbt, buffer);
 }
 
 void PAL_CALL palCmdBindDescriptorSet(
@@ -1285,7 +1285,7 @@ void PAL_CALL palCmdBindDescriptorSet(
     uint32_t setIndex,
     PalDescriptorSet* set)
 {
-    cmdBuffer->backend.vtbl1->cmdBindDescriptorSet(cmdBuffer, setIndex, set);
+    cmdBuffer->backend->vtbl1->cmdBindDescriptorSet(cmdBuffer, setIndex, set);
 }
 
 void PAL_CALL palCmdPushConstants(
@@ -1294,42 +1294,42 @@ void PAL_CALL palCmdPushConstants(
     uint32_t size,
     const void* value)
 {
-    cmdBuffer->backend.vtbl1->cmdPushConstants(cmdBuffer, offset, size, value);
+    cmdBuffer->backend->vtbl1->cmdPushConstants(cmdBuffer, offset, size, value);
 }
 
 void PAL_CALL palCmdSetCullMode(
     PalCommandBuffer* cmdBuffer,
     PalCullMode cullMode)
 {
-    cmdBuffer->backend.vtbl1->cmdSetCullMode(cmdBuffer, cullMode);
+    cmdBuffer->backend->vtbl1->cmdSetCullMode(cmdBuffer, cullMode);
 }
 
 void PAL_CALL palCmdSetFrontFace(
     PalCommandBuffer* cmdBuffer,
     PalFrontFace frontFace)
 {
-    cmdBuffer->backend.vtbl1->cmdSetFrontFace(cmdBuffer, frontFace);
+    cmdBuffer->backend->vtbl1->cmdSetFrontFace(cmdBuffer, frontFace);
 }
 
 void PAL_CALL palCmdSetPrimitiveTopology(
     PalCommandBuffer* cmdBuffer,
     PalPrimitiveTopology topology)
 {
-    cmdBuffer->backend.vtbl1->cmdSetPrimitiveTopology(cmdBuffer, topology);
+    cmdBuffer->backend->vtbl1->cmdSetPrimitiveTopology(cmdBuffer, topology);
 }
 
 void PAL_CALL palCmdSetDepthTestEnable(
     PalCommandBuffer* cmdBuffer,
     PalBool enable)
 {
-    cmdBuffer->backend.vtbl1->cmdSetDepthTestEnable(cmdBuffer, enable);
+    cmdBuffer->backend->vtbl1->cmdSetDepthTestEnable(cmdBuffer, enable);
 }
 
 void PAL_CALL palCmdSetDepthWriteEnable(
     PalCommandBuffer* cmdBuffer,
     PalBool enable)
 {
-    cmdBuffer->backend.vtbl1->cmdSetDepthWriteEnable(cmdBuffer, enable);
+    cmdBuffer->backend->vtbl1->cmdSetDepthWriteEnable(cmdBuffer, enable);
 }
 
 void PAL_CALL palCmdSetStencilOp(
@@ -1340,7 +1340,7 @@ void PAL_CALL palCmdSetStencilOp(
     PalStencilOp depthFailOp,
     PalCompareOp compareOp)
 {
-    cmdBuffer->backend.vtbl1
+    cmdBuffer->backend->vtbl1
         ->cmdSetStencilOp(cmdBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
@@ -1350,7 +1350,7 @@ void PAL_CALL palCmdImageBarrier2(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo2* info)
 {
-    cmdBuffer->backend.vtbl2->cmdImageBarrier2(cmdBuffer, image, subresourceRange, info);
+    cmdBuffer->backend->vtbl2->cmdImageBarrier2(cmdBuffer, image, subresourceRange, info);
 }
 
 void PAL_CALL palCmdBufferBarrier2(
@@ -1358,7 +1358,7 @@ void PAL_CALL palCmdBufferBarrier2(
     PalBuffer* buffer,
     PalBarrierInfo2* info)
 {
-    cmdBuffer->backend.vtbl2->cmdBufferBarrier2(cmdBuffer, buffer, info);
+    cmdBuffer->backend->vtbl2->cmdBufferBarrier2(cmdBuffer, buffer, info);
 }
 
 // ==================================================
@@ -1376,7 +1376,7 @@ PalResult PAL_CALL palCreateAccelerationstructure(
 
     PalResult result;
     PalAccelerationStructure* as = nullptr;
-    result = device->backend.vtbl1->createAccelerationstructure(device, info, &as);
+    result = device->backend->vtbl1->createAccelerationstructure(device, info, &as);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1388,7 +1388,7 @@ PalResult PAL_CALL palCreateAccelerationstructure(
 
 void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* as)
 {
-    as->backend.vtbl1->destroyAccelerationstructure(as);
+    as->backend->vtbl1->destroyAccelerationstructure(as);
 }
 
 void PAL_CALL palGetAccelerationStructureBuildSize(
@@ -1396,7 +1396,7 @@ void PAL_CALL palGetAccelerationStructureBuildSize(
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size)
 {
-    device->backend.vtbl1->getAccelerationStructureBuildSize(device, info, size);
+    device->backend->vtbl1->getAccelerationStructureBuildSize(device, info, size);
 }
 
 // ==================================================
@@ -1414,7 +1414,7 @@ PalResult PAL_CALL palCreateBuffer(
 
     PalResult result;
     PalBuffer* buffer = nullptr;
-    result = device->backend.vtbl1->createBuffer(device, info, &buffer);
+    result = device->backend->vtbl1->createBuffer(device, info, &buffer);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1426,14 +1426,14 @@ PalResult PAL_CALL palCreateBuffer(
 
 void PAL_CALL palDestroyBuffer(PalBuffer* buffer)
 {
-    buffer->backend.vtbl1->destroyBuffer(buffer);
+    buffer->backend->vtbl1->destroyBuffer(buffer);
 }
 
 void PAL_CALL palGetBufferMemoryRequirements(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements)
 {
-    buffer->backend.vtbl1->getBufferMemoryRequirements(buffer, requirements);
+    buffer->backend->vtbl1->getBufferMemoryRequirements(buffer, requirements);
 }
 
 void PAL_CALL palComputeInstanceStagingSize(
@@ -1441,7 +1441,7 @@ void PAL_CALL palComputeInstanceStagingSize(
     uint32_t instanceCount,
     uint64_t* outSize)
 {
-    device->backend.vtbl1->computeInstanceStagingSize(device, instanceCount, outSize);
+    device->backend->vtbl1->computeInstanceStagingSize(device, instanceCount, outSize);
 }
 
 void PAL_CALL palComputeImageStagingRequirements(
@@ -1450,7 +1450,7 @@ void PAL_CALL palComputeImageStagingRequirements(
     const PalBufferImageCopyInfo* copyInfo,
     PalImageStagingRequirements* requirements)
 {
-    device->backend.vtbl1
+    device->backend->vtbl1
         ->computeImageStagingRequirements(device, imageFormat, copyInfo, requirements);
 }
 
@@ -1460,7 +1460,7 @@ void PAL_CALL palWriteInstanceStaging(
     PalAccelerationStructureInstance* instances,
     void* ptr)
 {
-    device->backend.vtbl1->writeInstanceStaging(device, instanceCount, instances, ptr);
+    device->backend->vtbl1->writeInstanceStaging(device, instanceCount, instances, ptr);
 }
 
 void PAL_CALL palWriteImageStaging(
@@ -1470,7 +1470,7 @@ void PAL_CALL palWriteImageStaging(
     void* srcData,
     void* ptr)
 {
-    device->backend.vtbl1->writeImageStaging(device, imageFormat, copyInfo, srcData, ptr);
+    device->backend->vtbl1->writeImageStaging(device, imageFormat, copyInfo, srcData, ptr);
 }
 
 PalResult PAL_CALL palBindBufferMemory(
@@ -1478,7 +1478,7 @@ PalResult PAL_CALL palBindBufferMemory(
     PalMemory* memory,
     uint64_t offset)
 {
-    return buffer->backend.vtbl1->bindBufferMemory(buffer, memory, offset);
+    return buffer->backend->vtbl1->bindBufferMemory(buffer, memory, offset);
 }
 
 PalResult PAL_CALL palMapBuffer(
@@ -1487,17 +1487,17 @@ PalResult PAL_CALL palMapBuffer(
     uint64_t size,
     void** outPtr)
 {
-    return buffer->backend.vtbl1->mapBuffer(buffer, offset, size, outPtr);
+    return buffer->backend->vtbl1->mapBuffer(buffer, offset, size, outPtr);
 }
 
 void PAL_CALL palUnmapBuffer(PalBuffer* buffer)
 {
-    buffer->backend.vtbl1->unmapBuffer(buffer);
+    buffer->backend->vtbl1->unmapBuffer(buffer);
 }
 
 PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer)
 {
-    return buffer->backend.vtbl1->getBufferDeviceAddress(buffer);
+    return buffer->backend->vtbl1->getBufferDeviceAddress(buffer);
 }
 
 // ==================================================
@@ -1515,7 +1515,7 @@ PalResult PAL_CALL palCreateDescriptorSetLayout(
 
     PalResult result;
     PalDescriptorSetLayout* layout = nullptr;
-    result = device->backend.vtbl1->createDescriptorSetLayout(device, info, &layout);
+    result = device->backend->vtbl1->createDescriptorSetLayout(device, info, &layout);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1527,7 +1527,7 @@ PalResult PAL_CALL palCreateDescriptorSetLayout(
 
 void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layout)
 {
-    layout->backend.vtbl1->destroyDescriptorSetLayout(layout);
+    layout->backend->vtbl1->destroyDescriptorSetLayout(layout);
 }
 
 PalResult PAL_CALL palCreateDescriptorPool(
@@ -1541,7 +1541,7 @@ PalResult PAL_CALL palCreateDescriptorPool(
 
     PalResult result;
     PalDescriptorPool* pool = nullptr;
-    result = device->backend.vtbl1->createDescriptorPool(device, info, &pool);
+    result = device->backend->vtbl1->createDescriptorPool(device, info, &pool);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1553,12 +1553,12 @@ PalResult PAL_CALL palCreateDescriptorPool(
 
 void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool)
 {
-    pool->backend.vtbl1->destroyDescriptorPool(pool);
+    pool->backend->vtbl1->destroyDescriptorPool(pool);
 }
 
 PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool)
 {
-    return pool->backend.vtbl1->resetDescriptorPool(pool);
+    return pool->backend->vtbl1->resetDescriptorPool(pool);
 }
 
 PalResult PAL_CALL palAllocateDescriptorSet(
@@ -1573,7 +1573,7 @@ PalResult PAL_CALL palAllocateDescriptorSet(
 
     PalResult result;
     PalDescriptorSet* set = nullptr;
-    result = device->backend.vtbl1->allocateDescriptorSet(device, pool, layout, &set);
+    result = device->backend->vtbl1->allocateDescriptorSet(device, pool, layout, &set);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1588,7 +1588,7 @@ PalResult PAL_CALL palUpdateDescriptorSet(
     uint32_t count,
     PalDescriptorSetWriteInfo* infos)
 {
-    return device->backend.vtbl1->updateDescriptorSet(device, count, infos);
+    return device->backend->vtbl1->updateDescriptorSet(device, count, infos);
 }
 
 // ==================================================
@@ -1606,7 +1606,7 @@ PalResult PAL_CALL palCreatePipelineLayout(
 
     PalResult result;
     PalPipelineLayout* layout = nullptr;
-    result = device->backend.vtbl1->createPipelineLayout(device, info, &layout);
+    result = device->backend->vtbl1->createPipelineLayout(device, info, &layout);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1618,7 +1618,7 @@ PalResult PAL_CALL palCreatePipelineLayout(
 
 void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout)
 {
-    layout->backend.vtbl1->destroyPipelineLayout(layout);
+    layout->backend->vtbl1->destroyPipelineLayout(layout);
 }
 
 // ==================================================
@@ -1636,7 +1636,7 @@ PalResult PAL_CALL palCreateGraphicsPipeline(
 
     PalResult result;
     PalPipeline* pipeline = nullptr;
-    result = device->backend.vtbl1->createGraphicsPipeline(device, info, &pipeline);
+    result = device->backend->vtbl1->createGraphicsPipeline(device, info, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1657,7 +1657,7 @@ PalResult PAL_CALL palCreateComputePipeline(
 
     PalResult result;
     PalPipeline* pipeline = nullptr;
-    result = device->backend.vtbl1->createComputePipeline(device, info, &pipeline);
+    result = device->backend->vtbl1->createComputePipeline(device, info, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1678,7 +1678,7 @@ PalResult PAL_CALL palCreateRayTracingPipeline(
 
     PalResult result;
     PalPipeline* pipeline = nullptr;
-    result = device->backend.vtbl1->createRayTracingPipeline(device, info, &pipeline);
+    result = device->backend->vtbl1->createRayTracingPipeline(device, info, &pipeline);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1690,7 +1690,7 @@ PalResult PAL_CALL palCreateRayTracingPipeline(
 
 void PAL_CALL palDestroyPipeline(PalPipeline* pipeline)
 {
-    pipeline->backend.vtbl1->destroyPipeline(pipeline);
+    pipeline->backend->vtbl1->destroyPipeline(pipeline);
 }
 
 // ==================================================
@@ -1708,7 +1708,7 @@ PalResult PAL_CALL palCreateShaderBindingTable(
 
     PalResult result;
     PalShaderBindingTable* sbt = nullptr;
-    result = device->backend.vtbl1->createShaderBindingTable(device, info, &sbt);
+    result = device->backend->vtbl1->createShaderBindingTable(device, info, &sbt);
     if (result != PAL_RESULT_SUCCESS) {
         return result;
     }
@@ -1720,7 +1720,7 @@ PalResult PAL_CALL palCreateShaderBindingTable(
 
 void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt)
 {
-    sbt->backend.vtbl1->destroyShaderBindingTable(sbt);
+    sbt->backend->vtbl1->destroyShaderBindingTable(sbt);
 }
 
 void PAL_CALL palUpdateShaderBindingTable(
@@ -1728,7 +1728,7 @@ void PAL_CALL palUpdateShaderBindingTable(
     uint32_t count,
     PalShaderBindingTableRecordInfo* infos)
 {
-    sbt->backend.vtbl1->updateShaderBindingTable(sbt, count, infos);
+    sbt->backend->vtbl1->updateShaderBindingTable(sbt, count, infos);
 }
 
 // ==================================================

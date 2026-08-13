@@ -645,7 +645,6 @@ PalBool rayTracingTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
-    submitInfo.waitStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
 
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
@@ -757,7 +756,7 @@ PalBool rayTracingTest()
     // submit the command buffer to the GPU
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
-    submitInfo.waitStages = PAL_PIPELINE_STAGE_RAY_TRACING_SHADER;
+    
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");

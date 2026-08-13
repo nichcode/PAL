@@ -767,7 +767,7 @@ static const PalGraphicsBackendVtable1 s_VkBackend1 = {
     .updateShaderBindingTable = updateShaderBindingTableVk};
 
 static const PalGraphicsBackendVtable2 s_VkBackend2 = {
-    .vtable1 = s_VkBackend1,
+    .vtable1 = &s_VkBackend1,
     .canQueueShareOwnership = canQueueShareOwnershipVk,
     .canQueueUseUsageState = canQueueUseUsageStateVk,
     .canQueueUsePipelineStages = canQueueUsePipelineStagesVk,
@@ -1490,7 +1490,7 @@ static const PalGraphicsBackendVtable1 s_D3D12Backend1 = {
     .updateShaderBindingTable = updateShaderBindingTableD3D12};
 
 static const PalGraphicsBackendVtable2 s_D3D12Backend2 = {
-    .vtable1 = s_D3D12Backend1,
+    .vtable1 = &s_D3D12Backend1,
     .canQueueShareOwnership = canQueueShareOwnershipD3D12,
     .canQueueUseUsageState = canQueueUseUsageStateD3D12,
     .canQueueUsePipelineStages = canQueueUsePipelineStagesD3D12,

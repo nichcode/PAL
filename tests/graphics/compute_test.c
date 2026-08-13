@@ -136,8 +136,12 @@ PalBool computeTest()
         return PAL_FALSE;
     }
 
-    result = palAllocateCommandBuffer(device, cmdPool, PAL_COMMAND_BUFFER_TYPE_PRIMARY, &cmdBuffer);
-
+    result = palAllocateCommandBuffer(
+        device, 
+        cmdPool, 
+        PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
+        &cmdBuffer);
+        
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to allocate command buffer");
         return PAL_FALSE;
@@ -385,7 +389,6 @@ PalBool computeTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
-    submitInfo.waitStages = PAL_PIPELINE_STAGE_COMPUTE_SHADER;
 
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {

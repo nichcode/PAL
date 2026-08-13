@@ -4136,7 +4136,7 @@ typedef struct {
  * @since 2.1
  */
 typedef struct {
-    const PalGraphicsBackendVtable1 vtable1; /**< PalGraphicsBackendVtable1.*/
+    const PalGraphicsBackendVtable1* vtable1; /**< PalGraphicsBackendVtable1.*/
 
     /**
      * Backend implementation of ::palCanQueueShareOwnership.
@@ -6087,7 +6087,7 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  * 
  * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved
  * in the ownership transfer. The image must be owned by the source command buffer
- * provided.
+ * provided. `PalBarrierInfo2::dstCmdBuffer` must be in recording state.
  * 
  * If both command buffers are the same, no queue ownership transfer is performed but the barrier
  * will be set.
@@ -6154,7 +6154,7 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
  * 
  * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved
  * in the ownership transfer. The buffer must be owned by the source command buffer
- * provided.
+ * provided. `PalBarrierInfo2::dstCmdBuffer` must be in recording state.
  * 
  * If both command buffers are the same, no queue ownership transfer is performed but the barrier
  * will be set.

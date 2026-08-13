@@ -44,6 +44,7 @@ static inline void logResult(
     const char* msg)
 {
     char buffer[256];
+    // TODO: fix
     palFormatResult(result, 256, buffer);
     palLog(nullptr, "%s \n %s", msg, buffer);
 }
@@ -96,6 +97,7 @@ PalBool computeTest();
 PalBool rayTracingTest();
 PalBool multiDescriptorSetTest();
 PalBool customBackendTest();
+PalBool queueOwnershipTest();
 
 // graphics and video
 PalBool clearColorTest();
