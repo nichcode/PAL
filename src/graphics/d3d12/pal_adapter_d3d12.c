@@ -162,6 +162,8 @@ void PAL_CALL getAdapterInfoD3D12(
     info->deviceId = desc.DeviceId;
     info->apiType = PAL_ADAPTER_API_TYPE_D3D12;
     info->sharedMemory = desc.SharedSystemMemory;
+
+    info->vtableVersion = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
     strcpy(info->backendName, "PAL");
 
     WideCharToMultiByte(

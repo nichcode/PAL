@@ -169,6 +169,8 @@ void PAL_CALL getAdapterInfoVk(
     info->shaderFormats = PAL_SHADER_FORMAT_SPIRV;
     info->deviceId = props.deviceID;
     info->vendorId = props.vendorID;
+
+    info->vtableVersion = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
     info->driverVersion = props.driverVersion;
     strcpy(info->name, props.deviceName);
     strcpy(info->backendName, "PAL");

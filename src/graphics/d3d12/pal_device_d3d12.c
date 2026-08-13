@@ -51,6 +51,7 @@ PalResult PAL_CALL createDeviceD3D12(
 
     // get and cache highest shader model
     device->shaderModel = getHighestSupportedShaderTargetD3D12(adapter, PAL_SHADER_FORMAT_DXIL);
+    
     result = s_D3D12.createDevice(
         (IUnknown*)adapterImpl->handle,
         adapterImpl->level,
@@ -63,7 +64,6 @@ PalResult PAL_CALL createDeviceD3D12(
     }
 
     result = tmpDevice->lpVtbl->QueryInterface(tmpDevice, &IID_Device5, (void**)&device->handle);
-
     tmpDevice->lpVtbl->Release(tmpDevice);
     if (s_D3D12.debugLayer) {
         result = device->handle->lpVtbl->QueryInterface(

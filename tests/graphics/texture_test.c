@@ -549,7 +549,6 @@ PalBool textureTest()
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cmdBuffers[0];
     submitInfo.fence = fence;
-    submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
 
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
@@ -591,7 +590,6 @@ PalBool textureTest()
     samplerCreateInfo.maxAnisotropy = 1.0f;
 
     result = palCreateSampler(device, &samplerCreateInfo, &sampler);
-
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create sampler");
         return PAL_FALSE;
