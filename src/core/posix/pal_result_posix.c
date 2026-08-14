@@ -23,6 +23,9 @@ void PAL_CALL palFormatResult(
     if (nativeCode != 0) {
         strerror_r(nativeCode, tmpBuffer, 256);
         formatResultMsg(result, buffer, tmpBuffer);
+
+    } else {
+        formatResultMsg(result, buffer, nullptr);
     }
 }
 

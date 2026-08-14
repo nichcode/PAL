@@ -44,7 +44,6 @@ static inline void logResult(
     const char* msg)
 {
     char buffer[256];
-    // TODO: fix
     palFormatResult(result, 256, buffer);
     palLog(nullptr, "%s \n %s", msg, buffer);
 }

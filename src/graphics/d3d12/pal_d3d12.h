@@ -176,6 +176,7 @@ typedef struct {
     PalQueueType type;
     ID3D12Fence* fence;
     HANDLE fenceEvent;
+    DeviceD3D12* device;
     ID3D12CommandQueue* handle;
 } QueueD3D12;
 

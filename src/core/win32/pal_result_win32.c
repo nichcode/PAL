@@ -42,6 +42,9 @@ void PAL_CALL palFormatResult(
             nullptr);
 
         formatResultMsg(result, buffer, tmpBuffer);
+
+    } else {
+        formatResultMsg(result, buffer, nullptr);
     }
 }
 

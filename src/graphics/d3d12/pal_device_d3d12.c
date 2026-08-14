@@ -621,6 +621,7 @@ PalResult PAL_CALL createQueueD3D12(
     queue->fenceValue = 0;
     queue->type = type;
     queue->supportedStages = stages;
+    queue->device = deviceImpl;
 
     *outQueue = (PalQueue*)queue;
     return PAL_RESULT_SUCCESS;
@@ -632,6 +633,18 @@ void PAL_CALL destroyQueueD3D12(PalQueue* queue)
     queueImpl->fence->lpVtbl->Release(queueImpl->fence);
     queueImpl->handle->lpVtbl->Release(queueImpl->handle);
     CloseHandle(queueImpl->fenceEvent);
+
+    DeviceD3D12* device = queueImpl->device;
+    if (queueImpl->type == PAL_QUEUE_TYPE_GRAPHICS) {
+        device->limits.freeGraphicsQueues++;
+
+    } else if (queueImpl->type == PAL_QUEUE_TYPE_COMPUTE) {
+        device->limits.freeComputeQueues++;
+
+    } else {
+        device->limits.freeCopyQueues++;
+    }
+
     palFree(s_D3D12.allocator, queueImpl);
 }
 

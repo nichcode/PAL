@@ -968,17 +968,6 @@ void PAL_CALL cmdImageBarrier2Vk(
     uint32_t srcQueueFamily = srcCmdBufferImpl->pool->queue->phyQueue->familyIndex;
     uint32_t dstQueueFamily = dstCmdBufferImpl->pool->queue->phyQueue->familyIndex;
 
-    if (srcQueueFamily == dstQueueFamily) {
-        // same queue family therefore no ownership transfer
-        PalBarrierInfo barrierInfo = {0};
-        barrierInfo.oldState = info->oldState;
-        barrierInfo.srcStages = info->srcStages;
-        barrierInfo.newState = info->newState;
-        barrierInfo.dstStages = info->dstStages;
-        cmdImageBarrierVk(cmdBuffer, image, subresourceRange, &barrierInfo);
-        return;
-    }
-
     VkImageSubresourceRange range = {0};
     range.aspectMask = imageAspectToVk(subresourceRange->aspect);
     range.baseArrayLayer = subresourceRange->startArrayLayer;
@@ -1068,17 +1057,6 @@ void PAL_CALL cmdBufferBarrier2Vk(
     CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)info->dstCmdBuffer;
     uint32_t srcQueueFamily = srcCmdBufferImpl->pool->queue->phyQueue->familyIndex;
     uint32_t dstQueueFamily = dstCmdBufferImpl->pool->queue->phyQueue->familyIndex;
-
-    if (srcQueueFamily == dstQueueFamily) {
-        // same queue family therefore no ownership transfer
-        PalBarrierInfo barrierInfo = {0};
-        barrierInfo.oldState = info->oldState;
-        barrierInfo.srcStages = info->srcStages;
-        barrierInfo.newState = info->newState;
-        barrierInfo.dstStages = info->dstStages;
-        cmdBufferBarrierVk(cmdBuffer, buffer, &barrierInfo);
-        return;
-    }
 
     BarrierInfo old = barrierToVk(info->oldState);
     BarrierInfo new = barrierToVk(info->newState);

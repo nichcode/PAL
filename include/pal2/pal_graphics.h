@@ -2446,11 +2446,11 @@ typedef struct {
  * @since 2.1
  */
 typedef struct {
+    PalCommandBuffer* dstCmdBuffer;   /**< Destination queue command buffer.*/
     PalUsageState oldState;      /**< (eg. `PAL_USAGE_STATE_COLOR_ATTACHMENT`).*/
     PalUsageState newState;      /**< (eg. `PAL_USAGE_STATE_PRESENT`).*/
     PalPipelineStages srcStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
     PalPipelineStages dstStages; /**< (eg. `PAL_PIPELINE_STAGE_COLOR_OUTPUT`).*/
-    PalCommandBuffer* dstCmdBuffer;   /**< Acquire queue command buffer.*/
 } PalBarrierInfo2;
 
 /**
@@ -6033,6 +6033,8 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  * @since 2.0
  * @sa palCmdImageBarrier
  * @sa palCmdBufferBarrier
+ * @sa palCanQueueUseUsageState
+ * @sa palCanQueueUsePipelineStages
  */
 PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
     PalCommandBuffer* cmdBuffer,
@@ -6071,6 +6073,8 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
  * @since 2.0
  * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdBufferBarrier
+ * @sa palCanQueueUseUsageState
+ * @sa palCanQueueUsePipelineStages
  */
 PAL_API void PAL_CALL palCmdImageBarrier(
     PalCommandBuffer* cmdBuffer,
@@ -6079,18 +6083,19 @@ PAL_API void PAL_CALL palCmdImageBarrier(
     PalBarrierInfo* info);
 
 /**
- * @brief Transition an image from one usage state to another 
- * and optionally transfer ownership from one queue to another.
+ * @brief Transition an image from one usage state to another across queues, 
+ * optionally transferring ownership.
  * 
  * The adapter used to create the command buffer's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  * 
- * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved
- * in the ownership transfer. The image must be owned by the source command buffer
- * provided. `PalBarrierInfo2::dstCmdBuffer` must be in recording state.
+ * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved in
+ * the cross queue transition. The image must be owned by the source queue and
+ * `PalBarrierInfo2::dstCmdBuffer` must be in recording state.
  * 
- * If both command buffers are the same, no queue ownership transfer is performed but the barrier
- * will be set.
+ * Both command buffers should belong to different queue types. Using queues of the same type
+ * is supported but may introduce unnecessary cross queue transition overhead except if
+ * both queues cannot share resources.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] image Image to set barrier on.
@@ -6101,6 +6106,8 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  *
  * @since 2.1
  * @sa palCmdBufferBarrier2
+ * @sa palCanQueueUseUsageState
+ * @sa palCanQueueUsePipelineStages
  */
 PAL_API void PAL_CALL palCmdImageBarrier2(
     PalCommandBuffer* cmdBuffer,
@@ -6139,6 +6146,8 @@ PAL_API void PAL_CALL palCmdImageBarrier2(
  * @since 2.0
  * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdImageBarrier
+ * @sa palCanQueueUseUsageState
+ * @sa palCanQueueUsePipelineStages
  */
 PAL_API void PAL_CALL palCmdBufferBarrier(
     PalCommandBuffer* cmdBuffer,
@@ -6146,18 +6155,19 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
     PalBarrierInfo* info);
 
 /**
- * @brief Transition a buffer from one usage state to another
- * and optionally transfer ownership from one queue to another.
- *
+ * @brief Transition a buffer from one usage state to another across queues, 
+ * optionally transferring ownership.
+ * 
  * The adapter used to create the command buffer's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  * 
- * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved
- * in the ownership transfer. The buffer must be owned by the source command buffer
- * provided. `PalBarrierInfo2::dstCmdBuffer` must be in recording state.
+ * `cmdBuffer` and `PalBarrierInfo2::dstCmdBuffer` specify the command buffers involved in
+ * the cross queue transition. The buffer must be owned by the source queue and
+ * `PalBarrierInfo2::dstCmdBuffer` must be in recording state.
  * 
- * If both command buffers are the same, no queue ownership transfer is performed but the barrier
- * will be set.
+ * Both command buffers should belong to different queue types. Using queues of the same type
+ * is supported but may introduce unnecessary cross queue transition overhead except if
+ * both queues cannot share resources.
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer to set barrier on.
@@ -6167,6 +6177,8 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
  *
  * @since 2.1
  * @sa palCmdImageBarrier2
+ * @sa palCanQueueUseUsageState
+ * @sa palCanQueueUsePipelineStages
  */
 PAL_API void PAL_CALL palCmdBufferBarrier2(
     PalCommandBuffer* cmdBuffer,
