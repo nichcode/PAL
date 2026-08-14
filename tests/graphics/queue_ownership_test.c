@@ -36,7 +36,7 @@ PalBool queueOwnershipTest()
     debugger.userData = nullptr;
     debugger.enableGPUValidation = PAL_TRUE;
 
-    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
+    PalResult result = palInitGraphics(&debugger, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
@@ -161,27 +161,14 @@ PalBool queueOwnershipTest()
         }   
     }
 
-    const char* msg = nullptr;
-    const char* msg2 = nullptr;
     if (!cpyQueue) {
         // we didnt get a copy queue that cannot share resource ownership with thr graphics queue
-        // TODO: fix queue limit recycling
         result = palCreateQueue(device, PAL_QUEUE_TYPE_COPY, &cpyQueue);
         if (result != PAL_RESULT_SUCCESS) {
             logResult(result, "Failed to create queue");
             return PAL_FALSE;
         }
-
-        msg = "Warning: Copy queue shares resource ownership with the graphics queue.";
-        msg2 = "  Concurrent execution is possible";
-
-    } else {
-        msg = "Warning: Copy queue does not share resource ownership with the graphics queue";
-        msg2 = "  Ownership transfer is required";
     }
-
-    palLog(nullptr, msg);
-    palLog(nullptr, msg2);
 
     result = palCreateCommandPool(device, cpyQueue, &cpyCmdPool);
     if (result != PAL_RESULT_SUCCESS) {
@@ -269,11 +256,11 @@ PalBool queueOwnershipTest()
         return PAL_FALSE;
     }
 
-    palWriteImageStaging(device, imageCreateInfo.format, &copyInfo, texture, textureData);
+    palWriteImageStaging(device, imageCreateInfo.format, &copyInfo, textureData, ptr);
     palUnmapBuffer(stagingBuffer);
 
     // We use the copy queue to copy the buffer to the texture thus taking ownership
-    result = palCmdBegin(cpyCmdBuffer, nullptr);
+    result = palCmdBegin(gfxCmdBuffer, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to begin command buffer");
         return PAL_FALSE;
@@ -291,30 +278,30 @@ PalBool queueOwnershipTest()
     barrierInfo.newState = PAL_USAGE_STATE_TRANSFER_WRITE;
     barrierInfo.dstStages = PAL_PIPELINE_STAGE_TRANSFER;
 
-    palCmdImageBarrier(cpyCmdBuffer, texture, &range, &barrierInfo);
-    palCmdCopyBufferToImage(cpyCmdBuffer, texture, stagingBuffer, &copyInfo);
+    // palCmdImageBarrier(cpyCmdBuffer, texture, &range, &barrierInfo);
+    // palCmdCopyBufferToImage(cpyCmdBuffer, texture, stagingBuffer, &copyInfo);
 
     // The copy queue is done with the texture, we transfer ownership to the graphics queue
     PalBarrierInfo2 barrierInfo2 = {0};
     barrierInfo2.oldState = PAL_USAGE_STATE_TRANSFER_WRITE;
     barrierInfo2.srcStages = PAL_PIPELINE_STAGE_TRANSFER;
-    barrierInfo2.newState = PAL_USAGE_STATE_SHADER_READ;
+    barrierInfo2.newState = PAL_USAGE_STATE_TRANSFER_READ;
     barrierInfo2.dstStages = PAL_PIPELINE_STAGE_FRAGMENT_SHADER;
 
     // The graphics command buffer has to be in recording state.
-    result = palCmdBegin(gfxCmdBuffer, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to begin command buffer");
-        return PAL_FALSE;
-    }
+    // result = palCmdBegin(gfxCmdBuffer, nullptr);
+    // if (result != PAL_RESULT_SUCCESS) {
+    //     logResult(result, "Failed to begin command buffer");
+    //     return PAL_FALSE;
+    // }
 
     // If the two queues can share resource ownership, the function below just
     // sets the barrier but does no ownership transfer
-    barrierInfo2.dstCmdBuffer = gfxCmdBuffer; // The graphics queue command buffer
-    palCmdImageBarrier2(cpyCmdBuffer, texture, &range, &barrierInfo2);
+    // barrierInfo2.dstCmdBuffer = gfxCmdBuffer; // The graphics queue command buffer
+    // palCmdImageBarrier2(cpyCmdBuffer, texture, &range, &barrierInfo2);
 
     // End the copy command buffer
-    result = palCmdEnd(cpyCmdBuffer);
+    result = palCmdEnd(gfxCmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to end command buffer");
         return PAL_FALSE;
@@ -322,11 +309,12 @@ PalBool queueOwnershipTest()
 
     // Submit the copy command buffer
     PalCommandBufferSubmitInfo submitInfo = {0};
-    submitInfo.cmdBuffer = cpyCmdBuffer;
-    submitInfo.fence = nullptr; // we are not using fence
-    submitInfo.signalSemaphore = semaphore;
+    submitInfo.cmdBuffer = gfxCmdBuffer;
+    // submitInfo.fence = nullptr; // we are not using fence
+    // submitInfo.signalSemaphore = semaphore;
 
-    result = palSubmitCommandBuffer(cpyQueue, &submitInfo);
+    result = palSubmitCommandBuffer(gfxQueue, &submitInfo);
+    uint32_t lost = palGetDeviceLostReason(device);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
         return PAL_FALSE;
@@ -335,9 +323,9 @@ PalBool queueOwnershipTest()
     // We transition the image to a different usage to check if the graphics queue has ownership
     barrierInfo.oldState = PAL_USAGE_STATE_SHADER_READ;
     barrierInfo.srcStages = PAL_PIPELINE_STAGE_FRAGMENT_SHADER;
-    barrierInfo.newState = PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE;
-    barrierInfo.dstStages = PAL_PIPELINE_STAGE_COLOR_ATTACHMENT;
-    palCmdImageBarrier(gfxCmdBuffer, texture, &range, &barrierInfo);
+    barrierInfo.newState = PAL_USAGE_STATE_STORAGE_READ;
+    barrierInfo.dstStages = PAL_PIPELINE_STAGE_NONE;
+    // palCmdImageBarrier(gfxCmdBuffer, texture, &range, &barrierInfo);
 
     // End the graphics command buffer
     result = palCmdEnd(gfxCmdBuffer);

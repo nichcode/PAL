@@ -227,32 +227,34 @@ PalResult PAL_CALL submitCommandBufferD3D12(
 
     // wait semaphore
     if (info->waitSemaphore) {
+        UINT64 value = 0;
         SemaphoreD3D12* semaphore = (SemaphoreD3D12*)info->waitSemaphore;
         if (semaphore->isTimeline) {
-            ret = queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, info->waitValue);
-            if (FAILED(ret)) {
-                return makeResultD3D12(ret);
-            }
-
+            value = info->waitValue;
         } else {
-            ret = queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, semaphore->value);
-            if (FAILED(ret)) {
-                return makeResultD3D12(ret);
-            }
+            value = semaphore->value;
+        }
 
+        ret = queueHandle->lpVtbl->Wait(queueHandle, semaphore->handle, value);
+        if (FAILED(ret)) {
+            return makeResultD3D12(ret);
+        }
+
+        // reset the value if its a binary semaphore
+        if (!semaphore->isTimeline) {
+            semaphore->value = 0;
             ret = semaphore->handle->lpVtbl->Signal(semaphore->handle, 0);
             if (FAILED(ret)) {
                 return makeResultD3D12(ret);
             }
-
-            semaphore->value = 0;
         }
     }
-
+   
     ID3D12CommandList* cmdLists[1] = {(ID3D12CommandList*)cmdBufferImpl->handle};
     queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, cmdLists);
     pollMessagesD3D12(cmdBufferImpl->device);
 
+    // this is used for queue wait
     queueImpl->fenceValue++;
     ret = queueHandle->lpVtbl->Signal(queueHandle, queueImpl->fence, queueImpl->fenceValue);
     if (FAILED(ret)) {
@@ -269,19 +271,18 @@ PalResult PAL_CALL submitCommandBufferD3D12(
     }
 
     if (info->signalSemaphore) {
+        UINT64 value = 0;
         SemaphoreD3D12* semaphore = (SemaphoreD3D12*)info->signalSemaphore;
         if (semaphore->isTimeline) {
-            ret = queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, info->signalValue);
-            if (FAILED(ret)) {
-                return makeResultD3D12(ret);
-            }
-
+            value = info->signalValue;
         } else {
             semaphore->value = 1;
-            ret = queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, semaphore->value);
-            if (FAILED(ret)) {
-                return makeResultD3D12(ret);
-            }
+            value = semaphore->value;
+        }
+
+        ret = queueHandle->lpVtbl->Signal(queueHandle, semaphore->handle, value);
+        if (FAILED(ret)) {
+            return makeResultD3D12(ret);
         }
     }
 

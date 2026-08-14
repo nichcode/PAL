@@ -45,7 +45,7 @@ PalResult PAL_CALL createFenceD3D12(
         fence->canReset = PAL_TRUE;
     }
 
-    fence->isTimeline = PAL_FALSE; // for sempaphores
+    fence->isTimeline = PAL_FALSE; // for semaphores
     fence->value = 0;
     *outFence = (PalFence*)fence;
     return PAL_RESULT_SUCCESS;
@@ -71,7 +71,6 @@ PalResult PAL_CALL waitFenceD3D12(
 
     if (fenceImpl->handle->lpVtbl->GetCompletedValue(fenceImpl->handle) < value) {
         result = fenceImpl->handle->lpVtbl->SetEventOnCompletion(fenceImpl->handle, value, event);
-
         if (FAILED(result)) {
             return makeResultD3D12(result);
         }

@@ -492,7 +492,6 @@ PalBool textureTest()
     }
 
     palWriteImageStaging(device, imageCreateInfo.format, &bufferImageCopyInfo, texture, data);
-
     palUnmapBuffer(imageStagingBuffer);
 
     // use the first command buffer to upload the copy

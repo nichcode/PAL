@@ -1015,12 +1015,133 @@ void PAL_CALL cmdImageBarrier2D3D12(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo2* info)
 {
-    PalBarrierInfo barrierInfo = {0};
-    barrierInfo.oldState = info->oldState;
-    barrierInfo.srcStages = info->srcStages;
-    barrierInfo.newState = info->newState;
-    barrierInfo.dstStages = info->dstStages;
-    cmdImageBarrierD3D12(cmdBuffer, image, subresourceRange, &barrierInfo);
+    CommandBufferD3D12* srcCmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* dstCmdBufferImpl = (CommandBufferD3D12*)info->dstCmdBuffer;
+    ImageD3D12* imageImpl = (ImageD3D12*)image;
+    D3D12_RESOURCE_STATES old, new;
+
+    D3D12_RESOURCE_BARRIER barrier = {0};
+    old = barrierToD3D12(info->oldState);
+    new = barrierToD3D12(info->newState);
+
+    // read/write barrier without transition
+    if (old == new && old == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = imageImpl->handle;
+        srcCmdBufferImpl->handle->lpVtbl->ResourceBarrier(
+            srcCmdBufferImpl->handle,
+            1, 
+            &barrier);
+
+        // we dont need any on the dst command buffer
+        return;
+    }
+
+    uint32_t planeCount = 1; // for color or depth
+    if (subresourceRange->aspect == PAL_IMAGE_ASPECT_DEPTH_STENCIL) {
+        planeCount = 2;
+    }
+
+    D3D12_RESOURCE_BARRIER* barriers = nullptr;
+    uint32_t levelCount = subresourceRange->mipLevelCount;
+    uint32_t layerCount = subresourceRange->layerArrayCount;
+
+    uint32_t startLevel = subresourceRange->startMipLevel;
+    uint32_t startLayer = subresourceRange->startArrayLayer;
+    uint32_t maxLevels = imageImpl->info.mipLevelCount;
+    uint32_t maxLayers = imageImpl->info.arrayLayerCount;
+    uint32_t barrierCount = layerCount * levelCount * planeCount;
+
+    if (startLevel == 0 && levelCount == maxLevels && startLayer == 0 && layerCount == maxLayers) {
+        // full resource
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = imageImpl->handle;
+        barrier.Transition.StateBefore = old;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+
+        srcCmdBufferImpl->handle->lpVtbl->ResourceBarrier(
+            srcCmdBufferImpl->handle, 
+            1, 
+            &barrier);
+
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+        barrier.Transition.StateAfter = new;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
+        dstCmdBufferImpl->handle->lpVtbl->ResourceBarrier(
+            dstCmdBufferImpl->handle, 
+            1, 
+            &barrier);
+
+        return;
+    }
+
+    if (layerCount == 1 && layerCount == 1 && planeCount == 1) {
+        // single plane
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = imageImpl->handle;
+        barrier.Transition.StateBefore = old;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+
+        barrier.Transition.Subresource = startLevel + startLayer * maxLevels;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+
+        srcCmdBufferImpl->handle->lpVtbl->ResourceBarrier(
+            srcCmdBufferImpl->handle, 
+            1, 
+            &barrier);
+
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+        barrier.Transition.StateAfter = new;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
+        dstCmdBufferImpl->handle->lpVtbl->ResourceBarrier(
+            dstCmdBufferImpl->handle, 
+            1, 
+            &barrier);
+
+        return;
+    }
+
+    barriers = palLinearAlloc(
+        &srcCmdBufferImpl->linearAllocator,
+        sizeof(D3D12_RESOURCE_BARRIER) * barrierCount,
+        0);
+
+    uint32_t count = 0;
+    for (uint32_t plane = 0; plane < planeCount; plane++) {
+        for (uint32_t layer = startLayer; layer < startLayer + layerCount; layer++) {
+            for (uint32_t level = startLevel; level < startLevel + levelCount; level++) {
+                uint32_t index = level + (layer * maxLevels) + (plane * maxLevels * maxLayers);
+
+                D3D12_RESOURCE_BARRIER* tmp = &barriers[count++];
+                tmp->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                tmp->Transition.pResource = imageImpl->handle;
+                tmp->Transition.StateBefore = old;
+                tmp->Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+                tmp->Transition.Subresource = index;
+                tmp->Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+            }
+        }
+    }
+
+    srcCmdBufferImpl->handle->lpVtbl->ResourceBarrier(
+        srcCmdBufferImpl->handle, 
+        barrierCount, 
+        barriers);
+
+    for (int i = 0; i < barrierCount; i++) {
+        D3D12_RESOURCE_BARRIER* tmp = &barriers[i];
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+        barrier.Transition.StateAfter = new;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
+    }
+
+    dstCmdBufferImpl->handle->lpVtbl->ResourceBarrier(
+        dstCmdBufferImpl->handle, 
+        barrierCount, 
+        barriers);
 }
 
 void PAL_CALL cmdBufferBarrierD3D12(
@@ -1057,12 +1178,38 @@ void PAL_CALL cmdBufferBarrier2D3D12(
     PalBuffer* buffer,
     PalBarrierInfo2* info)
 {
-    PalBarrierInfo barrierInfo = {0};
-    barrierInfo.oldState = info->oldState;
-    barrierInfo.srcStages = info->srcStages;
-    barrierInfo.newState = info->newState;
-    barrierInfo.dstStages = info->dstStages;
-    cmdBufferBarrierD3D12(cmdBuffer, buffer, &barrierInfo);
+    CommandBufferD3D12* srcCmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
+    CommandBufferD3D12* dstCmdBufferImpl = (CommandBufferD3D12*)info->dstCmdBuffer;
+    BufferD3D12* bufferImpl = (BufferD3D12*)buffer;
+    D3D12_RESOURCE_STATES old, new;
+
+    if (!bufferImpl->canStateChange) {
+        return;
+    }
+
+    old = barrierToD3D12(info->oldState);
+    new = barrierToD3D12(info->newState);
+
+    D3D12_RESOURCE_BARRIER barrier = {0};
+    if (old == new && D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = bufferImpl->handle;
+        srcCmdBufferImpl->handle->lpVtbl->ResourceBarrier(srcCmdBufferImpl->handle, 1, &barrier);
+
+    } else {
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = bufferImpl->handle;
+        barrier.Transition.StateBefore = old;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+        srcCmdBufferImpl->handle->lpVtbl->ResourceBarrier(srcCmdBufferImpl->handle, 1, &barrier);
+
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+        barrier.Transition.StateAfter = new;
+        dstCmdBufferImpl->handle->lpVtbl->ResourceBarrier(dstCmdBufferImpl->handle, 1, &barrier);
+    }
 }
 
 void PAL_CALL cmdDispatchD3D12(

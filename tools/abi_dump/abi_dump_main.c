@@ -79,17 +79,11 @@ static PalBool checkPALVersion(uint32_t flags)
     }
 
     if (strcmp(VERSION, "1.0") == 0) {
-        // ABI Dump v1.0 == PAL v2.0.0
-        if (version.major == 2 && version.minor == 0 && version.build == 0) {
+        // ABI Dump v1.0 == PAL v2
+        if (version.major == 2) {
             if (flags & DUMP_FLAG_VERBOSE) {
-                palLog(nullptr, "Expected PAL Version: 2.0.0");
-                palLog(
-                    nullptr,
-                    "Actual PAL Version: %d.%d.%d",
-                    version.major,
-                    version.minor,
-                    version.build);
-
+                palLog(nullptr, "Expected PAL ABI Generation: 2");
+                palLog(nullptr, "Actual PAL ABI Generation:: %d",version.major);
                 palLog(nullptr, "Target Library: PAL2");
             }
             return PAL_TRUE;
