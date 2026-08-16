@@ -180,11 +180,11 @@ static PalBool validateVtableVersion2(const PalGraphicsBackendVtable2* vtable)
 
     // validate required functions
     // clang-format off
-    if (!vtable->canQueueShareOwnership    || 
-        !vtable->canQueueUseUsageState     ||
-        !vtable->canQueueUsePipelineStages ||
-        !vtable->cmdImageBarrier2          ||
-        !vtable->cmdBufferBarrier2) {
+    if (!vtable->canQueueShareOwnership      || 
+        !vtable->canQueueUseUsageState       ||
+        !vtable->canQueueUsePipelineStages   ||
+        !vtable->cmdImageOwnershipTransfer   ||
+        !vtable->cmdBufferOwnershipTransfer) {
         return PAL_FALSE;
     }
     // clang-format on
@@ -1217,12 +1217,44 @@ void PAL_CALL palCmdImageBarrier(
     cmdBuffer->backend->vtbl1->cmdImageBarrier(cmdBuffer, image, subresourceRange, info);
 }
 
+void PAL_CALL palCmdImageOwnershipTransfer(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
+    PalImage* image,
+    PalImageSubresourceRange* subresourceRange,
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages)
+{
+    srcCmdBuffer->backend->vtbl2->cmdImageOwnershipTransfer(
+        srcCmdBuffer, 
+        dstCmdBuffer, 
+        image, 
+        subresourceRange, 
+        srcUsageState, 
+        srcPipelineStages);
+}
+
 void PAL_CALL palCmdBufferBarrier(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBarrierInfo* info)
 {
     cmdBuffer->backend->vtbl1->cmdBufferBarrier(cmdBuffer, buffer, info);
+}
+
+void PAL_CALL palCmdBufferOwnershipTransfer(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
+    PalBuffer* buffer,
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages)
+{
+    srcCmdBuffer->backend->vtbl2->cmdBufferOwnershipTransfer(
+        srcCmdBuffer, 
+        dstCmdBuffer, 
+        buffer, 
+        srcUsageState, 
+        srcPipelineStages);
 }
 
 void PAL_CALL palCmdDispatch(
@@ -1342,23 +1374,6 @@ void PAL_CALL palCmdSetStencilOp(
 {
     cmdBuffer->backend->vtbl1
         ->cmdSetStencilOp(cmdBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
-}
-
-void PAL_CALL palCmdImageBarrier2(
-    PalCommandBuffer* cmdBuffer,
-    PalImage* image,
-    PalImageSubresourceRange* subresourceRange,
-    PalBarrierInfo2* info)
-{
-    cmdBuffer->backend->vtbl2->cmdImageBarrier2(cmdBuffer, image, subresourceRange, info);
-}
-
-void PAL_CALL palCmdBufferBarrier2(
-    PalCommandBuffer* cmdBuffer,
-    PalBuffer* buffer,
-    PalBarrierInfo2* info)
-{
-    cmdBuffer->backend->vtbl2->cmdBufferBarrier2(cmdBuffer, buffer, info);
 }
 
 // ==================================================
