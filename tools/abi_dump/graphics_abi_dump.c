@@ -1747,6 +1747,183 @@ static PalBool commandsDump(uint32_t flags)
     return checkABI(&barrierInfo, flags);
 }
 
+static PalBool vtable1Dump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo fields[] = {
+        { "enumerateAdapters", {0, 8}, FIELD(PalGraphicsBackendVtable1, enumerateAdapters) },
+        { "getAdapterInfo", {8, 8}, FIELD(PalGraphicsBackendVtable1, getAdapterInfo) },
+        { "getAdapterCapabilities", {16, 8}, FIELD(PalGraphicsBackendVtable1, getAdapterCapabilities) },
+        { "getAdapterFeatures", {24, 8}, FIELD(PalGraphicsBackendVtable1, getAdapterFeatures) },
+        { "getHighestSupportedShaderTarget", {32, 8}, FIELD(PalGraphicsBackendVtable1, getHighestSupportedShaderTarget) },
+        { "createDevice", {40, 8}, FIELD(PalGraphicsBackendVtable1, createDevice) },
+        { "destroyDevice", {48, 8}, FIELD(PalGraphicsBackendVtable1, destroyDevice) },
+        { "getDeviceLostReason", {56, 8}, FIELD(PalGraphicsBackendVtable1, getDeviceLostReason) },
+        { "allocateMemory", {64, 8}, FIELD(PalGraphicsBackendVtable1, allocateMemory) },
+        { "freeMemory", {72, 8}, FIELD(PalGraphicsBackendVtable1, freeMemory) },
+        { "querySamplerAnisotropyCapabilities", {80, 8}, FIELD(PalGraphicsBackendVtable1, querySamplerAnisotropyCapabilities) },
+        { "queryMultiViewCapabilities", {88, 8}, FIELD(PalGraphicsBackendVtable1, queryMultiViewCapabilities) },
+        { "queryMultiViewportCapabilities", {96, 8}, FIELD(PalGraphicsBackendVtable1, queryMultiViewportCapabilities) },
+        { "queryDepthStencilCapabilities", {104, 8}, FIELD(PalGraphicsBackendVtable1, queryDepthStencilCapabilities) },
+        { "queryFragmentShadingRateCapabilities", {112, 8}, FIELD(PalGraphicsBackendVtable1, queryFragmentShadingRateCapabilities) },
+        { "queryMeshShaderCapabilities", {120, 8}, FIELD(PalGraphicsBackendVtable1, queryMeshShaderCapabilities) },
+        { "queryRayTracingCapabilities", {128, 8}, FIELD(PalGraphicsBackendVtable1, queryRayTracingCapabilities) },
+        { "queryDescriptorIndexingCapabilities", {136, 8}, FIELD(PalGraphicsBackendVtable1, queryDescriptorIndexingCapabilities) },
+        { "createQueue", {144, 8}, FIELD(PalGraphicsBackendVtable1, createQueue) },
+        { "destroyQueue", {152, 8}, FIELD(PalGraphicsBackendVtable1, destroyQueue) },
+        { "canQueuePresent", {160, 8}, FIELD(PalGraphicsBackendVtable1, canQueuePresent) },
+        { "waitQueue", {168, 8}, FIELD(PalGraphicsBackendVtable1, waitQueue) },
+        { "enumerateFormats", {176, 8}, FIELD(PalGraphicsBackendVtable1, enumerateFormats) },
+        { "isFormatSupported", {184, 8}, FIELD(PalGraphicsBackendVtable1, isFormatSupported) },
+        { "queryFormatImageUsages", {192, 8}, FIELD(PalGraphicsBackendVtable1, queryFormatImageUsages) },
+        { "queryFormatSampleCount", {200, 8}, FIELD(PalGraphicsBackendVtable1, queryFormatSampleCount) },
+        { "createImage", {208, 8}, FIELD(PalGraphicsBackendVtable1, createImage) },
+        { "destroyImage", {216, 8}, FIELD(PalGraphicsBackendVtable1, destroyImage) },
+        { "getImageInfo", {224, 8}, FIELD(PalGraphicsBackendVtable1, getImageInfo) },
+        { "getImageMemoryRequirements", {232, 8}, FIELD(PalGraphicsBackendVtable1, getImageMemoryRequirements) },
+        { "bindImageMemory", {240, 8}, FIELD(PalGraphicsBackendVtable1, bindImageMemory) },
+        { "createImageView", {248, 8}, FIELD(PalGraphicsBackendVtable1, createImageView) },
+        { "destroyImageView", {256, 8}, FIELD(PalGraphicsBackendVtable1, destroyImageView) },
+        { "createSampler", {264, 8}, FIELD(PalGraphicsBackendVtable1, createSampler) },
+        { "destroySampler", {272, 8}, FIELD(PalGraphicsBackendVtable1, destroySampler) },
+        { "createSurface", {280, 8}, FIELD(PalGraphicsBackendVtable1, createSurface) },
+        { "destroySurface", {288, 8}, FIELD(PalGraphicsBackendVtable1, destroySurface) },
+        { "getSurfaceCapabilities", {296, 8}, FIELD(PalGraphicsBackendVtable1, getSurfaceCapabilities) },
+        { "createSwapchain", {304, 8}, FIELD(PalGraphicsBackendVtable1, createSwapchain) },
+        { "destroySwapchain", {312, 8}, FIELD(PalGraphicsBackendVtable1, destroySwapchain) },
+        { "getSwapchainImage", {320, 8}, FIELD(PalGraphicsBackendVtable1, getSwapchainImage) },
+        { "getNextSwapchainImage", {328, 8}, FIELD(PalGraphicsBackendVtable1, getNextSwapchainImage) },
+        { "presentSwapchain", {336, 8}, FIELD(PalGraphicsBackendVtable1, presentSwapchain) },
+        { "resizeSwapchain", {344, 8}, FIELD(PalGraphicsBackendVtable1, resizeSwapchain) },
+        { "createShader", {352, 8}, FIELD(PalGraphicsBackendVtable1, createShader) },
+        { "destroyShader", {360, 8}, FIELD(PalGraphicsBackendVtable1, destroyShader) },
+        { "createFence", {368, 8}, FIELD(PalGraphicsBackendVtable1, createFence) },
+        { "destroyFence", {376, 8}, FIELD(PalGraphicsBackendVtable1, destroyFence) },
+        { "waitFence", {384, 8}, FIELD(PalGraphicsBackendVtable1, waitFence) },
+        { "resetFence", {392, 8}, FIELD(PalGraphicsBackendVtable1, resetFence) },
+        { "isFenceSignaled", {400, 8}, FIELD(PalGraphicsBackendVtable1, isFenceSignaled) },
+        { "createSemaphore", {408, 8}, FIELD(PalGraphicsBackendVtable1, createSemaphore) },
+        { "destroySemaphore", {416, 8}, FIELD(PalGraphicsBackendVtable1, destroySemaphore) },
+        { "waitSemaphore", {424, 8}, FIELD(PalGraphicsBackendVtable1, waitSemaphore) },
+        { "signalSemaphore", {432, 8}, FIELD(PalGraphicsBackendVtable1, signalSemaphore) },
+        { "getSemaphoreValue", {440, 8}, FIELD(PalGraphicsBackendVtable1, getSemaphoreValue) },
+        { "createCommandPool", {448, 8}, FIELD(PalGraphicsBackendVtable1, createCommandPool) },
+        { "destroyCommandPool", {456, 8}, FIELD(PalGraphicsBackendVtable1, destroyCommandPool) },
+        { "allocateCommandBuffer", {464, 8}, FIELD(PalGraphicsBackendVtable1, allocateCommandBuffer) },
+        { "freeCommandBuffer", {472, 8}, FIELD(PalGraphicsBackendVtable1, freeCommandBuffer) },
+        { "resetCommandBuffer", {480, 8}, FIELD(PalGraphicsBackendVtable1, resetCommandBuffer) },
+        { "submitCommandBuffer", {488, 8}, FIELD(PalGraphicsBackendVtable1, submitCommandBuffer) },
+        { "cmdBegin", {496, 8}, FIELD(PalGraphicsBackendVtable1, cmdBegin) },
+        { "cmdEnd", {504, 8}, FIELD(PalGraphicsBackendVtable1, cmdEnd) },
+        { "cmdExecuteCommandBuffer", {512, 8}, FIELD(PalGraphicsBackendVtable1, cmdExecuteCommandBuffer) },
+        { "cmdSetFragmentShadingRate", {520, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetFragmentShadingRate) },
+        { "cmdDrawMeshTasks", {528, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawMeshTasks) },
+        { "cmdDrawMeshTasksIndirect", {536, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawMeshTasksIndirect) },
+        { "cmdDrawMeshTasksIndirectCount", {544, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawMeshTasksIndirectCount) },
+        { "cmdBuildAccelerationStructure", {552, 8}, FIELD(PalGraphicsBackendVtable1, cmdBuildAccelerationStructure) },
+        { "cmdBeginRendering", {560, 8}, FIELD(PalGraphicsBackendVtable1, cmdBeginRendering) },
+        { "cmdEndRendering", {568, 8}, FIELD(PalGraphicsBackendVtable1, cmdEndRendering) },
+        { "cmdCopyBuffer", {576, 8}, FIELD(PalGraphicsBackendVtable1, cmdCopyBuffer) },
+        { "cmdCopyBufferToImage", {584, 8}, FIELD(PalGraphicsBackendVtable1, cmdCopyBufferToImage) },
+        { "cmdCopyImage", {592, 8}, FIELD(PalGraphicsBackendVtable1, cmdCopyImage) },
+        { "cmdCopyImageToBuffer", {600, 8}, FIELD(PalGraphicsBackendVtable1, cmdCopyImageToBuffer) },
+        { "cmdBindPipeline", {608, 8}, FIELD(PalGraphicsBackendVtable1, cmdBindPipeline) },
+        { "cmdSetViewport", {616, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetViewport) },
+        { "cmdSetScissors", {624, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetScissors) },
+        { "cmdBindVertexBuffers", {632, 8}, FIELD(PalGraphicsBackendVtable1, cmdBindVertexBuffers) },
+        { "cmdBindIndexBuffer", {640, 8}, FIELD(PalGraphicsBackendVtable1, cmdBindIndexBuffer) },
+        { "cmdDraw", {648, 8}, FIELD(PalGraphicsBackendVtable1, cmdDraw) },
+        { "cmdDrawIndirect", {656, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawIndirect) },
+        { "cmdDrawIndirectCount", {664, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawIndirectCount) },
+        { "cmdDrawIndexed", {672, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawIndexed) },
+        { "cmdDrawIndexedIndirect", {680, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawIndexedIndirect) },
+        { "cmdDrawIndexedIndirectCount", {688, 8}, FIELD(PalGraphicsBackendVtable1, cmdDrawIndexedIndirectCount) },
+        { "cmdAccelerationStructureBarrier", {696, 8}, FIELD(PalGraphicsBackendVtable1, cmdAccelerationStructureBarrier) },
+        { "cmdImageBarrier", {704, 8}, FIELD(PalGraphicsBackendVtable1, cmdImageBarrier) },
+        { "cmdBufferBarrier", {712, 8}, FIELD(PalGraphicsBackendVtable1, cmdBufferBarrier) },
+        { "cmdDispatch", {720, 8}, FIELD(PalGraphicsBackendVtable1, cmdDispatch) },
+        { "cmdDispatchBase", {728, 8}, FIELD(PalGraphicsBackendVtable1, cmdDispatchBase) },
+        { "cmdDispatchIndirect", {736, 8}, FIELD(PalGraphicsBackendVtable1, cmdDispatchIndirect) },
+        { "cmdTraceRays", {744, 8}, FIELD(PalGraphicsBackendVtable1, cmdTraceRays) },
+        { "cmdTraceRaysIndirect", {752, 8}, FIELD(PalGraphicsBackendVtable1, cmdTraceRaysIndirect) },
+        { "cmdBindDescriptorSet", {760, 8}, FIELD(PalGraphicsBackendVtable1, cmdBindDescriptorSet) },
+        { "cmdPushConstants", {768, 8}, FIELD(PalGraphicsBackendVtable1, cmdPushConstants) },
+        { "cmdSetCullMode", {776, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetCullMode) },
+        { "cmdSetFrontFace", {784, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetFrontFace) },
+        { "cmdSetPrimitiveTopology", {792, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetPrimitiveTopology) },
+        { "cmdSetDepthTestEnable", {800, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetDepthTestEnable) },
+        { "cmdSetDepthWriteEnable", {808, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetDepthWriteEnable) },
+        { "cmdSetStencilOp", {816, 8}, FIELD(PalGraphicsBackendVtable1, cmdSetStencilOp) },
+        { "createAccelerationstructure", {824, 8}, FIELD(PalGraphicsBackendVtable1, createAccelerationstructure) },
+        { "destroyAccelerationstructure", {832, 8}, FIELD(PalGraphicsBackendVtable1, destroyAccelerationstructure) },
+        { "getAccelerationStructureBuildSize", {840, 8}, FIELD(PalGraphicsBackendVtable1, getAccelerationStructureBuildSize) },
+        { "createBuffer", {848, 8}, FIELD(PalGraphicsBackendVtable1, createBuffer) },
+        { "destroyBuffer", {856, 8}, FIELD(PalGraphicsBackendVtable1, destroyBuffer) },
+        { "getBufferMemoryRequirements", {864, 8}, FIELD(PalGraphicsBackendVtable1, getBufferMemoryRequirements) },
+        { "computeInstanceStagingSize", {872, 8}, FIELD(PalGraphicsBackendVtable1, computeInstanceStagingSize) },
+        { "computeImageStagingRequirements", {880, 8}, FIELD(PalGraphicsBackendVtable1, computeImageStagingRequirements) },
+        { "writeInstanceStaging", {888, 8}, FIELD(PalGraphicsBackendVtable1, writeInstanceStaging) },
+        { "writeImageStaging", {896, 8}, FIELD(PalGraphicsBackendVtable1, writeImageStaging) },
+        { "bindBufferMemory", {904, 8}, FIELD(PalGraphicsBackendVtable1, bindBufferMemory) },
+        { "mapBuffer", {912, 8}, FIELD(PalGraphicsBackendVtable1, mapBuffer) },
+        { "unmapBuffer", {920, 8}, FIELD(PalGraphicsBackendVtable1, unmapBuffer) },
+        { "getBufferDeviceAddress", {928, 8}, FIELD(PalGraphicsBackendVtable1, getBufferDeviceAddress) },
+        { "createDescriptorSetLayout", {936, 8}, FIELD(PalGraphicsBackendVtable1, createDescriptorSetLayout) },
+        { "destroyDescriptorSetLayout", {944, 8}, FIELD(PalGraphicsBackendVtable1, destroyDescriptorSetLayout) },
+        { "createDescriptorPool", {952, 8}, FIELD(PalGraphicsBackendVtable1, createDescriptorPool) },
+        { "destroyDescriptorPool", {960, 8}, FIELD(PalGraphicsBackendVtable1, destroyDescriptorPool) },
+        { "resetDescriptorPool", {968, 8}, FIELD(PalGraphicsBackendVtable1, resetDescriptorPool) },
+        { "allocateDescriptorSet", {976, 8}, FIELD(PalGraphicsBackendVtable1, allocateDescriptorSet) },
+        { "updateDescriptorSet", {984, 8}, FIELD(PalGraphicsBackendVtable1, updateDescriptorSet) },
+        { "createPipelineLayout", {992, 8}, FIELD(PalGraphicsBackendVtable1, createPipelineLayout) },
+        { "destroyPipelineLayout", {1000, 8}, FIELD(PalGraphicsBackendVtable1, destroyPipelineLayout) },
+        { "createGraphicsPipeline", {1008, 8}, FIELD(PalGraphicsBackendVtable1, createGraphicsPipeline) },
+        { "createComputePipeline", {1016, 8}, FIELD(PalGraphicsBackendVtable1, createComputePipeline) },
+        { "createRayTracingPipeline", {1024, 8}, FIELD(PalGraphicsBackendVtable1, createRayTracingPipeline) },
+        { "destroyPipeline", {1032, 8}, FIELD(PalGraphicsBackendVtable1, destroyPipeline) },
+        { "createShaderBindingTable", {1040, 8}, FIELD(PalGraphicsBackendVtable1, createShaderBindingTable) },
+        { "destroyShaderBindingTable", {1048, 8}, FIELD(PalGraphicsBackendVtable1, destroyShaderBindingTable) },
+        { "updateShaderBindingTable", {1056, 8}, FIELD(PalGraphicsBackendVtable1, updateShaderBindingTable) }
+    };
+    // clang-format on
+
+    StructInfo info = {0};
+    info.name = "PalGraphicsBackendVtable1";
+    info.fields = fields;
+    info.fieldCount = ARRAY_SIZE(fields);
+    info.expected.alignof = 8;
+    info.expected.size = 1064;
+    info.expected.padding = 0;
+    info.actual = STRUCT(PalGraphicsBackendVtable1);
+
+    return checkABI(&info, flags);
+}
+
+static PalBool vtable2Dump(uint32_t flags)
+{
+    // clang-format off
+    FieldInfo fields[] = {
+        { "vtable1", {0, 8}, FIELD(PalGraphicsBackendVtable2, vtable1) },
+        { "canQueueShareOwnership", {8, 8}, FIELD(PalGraphicsBackendVtable2, canQueueShareOwnership) },
+        { "canQueueUseUsageState", {16, 8}, FIELD(PalGraphicsBackendVtable2, canQueueUseUsageState) },
+        { "canQueueUsePipelineStages", {24, 8}, FIELD(PalGraphicsBackendVtable2, canQueueUsePipelineStages) },
+        { "cmdImageOwnershipTransfer", {32, 8}, FIELD(PalGraphicsBackendVtable2, cmdImageOwnershipTransfer) },
+        { "cmdBufferOwnershipTransfer", {40, 8}, FIELD(PalGraphicsBackendVtable2, cmdBufferOwnershipTransfer) },
+    };
+    // clang-format on
+
+    StructInfo info = {0};
+    info.name = "PalGraphicsBackendVtable2";
+    info.fields = fields;
+    info.fieldCount = ARRAY_SIZE(fields);
+    info.expected.alignof = 8;
+    info.expected.size = 48;
+    info.expected.padding = 0;
+    info.actual = STRUCT(PalGraphicsBackendVtable2);
+
+    return checkABI(&info, flags);
+}
+
 PalBool graphicsABIDump(uint32_t flags)
 {
     if (!(flags & DUMP_FLAG_QUICK)) {
@@ -1856,5 +2033,15 @@ PalBool graphicsABIDump(uint32_t flags)
         return status;
     }
 
-    return commandsDump(flags);
+    status = commandsDump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    status = vtable1Dump(flags);
+    if (status == PAL_FALSE) {
+        return status;
+    }
+
+    return vtable2Dump(flags);
 }

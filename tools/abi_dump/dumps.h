@@ -91,7 +91,7 @@ static PalBool checkABI(
         }
     }
 
-    fieldSize += 2;                                                     // add 6 spaces
+    fieldSize += 2;
     uint32_t seperatorSize = fieldSize + expectedSize + actualSize + 4; // add 4 spaces
     for (int i = 0; i < seperatorSize; i++) {
         seperator[i] = '=';
@@ -108,7 +108,7 @@ static PalBool checkABI(
         palLog(nullptr, "Field format: (Offset, Size)");
         palLog(nullptr, "");
 
-        palLog(nullptr, "Size:      (%03u, %03u)", info->expected.size, info->actual.size);
+        palLog(nullptr, "Size:      (%04u, %04u)", info->expected.size, info->actual.size);
         palLog(nullptr, "Alignment: (%u, %u)", info->expected.alignof, info->actual.alignof);
         palLog(nullptr, "Padding:   (%02u, %02u)", info->expected.padding, info->actual.padding);
         palLog(nullptr, seperator);
@@ -140,7 +140,7 @@ static PalBool checkABI(
         if (flags & DUMP_FLAG_VERBOSE) {
             palLog(
                 nullptr,
-                "%-*s (%03u, %03u)    (%03u, %03u)",
+                "%-*s (%04u, %03u)    (%04u, %03u)",
                 fieldSize,
                 field->name,
                 field->expected.offset,
