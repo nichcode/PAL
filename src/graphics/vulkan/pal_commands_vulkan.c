@@ -934,6 +934,12 @@ void PAL_CALL cmdImageBarrierVk(
 
     BarrierInfo old = barrierToVk(info->oldState);
     BarrierInfo new = barrierToVk(info->newState);
+    if (old.layout != VK_IMAGE_LAYOUT_UNDEFINED) {
+        // make sure new.layout is not undefined
+        if (new.layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+            new.layout = old.layout;
+        }
+    }
 
     barrier.srcStageMask = pipelineStagesToVk(info->srcStages);
     barrier.srcAccessMask = old.access;
@@ -956,17 +962,27 @@ void PAL_CALL cmdImageBarrierVk(
     cmdBufferImpl->device->cmdPipelineBarrier(cmdBufferImpl->handle, &dependencyInfo);
 }
 
-void PAL_CALL cmdImageBarrier2Vk(
-    PalCommandBuffer* cmdBuffer,
+void PAL_CALL cmdImageOwnershipTransferVk(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalBarrierInfo2* info)
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages)
 {
     ImageVk* imageImpl = (ImageVk*)image;
-    CommandBufferVk* srcCmdBufferImpl = (CommandBufferVk*)cmdBuffer;
-    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)info->dstCmdBuffer;
+    CommandBufferVk* srcCmdBufferImpl = (CommandBufferVk*)srcCmdBuffer;
+    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)dstCmdBuffer;
     uint32_t srcQueueFamily = srcCmdBufferImpl->pool->queue->phyQueue->familyIndex;
     uint32_t dstQueueFamily = dstCmdBufferImpl->pool->queue->phyQueue->familyIndex;
+
+    if (srcQueueFamily == dstQueueFamily) {
+        PalBarrierInfo info = {0};
+        info.oldState = srcUsageState;
+        info.srcStages = srcPipelineStages;
+        cmdImageBarrierVk(srcCmdBuffer, image, subresourceRange, &info);
+        return;
+    }
 
     VkImageSubresourceRange range = {0};
     range.aspectMask = imageAspectToVk(subresourceRange->aspect);
@@ -975,22 +991,20 @@ void PAL_CALL cmdImageBarrier2Vk(
     range.layerCount = subresourceRange->layerArrayCount;
     range.levelCount = subresourceRange->mipLevelCount;
 
-    BarrierInfo old = barrierToVk(info->oldState);
-    BarrierInfo new = barrierToVk(info->newState);
-
+    BarrierInfo old = barrierToVk(srcUsageState);
     VkImageMemoryBarrier2KHR releaseBarrier = {0};
     releaseBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
     releaseBarrier.subresourceRange = range;
     releaseBarrier.image = imageImpl->handle;
 
-    releaseBarrier.srcStageMask = pipelineStagesToVk(info->srcStages);
+    releaseBarrier.srcStageMask = pipelineStagesToVk(srcPipelineStages);
     releaseBarrier.srcAccessMask = old.access;
     releaseBarrier.oldLayout = old.layout;
     releaseBarrier.srcQueueFamilyIndex = srcQueueFamily;
 
     releaseBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
     releaseBarrier.dstAccessMask = VK_ACCESS_2_NONE;
-    releaseBarrier.newLayout = new.layout;
+    releaseBarrier.newLayout = releaseBarrier.oldLayout;
     releaseBarrier.dstQueueFamilyIndex = dstQueueFamily;
 
     VkImageMemoryBarrier2KHR acquireBarrier = {0};
@@ -1003,9 +1017,9 @@ void PAL_CALL cmdImageBarrier2Vk(
     acquireBarrier.oldLayout = old.layout;
     acquireBarrier.srcQueueFamilyIndex = srcQueueFamily;
 
-    acquireBarrier.dstStageMask = pipelineStagesToVk(info->dstStages);
-    acquireBarrier.dstAccessMask = new.access;
-    acquireBarrier.newLayout = new.layout;
+    acquireBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    acquireBarrier.dstAccessMask = VK_ACCESS_2_NONE;
+    acquireBarrier.newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     acquireBarrier.dstQueueFamilyIndex = dstQueueFamily;
 
     VkDependencyInfo dependencyInfo = {0};
@@ -1047,23 +1061,31 @@ void PAL_CALL cmdBufferBarrierVk(
     cmdBufferImpl->device->cmdPipelineBarrier(cmdBufferImpl->handle, &dependencyInfo);
 }
 
-void PAL_CALL cmdBufferBarrier2Vk(
-    PalCommandBuffer* cmdBuffer,
+void PAL_CALL cmdBufferOwnershipTransferVk(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
     PalBuffer* buffer,
-    PalBarrierInfo2* info)
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages)
 {
     BufferVk* bufferImpl = (BufferVk*)buffer;
-    CommandBufferVk* srcCmdBufferImpl = (CommandBufferVk*)cmdBuffer;
-    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)info->dstCmdBuffer;
+    CommandBufferVk* srcCmdBufferImpl = (CommandBufferVk*)srcCmdBuffer;
+    CommandBufferVk* dstCmdBufferImpl = (CommandBufferVk*)dstCmdBuffer;
     uint32_t srcQueueFamily = srcCmdBufferImpl->pool->queue->phyQueue->familyIndex;
     uint32_t dstQueueFamily = dstCmdBufferImpl->pool->queue->phyQueue->familyIndex;
 
-    BarrierInfo old = barrierToVk(info->oldState);
-    BarrierInfo new = barrierToVk(info->newState);
+    if (srcQueueFamily == dstQueueFamily) {
+        PalBarrierInfo info = {0};
+        info.oldState = srcUsageState;
+        info.srcStages = srcPipelineStages;
+        cmdBufferBarrierVk(srcCmdBuffer, buffer, &info);
+        return;
+    }
 
+    BarrierInfo old = barrierToVk(srcUsageState);
     VkBufferMemoryBarrier2KHR releaseBarrier = {0};
     releaseBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
-    releaseBarrier.srcStageMask = pipelineStagesToVk(info->srcStages);
+    releaseBarrier.srcStageMask = pipelineStagesToVk(srcPipelineStages);
     releaseBarrier.srcAccessMask = old.access;
     releaseBarrier.srcQueueFamilyIndex = srcQueueFamily;
 
@@ -1077,8 +1099,8 @@ void PAL_CALL cmdBufferBarrier2Vk(
     acquireBarrier.srcAccessMask = VK_ACCESS_2_NONE;
     acquireBarrier.srcQueueFamilyIndex = srcQueueFamily;
 
-    acquireBarrier.dstStageMask = pipelineStagesToVk(info->dstStages);
-    acquireBarrier.dstAccessMask = new.access;
+    acquireBarrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    acquireBarrier.dstAccessMask = VK_ACCESS_2_NONE;
     acquireBarrier.dstQueueFamilyIndex = dstQueueFamily;
 
     VkDependencyInfo dependencyInfo = {0};

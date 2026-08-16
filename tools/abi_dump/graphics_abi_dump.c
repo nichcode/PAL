@@ -1621,14 +1621,6 @@ static PalBool commandsDump(uint32_t flags)
         { "srcStages", {8, 4}, FIELD(PalBarrierInfo, srcStages) },
         { "dstStages", {12, 4}, FIELD(PalBarrierInfo, dstStages) }
     };
-
-    FieldInfo barrierInfo2Fields[] = {
-        { "dstCmdBuffer", {0, 8}, FIELD(PalBarrierInfo2, dstCmdBuffer) },
-        { "oldState", {8, 4}, FIELD(PalBarrierInfo2, oldState) },
-        { "newState", {12, 4}, FIELD(PalBarrierInfo2, newState) },
-        { "srcStages", {16, 4}, FIELD(PalBarrierInfo2, srcStages) },
-        { "dstStages", {20, 4}, FIELD(PalBarrierInfo2, dstStages) }
-    };
     // clang-format on
 
     StructInfo clearValue = {0};
@@ -1712,15 +1704,6 @@ static PalBool commandsDump(uint32_t flags)
     barrierInfo.expected.padding = 0;
     barrierInfo.actual = STRUCT(PalBarrierInfo);
 
-    StructInfo barrierInfo2 = {0};
-    barrierInfo2.name = "PalBarrierInfo2";
-    barrierInfo2.fields = barrierInfo2Fields;
-    barrierInfo2.fieldCount = ARRAY_SIZE(barrierInfo2Fields);
-    barrierInfo2.expected.alignof = 8;
-    barrierInfo2.expected.size = 24;
-    barrierInfo2.expected.padding = 0;
-    barrierInfo2.actual = STRUCT(PalBarrierInfo2);
-
     PalBool status = checkABI(&clearValue, flags);
     if (status == PAL_FALSE) {
         return status;
@@ -1761,12 +1744,7 @@ static PalBool commandsDump(uint32_t flags)
         return status;
     }
 
-    status = checkABI(&barrierInfo, flags);
-    if (status == PAL_FALSE) {
-        return status;
-    }
-
-    return checkABI(&barrierInfo2, flags);
+    return checkABI(&barrierInfo, flags);
 }
 
 PalBool graphicsABIDump(uint32_t flags)

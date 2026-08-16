@@ -418,21 +418,25 @@ void PAL_CALL cmdImageBarrierVk(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info);
 
-void PAL_CALL cmdImageBarrier2Vk(
-    PalCommandBuffer* cmdBuffer,
+void PAL_CALL cmdImageOwnershipTransferVk(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalBarrierInfo2* info);
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages);
 
 void PAL_CALL cmdBufferBarrierVk(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBarrierInfo* info);
 
-void PAL_CALL cmdBufferBarrier2Vk(
-    PalCommandBuffer* cmdBuffer,
+void PAL_CALL cmdBufferOwnershipTransferVk(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
     PalBuffer* buffer,
-    PalBarrierInfo2* info);
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages);
 
 void PAL_CALL cmdDispatchVk(
     PalCommandBuffer* cmdBuffer,
@@ -771,8 +775,8 @@ static const PalGraphicsBackendVtable2 s_VkBackend2 = {
     .canQueueShareOwnership = canQueueShareOwnershipVk,
     .canQueueUseUsageState = canQueueUseUsageStateVk,
     .canQueueUsePipelineStages = canQueueUsePipelineStagesVk,
-    .cmdImageBarrier2 = cmdImageBarrier2Vk,
-    .cmdBufferBarrier2 = cmdBufferBarrier2Vk};
+    .cmdImageOwnershipTransfer = cmdImageOwnershipTransferVk,
+    .cmdBufferOwnershipTransfer = cmdBufferOwnershipTransferVk};
 
 #endif // PAL_HAS_VULKAN_BACKEND
 
@@ -1178,21 +1182,25 @@ void PAL_CALL cmdImageBarrierD3D12(
     PalImageSubresourceRange* subresourceRange,
     PalBarrierInfo* info);
 
-void PAL_CALL cmdImageBarrier2D3D12(
-    PalCommandBuffer* cmdBuffer,
+void PAL_CALL cmdImageOwnershipTransferD3D12(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
     PalImage* image,
     PalImageSubresourceRange* subresourceRange,
-    PalBarrierInfo2* info);
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages);
 
 void PAL_CALL cmdBufferBarrierD3D12(
     PalCommandBuffer* cmdBuffer,
     PalBuffer* buffer,
     PalBarrierInfo* info);
 
-void PAL_CALL cmdBufferBarrier2D3D12(
-    PalCommandBuffer* cmdBuffer,
+void PAL_CALL cmdBufferOwnershipTransferD3D12(
+    PalCommandBuffer* srcCmdBuffer,
+    PalCommandBuffer* dstCmdBuffer,
     PalBuffer* buffer,
-    PalBarrierInfo2* info);
+    PalUsageState srcUsageState,
+    PalPipelineStages srcPipelineStages);
 
 void PAL_CALL cmdDispatchD3D12(
     PalCommandBuffer* cmdBuffer,
@@ -1494,8 +1502,8 @@ static const PalGraphicsBackendVtable2 s_D3D12Backend2 = {
     .canQueueShareOwnership = canQueueShareOwnershipD3D12,
     .canQueueUseUsageState = canQueueUseUsageStateD3D12,
     .canQueueUsePipelineStages = canQueueUsePipelineStagesD3D12,
-    .cmdImageBarrier2 = cmdImageBarrier2D3D12,
-    .cmdBufferBarrier2 = cmdBufferBarrier2D3D12};
+    .cmdImageOwnershipTransfer = cmdImageOwnershipTransferD3D12,
+    .cmdBufferOwnershipTransfer = cmdBufferOwnershipTransferD3D12};
 
 #endif // PAL_HAS_D3D12_BACKEND
 
