@@ -1011,7 +1011,7 @@ void PAL_CALL cmdImageOwnershipTransferVk(
     acquireBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
     acquireBarrier.subresourceRange = range;
     acquireBarrier.image = imageImpl->handle;
-    
+
     acquireBarrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
     acquireBarrier.srcAccessMask = VK_ACCESS_2_NONE;
     acquireBarrier.oldLayout = old.layout;

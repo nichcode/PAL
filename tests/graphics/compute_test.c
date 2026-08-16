@@ -136,12 +136,8 @@ PalBool computeTest()
         return PAL_FALSE;
     }
 
-    result = palAllocateCommandBuffer(
-        device, 
-        cmdPool, 
-        PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
-        &cmdBuffer);
-        
+    result = palAllocateCommandBuffer(device, cmdPool, PAL_COMMAND_BUFFER_TYPE_PRIMARY, &cmdBuffer);
+
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to allocate command buffer");
         return PAL_FALSE;

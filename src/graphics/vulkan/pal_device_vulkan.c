@@ -1293,7 +1293,7 @@ PalBool PAL_CALL canQueueShareOwnershipVk(
     QueueVk* queueImplB = (QueueVk*)b;
     return queueImplA->phyQueue->familyIndex == queueImplB->phyQueue->familyIndex;
 }
-   
+
 PalBool PAL_CALL canQueueUseUsageStateVk(
     PalQueue* queue,
     PalUsageState state)

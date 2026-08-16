@@ -51,7 +51,7 @@ PalResult PAL_CALL createDeviceD3D12(
 
     // get and cache highest shader model
     device->shaderModel = getHighestSupportedShaderTargetD3D12(adapter, PAL_SHADER_FORMAT_DXIL);
-    
+
     result = s_D3D12.createDevice(
         (IUnknown*)adapterImpl->handle,
         adapterImpl->level,
@@ -686,7 +686,7 @@ PalBool PAL_CALL canQueueShareOwnershipD3D12(
 
     return PAL_FALSE;
 }
-   
+
 PalBool PAL_CALL canQueueUseUsageStateD3D12(
     PalQueue* queue,
     PalUsageState state)

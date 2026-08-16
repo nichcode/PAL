@@ -4617,13 +4617,13 @@ PAL_API PalBool PAL_CALL palCanQueuePresent(
 
 /**
  * @brief Check if two queues can share resources without requiring ownership transfer.
- * 
+ *
  * The adapter used to create the queue's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  *
  * @param[in] a First queue
  * @param[in] b Second queue.
- * 
+ *
  * @return `PAL_TRUE` if both queues can share resources otherwise `PAL_FALSE`.
  *
  * Thread safety: Thread safe.
@@ -4633,20 +4633,20 @@ PAL_API PalBool PAL_CALL palCanQueuePresent(
 PAL_API PalBool PAL_CALL palCanQueueShareOwnership(
     PalQueue* a,
     PalQueue* b);
-   
+
 /**
  * @brief Check if a queue can use the provided usage state.
- * 
+ *
  * The adapter used to create the queue's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  *
  * @param[in] queue The queue to query.
  * @param[in] state The usage state.
- * 
+ *
  * @return `PAL_TRUE` if the queue can use the usage state otherwise `PAL_FALSE`.
  *
  * Thread safety: Thread safe.
- * 
+ *
  * @sa palCanQueueUsePipelineStages
  * @since 2.1
  */
@@ -4656,17 +4656,17 @@ PAL_API PalBool PAL_CALL palCanQueueUseUsageState(
 
 /**
  * @brief Check if a queue can use the provided pipeline stages.
- * 
+ *
  * The adapter used to create the queue's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  *
  * @param[in] queue The queue to query.
  * @param[in] stages The pipeline stages.
- * 
+ *
  * @return `PAL_TRUE` if the queue can use the pipeline stages otherwise `PAL_FALSE`.
  *
  * Thread safety: Thread safe.
- * 
+ *
  * @sa palCanQueueUseUsageState
  * @since 2.1
  */
@@ -5745,7 +5745,7 @@ PAL_API void PAL_CALL palCmdCopyImageToBuffer(
 /**
  * @brief Bind a pipeline.
  *
- * Every pipeline knows it types which is set at the respective creation functions. 
+ * Every pipeline knows it types which is set at the respective creation functions.
  * (`palCreate**Graphics/Compute/RayTracing**Pipeline`).
  *
  * @param[in] cmdBuffer Command buffer being recorded.
@@ -5990,9 +5990,9 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
- * This function defines a dependency between `PalBarrierInfo::oldState` and 
- * `PalBarrierInfo::newState`. It ensures that all operations performed under the old 
- * `PalBarrierInfo::oldState` are completed and visible before the acceleration structure 
+ * This function defines a dependency between `PalBarrierInfo::oldState` and
+ * `PalBarrierInfo::newState`. It ensures that all operations performed under the old
+ * `PalBarrierInfo::oldState` are completed and visible before the acceleration structure
  * is accessed under `PalBarrierInfo::newState`.
  *
  * This function does not modify the acceleration structure, it only exforces execution ordering
@@ -6032,8 +6032,8 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
 /**
  * @brief Transition an image from one usage state to another.
  *
- * This function defines a dependency between `PalBarrierInfo::oldState` and 
- * `PalBarrierInfo::newState`. It ensures that all operations performed under 
+ * This function defines a dependency between `PalBarrierInfo::oldState` and
+ * `PalBarrierInfo::newState`. It ensures that all operations performed under
  * `PalBarrierInfo::oldState` are completed and visible before the image is accessed under
  * `PalBarrierInfo::newState`.
  *
@@ -6071,18 +6071,18 @@ PAL_API void PAL_CALL palCmdImageBarrier(
     PalBarrierInfo* info);
 
 /**
- * @brief Transition an image from one usage state to another across queues, 
+ * @brief Transition an image from one usage state to another across queues,
  * optionally transferring ownership.
- * 
+ *
  * The adapter used to create the command buffer's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
- * 
- * The source command buffer releases ownership of the image after `srcUsageState` and optionally 
+ *
+ * The source command buffer releases ownership of the image after `srcUsageState` and optionally
  * `srcPipelineStages` operations are completed. The destination command buffer acquires the
  * image and transition it to `PAL_USAGE_STATE_UNDEFINED` and `PAL_PIPELINE_STAGE_NONE` as the
  * default state. The image must the transitioned to the proper state before it is used by
  * the destination command buffer after this call.
- * 
+ *
  * Both command buffers must not be able to share resource ownership otherwise, this function
  * sets a normal barrier on the source command buffer ignoring the destination buffer. Call
  * `palCanQueueShareOwnership()` to check if both command buffer queues can share resources.
@@ -6112,9 +6112,9 @@ PAL_API void PAL_CALL palCmdImageOwnershipTransfer(
 /**
  * @brief Transition a buffer from one usage state to another.
  *
- * This function defines a dependency between `PalBarrierInfo::oldState` and 
- * `PalBarrierInfo::newState`. It ensures that all operations performed under 
- * `PalBarrierInfo::oldState` are completed and visible before the buffer is accessed 
+ * This function defines a dependency between `PalBarrierInfo::oldState` and
+ * `PalBarrierInfo::newState`. It ensures that all operations performed under
+ * `PalBarrierInfo::oldState` are completed and visible before the buffer is accessed
  * under `PalBarrierInfo::newState`.
  *
  * This function does not modify the buffer, it only exforces execution ordering and buffer memory
@@ -6149,18 +6149,18 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
     PalBarrierInfo* info);
 
 /**
- * @brief Transition a buffer from one usage state to another across queues, 
+ * @brief Transition a buffer from one usage state to another across queues,
  * optionally transferring ownership.
- * 
+ *
  * The adapter used to create the command buffer's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
- * 
- * The source command buffer releases ownership of the buffer after `srcUsageState` and optionally 
+ *
+ * The source command buffer releases ownership of the buffer after `srcUsageState` and optionally
  * `srcPipelineStages` operations are completed. The destination command buffer acquires the
  * buffer and transition it to `PAL_USAGE_STATE_UNDEFINED` and `PAL_PIPELINE_STAGE_NONE` as the
  * default state. The buffer must the transitioned to the proper state before it is used by
  * the destination command buffer after this call.
- * 
+ *
  * Both command buffers must not be able to share resource ownership otherwise, this function
  * sets a normal barrier on the source command buffer ignoring the destination buffer. Call
  * `palCanQueueShareOwnership()` to check if both command buffer queues can share resources.
@@ -6259,7 +6259,7 @@ PAL_API void PAL_CALL palCmdDispatchIndirect(
 
 /**
  * @brief Dispatch rays.
- * 
+ *
  * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
  * Otherwise behavior is undefined.
  *
@@ -6604,7 +6604,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
 /**
  * @brief Compute requirements for an image staging buffer.
  *
- * This does not allocate memory for the buffer. This function is required for all 
+ * This does not allocate memory for the buffer. This function is required for all
  * image copy staging buffers.
  *
  * `PalBufferImageCopyInfo::bufferRowLength` and `PalBufferImageCopyInfo::bufferImageHeight`
@@ -6728,7 +6728,7 @@ PAL_API PalResult PAL_CALL palMapBuffer(
 /**
  * @brief Unmap buffer from CPU visible address space.
  *
- * The buffer must be mapped before this call. After this call, the CPU pointer must not 
+ * The buffer must be mapped before this call. After this call, the CPU pointer must not
  * be used anymore.
  *
  * @param[in] buffer Pointer to buffer to unmap.
@@ -6848,7 +6848,7 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
 /**
  * @brief Allocate a descriptor set from the provided descriptor pool.
  *
- * The descriptor set will be allocated uninitialized therefore update it before 
+ * The descriptor set will be allocated uninitialized therefore update it before
  * use except the case where descriptor indexing is enabled.
  *
  * `pool` and `layout` must either be created with descriptor indexing enabled or not. Any other

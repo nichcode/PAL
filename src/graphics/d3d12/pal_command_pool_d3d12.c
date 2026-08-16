@@ -249,7 +249,7 @@ PalResult PAL_CALL submitCommandBufferD3D12(
             }
         }
     }
-   
+
     ID3D12CommandList* cmdLists[1] = {(ID3D12CommandList*)cmdBufferImpl->handle};
     queueHandle->lpVtbl->ExecuteCommandLists(queueHandle, 1, cmdLists);
     pollMessagesD3D12(cmdBufferImpl->device);

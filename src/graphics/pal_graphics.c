@@ -13,7 +13,7 @@
 #define MAX_BACKENDS (PAL_MAX_CUSTOM_BACKENDS + 2)
 #define PAL_HANDLE(name)                                                                           \
     struct name {                                                                                  \
-        PalGraphicsVtable* backend;                                                                 \
+        PalGraphicsVtable* backend;                                                                \
     };
 
 PAL_HANDLE(PalAdapter)
@@ -508,7 +508,7 @@ PalBool PAL_CALL palCanQueueShareOwnership(
 {
     return a->backend->vtbl2->canQueueShareOwnership(a, b);
 }
-   
+
 PalBool PAL_CALL palCanQueueUseUsageState(
     PalQueue* queue,
     PalUsageState state)
@@ -1226,11 +1226,11 @@ void PAL_CALL palCmdImageOwnershipTransfer(
     PalPipelineStages srcPipelineStages)
 {
     srcCmdBuffer->backend->vtbl2->cmdImageOwnershipTransfer(
-        srcCmdBuffer, 
-        dstCmdBuffer, 
-        image, 
-        subresourceRange, 
-        srcUsageState, 
+        srcCmdBuffer,
+        dstCmdBuffer,
+        image,
+        subresourceRange,
+        srcUsageState,
         srcPipelineStages);
 }
 
@@ -1250,10 +1250,10 @@ void PAL_CALL palCmdBufferOwnershipTransfer(
     PalPipelineStages srcPipelineStages)
 {
     srcCmdBuffer->backend->vtbl2->cmdBufferOwnershipTransfer(
-        srcCmdBuffer, 
-        dstCmdBuffer, 
-        buffer, 
-        srcUsageState, 
+        srcCmdBuffer,
+        dstCmdBuffer,
+        buffer,
+        srcUsageState,
         srcPipelineStages);
 }
 

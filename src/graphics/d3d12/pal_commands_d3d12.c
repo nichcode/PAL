@@ -1017,7 +1017,10 @@ void PAL_CALL cmdImageOwnershipTransferD3D12(
     PalUsageState srcUsageState,
     PalPipelineStages srcPipelineStages)
 {
-    // TODO: 
+    PalBarrierInfo info = {0};
+    info.oldState = srcUsageState;
+    info.srcStages = srcPipelineStages;
+    cmdImageBarrierD3D12(srcCmdBuffer, image, subresourceRange, &info);
 }
 
 void PAL_CALL cmdBufferBarrierD3D12(
@@ -1056,7 +1059,10 @@ void PAL_CALL cmdBufferOwnershipTransferD3D12(
     PalUsageState srcUsageState,
     PalPipelineStages srcPipelineStages)
 {
-    // TODO: 
+    PalBarrierInfo info = {0};
+    info.oldState = srcUsageState;
+    info.srcStages = srcPipelineStages;
+    cmdBufferBarrierD3D12(srcCmdBuffer, buffer, &info);
 }
 
 void PAL_CALL cmdDispatchD3D12(

@@ -130,11 +130,11 @@ PalBool queueOwnershipTest()
 
     // allocate a command buffer from the graphics command pool
     result = palAllocateCommandBuffer(
-        device, 
-        gfxCmdPool, 
-        PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
+        device,
+        gfxCmdPool,
+        PAL_COMMAND_BUFFER_TYPE_PRIMARY,
         &gfxCmdBuffer);
-        
+
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to allocate command buffer");
         return PAL_FALSE;
@@ -158,15 +158,15 @@ PalBool queueOwnershipTest()
 
         } else {
             break;
-        }   
+        }
     }
 
     if (!cpyQueue) {
         palLog(nullptr, "");
         palLog(
-            nullptr, 
+            nullptr,
             "Failed to find a copy queue that does not share ownership with the graphics queue");
-        
+
         palLog(nullptr, "No ownership transfer is required.");
         palLog(nullptr, "Defaulting to cross-queue synchronization.");
         palLog(nullptr, "");
@@ -186,11 +186,11 @@ PalBool queueOwnershipTest()
 
     // allocate a command buffer from the graphics command pool
     result = palAllocateCommandBuffer(
-        device, 
-        cpyCmdPool, 
-        PAL_COMMAND_BUFFER_TYPE_PRIMARY, 
+        device,
+        cpyCmdPool,
+        PAL_COMMAND_BUFFER_TYPE_PRIMARY,
         &cpyCmdBuffer);
-        
+
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to allocate command buffer");
         return PAL_FALSE;
@@ -233,11 +233,7 @@ PalBool queueOwnershipTest()
     copyInfo.imageHeight = TEXTURE_HEIGHT;
     copyInfo.imageDepth = 1;
 
-    palComputeImageStagingRequirements(
-        device,
-        imageCreateInfo.format,
-        &copyInfo,
-        &stagingReq);
+    palComputeImageStagingRequirements(device, imageCreateInfo.format, &copyInfo, &stagingReq);
 
     copyInfo.bufferRowLength = stagingReq.bufferRowLength;
     copyInfo.bufferImageHeight = stagingReq.bufferImageHeight;
@@ -300,11 +296,11 @@ PalBool queueOwnershipTest()
     // this sets a normal barrier on the source command buffer is there is no
     // ownership tranfer
     palCmdImageOwnershipTransfer(
-        cpyCmdBuffer, 
-        gfxCmdBuffer, 
-        texture, 
-        &range, 
-        PAL_USAGE_STATE_TRANSFER_WRITE, 
+        cpyCmdBuffer,
+        gfxCmdBuffer,
+        texture,
+        &range,
+        PAL_USAGE_STATE_TRANSFER_WRITE,
         PAL_PIPELINE_STAGE_TRANSFER);
 
     // End the copy command buffer
@@ -336,7 +332,7 @@ PalBool queueOwnershipTest()
 
     // we could do additional work like reading back from the image and writing to a ppm file
     // but we keep it very simple and focused
-    
+
     // End the graphics command buffer
     result = palCmdEnd(gfxCmdBuffer);
     if (result != PAL_RESULT_SUCCESS) {
@@ -348,7 +344,7 @@ PalBool queueOwnershipTest()
     submitInfo.cmdBuffer = gfxCmdBuffer;
     submitInfo.waitStages = PAL_PIPELINE_STAGE_TRANSFER;
     submitInfo.waitSemaphore = semaphore; // wait for the copy queue
-    submitInfo.fence = fence; // signal fence if graphics queue is done
+    submitInfo.fence = fence;             // signal fence if graphics queue is done
 
     result = palSubmitCommandBuffer(gfxQueue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
