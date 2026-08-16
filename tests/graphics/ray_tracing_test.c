@@ -756,7 +756,7 @@ PalBool rayTracingTest()
     // submit the command buffer to the GPU
     submitInfo.cmdBuffer = cmdBuffer;
     submitInfo.fence = fence;
-    
+
     result = palSubmitCommandBuffer(queue, &submitInfo);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to submit command buffer");
