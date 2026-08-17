@@ -239,9 +239,9 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             (void**)&heap->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
+        pollMessagesD3D12(deviceImpl);
 
         // get increment size
         heap->incrementSize = deviceImpl->handle->lpVtbl->GetDescriptorHandleIncrementSize(
@@ -277,9 +277,9 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             (void**)&heap->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
+        pollMessagesD3D12(deviceImpl);
 
         // get increment size
         heap->incrementSize = deviceImpl->handle->lpVtbl->GetDescriptorHandleIncrementSize(

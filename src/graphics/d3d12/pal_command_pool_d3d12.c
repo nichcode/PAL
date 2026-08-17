@@ -90,9 +90,9 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->allocator);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // create the command list
     ID3D12GraphicsCommandList* cmdList = nullptr;
@@ -106,9 +106,9 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdList);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // create a tmp gpu buffer
     D3D12_HEAP_PROPERTIES heapProps = {0};
@@ -136,9 +136,9 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->buffer);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // create staging buffer
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -153,20 +153,21 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
         (void**)&cmdBuffer->stagingBuffer);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     result =
         cmdList->lpVtbl->QueryInterface(cmdList, &IID_CommandList6, (void**)&cmdBuffer->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     cmdList->lpVtbl->Release(cmdList);
     cmdBuffer->handle->lpVtbl->Close(cmdBuffer->handle);
+    cmdBuffer->handle->lpVtbl->SetName(cmdBuffer->handle, L"Command Buffer");
 
     cmdBuffer->device = deviceImpl;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
@@ -205,10 +206,10 @@ PalResult PAL_CALL resetCommandBufferD3D12(PalCommandBuffer* cmdBuffer)
 
     result = cmdBufferImpl->handle->lpVtbl->Close(cmdBufferImpl->handle);
     if (FAILED(result)) {
-        pollMessagesD3D12(cmdBufferImpl->device);
         return makeResultD3D12(result);
     }
 
+    pollMessagesD3D12(cmdBufferImpl->device);
     cmdBufferImpl->pipeline = nullptr;
     return PAL_RESULT_SUCCESS;
 }

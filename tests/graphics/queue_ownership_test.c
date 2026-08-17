@@ -75,10 +75,6 @@ PalBool queueOwnershipTest()
     for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         palGetAdapterCapabilities(adapter, &caps);
-        if (caps.maxComputeQueues == 0) {
-            adapter = nullptr;
-            continue;
-        }
 
         palGetAdapterInfo(adapter, &adapterInfo);
         // Skip CPU adapters
@@ -234,7 +230,6 @@ PalBool queueOwnershipTest()
     copyInfo.imageDepth = 1;
 
     palComputeImageStagingRequirements(device, imageCreateInfo.format, &copyInfo, &stagingReq);
-
     copyInfo.bufferRowLength = stagingReq.bufferRowLength;
     copyInfo.bufferImageHeight = stagingReq.bufferImageHeight;
 
@@ -310,7 +305,7 @@ PalBool queueOwnershipTest()
         return PAL_FALSE;
     }
 
-    // Submit the copy command buffer
+    // // Submit the copy command buffer
     PalCommandBufferSubmitInfo submitInfo = {0};
     submitInfo.cmdBuffer = cpyCmdBuffer;
     submitInfo.fence = nullptr; // we are not using fence

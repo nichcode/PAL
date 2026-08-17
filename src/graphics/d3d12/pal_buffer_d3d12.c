@@ -129,10 +129,10 @@ PalResult PAL_CALL createBufferD3D12(
             (void**)&buffer->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
 
+        pollMessagesD3D12(deviceImpl);
         buffer->isMemoryManaged = PAL_TRUE;
     }
 
@@ -289,9 +289,9 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
         (void**)&bufferImpl->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(device);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(device);
 
     return PAL_RESULT_SUCCESS;
 }

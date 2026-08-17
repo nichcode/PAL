@@ -26,10 +26,10 @@ PalResult PAL_CALL createFenceD3D12(
                  ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&fence->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         palFree(s_D3D12.allocator, fence);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // create event
     fence->event = CreateEvent(nullptr, PAL_FALSE, PAL_FALSE, nullptr);
@@ -128,10 +128,10 @@ PalResult PAL_CALL createSemaphoreD3D12(
                  ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&semaphore->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         palFree(s_D3D12.allocator, semaphore);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // create event
     semaphore->event = CreateEvent(nullptr, PAL_FALSE, PAL_FALSE, nullptr);
