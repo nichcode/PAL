@@ -813,7 +813,7 @@ void PAL_CALL destroyDeviceVk(PalDevice* device)
 
 uint32_t PAL_CALL getDeviceLostReasonVk(PalDevice* device)
 {
-    return (uint32_t)VK_ERROR_DEVICE_LOST;
+    return 0;
 }
 
 PalResult PAL_CALL allocateMemoryVk(

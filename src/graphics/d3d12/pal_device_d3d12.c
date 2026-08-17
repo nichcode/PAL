@@ -78,10 +78,7 @@ PalResult PAL_CALL createDeviceD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
 
-            D3D12_MESSAGE_ID denyIDs[] = {
-                D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
-                D3D12_MESSAGE_ID_LIVE_OBJECT_SUMMARY};
-
+            D3D12_MESSAGE_ID denyIDs[] = { D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE };
             device->infoQueue->lpVtbl->SetBreakOnSeverity(
                 device->infoQueue,
                 D3D12_MESSAGE_SEVERITY_ERROR,
@@ -375,9 +372,9 @@ PalResult PAL_CALL allocateMemoryD3D12(
                  ->CreateHeap(deviceImpl->handle, &desc, &IID_Heap, (void**)&memory->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     memory->type = type;
     *outMemory = (PalMemory*)memory;
@@ -520,6 +517,7 @@ PalResult PAL_CALL createQueueD3D12(
     D3D12_COMMAND_QUEUE_DESC desc = {0};
     PalPipelineStages stages = 0;
 
+    const wchar_t* name = nullptr;
     switch (type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -527,6 +525,7 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeComputeQueues--;
+            name = L"Compute Queue";
 
             stages = PAL_PIPELINE_STAGE_TRANSFER;
             stages |= PAL_PIPELINE_STAGE_COMPUTE_SHADER;
@@ -544,6 +543,7 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeGraphicsQueues--;
+            name = L"Graphics Queue";
 
             stages = PAL_PIPELINE_STAGE_TRANSFER;
             stages |= PAL_PIPELINE_STAGE_VERTEX_SHADER;
@@ -577,6 +577,7 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeCopyQueues--;
+            name = L"Copy Queue";
 
             stages = PAL_PIPELINE_STAGE_TRANSFER;
             break;
@@ -595,10 +596,10 @@ PalResult PAL_CALL createQueueD3D12(
         (void**)&queue->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         palFree(s_D3D12.allocator, queue);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // create fence used for queue wait
     result = deviceImpl->handle->lpVtbl
@@ -618,6 +619,7 @@ PalResult PAL_CALL createQueueD3D12(
             GetLastError());
     }
 
+    queue->handle->lpVtbl->SetName(queue->handle, name);
     queue->fenceValue = 0;
     queue->type = type;
     queue->supportedStages = stages;

@@ -155,6 +155,7 @@ typedef struct {
     void* scratchBuffer;
     uint32_t shaderModel;
     PalBool canFenceReset;
+    PalBool loggedDRED;
     IDXGIAdapter4* adapter;
     ID3D12CommandSignature* meshSignature;
     ID3D12CommandSignature* drawIndexedSignature;

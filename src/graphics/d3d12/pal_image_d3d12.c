@@ -182,10 +182,10 @@ PalResult PAL_CALL createImageD3D12(
             (void**)&image->handle);
 
         if (FAILED(result)) {
-            pollMessagesD3D12(deviceImpl);
             return makeResultD3D12(result);
         }
 
+        pollMessagesD3D12(deviceImpl);
         image->isMemoryManaged = PAL_TRUE;
     }
 
@@ -267,10 +267,10 @@ PalResult PAL_CALL bindImageMemoryD3D12(
         (void**)&imageImpl->handle);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(imageImpl->device);
         return makeResultD3D12(result);
     }
 
+    pollMessagesD3D12(imageImpl->device);
     return PAL_RESULT_SUCCESS;
 }
 

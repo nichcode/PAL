@@ -7,6 +7,7 @@
 
 #if PAL_HAS_D3D12_BACKEND
 #include "pal_d3d12.h"
+#include "core/pal_format.h"
 
 // clang-format off
 // IIDS
@@ -31,6 +32,8 @@ IID IID_StateObject = {0x47016943, 0xfca8, 0x4594, 0x93, 0xea, 0xaf, 0x25, 0x8b,
 IID IID_Resource = {0x696442be, 0xa72e, 0x4059, 0xbc, 0x79, 0x5b, 0x5c, 0x98, 0x04, 0x0f, 0xad};
 IID IID_StateObjectProps = {0xde5fa827, 0x9bf9, 0x4f26, 0x89, 0xff, 0xd7, 0xf5, 0x6f, 0xde, 0x38, 0x60};
 IID IID_Fence = {0x0a753dcf, 0xc4d8, 0x4b91, 0xad, 0xf6, 0xbe, 0x5a, 0x60, 0xd9, 0x5a, 0x76};
+IID IID_DREDSettings = {0x82bc481c, 0x6b9b, 0x4030, 0xae,0xdb, 0x7e,0xe3,0xd1,0xdf,0x1e,0x63};
+IID IID_DREDData = {0x98931d33, 0x5ae8, 0x4791, 0xaa,0x3c, 0x1a,0x73,0xa2,0x93,0x4e,0x71};
 // clang-format on
 
 D3D12 s_D3D12 = {0};
@@ -991,65 +994,160 @@ void getDescriptorTierLimitsD3D12(
     }
 }
 
+static const char* breadCrumbOpToString(UINT op)
+{
+    // clang-format off
+    switch (op) {
+        case 0: return "SETMARKER";
+        case 1: return "BEGINEVENT";
+        case 2: return "ENDEVENT";
+        case 3: return "DRAWINSTANCED";
+        case 4: return "DRAWINDEXEDINSTANCED";
+        case 5: return "EXECUTEINDIRECT";
+        case 6: return "DISPATCH";
+        case 7: return "COPYBUFFERREGION";
+        case 8: return "COPYTEXTUREREGION";
+        case 9: return "COPYRESOURCE";
+        case 10: return "COPYTILES";
+        case 11: return "RESOLVESUBRESOURCE";
+        case 12: return "CLEARRENDERTARGETVIEW";
+        case 13: return "CLEARUNORDEREDACCESSVIEW";
+        case 14: return "CLEARDEPTHSTENCILVIEW";
+        case 15: return "RESOURCEBARRIER";
+        case 16: return "EXECUTEBUNDLE";
+        case 17: return "PRESENT";
+        case 18: return "RESOLVEQUERYDATA";
+        case 19: return "BEGINSUBMISSION";
+        case 20: return "ENDSUBMISSION";
+        case 21: return "DECODEFRAME";
+        case 22: return "PROCESSFRAMES";
+        case 23: return "ATOMICCOPYBUFFERUINT";
+        case 24: return "ATOMICCOPYBUFFERUINT64";
+        case 25: return "RESOLVESUBRESOURCEREGION";
+        case 26: return "WRITEBUFFERIMMEDIATE";
+        case 27: return "DECODEFRAME1";
+        case 28: return "SETPROTECTEDRESOURCESESSION";
+        case 29: return "DECODEFRAME2";
+        case 30: return "PROCESSFRAMES1";
+        case 31: return "BUILDRAYTRACINGACCELERATIONSTRUCTURE";
+        case 32: return "EMITRAYTRACINGACCELERATIONSTRUCTUREPOSTBUILDINFO";
+        case 33: return "COPYRAYTRACINGACCELERATIONSTRUCTURE";
+        case 34: return "DISPATCHRAYS";
+        case 35: return "INITIALIZEMETACOMMAND";
+        case 36: return "EXECUTEMETACOMMAND";
+        case 37: return "ESTIMATEMOTION";
+        case 38: return "RESOLVEMOTIONVECTORHEAP";
+        case 39: return "SETPIPELINESTATE1";
+        case 40: return "INITIALIZEEXTENSIONCOMMAND";
+        case 41: return "EXECUTEEXTENSIONCOMMAND";
+        case 42: return "DISPATCHMESH";
+        case 43: return "ENCODEFRAME";
+        case 44: return "RESOLVEENCODEROUTPUTMETADATA";
+    }
+    // clang-format on
+    return "SETMARKER";
+}
+
 void pollMessagesD3D12(DeviceD3D12* device)
 {
     ID3D12InfoQueue* queue = device->infoQueue;
-    if (!queue) {
-        return;
+    if (queue) {
+        UINT64 messageCount = queue->lpVtbl->GetNumStoredMessages(queue);
+        for (int i = 0; i < messageCount; i++) {
+            SIZE_T size = 16384;
+            uint8_t* buffer = device->scratchBuffer;
+            queue->lpVtbl->GetMessage(queue, i, (D3D12_MESSAGE*)buffer, &size);
+
+            const char* message = ((D3D12_MESSAGE*)buffer)->pDescription;
+            D3D12_MESSAGE_CATEGORY category = ((D3D12_MESSAGE*)buffer)->Category;
+            D3D12_MESSAGE_SEVERITY severity = ((D3D12_MESSAGE*)buffer)->Severity;
+
+            PalDebugMessageSeverity msgSeverity = 0;
+            PalDebugMessageType msgType = 0;
+            switch (category) {
+                case D3D12_MESSAGE_CATEGORY_APPLICATION_DEFINED:
+                case D3D12_MESSAGE_CATEGORY_MISCELLANEOUS:
+                case D3D12_MESSAGE_CATEGORY_COMPILATION: {
+                    msgType = PAL_DEBUG_MESSAGE_TYPE_GENERAL;
+                    break;
+                }
+
+                case D3D12_MESSAGE_CATEGORY_INITIALIZATION:
+                case D3D12_MESSAGE_CATEGORY_SHADER:
+                case D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION:
+                case D3D12_MESSAGE_CATEGORY_EXECUTION:
+                case D3D12_MESSAGE_CATEGORY_STATE_GETTING:
+                case D3D12_MESSAGE_CATEGORY_STATE_SETTING: {
+                    msgType = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
+                    break;
+                }
+            }
+
+            switch (severity) {
+                case D3D12_MESSAGE_SEVERITY_WARNING: {
+                    msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
+                    break;
+                }
+
+                case D3D12_MESSAGE_SEVERITY_ERROR:
+                case D3D12_MESSAGE_SEVERITY_CORRUPTION: {
+                    msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
+                    break;
+                }
+            }
+
+            s_D3D12.debugCallback(s_D3D12.debugUserData, msgSeverity, msgType, message);
+        }
+        queue->lpVtbl->ClearStoredMessages(queue);
     }
 
-    UINT64 messageCount = queue->lpVtbl->GetNumStoredMessages(queue);
-    for (int i = 0; i < messageCount; i++) {
-        SIZE_T size = 16384;
-        uint8_t* buffer = device->scratchBuffer;
-        queue->lpVtbl->GetMessage(queue, i, (D3D12_MESSAGE*)buffer, &size);
-
-        const char* message = ((D3D12_MESSAGE*)buffer)->pDescription;
-        D3D12_MESSAGE_CATEGORY category = ((D3D12_MESSAGE*)buffer)->Category;
-        D3D12_MESSAGE_SEVERITY severity = ((D3D12_MESSAGE*)buffer)->Severity;
-
-        PalDebugMessageSeverity msgSeverity = 0;
-        PalDebugMessageType msgType = 0;
-        switch (category) {
-            case D3D12_MESSAGE_CATEGORY_APPLICATION_DEFINED:
-            case D3D12_MESSAGE_CATEGORY_MISCELLANEOUS:
-            case D3D12_MESSAGE_CATEGORY_COMPILATION: {
-                msgType = PAL_DEBUG_MESSAGE_TYPE_GENERAL;
-                break;
-            }
-
-            case D3D12_MESSAGE_CATEGORY_INITIALIZATION:
-            case D3D12_MESSAGE_CATEGORY_SHADER:
-            case D3D12_MESSAGE_CATEGORY_RESOURCE_MANIPULATION:
-            case D3D12_MESSAGE_CATEGORY_EXECUTION:
-            case D3D12_MESSAGE_CATEGORY_STATE_GETTING:
-            case D3D12_MESSAGE_CATEGORY_STATE_SETTING: {
-                msgType = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
-                break;
-            }
+    // check DRED
+    HRESULT hr = device->handle->lpVtbl->GetDeviceRemovedReason(device->handle);
+    if (FAILED(hr) && s_D3D12.debugCallback && device->loggedDRED == PAL_FALSE) {
+        ID3D12DeviceRemovedExtendedData* dred = nullptr;
+        hr = device->handle->lpVtbl->QueryInterface(device->handle, &IID_DREDData, (void**)&dred);
+        if (FAILED(hr)) {
+            return;
         }
 
-        switch (severity) {
-            case D3D12_MESSAGE_SEVERITY_INFO: {
-                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
-                break;
-            }
+        D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT breadcrumbs = {0};
+        hr = dred->lpVtbl->GetAutoBreadcrumbsOutput(dred, &breadcrumbs);
+        if (SUCCEEDED(hr)) {
+            const D3D12_AUTO_BREADCRUMB_NODE* node = breadcrumbs.pHeadAutoBreadcrumbNode;
+            while (node) {
+                PalDebugMessageType type = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
+                PalDebugMessageSeverity severity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
+                s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "");
+                s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "DRED Command List");
 
-            case D3D12_MESSAGE_SEVERITY_WARNING: {
-                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_INFO;
-                break;
-            }
+                char buffer[256];
+                format(
+                    buffer, 
+                    " Name: %s (%p)",
+                    node->pCommandListDebugNameA,
+                    (void*)node->pCommandList);
+                s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
 
-            case D3D12_MESSAGE_SEVERITY_ERROR:
-            case D3D12_MESSAGE_SEVERITY_CORRUPTION: {
-                msgSeverity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
-                break;
+                format(
+                    buffer, 
+                    " Queue Name: %s (%p)",
+                    node->pCommandQueueDebugNameA,
+                    (void*)node->pCommandQueue);
+                s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
+
+                for (UINT i = 0; i < node->BreadcrumbCount; i++) {
+                    const char* str = breadCrumbOpToString((UINT)node->pCommandHistory[i]);
+                    format(buffer, "Operation: %s", str);
+                    s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
+                }
+
+                s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "");
+                node = node->pNext;
             }
         }
-
-        s_D3D12.debugCallback(s_D3D12.debugUserData, msgSeverity, msgType, message);
+        dred->lpVtbl->Release(dred);
+        device->loggedDRED = PAL_TRUE;
     }
-    queue->lpVtbl->ClearStoredMessages(queue);
 }
 
 PalBool PAL_CALL initGraphicsD3D12(
@@ -1099,6 +1197,7 @@ PalBool PAL_CALL initGraphicsD3D12(
                     if (SUCCEEDED(hr)) {
                         debug1->lpVtbl->SetEnableSynchronizedCommandQueueValidation(debug1, TRUE);
                         debug1->lpVtbl->SetEnableGPUBasedValidation(debug1, TRUE);
+                        debug1->lpVtbl->SetEnableSynchronizedCommandQueueValidation(debug1, TRUE);
                         debug1->lpVtbl->Release(debug1);
                     }
                 }
@@ -1132,6 +1231,21 @@ PalBool PAL_CALL initGraphicsD3D12(
 
                 s_D3D12.debugLayer = PAL_TRUE;
                 s_D3D12.debugCallback = debugger->callback;
+            }
+
+            // check if DRED is available
+            ID3D12DeviceRemovedExtendedDataSettings* dredSettings = nullptr;
+            hr = s_D3D12.getDebugInterface(&IID_DREDSettings, (void**)&dredSettings);
+            if (SUCCEEDED(hr)) {
+                dredSettings->lpVtbl->SetAutoBreadcrumbsEnablement(
+                    dredSettings, 
+                    D3D12_DRED_ENABLEMENT_FORCED_ON);
+
+                dredSettings->lpVtbl->SetPageFaultEnablement(
+                    dredSettings, 
+                    D3D12_DRED_ENABLEMENT_FORCED_ON);
+
+                dredSettings->lpVtbl->Release(dredSettings);
             }
         }
     }

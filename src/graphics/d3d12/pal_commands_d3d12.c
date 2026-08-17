@@ -158,7 +158,6 @@ PalResult PAL_CALL cmdBeginD3D12(
     CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     result = cmdBufferImpl->allocator->lpVtbl->Reset(cmdBufferImpl->allocator);
     if (FAILED(result)) {
-        pollMessagesD3D12(cmdBufferImpl->device);
         return makeResultD3D12(result);
     }
 
@@ -168,10 +167,10 @@ PalResult PAL_CALL cmdBeginD3D12(
         nullptr);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(cmdBufferImpl->device);
         return makeResultD3D12(result);
     }
 
+    pollMessagesD3D12(cmdBufferImpl->device);
     cmdBufferImpl->linearAllocator.offset = 0;
     return PAL_RESULT_SUCCESS;
 }
@@ -181,10 +180,10 @@ PalResult PAL_CALL cmdEndD3D12(PalCommandBuffer* cmdBuffer)
     CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     HRESULT result = cmdBufferImpl->handle->lpVtbl->Close(cmdBufferImpl->handle);
     if (FAILED(result)) {
-        pollMessagesD3D12(cmdBufferImpl->device);
         return makeResultD3D12(result);
     }
 
+    pollMessagesD3D12(cmdBufferImpl->device);
     return PAL_RESULT_SUCCESS;
 }
 

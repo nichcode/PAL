@@ -236,9 +236,9 @@ PalResult PAL_CALL createSwapchainD3D12(
         &swapchain1);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     swapchain1->lpVtbl->QueryInterface(swapchain1, &IID_Swapchain, (void**)&swapchain->handle);
     swapchain1->lpVtbl->Release(swapchain1);
@@ -329,9 +329,9 @@ PalResult PAL_CALL getNextSwapchainImageD3D12(
         fence->value++;
         result = queue->lpVtbl->Signal(queue, fence->handle, fence->value);
         if (FAILED(result)) {
-            pollMessagesD3D12(swapchainImpl->device);
             return makeResultD3D12(result);
         }
+        pollMessagesD3D12(swapchainImpl->device);
     }
 
     if (info->signalSemaphore) {
@@ -378,10 +378,8 @@ PalResult PAL_CALL presentSwapchainD3D12(
         swapchainImpl->syncInterval,
         swapchainImpl->presentFlags);
 
-    pollMessagesD3D12(swapchainImpl->device);
     if (FAILED(result)) {
         if (result == DXGI_ERROR_DEVICE_REMOVED || result == DXGI_ERROR_DEVICE_RESET) {
-            pollMessagesD3D12(swapchainImpl->device);
             return makeResultD3D12(result);
         }
 
@@ -423,9 +421,9 @@ PalResult PAL_CALL resizeSwapchainD3D12(
         swapchainImpl->flags);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(swapchainImpl->device);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(swapchainImpl->device);
 
     // fill all images with the creation info
     for (int i = 0; i < swapchainImpl->imageCount; i++) {

@@ -71,9 +71,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     ID3D12StateObjectProperties* props = NULL;
     result = handle->lpVtbl->QueryInterface(handle, &IID_StateObjectProps, (void**)&props);
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     uint32_t groupHandleSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     uint32_t groupHandleAlignment = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
@@ -171,9 +171,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         (void**)&sbt->buffer);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // create staging buffer
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -188,9 +188,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
         (void**)&sbt->stagingBuffer);
 
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // get shader group handles
     uint32_t raygenIndex = 0;
@@ -234,9 +234,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     void* ptr = nullptr;
     result = sbt->stagingBuffer->lpVtbl->Map(sbt->stagingBuffer, 0, nullptr, &ptr);
     if (FAILED(result)) {
-        pollMessagesD3D12(deviceImpl);
         return makeResultD3D12(result);
     }
+    pollMessagesD3D12(deviceImpl);
 
     // raygen
     for (int i = 0; i < sbtInfo->raygenCount; i++) {
