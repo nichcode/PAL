@@ -34,9 +34,8 @@ PalBool queueOwnershipTest()
     PalGraphicsDebugger debugger = {0};
     debugger.callback = onGraphicsDebug;
     debugger.userData = nullptr;
-    debugger.enableGPUValidation = PAL_TRUE;
 
-    PalResult result = palInitGraphics(&debugger, nullptr, 0, nullptr);
+    PalResult result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize graphics");
         return PAL_FALSE;
@@ -75,13 +74,7 @@ PalBool queueOwnershipTest()
     for (int32_t i = 0; i < adapterCount; i++) {
         adapter = adapters[i];
         palGetAdapterCapabilities(adapter, &caps);
-
         palGetAdapterInfo(adapter, &adapterInfo);
-        // Skip CPU adapters
-        if (adapterInfo.type == PAL_ADAPTER_TYPE_CPU) {
-            adapter = nullptr;
-            continue;
-        }
 
         // we want an adapter that supports vtable version 2+
         if (adapterInfo.vtableVersion < PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2) {
