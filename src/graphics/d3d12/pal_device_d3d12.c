@@ -78,7 +78,7 @@ PalResult PAL_CALL createDeviceD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
 
-            D3D12_MESSAGE_ID denyIDs[] = { D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE };
+            D3D12_MESSAGE_ID denyIDs[] = {D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE};
             device->infoQueue->lpVtbl->SetBreakOnSeverity(
                 device->infoQueue,
                 D3D12_MESSAGE_SEVERITY_ERROR,
