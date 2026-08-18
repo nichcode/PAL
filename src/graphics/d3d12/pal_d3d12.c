@@ -1122,14 +1122,14 @@ void pollMessagesD3D12(DeviceD3D12* device)
 
                 char buffer[256];
                 format(
-                    buffer, 
+                    buffer,
                     " Name: %s (%p)",
                     node->pCommandListDebugNameA,
                     (void*)node->pCommandList);
                 s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
 
                 format(
-                    buffer, 
+                    buffer,
                     " Queue Name: %s (%p)",
                     node->pCommandQueueDebugNameA,
                     (void*)node->pCommandQueue);
