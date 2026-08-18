@@ -762,7 +762,7 @@ PalBool customBackendTest()
     // We are still keeping the custom backend at version 1 so we dont have to implement
     // the required V2 functions but below is how to update. All the functions are required
     // but we set to nullptr just as an example.
-    PalGraphicsBackendVtable2 vtable2 = {0};
+    // PalGraphicsBackendVtable2 vtable2 = {0};
     // vtable2.vtable1 = &vtable;
     // vtable2.canQueueShareOwnership = nullptr;
     // vtable2.canQueueUsePipelineStages = nullptr;

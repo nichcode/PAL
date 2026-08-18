@@ -14,8 +14,9 @@
 - Added `palCanQueueUsePipelineStages()` to check if a queue can use a pipeline stage(s).
 - Added `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` constant to extend the graphics backend vtable.
 - Added struct `PalGraphicsBackendVtable2`.
-- Fixed D3D12 graphics backend queue bug where queues destroyed were not added back to the pool.
+- Fixed D3D12 backend queue bug where queues destroyed were not added back to the pool.
 - Fixed `palFormatResult()` bug where results without native code were not formatting properly.
+- Improved D3D12 backend debugging.
 
 <!-- ===========================================================-->
 <!-- PAL V2.0.1 -->
