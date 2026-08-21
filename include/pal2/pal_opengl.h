@@ -67,6 +67,11 @@
  * @struct PalGLContext
  * @brief Opaque handle to an opengl context.
  *
+ * @sa palCreateGLContext()
+ * @sa palDestroyGLContext()
+ * @sa palMakeContextCurrent()
+ * @sa palSwapBuffers()
+ * 
  * @since 2.0
  */
 typedef struct PalGLContext PalGLContext;
@@ -349,7 +354,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * @param[in] context Pointer to the context to destroy.
  *
- * Thread safety: Thread safe if the `context` is per thread.
+ * Thread safety: `context` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateGLContext

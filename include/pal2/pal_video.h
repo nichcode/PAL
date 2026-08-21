@@ -758,7 +758,7 @@ PAL_API void PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
  * @param[in] monitor Monitor to query information on.
  * @param[out] info Pointer to a PalMonitorInfo to fill.
  *
- * Thread safety: Must be called from the main thread.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  */
@@ -798,7 +798,7 @@ PAL_API void PAL_CALL palEnumerateMonitorModes(
  * @param[out] mode Pointer to a PalMonitorMode to recieve the current monitor.
  * mode.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  * @sa palSetMonitorMode
@@ -1036,7 +1036,7 @@ PAL_API void PAL_CALL palFlashWindow(
  * @param[in] window Pointer to the window.
  * @param[out] outStyle Pointer to a PalWindowStyle to recieve the window style.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `outStyle` is per thread.
  *
  * @since 2.0
  * @sa palSetWindowStyle
@@ -1053,7 +1053,7 @@ PAL_API void PAL_CALL palGetWindowStyle(
  * @param[in] window Pointer to the window.
  * @param[out] outMonitor Pointer to a PalMonitor to recieve the monitor.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `outMonitor` is per thread.
  *
  * @since 2.0
  */
@@ -1076,7 +1076,7 @@ PAL_API void PAL_CALL palGetWindowMonitor(
  * @param[out] outBuffer Pointer to a user provided buffer to recieve the title.
  * Can be `nullptr`.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `outBuffer` is per thread.
  *
  * @since 2.0
  * @sa palSetWindowTitle
@@ -1096,7 +1096,7 @@ PAL_API void PAL_CALL palGetWindowTitle(
  * @param[out] x Pointer to recieve the window x position. Can be `nullptr`.
  * @param[out] y Pointer to recieve the window y position. Can be `nullptr`.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `x` and `y` are per thread.
  *
  * @since 2.0
  * @sa palSetWindowPos
@@ -1115,7 +1115,7 @@ PAL_API void PAL_CALL palGetWindowPos(
  * @param[out] width Pointer to recieve the width. Can be `nullptr`.
  * @param[out] height Pointer to recieve the height. Can be `nullptr`.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `width` and `height` are per thread.
  *
  * @since 2.0
  * @sa palSetWindowSize
@@ -1133,7 +1133,7 @@ PAL_API void PAL_CALL palGetWindowSize(
  * @param[in] window Pointer to the window.
  * @param[out] outState Pointer to a PalWindowState to recieve the window state.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `outState` is per thread.
  *
  * @since 2.0
  */

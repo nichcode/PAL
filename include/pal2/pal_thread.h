@@ -30,6 +30,16 @@
 /**
  * @struct PalThread
  * @brief Opaque handle to a thread.
+ * 
+ * @sa palCreateThread()
+ * @sa palJoinThread()
+ * @sa palDetachThread()
+ * @sa palGetThreadPriority()
+ * @sa palGetThreadAffinity()
+ * @sa palGetThreadName()
+ * @sa palSetThreadPriority()
+ * @sa palSetThreadAffinity()
+ * @sa palSetThreadName()
  *
  * @since 2.0
  */
@@ -38,6 +48,11 @@ typedef struct PalThread PalThread;
 /**
  * @typedef PalTLSId
  * @brief Opaque handle to a Thread Local Storage.
+ * 
+ * @sa palCreateTLS()
+ * @sa palDestroyTLS()
+ * @sa palGetTLS()
+ * @sa palSetTLS()
  *
  * @since 2.0
  */
@@ -46,6 +61,11 @@ typedef uint32_t PalTLSId;
 /**
  * @struct PalMutex
  * @brief Opaque handle to a mutex.
+ * 
+ * @sa palCreateMutex()
+ * @sa palDestroyMutex()
+ * @sa palLockMutex()
+ * @sa palUnlockMutex()
  *
  * @since 2.0
  */
@@ -54,6 +74,13 @@ typedef struct PalMutex PalMutex;
 /**
  * @struct PalCondVar
  * @brief Opaque handle to a condition variable.
+ * 
+ * @sa palCreateCondVar()
+ * @sa palDestroyCondVar()
+ * @sa palWaitCondVar()
+ * @sa palWaitCondVarTimeout()
+ * @sa palSignalCondVar()
+ * @sa palBroadcastCondVar()
  *
  * @since 2.0
  */
@@ -275,7 +302,7 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @param[out] outBuffer Pointer to a user provided buffer to recieve the name.
  * Can be `nullptr`.
  *
- * Thread safety: Thread safe.
+ * Thread safety: Thread safe if `outBuffer` is per thread.
  *
  * @note On Linux: Thread names are limited to 16 characters including the null
  * terminator.
