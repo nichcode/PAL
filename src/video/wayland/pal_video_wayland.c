@@ -318,11 +318,12 @@ MonitorData* wlGetFreeMonitorData()
     int freeIndex = s_Wl.maxMonitorData + 1;
     data = palAllocate(s_Wl.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
+        memset(data, 0, sizeof(MonitorData) * count);
         memcpy(data, s_Wl.monitorData, s_Wl.maxMonitorData * sizeof(MonitorData));
 
         palFree(s_Wl.allocator, s_Wl.monitorData);
         s_Wl.monitorData = data;
-        s_Wl.maxWindowData = count;
+        s_Wl.maxMonitorData = count;
 
         s_Wl.monitorData[freeIndex].used = PAL_TRUE;
         return &s_Wl.monitorData[freeIndex];
@@ -366,6 +367,7 @@ WindowData* wlGetFreeWindowData()
     int freeIndex = s_Wl.maxWindowData + 1;
     data = palAllocate(s_Wl.allocator, sizeof(WindowData) * count, 0);
     if (data) {
+        memset(data, 0, sizeof(WindowData) * count);
         memcpy(data, s_Wl.windowData, s_Wl.maxWindowData * sizeof(WindowData));
 
         palFree(s_Wl.allocator, s_Wl.windowData);
@@ -1542,6 +1544,9 @@ PalResult wlInitVideo(
     if (!s_Wl.monitorData || !s_Wl.windowData) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
+
+    memset(s_Wl.windowData, 0, sizeof(WindowData) * s_Wl.maxWindowData);
+    memset(s_Wl.monitorData, 0, sizeof(MonitorData) * s_Wl.maxMonitorData);
 
     // initialize wayland
     s_Wl.checkFeatures = PAL_TRUE;

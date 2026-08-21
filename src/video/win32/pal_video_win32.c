@@ -767,6 +767,8 @@ PalResult win32InitVideo(
     s_Win32.windowData =
         palAllocate(s_Win32.allocator, sizeof(WindowData) * s_Win32.maxWindowData, 0);
 
+    memset(s_Win32.windowData, 0, sizeof(WindowData) * s_Win32.maxWindowData);
+
     // user provided instance
     if (preferredInstance) {
         s_Win32.instance = preferredInstance;

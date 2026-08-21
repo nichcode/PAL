@@ -1,5 +1,13 @@
 
 <!-- ===========================================================-->
+<!-- PAL V2.1.1 -->
+<!-- =========================================================== -->
+
+- [Wayland] Fixed a bug where invalid monitor handles were returned sometimes. (#8)
+- [X11] Fixed a bug where invalid monitor handles were returned sometimes. (#8)
+- [Win32] Fixed a bug where invalid monitor handles were returned sometimes. (#8)
+
+<!-- ===========================================================-->
 <!-- PAL V2.1.0 -->
 <!-- =========================================================== -->
 

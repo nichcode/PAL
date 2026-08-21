@@ -25,6 +25,7 @@ static WindowData* getFreeWindowData()
     int freeIndex = s_Win32.maxWindowData + 1;
     data = palAllocate(s_Win32.allocator, sizeof(WindowData) * count, 0);
     if (data) {
+        memset(data, 0, sizeof(WindowData) * count);
         memcpy(data, s_Win32.windowData, s_Win32.maxWindowData * sizeof(WindowData));
 
         palFree(s_Win32.allocator, s_Win32.windowData);

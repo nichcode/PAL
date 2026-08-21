@@ -504,11 +504,12 @@ MonitorData* xGetFreeMonitorData()
     int freeIndex = s_X11.maxMonitorData + 1;
     data = palAllocate(s_X11.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
+        memset(data, 0, sizeof(MonitorData) * count);
         memcpy(data, s_X11.monitorData, s_X11.maxMonitorData * sizeof(MonitorData));
 
         palFree(s_X11.allocator, s_X11.monitorData);
         s_X11.monitorData = data;
-        s_X11.maxWindowData = count;
+        s_X11.maxMonitorData = count;
 
         s_X11.monitorData[freeIndex].used = PAL_TRUE;
         return &s_X11.monitorData[freeIndex];
@@ -552,6 +553,7 @@ WindowData* xGetFreeWindowData()
     int freeIndex = s_X11.maxWindowData + 1;
     data = palAllocate(s_X11.allocator, sizeof(WindowData) * count, 0);
     if (data) {
+        memset(data, 0, sizeof(WindowData) * count);
         memcpy(data, s_X11.windowData, s_X11.maxWindowData * sizeof(WindowData));
 
         palFree(s_X11.allocator, s_X11.windowData);
@@ -899,6 +901,9 @@ PalResult xInitVideo(
     if (!s_X11.monitorData || !s_X11.windowData) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
+
+    memset(s_X11.windowData, 0, sizeof(WindowData) * s_X11.maxWindowData);
+    memset(s_X11.monitorData, 0, sizeof(MonitorData) * s_X11.maxMonitorData);
 
     // X11 server
     if (preferredInstance) {
