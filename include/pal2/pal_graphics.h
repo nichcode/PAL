@@ -4363,7 +4363,7 @@ PAL_API void PAL_CALL palShutdownGraphics();
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `count` and `outAdapters` are per thread.
  *
  * @since 2.0
  */
@@ -4450,7 +4450,7 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `adapter` is externally synchronized.
+ * Thread safety: Thread safe if `outDevice` is per thread.
  *
  * @since 2.0
  * @sa palDestroyDevice
@@ -4467,8 +4467,7 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  *
  * @param[in] device Pointer to the device to destroy.
  *
- * Thread safety: Thread safe if the adapter used to create the device is
- * externally synchronized.
+ * Thread safety: `device` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateDevice
@@ -4507,8 +4506,7 @@ PAL_API uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized and
- * `outMemory` is per thread.
+ * Thread safety: Thread safe if `outMemory` is per thread.
  *
  * @since 2.0
  * @sa palFreeMemory
@@ -4527,8 +4525,7 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  *
  * @param[in] memory Pointer to memory to free.
  *
- * Thread safety: Thread safe if `device` is externally synchronized and
- * `outMemory` is per thread.
+ * Thread safety: `memory` must be externally synchronized.
  *
  * @since 2.0
  * @sa palAllocateMemory
@@ -4692,7 +4689,7 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outQueue` is per thread.
  *
  * @since 2.0
  * @sa palDestroyQueue
@@ -4707,8 +4704,7 @@ PAL_API PalResult PAL_CALL palCreateQueue(
  *
  * @param[in] queue Queue to destroy.
  *
- * Thread safety: Thread safe if the device used to create the queue is
- * externally synchronized.
+ * Thread safety: `queue` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateQueue
@@ -4723,7 +4719,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  *
  * @return `PAL_TRUE` if queue can present otherwise `PAL_FALSE`.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  * @sa palCreateQueue
@@ -4802,7 +4798,7 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `queue` is externally synchronized.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  */
@@ -4823,7 +4819,7 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  * @param[in, out] count Capacity of the PalFormatInfo array.
  * @param[out] outFormats User allocated array of PalFormatInfo.
  *
- * Thread safety: Thread safe if `outFormats` is per thread.
+ * Thread safety: Thread safe if `count` and `outFormats` are per thread.
  *
  * @since 2.0
  * @sa palIsFormatSupported
@@ -4903,7 +4899,7 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outImage` is per thread.
  *
  * @since 2.0
  * @sa palDestroyImage
@@ -4918,8 +4914,7 @@ PAL_API PalResult PAL_CALL palCreateImage(
  *
  * @param[in] image Image to destroy.
  *
- * Thread safety: Thread safe if the device used to create the image is
- * externally synchronized.
+ * Thread safety: `image` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateImage
@@ -4961,7 +4956,9 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
  * @brief Bind an allocated memory to an image.
  *
  * The memory size and alignment should match the requirements of the image.
- * Get the requirements with palGetImageMemoryRequirements().
+ * Get the requirements with `palGetImageMemoryRequirements()`.
+ * 
+ * The image must not have memory bounf to it before this call.
  *
  * @param[in] image Image to bind memory to.
  * @param[in] memory Memory to bind.
@@ -4970,7 +4967,7 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `requirements` is per thread.
+ * Thread safety: `image` must be externally synchronized.
  *
  * @since 2.0
  * @sa palGetImageMemoryRequirements
@@ -5001,7 +4998,7 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outImageView` is per thread.
  *
  * @since 2.0
  * @sa palDestroyImageView
@@ -5017,8 +5014,7 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  *
  * @param[in] imageView Image view to destroy.
  *
- * Thread safety: Thread safe if the device used to create the image view is
- * externally synchronized.
+ * Thread safety: `imageView` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateImageView
@@ -5037,7 +5033,7 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outSampler` is per thread.
  *
  * @since 2.0
  * @sa palDestroySampler
@@ -5052,8 +5048,7 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  *
  * @param[in] sampler Sampler to destroy.
  *
- * Thread safety: Thread safe if the device used to create the sampler is
- * externally synchronized.
+ * Thread safety: `sampler` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateSampler
@@ -5077,7 +5072,7 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outSurface` is per thread.
  *
  * @since 2.0
  * @sa palDestroySurface
@@ -5094,8 +5089,7 @@ PAL_API PalResult PAL_CALL palCreateSurface(
  *
  * @param[in] surface Surface to destroy.
  *
- * Thread safety: Thread safe if the device used to create the surface is
- * externally synchronized.
+ * Thread safety: `surface` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateSurface
@@ -5138,7 +5132,7 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outSwapchain` is per thread.
  *
  * @since 2.0
  * @sa palDestroySwapchain
@@ -5155,8 +5149,7 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
  *
  * @param[in] swapchain Swapchain to destroy.
  *
- * Thread safety: Thread safe if the device used to create the swapchain is
- * externally synchronized.
+ * Thread safety: `swapchain` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateSwapchain
@@ -5210,7 +5203,7 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: `swapchain` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5268,7 +5261,7 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outShader` is per thread.
  *
  * @note The shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
  *
@@ -5285,8 +5278,7 @@ PAL_API PalResult PAL_CALL palCreateShader(
  *
  * @param[in] shader Shader to destroy.
  *
- * Thread safety: Thread safe if the device used to create the shader is
- * externally synchronized.
+ * Thread safety: `shader` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateShader
@@ -5306,7 +5298,7 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outFence` is per thread.
  *
  * @since 2.0
  * @sa palDestroyFence
@@ -5321,8 +5313,7 @@ PAL_API PalResult PAL_CALL palCreateFence(
  *
  * @param[in] fence Fence to destroy.
  *
- * Thread safety: Thread safe if the device used to create the fence is
- * externally synchronized.
+ * Thread safety: `fence` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateFence
@@ -5396,7 +5387,7 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outSemaphore` is per thread.
  *
  * @since 2.0
  * @sa palDestroySemaphore
@@ -5411,8 +5402,7 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
  *
  * @param[in] semaphore Semaphore to destroy.
  *
- * Thread safety: Thread safe if the device used to create the semaphore is
- * externally synchronized.
+ * Thread safety: `semaphore` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateSemaphore
@@ -5431,7 +5421,7 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `semaphore` is externally synchronized.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  * @sa palSignalSemaphore
@@ -5454,7 +5444,7 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `queue` is externally synchronized.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  * @sa palWaitSemaphore
@@ -5476,7 +5466,7 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `semaphore` is externally synchronized.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  * @sa palWaitSemaphore
@@ -5498,7 +5488,7 @@ PAL_API PalResult PAL_CALL palGetSemaphoreValue(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outPool` is per thread.
  *
  * @since 2.0
  * @sa palDestroyCommandPool
@@ -5516,8 +5506,7 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  *
  * @param[in] pool Command pool to destroy.
  *
- * Thread safety: Thread safe if the device used to create the command pool is
- * externally synchronized.
+ * Thread safety: `pool` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateCommandPool
@@ -5549,7 +5538,7 @@ PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
+ * Thread safety: Thread safe if `pool` and `outCmdBuffer` are per thread.
  *
  * @since 2.0
  * @sa palFreeCommandBuffer
@@ -5565,8 +5554,7 @@ PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
  *
  * @param[in] cmdBuffer Command buffer to free.
  *
- * Thread safety: Thread safe if the command pool used to create the command buffer is
- * externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  * @sa palAllocateCommandBuffer
@@ -5581,7 +5569,7 @@ PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5598,7 +5586,7 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `queue` is externally synchronized.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  */
@@ -5616,7 +5604,7 @@ PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  * @sa palCmdEnd
@@ -5633,7 +5621,7 @@ PAL_API PalResult PAL_CALL palCmdBegin(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  * @sa palCmdBegin
@@ -5648,7 +5636,7 @@ PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
  * @param[in] primaryCmdBuffer Primary command buffer. Must be in recording state.
  * @param[in] secondaryCmdBuffer Secondary command buffer.
  *
- * Thread safety: Thread safe if `primaryCmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5665,7 +5653,7 @@ PAL_API void PAL_CALL palCmdExecuteCommandBuffer(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] state Pointer to a PalFragmentShadingRateState struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5684,7 +5672,7 @@ PAL_API void PAL_CALL palCmdSetFragmentShadingRate(
  * @param[in] groupCountY Number of mesh shader groups to dispatch on the y axis.
  * @param[in] groupCountZ Number of mesh shader groups to dispatch on the z axis.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5707,7 +5695,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasks(
  * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs.
  * @param[in] drawCount Number of draws to perform.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5731,7 +5719,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirect(
  * @param[in] countBuffer Buffer containing a single `uint32_t` specifying the number of draws.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5754,7 +5742,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirectCount(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5768,7 +5756,7 @@ PAL_API void PAL_CALL palCmdBuildAccelerationStructure(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalRenderingInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5781,7 +5769,7 @@ PAL_API void PAL_CALL palCmdBeginRendering(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5795,7 +5783,7 @@ PAL_API void PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
  * @param[in] src Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferCopyInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5813,7 +5801,7 @@ PAL_API void PAL_CALL palCmdCopyBuffer(
  * @param[in] srcBuffer Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5831,7 +5819,7 @@ PAL_API void PAL_CALL palCmdCopyBufferToImage(
  * @param[in] src Source image.
  * @param[in] copyInfo Pointer to a PalImageCopyInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5849,7 +5837,7 @@ PAL_API void PAL_CALL palCmdCopyImage(
  * @param[in] srcImage Source image.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5868,7 +5856,7 @@ PAL_API void PAL_CALL palCmdCopyImageToBuffer(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] pipeline Pipeline to bind.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5886,7 +5874,7 @@ PAL_API void PAL_CALL palCmdBindPipeline(
  * @param[in] count Capacity of the PalViewport array.
  * @param[in] viewports Pointer to an array of viewports.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5905,7 +5893,7 @@ PAL_API void PAL_CALL palCmdSetViewport(
  * @param[in] count Capacity of the PalRect2D array.
  * @param[in] scissors Pointer to an array of scissors.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5923,7 +5911,7 @@ PAL_API void PAL_CALL palCmdSetScissors(
  * @param[in] buffers Pointer to an array of vertex buffers.
  * @param[in] offsets Pointer to an array of offsets in bytes into each vertex buffer.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5944,7 +5932,7 @@ PAL_API void PAL_CALL palCmdBindVertexBuffers(
  * @param[in] offset Offset in bytes into the index buffer.
  * @param[in] type Type of indices stored in the index buffer. (eg. `PAL_INDEX_TYPE_UINT32`).
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5965,7 +5953,7 @@ PAL_API void PAL_CALL palCmdBindIndexBuffer(
  * @param[in] firstVertex Index of the first vertex to draw.
  * @param[in] firstInstance Index of the first instance to draw.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5990,7 +5978,7 @@ PAL_API void PAL_CALL palCmdDraw(
  * Can be a single struct.
  * @param[in] count Number of draws to perform.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -6014,7 +6002,7 @@ PAL_API void PAL_CALL palCmdDrawIndirect(
  * @param[in] countBuffer Buffer containing a single `uint32_t` specifying the number of draws.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -6038,7 +6026,7 @@ PAL_API void PAL_CALL palCmdDrawIndirectCount(
  * @param[in] vertexOffset Added offset to vertex indices.
  * @param[in] firstInstance Index of the first instance to draw.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -6063,7 +6051,7 @@ PAL_API void PAL_CALL palCmdDrawIndexed(
  * @param[in] buffer Buffer containing an array of PalDrawIndexedIndirectData structs.
  * @param[in] count Number of draws to perform.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -6087,7 +6075,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirect(
  * @param[in] countBuffer Buffer containing a single `uint32_t` specifying the number of draws.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -6133,7 +6121,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  * @param[in] as Acceleration structure to set barrier on.
  * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  * @sa palCmdImageBarrier
@@ -6173,7 +6161,7 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
  * @param[in] subresourceRange Subresource range of the image.
  * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  * @sa palCmdAccelerationStructureBarrier
@@ -6252,7 +6240,7 @@ PAL_API void PAL_CALL palCmdImageOwnershipTransfer(
  * @param[in] buffer Buffer to set barrier on.
  * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  * @sa palCmdAccelerationStructureBarrier
@@ -6310,7 +6298,7 @@ PAL_API void PAL_CALL palCmdBufferOwnershipTransfer(
  * @param[in] groupCountY Number of compute shader groups to dispatch on the y axis.
  * @param[in] groupCountZ Number of compute shader groups to dispatch on the z axis.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -6337,7 +6325,7 @@ PAL_API void PAL_CALL palCmdDispatch(
  * @param[in] groupCountY Number of compute shader groups to dispatch on the y axis.
  * @param[in] groupCountZ Number of compute shader groups to dispatch on the z axis.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -6362,7 +6350,7 @@ PAL_API void PAL_CALL palCmdDispatchBase(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer containing the PalDispatchIndirectData struct.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -6387,7 +6375,7 @@ PAL_API void PAL_CALL palCmdDispatchIndirect(
  * @param[in] height Number of rays to trace on the y axis.
  * @param[in] depth Number of rays to trace on the z axis.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -6412,7 +6400,7 @@ PAL_API void PAL_CALL palCmdTraceRays(
  * @param[in] sbt The shader binding table to use.
  * @param[in] buffer Buffer containing the PalDispatchIndirectData struct.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note The argument buffer memory must not be `PAL_MEMORY_TYPE_CPU_UPLOAD`. The implementation
  * internally copies the data into a GPU buffer for execution.
@@ -6435,7 +6423,7 @@ PAL_API void PAL_CALL palCmdTraceRaysIndirect(
  * @param[in] setIndex Index of the descriptor set to bind.
  * @param[in] set Descriptor set to bind. Must be compatible with `layout`.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -6454,7 +6442,7 @@ PAL_API void PAL_CALL palCmdBindDescriptorSet(
  * @param[in] size Size of `value` in bytes.
  * @param[in] value Pointer to the push constant range data to write.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -6475,7 +6463,7 @@ PAL_API void PAL_CALL palCmdPushConstants(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] cullMode Cull mode to set.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6492,7 +6480,7 @@ PAL_API void PAL_CALL palCmdSetCullMode(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] frontFace Front face to set.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6509,7 +6497,7 @@ PAL_API void PAL_CALL palCmdSetFrontFace(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] topology Topology to set.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6526,7 +6514,7 @@ PAL_API void PAL_CALL palCmdSetPrimitiveTopology(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] enable True to enable.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6543,7 +6531,7 @@ PAL_API void PAL_CALL palCmdSetDepthTestEnable(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] enable True to enable.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6563,7 +6551,7 @@ PAL_API void PAL_CALL palCmdSetDepthWriteEnable(
  * @param[in] depthFailOp Stencil operation to perform when stencil passes but depth fails.
  * @param[in] compareOp Compare operation for stencil tests.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: `cmdBuffer` and its command pool must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6591,7 +6579,7 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outAs` is per thread.
  *
  * @since 2.0
  * @sa palDestroyAccelerationStructure
@@ -6606,8 +6594,7 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
  *
  * @param[in] as Acceleration structure to destroy.
  *
- * Thread safety: Thread safe if the device used to create the acceleration structure is
- * externally synchronized.
+ * Thread safety: `as` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateAccelerationstructure
@@ -6627,7 +6614,7 @@ PAL_API void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* 
  * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters.
  * @param[out] size Pointer to a PalAccelerationStructureBuildSize to recieve the build size.
  *
- * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
+ * Thread safety: Thread safe if `size` is per thread.
  *
  * @since 2.0
  */
@@ -6658,7 +6645,7 @@ PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outBuffer` is per thread.
  *
  * @since 2.0
  * @sa palDestroyBuffer
@@ -6673,8 +6660,7 @@ PAL_API PalResult PAL_CALL palCreateBuffer(
  *
  * @param[in] buffer buffer to destroy.
  *
- * Thread safety: Thread safe if the device used to create the buffer is
- * externally synchronized.
+ * Thread safety: `buffer` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateBuffer
@@ -6708,7 +6694,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
  * @param[in] instanceCount Number of instances the instance buffer will hold.
  * @param[out] outSize Pointer to a uint64_t to recieve the required size.
  *
- * Thread safety: Thread safe.
+ * Thread safety: Thread safe if `outSize` is per thread.
  *
  * @since 2.0
  * @sa palWriteInstanceStaging
@@ -6734,7 +6720,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * @param[out] requirements Pointer to a PalImageStagingRequirements to recieve the requirements
  *
- * Thread safety: Thread safe.
+ * Thread safety: Thread safe if `requirements` is per thread.
  *
  * @since 2.0
  * @sa palWriteImageStaging
@@ -6801,7 +6787,7 @@ PAL_API void PAL_CALL palWriteImageStaging(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `requirements` is per thread.
+ * Thread safety: `buffer` must be externally synchronized.
  *
  * @since 2.0
  * @sa palGetBufferMemoryRequirements
@@ -6829,9 +6815,7 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `buffer` is externally synchronized.
- * Mapping with different offsets into the same buffer is thread safe as long as `buffer`
- * is externally synchronized.
+ * Thread safety: `buffer` must be externally synchronized.
  *
  * @since 2.0
  * @sa palUnmapBuffer
@@ -6850,7 +6834,7 @@ PAL_API PalResult PAL_CALL palMapBuffer(
  *
  * @param[in] buffer Pointer to buffer to unmap.
  *
- * Thread safety: Thread safe if `buffer` is externally synchronized.
+ * Thread safety: `buffer` must be externally synchronized.
  *
  * @since 2.0
  * @sa palMapBuffer
@@ -6866,7 +6850,7 @@ PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
  *
  * @return Buffer device address on success or `0` on failure.
  *
- * Thread safety: Thread safe if `buffer` is per thread.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  */
@@ -6876,7 +6860,6 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  * @brief Create a descriptor set layout that defines the bindings used by descriptor sets.
  *
  * The created descriptor set layout must be destroyed using `palDestroyDescriptorSetLayout()`.
- *
  * This defines the layout, ordering and the number of descriptors a descriptor set uses.
  *
  * The layouts should reflect the exact layout of the shaders. Eg.
@@ -6890,7 +6873,7 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outLayout` is per thread.
  *
  * @since 2.0
  * @sa palDestroyDescriptorSetLayout
@@ -6905,8 +6888,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
  *
  * @param[in] layout Descriptor set layout to destroy.
  *
- * Thread safety: Thread safe if the device used to create the descriptor set layout is
- * externally synchronized.
+ * Thread safety: `layout` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateDescriptorSetLayout
@@ -6925,7 +6907,7 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outPool` is per thread.
  *
  * @since 2.0
  * @sa palDestroyDescriptorPool
@@ -6940,8 +6922,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
  *
  * @param[in] pool Descriptor pool to destroy.
  *
- * Thread safety: Thread safe if the device used to create the descriptor pool is
- * externally synchronized.
+ * Thread safety: `pool` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateDescriptorPool
@@ -6956,7 +6937,7 @@ PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `pool` is externally synchronized.
+ * Thread safety: `pool` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6979,7 +6960,7 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
+ * Thread safety: Thread safe if `pool` and `outSet` are per thread.
  *
  * @since 2.0
  */
@@ -7002,7 +6983,7 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: `set` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -7024,7 +7005,7 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outLayout` is per thread.
  *
  * @since 2.0
  * @sa palDestroyPipelineLayout
@@ -7039,8 +7020,7 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
  *
  * @param[in] layout Pipeline layout to destroy.
  *
- * Thread safety: Thread safe if the device used to create the pipeline layout is
- * externally synchronized.
+ * Thread safety: `layout` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreatePipelineLayout
@@ -7059,7 +7039,7 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outPipeline` is per thread.
  *
  * @since 2.0
  * @sa palDestroyPipeline
@@ -7081,7 +7061,7 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outPipeline` is per thread.
  *
  * @note The first entry of the compute shader will be used.
  *
@@ -7108,7 +7088,7 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outPipeline` is per thread.
  *
  * @note The shader group array must be in this order [raygen][miss][hitgroup][callable].
  *
@@ -7125,8 +7105,7 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  *
  * @param[in] pipeline Pipeline to destroy.
  *
- * Thread safety: Thread safe if the device used to create the pipeline is
- * externally synchronized.
+ * Thread safety: `pipeline` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateGraphicsPipeline
@@ -7154,7 +7133,7 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `device` is externally synchronized.
+ * Thread safety: Thread safe if `outSbt` is per thread.
  *
  * @note The records array must be in this order [raygen][miss][hitgroup][callable].
  *
@@ -7171,8 +7150,7 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
  *
  * @param[in] sbt Shader binding table to destroy.
  *
- * Thread safety: Thread safe if the device used to create the shader binding table is
- * externally synchronized.
+ * Thread safety: `sbt` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateShaderBindingTable
@@ -7190,7 +7168,7 @@ PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
  * @param[in] count Capacity of the PalShaderBindingTableRecordInfo array.
  * @param[in] infos Array of PalShaderBindingTableRecordInfo to update.
  *
- * Thread safety: Thread safe if `sbt` is externally synchronized.
+ * Thread safety: `sbt` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -7218,7 +7196,7 @@ PAL_API void PAL_CALL palUpdateShaderBindingTable(
  * @param[in, out] count Capacity of the PalWorkGroupInfo array.
  * @param[out] infos Pointer to an Array of PalWorkGroupInfo.
  *
- * Thread safety: Must only be called from the main thread.
+ * Thread safety: Thread safe if `count` and `info` are per thread.
  *
  * @since 2.0
  * @sa palCmdDrawMeshTasks
