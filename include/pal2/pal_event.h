@@ -7,9 +7,10 @@
 
 /**
  * @defgroup pal_event Event
- * @ingroup pal_event
- * @{
+ * @brief PAL Event Functionality and API.
  */
+
+/** @{ */
 
 #ifndef _PAL_EVENT_H
 #define _PAL_EVENT_H
@@ -21,312 +22,313 @@
 #define PAL_DECORATION_MODE_COUNT 2
 
 /**
- * PAL_EVENT_TYPE_WINDOW_CLOSE
+ * @typedef PAL_EVENT_TYPE_WINDOW_CLOSE
+ * @brief Event constant for window close.
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0
 
 /**
- * PAL_EVENT_TYPE_WINDOW_SIZE
+ * @typedef PAL_EVENT_TYPE_WINDOW_SIZE
+ * @brief Event constant for window size.
  *
- * data:
- *  bits 0-31: width
- *  bits 32-63: height
- *
- * data2:
- *  window
- *
+ * data: bits 0-31: width, bits 32-63: height
+ * 
+ * data2: window
+ * 
  * Helpers:
- * palUnpackUint32(event.data, &width, &height)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackUint32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1
 
 /**
- * PAL_EVENT_TYPE_WINDOW_MOVE
+ * @typedef PAL_EVENT_TYPE_WINDOW_MOVE
+ * @brief Event constant for window move
  *
- * data:
- *  bits 0-31: x
- *  bits 32-63: y
+ * data: bits 0-31: x, bits 32-63: y
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * palUnpackInt32(event.data, &x, &y)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackInt32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_MOVE 2
 
 /**
- * PAL_EVENT_TYPE_WINDOW_STATE
+ * @typedef PAL_EVENT_TYPE_WINDOW_STATE
+ * @brief Event constant for window state changed.
  *
  * data:
- *  bits 0-31: state (minimized, maximized, restored).
- *  bits 32-63: unused
+ *  bits 0-31: state (minimized, maximized, restored), bits 32-63: unused
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_STATE 3
 
 /**
- * PAL_EVENT_TYPE_WINDOW_FOCUS
+ * @typedef PAL_EVENT_TYPE_WINDOW_FOCUS
+ * @brief Event constant for window focus gained or lost.
  *
  * data:
- *  bits 0-31: focus gained (`PAL_TRUE`/`PAL_FALSE`).
- *  bits 32-63: unused
+ *  bits 0-31: focus gained (`PAL_TRUE`/`PAL_FALSE`), bits 32-63: unused
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_FOCUS 4
 
 /**
- * PAL_EVENT_TYPE_WINDOW_VISIBILITY
+ * @typedef PAL_EVENT_TYPE_WINDOW_VISIBILITY
+ * @brief Event constant for window visibility.
  *
  * data:
- *  bits 0-31: visibility (`PAL_TRUE`/`PAL_FALSE`).
- *  bits 32-63: unused
+ *  bits 0-31: visibility (`PAL_TRUE`/`PAL_FALSE`), bits 32-63: unused
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_VISIBILITY 5
 
 /**
- * PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN
+ * @typedef PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN
+ * @brief Event constant for window modal mode begin.
  *
- * data2:
- *  window
+ * data2: window
  *
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN 6
 
 /**
- * PAL_EVENT_TYPE_WINDOW_MODAL_END
+ * @typedef PAL_EVENT_TYPE_WINDOW_MODAL_END
+ * @brief Event constant for window modal mode end.
  *
- * data2:
- *  window
+ * data2: window
  *
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_MODAL_END 7
 
 /**
- * PAL_EVENT_TYPE_MONITOR_DPI_CHANGED
+ * @typedef PAL_EVENT_TYPE_MONITOR_DPI_CHANGED
+ * @brief Event constant for monitor DPI changed.
  *
- * data:
- *  bits 0-31: dpi
- *  bits 32-63: unused
+ * data: bits 0-31: dpi, bits 32-63: unused
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_MONITOR_DPI_CHANGED 8
 
 /**
- * PAL_EVENT_TYPE_MONITOR_LIST_CHANGED
+ * @typedef PAL_EVENT_TYPE_MONITOR_LIST_CHANGED
+ * @brief Event constant for monitor list changed.
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_MONITOR_LIST_CHANGED 9
 
 /**
- * PAL_EVENT_TYPE_KEYDOWN
+ * @typedef PAL_EVENT_TYPE_KEYDOWN
+ * @brief Event constant for keydown.
  *
- * data:
- *  bits 0-31: keycode
- *  bits 32-63: scancode
+ * data: bits 0-31: keycode, bits 32-63: scancode
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * palUnpackUint32(event.data, &keycode, &scancode)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackUint32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_KEYDOWN 10
 
 /**
- * PAL_EVENT_TYPE_KEYREPEAT
+ * @typedef PAL_EVENT_TYPE_KEYREPEAT
+ * @brief Event constant for keyrepeat
  *
- * data:
- *  bits 0-31: keycode
- *  bits 32-63: scancode
+ * data: bits 0-31: keycode, bits 32-63: scancode
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * palUnpackUint32(event.data, &keycode, &scancode)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackUint32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_KEYREPEAT 11
 
 /**
- * PAL_EVENT_TYPE_KEYUP
+ * @typedef PAL_EVENT_TYPE_KEYUP
+ * @brief Event constant for keyup
  *
- * data:
- *  bits 0-31: keycode
- *  bits 32-63: scancode
+ * data: bits 0-31: keycode, bits 32-63: scancode
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * palUnpackUint32(event.data, &keycode, &scancode)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackUint32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_KEYUP 12
 
 /**
- * PAL_EVENT_TYPE_MOUSE_BUTTONDOWN
+ * @typedef PAL_EVENT_TYPE_MOUSE_BUTTONDOWN
+ * @brief Event constant for mouse button down
  *
- * data:
- *  bits 0-31: button
- *  bits 32-63: serial
+ * data: bits 0-31: button bits 32-63: serial
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * palUnpackUint32(event.data, &button, &serial)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackUint32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_MOUSE_BUTTONDOWN 13
 
 /**
- * PAL_EVENT_TYPE_MOUSE_BUTTONUP
+ * @typedef PAL_EVENT_TYPE_MOUSE_BUTTONUP
+ * @brief Event constant for mouse button up
  *
- * data:
- *  bits 0-31: button
- *  bits 32-63: serial
+ * data: bits 0-31: button bits 32-63: serial
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * palUnpackUint32(event.data, &button, &serial)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackUint32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_MOUSE_BUTTONUP 14
 
 /**
- * PAL_EVENT_TYPE_MOUSE_MOVE
+ * @typedef PAL_EVENT_TYPE_MOUSE_MOVE
+ * @brief Event constant for mouse move
  *
- * data:
- *  bits 0-31: x
- *  bits 32-63: y
+ * data: bits 0-31: x, bits 32-63: y
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * palUnpackInt32(event.data, &x, &y)
- * window = palUnpackPointer(event.data2)
+ *
+ * - palUnpackInt32()
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_MOUSE_MOVE 15
 
 /**
- * PAL_EVENT_TYPE_MOUSE_DELTA
+ * @typedef PAL_EVENT_TYPE_MOUSE_DELTA
+ * @brief Event constant for mouse move delta
  *
- * data:
- *  bits 0-31: dx
- *  bits 32-63: dy
+ * data: bits 0-31: dx, bits 32-63: dy
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
+ * @sa palUnpackFloat()
  * Helpers:
- * palUnpackFloat(event.data, &dx, &dy)
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_MOUSE_DELTA 16
 
 /**
- * PAL_EVENT_TYPE_MOUSE_WHEEL
+ * @typedef PAL_EVENT_TYPE_MOUSE_WHEEL
+ * @brief Event constant for mouse wheel
  *
- * data:
- *  bits 0-31: dx
- *  bits 32-63: dy
+ * data: bits 0-31: dx, bits 32-63: dy
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
+ * @sa palUnpackFloat()
  * Helpers:
- * palUnpackFloat(event.data, &dx, &dy)
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_MOUSE_WHEEL 17
 
 /**
- * PAL_EVENT_TYPE_USER
+ * @typedef PAL_EVENT_TYPE_USER
+ * @brief Event constant for user events
  *
- * userId:
- *  User event ID or type.
- *
+ * userId: User event ID or type.
+ * 
  * Helpers:
- * palPackInt32()
- * palPackUint32()
- * palPackPointer()
- * palUnpackInt32()
- * palUnpackUint32()
- * palUnpackPointer()
+ * 
+ * - palPackInt32() <==> palUnpackInt32()
+ * 
+ * - palPackUint32() <==> palUnpackUint32()
+ * 
+ * - palPackFloat() <==> palUnpackFloat()
+ * 
+ * - palPackPointer() <==> palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_USER 18
 
 /**
- * PAL_EVENT_TYPE_KEYCHAR
+ * @typedef PAL_EVENT_TYPE_KEYCHAR
+ * @brief Event constant for key character.
  *
- * data:
- *  bits 0-31: codepoint
- *  bits 32-63: unused
+ * data: bits 0-31: codepoint, bits 32-63: unused
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_KEYCHAR 19
 
 /**
- * PAL_EVENT_TYPE_WINDOW_DECORATION_MODE
+ * @typedef PAL_EVENT_TYPE_WINDOW_DECORATION_MODE
+ * @brief Event constant for window decoration mode
  *
- * data:
- *  bits 0-31: decorations mode
- *  bits 32-63: unused
+ * data: bits 0-31: decorations mode, bits 32-63: unused
  *
- * data2:
- *  window
- *
+ * data2: window
+ * 
  * Helpers:
- * window = palUnpackPointer(event.data2)
+ * 
+ * - palUnpackPointer()
  */
 #define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20
 
@@ -340,7 +342,14 @@
 /**
  * @struct PalEventDriver
  * @brief Opaque handle to an event driver.
- *
+ * 
+ * @sa palCreateEventDriver()
+ * @sa palDestroyEventDriver()
+ * @sa palSetEventDispatchMode()
+ * @sa palGetEventDispatchMode()
+ * @sa palPushEvent()
+ * @sa palPollEvent()
+ * 
  * @since 2.0
  */
 typedef struct PalEventDriver PalEventDriver;
@@ -500,8 +509,7 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
  *
  * @param[in] eventDriver Pointer to the event driver to destroy.
  *
- * Thread safety: Thread safe if the allocator used to create
- * the event driver is thread safe and `eventDriver` is per thread.
+ * Thread safety: `eventDriver` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateEventDriver
@@ -521,8 +529,7 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @param[in] type Event type to set dispatch mode for.
  * @param[in] mode Dispatch mode to use.
  *
- * Thread safety: Thread safe if multiple threads are not
- * simultaneously setting dispatch mode on the same `eventDriver`.
+ * Thread safety: `eventDriver` must be externally synchronized.
  *
  * @since 2.0
  * @sa palGetEventDispatchMode
@@ -541,8 +548,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  *
  * @return The dispatch mode on success or `PAL_DISPATCH_MODE_NONE` on failure.
  *
- * Thread safety: Thread safe if multiple threads are not
- * simultaneously setting dispatch mode on the same `eventDriver`.
+ * Thread safety: Thread safe.
  *
  * @since 2.0
  * @sa palSetEventDispatchMode
@@ -564,9 +570,7 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * @param[in] eventDriver Pointer to the event driver.
  * @param[in] event Pointer to the event to push.
  *
- * Thread safety: Thread safe if the provided event queue is thread
- * safe or every thread has its own `eventDriver`. The default event queue is
- * not thread safe.
+ * Thread safety: `eventDriver` must be externally synchronized.
  *
  * @since 2.0
  * @sa palPollEvent
@@ -584,12 +588,9 @@ PAL_API void PAL_CALL palPushEvent(
  * returns `PAL_FALSE`.
  *
  * @param[in] eventDriver Pointer to the event driver.
- * @param[out] outEvent Pointer to a PalEvent to recieve the event. Must be
- * valid.
+ * @param[out] outEvent Pointer to a PalEvent to recieve the event. Must be valid.
  *
- * Thread safety: Thread safe if the provided event queue is thread
- * safe or every thread has its own `eventDriver`. The default event queue is
- * not thread safe.
+ * Thread safety: `eventDriver` must be externally synchronized.
  *
  * @since 2.0
  * @sa palPushEvent

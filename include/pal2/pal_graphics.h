@@ -7,9 +7,10 @@
 
 /**
  * @defgroup pal_graphics Graphics
- * @ingroup pal_graphics
- * @{
+ * @brief PAL Graphics Functionality and API.
  */
+
+/** @{ */
 
 #ifndef _PAL_GRAPHICS_H
 #define _PAL_GRAPHICS_H

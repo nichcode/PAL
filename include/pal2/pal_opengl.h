@@ -7,9 +7,10 @@
 
 /**
  * @defgroup pal_opengl Opengl
- * @ingroup pal_opengl
- * @{
+ * @brief PAL Opengl Functionality and API.
  */
+
+/** @{ */
 
 #ifndef _PAL_OPENGL_H
 #define _PAL_OPENGL_H

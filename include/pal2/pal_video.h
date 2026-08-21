@@ -7,9 +7,10 @@
 
 /**
  * @defgroup pal_video Video
- * @ingroup pal_video
- * @{
+ * @brief PAL Video Functionality and API.
  */
+
+/** @{ */
 
 #ifndef _PAL_VIDEO_H
 #define _PAL_VIDEO_H
@@ -323,6 +324,15 @@
 /**
  * @struct PalMonitor
  * @brief Opaque handle to a monitor.
+ * 
+ * @sa palEnumerateMonitors()
+ * @sa palGetPrimaryMonitor()
+ * @sa palGetMonitorInfo()
+ * @sa palEnumerateMonitorModes()
+ * @sa palGetCurrentMonitorMode()
+ * @sa palSetMonitorMode()
+ * @sa palValidateMonitorMode()
+ * @sa palSetMonitorOrientation()
  *
  * @since 2.0
  */
@@ -331,6 +341,32 @@ typedef struct PalMonitor PalMonitor;
 /**
  * @struct PalWindow
  * @brief Opaque handle to a window.
+ * 
+ * @sa palCreateWindow()
+ * @sa palDestroyWindow()
+ * @sa palMinimizeWindow()
+ * @sa palMaximizeWindow()
+ * @sa palRestoreWindow()
+ * @sa palShowWindow()
+ * @sa palHideWindow()
+ * @sa palFlashWindow()
+ * @sa palGetWindowStyle()
+ * @sa palGetWindowMonitor()
+ * @sa palGetWindowTitle()
+ * @sa palGetWindowPos()
+ * @sa palGetWindowSize()
+ * @sa palGetWindowState()
+ * @sa palIsWindowVisible()
+ * @sa palGetFocusWindow()
+ * @sa palGetWindowHandleInfo()
+ * @sa palSetWindowOpacity()
+ * @sa palSetWindowStyle()
+ * @sa palSetWindowTitle()
+ * @sa palSetWindowPos()
+ * @sa palSetWindowSize()
+ * @sa palSetFocusWindow()
+ * @sa palAttachWindow()
+ * @sa palDetachWindow()
  *
  * @since 2.0
  */
@@ -339,6 +375,10 @@ typedef struct PalWindow PalWindow;
 /**
  * @struct PalIcon
  * @brief Opaque handle to an icon.
+ * 
+ * @sa palCreateIcon()
+ * @sa palDestroyIcon()
+ * @sa palSetWindowIcon()
  *
  * @since 2.0
  */
@@ -347,6 +387,15 @@ typedef struct PalIcon PalIcon;
 /**
  * @struct PalCursor
  * @brief Opaque handle to a cursor.
+ * 
+ * @sa palCreateCursor()
+ * @sa palCreateCursorFrom()
+ * @sa palDestroyCursor()
+ * @sa palShowCursor()
+ * @sa palClipCursor()
+ * @sa palGetCursorPos()
+ * @sa palSetCursorPos()
+ * @sa palSetWindowCursor()
  *
  * @since 2.0
  */

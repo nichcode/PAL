@@ -7,9 +7,10 @@
 
 /**
  * @defgroup pal_core Core
- * @ingroup pal_core
- * @{
+ * @brief PAL Core Functionality and API.
  */
+
+/** @{ */
 
 #ifndef _PAL_CORE_H
 #define _PAL_CORE_H
@@ -229,7 +230,7 @@ typedef struct {
  * @param bufferSize The size of the buffer.
  * @param buffer The buffer.
  *
- * Thread safety: Thread safe if buffer is per thread.
+ * Thread safety: Thread safe if `buffer` is per thread.
  *
  * @since 2.0
  */
@@ -243,7 +244,7 @@ PAL_API void PAL_CALL palFormatResult(
  *
  * @param version Pointer to PalVersion struct to fill.
  *
- * Thread safety: Thread safe if version is per thread.
+ * Thread safety: Thread safe if `version` is per thread.
  *
  * @since 2.0
  * @sa palGetVersionString
@@ -491,7 +492,7 @@ static inline uint64_t PAL_CALL palPackFloat(
  * @param[out] outLow Low value of the 64-bit unsigned integer.
  * @param[out] outHigh High value of the 64-bit unsigned integer.
  *
- * Thread safety: Thread safe.
+ * Thread safety: Thread-safe if `outLow` and `outHigh` are per thread.
  *
  * @since 2.0
  * @sa palPackUint32
@@ -516,8 +517,7 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] outLow Low value of the 64-bit unsigned integer.
  * @param[out] outHigh High value of the 64-bit unsigned integer.
  *
- * Thread safety: Thread-safe if `outLow` and `outHigh` are
- * thread local.
+ * Thread safety: Thread-safe if `outLow` and `outHigh` are per thread.
  *
  * @since 2.0
  * @sa palPackInt32
@@ -557,8 +557,7 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
  * @param[out] outLow Low value of the 64-bit unsigned integer.
  * @param[out] outHigh High value of the 64-bit unsigned integer.
  *
- * Thread safety: Thread-safe if `outLow` and `outHigh` are
- * thread local.
+ * Thread safety: Thread-safe if `outLow` and `outHigh` are per thread.
  *
  * @since 2.0
  * @sa palPackFloat

@@ -7,9 +7,10 @@
 
 /**
  * @defgroup pal_thread Thread
- * @ingroup pal_thread
- * @{
+ * @brief PAL Thread Functionality and API.
  */
+
+/** @{ */
 
 #ifndef _PAL_THREAD_H
 #define _PAL_THREAD_H

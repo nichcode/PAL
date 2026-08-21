@@ -6,9 +6,10 @@
 
 /**
  * @defgroup pal_system System
- * @ingroup pal_system
- * @{
+ * @brief PAL System Functionality and API.
  */
+
+/** @{ */
 
 #ifndef _PAL_SYSTEM_H
 #define _PAL_SYSTEM_H
