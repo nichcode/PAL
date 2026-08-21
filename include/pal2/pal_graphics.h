@@ -670,6 +670,16 @@
 /**
  * @struct PalAdapter
  * @brief Opaque handle to an adapter (GPU).
+ * 
+ * @sa palEnumerateAdapters()
+ * @sa palGetAdapterInfo()
+ * @sa palGetAdapterCapabilities()
+ * @sa palGetAdapterFeatures()
+ * @sa palGetHighestSupportedShaderTarget()
+ * @sa palEnumerateFormats()
+ * @sa palIsFormatSupported()
+ * @sa palQueryFormatImageUsages()
+ * @sa palQueryFormatSampleCount()
  *
  * @since 2.0
  */
@@ -678,6 +688,18 @@ typedef struct PalAdapter PalAdapter;
 /**
  * @struct PalDevice
  * @brief Opaque handle to a device. Devices are created from an adapter (GPU).
+ * 
+ * @sa palCreateDevice()
+ * @sa palDestroyDevice()
+ * @sa palGetDeviceLostReason()
+ * @sa palQuerySamplerAnisotropyCapabilities()
+ * @sa palQueryMultiViewCapabilities()
+ * @sa palQueryMultiViewportCapabilities()
+ * @sa palQueryDepthStencilCapabilities()
+ * @sa palQueryFragmentShadingRateCapabilities()
+ * @sa palQueryMeshShaderCapabilities()
+ * @sa palQueryRayTracingCapabilities()
+ * @sa palQueryDescriptorIndexingCapabilities()
  *
  * @since 2.0
  */
@@ -686,6 +708,9 @@ typedef struct PalDevice PalDevice;
 /**
  * @struct PalMemory
  * @brief Opaque handle to a device memory. This is not CPU memory.
+ * 
+ * @sa palAllocateMemory()
+ * @sa palFreeMemory()
  *
  * @since 2.0
  */
@@ -694,6 +719,14 @@ typedef struct PalMemory PalMemory;
 /**
  * @struct PalQueue
  * @brief Opaque handle to a queue.
+ * 
+ * @sa palCreateQueue()
+ * @sa palDestroyQueue()
+ * @sa palCanQueuePresent()
+ * @sa palCanQueueShareOwnership()
+ * @sa palCanQueueUseUsageState()
+ * @sa palCanQueueUsePipelineStages()
+ * @sa palWaitQueue()
  *
  * @since 2.0
  */
@@ -702,6 +735,10 @@ typedef struct PalQueue PalQueue;
 /**
  * @struct PalSurface
  * @brief Opaque handle to a surface.
+ * 
+ * @sa palCreateSurface()
+ * @sa palDestroySurface()
+ * @sa palGetSurfaceCapabilities()
  *
  * @since 2.0
  */
@@ -710,6 +747,13 @@ typedef struct PalSurface PalSurface;
 /**
  * @struct PalSwapchain
  * @brief Opaque handle to a swapchain.
+ * 
+ * @sa palCreateSwapchain()
+ * @sa palDestroySwapchain()
+ * @sa palGetSwapchainImage()
+ * @sa palGetNextSwapchainImage()
+ * @sa palPresentSwapchain()
+ * @sa palResizeSwapchain()
  *
  * @since 2.0
  */
@@ -718,6 +762,12 @@ typedef struct PalSwapchain PalSwapchain;
 /**
  * @struct PalImage
  * @brief Opaque handle to an image.
+ * 
+ * @sa palCreateImage()
+ * @sa palDestroyImage()
+ * @sa palGetImageInfo()
+ * @sa palGetImageMemoryRequirements()
+ * @sa palBindImageMemory()
  *
  * @since 2.0
  */
@@ -726,6 +776,9 @@ typedef struct PalImage PalImage;
 /**
  * @struct PalImageView
  * @brief Opaque handle to an image view.
+ * 
+ * @sa palCreateImageView()
+ * @sa palDestroyImageView()
  *
  * @since 2.0
  */
@@ -734,6 +787,9 @@ typedef struct PalImageView PalImageView;
 /**
  * @struct PalShader
  * @brief Opaque handle to a shader.
+ * 
+ * @sa palCreateShader()
+ * @sa palDestroyShader()
  *
  * @since 2.0
  */
@@ -742,6 +798,14 @@ typedef struct PalShader PalShader;
 /**
  * @struct PalBuffer
  * @brief Opaque handle to a buffer.
+ * 
+ * @sa palCreateBuffer()
+ * @sa palDestroyBuffer()
+ * @sa palGetBufferMemoryRequirements()
+ * @sa palBindBufferMemory()
+ * @sa palMapBuffer()
+ * @sa palUnmapBuffer()
+ * @sa palGetBufferDeviceAddress()
  *
  * @since 2.0
  */
@@ -750,6 +814,12 @@ typedef struct PalBuffer PalBuffer;
 /**
  * @struct PalFence
  * @brief Opaque handle to a fence.
+ * 
+ * @sa palCreateFence()
+ * @sa palDestroyFence()
+ * @sa palWaitFence()
+ * @sa palResetFence()
+ * @sa palIsFenceSignaled()
  *
  * @since 2.0
  */
@@ -758,6 +828,12 @@ typedef struct PalFence PalFence;
 /**
  * @struct PalSemaphore
  * @brief Opaque handle to a semaphore.
+ * 
+ * @sa palCreateSemaphore()
+ * @sa palDestroySemaphore()
+ * @sa palWaitSemaphore()
+ * @sa palSignalSemaphore()
+ * @sa palGetSemaphoreValue()
  *
  * @since 2.0
  */
@@ -766,6 +842,10 @@ typedef struct PalSemaphore PalSemaphore;
 /**
  * @struct PalCommandPool
  * @brief Opaque handle to a command pool.
+ * 
+ * @sa palCreateCommandPool()
+ * @sa palDestroyCommandPool()
+ * @sa palResetCommandPool()
  *
  * @since 2.0
  */
@@ -774,6 +854,13 @@ typedef struct PalCommandPool PalCommandPool;
 /**
  * @struct PalCommandBuffer
  * @brief Opaque handle to a command buffer.
+ * 
+ * All command functions begin with palCmd (eg. `palCmdDrawIndexed()`).
+ * 
+ * @sa palAllocateCommandBuffer()
+ * @sa palFreeCommandBuffer()
+ * @sa palResetCommandBuffer()
+ * @sa palSubmitCommandBuffer()
  *
  * @since 2.0
  */
@@ -788,6 +875,9 @@ typedef struct PalCommandBuffer PalCommandBuffer;
  * The layouts should reflect the exact layout of the shaders. Eg.
  * descriptorBindings[2] = { sampler, sampled image } is different from
  * descriptorBindings[2] = { sampled image, sampler }. The ordering must be correct.
+ * 
+ * @sa palCreateDescriptorSetLayout()
+ * @sa palDestroyDescriptorSetLayout()
  *
  * @since 2.0
  */
@@ -796,6 +886,10 @@ typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
 /**
  * @struct PalDescriptorPool
  * @brief Opaque handle to a descriptor pool.
+ * 
+ * @sa palCreateDescriptorPool()
+ * @sa palDestroyDescriptorPool()
+ * @sa palResetDescriptorPool()
  *
  * @since 2.0
  */
@@ -804,6 +898,9 @@ typedef struct PalDescriptorPool PalDescriptorPool;
 /**
  * @struct PalDescriptorSet
  * @brief Opaque handle to a descriptor set.
+ * 
+ * @sa palAllocateDescriptorSet()
+ * @sa palUpdateDescriptorSet()
  *
  * @since 2.0
  */
@@ -812,6 +909,9 @@ typedef struct PalDescriptorSet PalDescriptorSet;
 /**
  * @struct PalSampler
  * @brief Opaque handle to a sampler.
+ * 
+ * @sa palCreateSampler()
+ * @sa palDestroySampler()
  *
  * @since 2.0
  */
@@ -820,6 +920,9 @@ typedef struct PalSampler PalSampler;
 /**
  * @struct PalPipelineLayout
  * @brief Opaque handle to a pipeline layout.
+ * 
+ * @sa palCreatePipelineLayout()
+ * @sa palDestroyPipelineLayout()
  *
  * @since 2.0
  */
@@ -829,6 +932,11 @@ typedef struct PalPipelineLayout PalPipelineLayout;
  * @struct PalPipeline
  * @brief Opaque handle to a pipeline. This is the same handle used for all pipeline types
  * (Graphics, Compute and Ray tracing).
+ * 
+ * @sa palCreateGraphicsPipeline()
+ * @sa palCreateComputePipeline()
+ * @sa palCreateRayTracingPipeline()
+ * @sa palDestroyPipeline()
  *
  * @since 2.0
  */
@@ -837,6 +945,10 @@ typedef struct PalPipeline PalPipeline;
 /**
  * @struct PalShaderBindingTable
  * @brief Opaque handle to a shader binding table.
+ * 
+ * @sa palCreateShaderBindingTable()
+ * @sa palDestroyShaderBindingTable()
+ * @sa palUpdateShaderBindingTable()
  *
  * @since 2.0
  */
@@ -845,6 +957,10 @@ typedef struct PalShaderBindingTable PalShaderBindingTable;
 /**
  * @struct PalAccelerationStructure
  * @brief Opaque handle to an acceleration structure.
+ * 
+ * @sa palCreateAccelerationstructure()
+ * @sa palDestroyAccelerationStructure()
+ * @sa palGetAccelerationStructureBuildSize()
  *
  * @since 2.0
  */
@@ -7129,7 +7245,7 @@ PAL_API void PAL_CALL palBuildWorkGroupInfo(
  * parameter and `PAL_PRESENT_MODE_IMMEDIATE` as the value parameter.
  *
  * @param[in] mask The supported mask.
- * @param[in, out] value The value to check in the supported mask.
+ * @param[in] value The value to check in the supported mask.
  *
  * @return `PAL_TRUE` on success otherwise `PAL_FALSE`.
  *
