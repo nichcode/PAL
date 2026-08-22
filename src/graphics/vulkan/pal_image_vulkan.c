@@ -229,6 +229,7 @@ PalResult PAL_CALL createImageVk(
             return makeResultVk(result);
         }
 
+        setDebugName(deviceImpl, VK_OBJECT_TYPE_DEVICE_MEMORY, memory->handle);
         memory->type = memoryType;
         image->isMemoryManaged = PAL_TRUE;
     }
@@ -245,6 +246,7 @@ PalResult PAL_CALL createImageVk(
     image->info.arrayLayerCount = info->arrayLayerCount;
     image->info.belongsToSwapchain = PAL_FALSE;
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_IMAGE, image->handle);
     image->memory = memory;
     *outImage = (PalImage*)image;
     return PAL_RESULT_SUCCESS;
@@ -355,6 +357,7 @@ PalResult PAL_CALL createImageViewVk(
         return makeResultVk(result);
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_IMAGE_VIEW, imageView->handle);
     imageView->device = deviceImpl;
     imageView->image = imageImpl;
     imageView->layerCount = createInfo.subresourceRange.layerCount;
@@ -414,6 +417,7 @@ PalResult PAL_CALL createSamplerVk(
         return makeResultVk(result);
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_SAMPLER, sampler->handle);
     sampler->device = deviceImpl;
     *outSampler = (PalSampler*)sampler;
     return PAL_RESULT_SUCCESS;

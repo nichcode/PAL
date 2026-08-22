@@ -450,6 +450,7 @@ typedef struct {
     PFN_vkDestroyPipeline destroyPipeline;
     PFN_vkCreateDebugUtilsMessengerEXT createMessenger;
     PFN_vkDestroyDebugUtilsMessengerEXT destroyMessenger;
+    PFN_vkSetDebugUtilsObjectNameEXT setDebugName;
     PFN_vkQueueWaitIdle waitQueue;
 
     void* handle;
@@ -487,6 +488,11 @@ void fillBuildInfoVk(
     void* outData);
 
 VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages);
+
+void setDebugName(
+    DeviceVk* device, 
+    VkObjectType type, 
+    void* handle);
 
 #endif // PAL_HAS_VULKAN_BACKEND
 #endif // _PAL_VULKAN_H

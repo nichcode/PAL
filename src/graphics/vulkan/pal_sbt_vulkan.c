@@ -315,6 +315,11 @@ PalResult PAL_CALL createShaderBindingTableVk(
     sbt->handleSize = groupHandleSize;
     sbt->pipeline = pipeline;
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_BUFFER, sbt->buffer);
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_DEVICE_MEMORY, sbt->bufferMemory);
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_BUFFER, sbt->stagingBuffer);
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_DEVICE_MEMORY, sbt->stagingBufferMemory);
+
     sbt->isDirty = PAL_TRUE; // we need to copy from the staging to the gpu buffer
     *outSbt = (PalShaderBindingTable*)sbt;
     return PAL_RESULT_SUCCESS;

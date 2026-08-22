@@ -270,10 +270,12 @@ PalResult PAL_CALL createBufferVk(
             return makeResultVk(result);
         }
 
+        setDebugName(deviceImpl, VK_OBJECT_TYPE_DEVICE_MEMORY, memory->handle);
         memory->type = memoryType;
         buffer->isMemoryManaged = PAL_TRUE;
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_BUFFER, buffer->handle);
     buffer->memory = memory;
     buffer->usages = info->usages;
     buffer->device = deviceImpl;

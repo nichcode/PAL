@@ -108,6 +108,7 @@ PalResult PAL_CALL createDescriptorSetLayoutVk(
         return makeResultVk(result);
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, layout->handle);
     layout->device = deviceImpl;
     layout->flags = info->flags;
     *outLayout = (PalDescriptorSetLayout*)layout;
@@ -170,6 +171,7 @@ PalResult PAL_CALL createDescriptorPoolVk(
         return makeResultVk(result);
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_DESCRIPTOR_POOL, pool->handle);
     pool->device = deviceImpl;
     pool->flags = info->flags;
     *outPool = (PalDescriptorPool*)pool;
@@ -219,6 +221,7 @@ PalResult PAL_CALL allocateDescriptorSetVk(
         return makeResultVk(result);
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_DESCRIPTOR_SET, set->handle);
     set->pool = poolImpl;
     set->device = deviceImpl;
     *outSet = (PalDescriptorSet*)set;

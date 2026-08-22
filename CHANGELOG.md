@@ -5,6 +5,8 @@
 
 - Improved API documentation.
 - Fixed Thread safety documentation.
+- Improved Vulkan backend debugging.
+- Improved D3D12 backend debugging.
 - [Wayland] Fixed a bug where invalid monitor handles were returned sometimes. (#8)
 - [X11] Fixed a bug where invalid monitor handles were returned sometimes. (#8)
 - [Win32] Fixed a bug where invalid monitor handles were returned sometimes. (#8)

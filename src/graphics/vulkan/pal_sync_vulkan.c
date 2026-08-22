@@ -34,6 +34,7 @@ PalResult PAL_CALL createFenceVk(
         return makeResultVk(result);
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_FENCE, fence->handle);
     fence->device = deviceImpl;
     *outFence = (PalFence*)fence;
     return PAL_RESULT_SUCCESS;
@@ -132,6 +133,7 @@ PalResult PAL_CALL createSemaphoreVk(
         return makeResultVk(result);
     }
 
+    setDebugName(deviceImpl, VK_OBJECT_TYPE_SEMAPHORE, semaphore->handle);
     semaphore->device = deviceImpl;
     *outSemaphore = (PalSemaphore*)semaphore;
     return PAL_RESULT_SUCCESS;

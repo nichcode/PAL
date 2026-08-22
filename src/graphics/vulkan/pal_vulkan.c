@@ -864,6 +864,127 @@ VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages)
     return vkStages;
 }
 
+void setDebugName(
+    DeviceVk* device, 
+    VkObjectType type, 
+    void* handle)
+{
+    if (!s_Vk.callback) {
+        return;
+    }
+
+    VkDebugUtilsObjectNameInfoEXT info = {0};
+    info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    info.objectType = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
+    info.objectType = type;
+    info.objectHandle = (uint64_t)(uintptr_t)(handle);
+
+    info.pObjectName = "Unnamed";
+    switch (type) {
+        case VK_OBJECT_TYPE_BUFFER: {
+            info.pObjectName = "Buffer";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_DEVICE: {
+            info.pObjectName = "Device";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_QUEUE: {
+            info.pObjectName = "Queue";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_SEMAPHORE: {
+            info.pObjectName = "Semaphore";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_COMMAND_BUFFER: {
+            info.pObjectName = "Command Buffer";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_FENCE: {
+            info.pObjectName = "Fence";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_DEVICE_MEMORY: {
+            info.pObjectName = "Device Memory";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_IMAGE: {
+            info.pObjectName = "Image";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_IMAGE_VIEW: {
+            info.pObjectName = "Image View";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_SHADER_MODULE: {
+            info.pObjectName = "Shader";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_PIPELINE_LAYOUT: {
+            info.pObjectName = "Pipeline Layout";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_PIPELINE: {
+            info.pObjectName = "Pipeline";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT: {
+            info.pObjectName = "Descriptor Set Layout";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_SAMPLER: {
+            info.pObjectName = "Sampler";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_DESCRIPTOR_POOL: {
+            info.pObjectName = "Descriptor Pool";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET: {
+            info.pObjectName = "Descriptor Set";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_COMMAND_POOL: {
+            info.pObjectName = "Command Pool";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_SURFACE_KHR: {
+            info.pObjectName = "Surface";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_SWAPCHAIN_KHR: {
+            info.pObjectName = "Swapchain";
+            break;
+        }
+
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: {
+            info.pObjectName = "Acceleration Structure";
+            break;
+        }
+    }
+
+    s_Vk.setDebugName(device->handle, &info);
+}
+
 static void* alignedRealloc(
     void* memory,
     uint64_t size,
@@ -952,15 +1073,6 @@ static void* loadProc(
     return GetProcAddress(lib, name);
 #elif defined(__linux__)
     return dlsym(lib, name);
-#endif
-}
-
-static uint32_t getNativeCode()
-{
-#ifdef _WIN32
-    return GetLastError();
-#elif defined(__linux__)
-    return errno;
 #endif
 }
 
@@ -1627,6 +1739,11 @@ PalBool PAL_CALL initGraphicsVk(
             (PFN_vkDestroyDebugUtilsMessengerEXT)s_Vk.getInstanceProcAddr(
                 instance,
                 "vkDestroyDebugUtilsMessengerEXT");
+
+        s_Vk.setDebugName =
+            (PFN_vkSetDebugUtilsObjectNameEXT)s_Vk.getInstanceProcAddr(
+                instance,
+                "vkSetDebugUtilsObjectNameEXT");
 
         s_Vk.createMessenger(instance, &debugCreateInfo, &s_Vk.allocatorImpl, &s_Vk.messenger);
     }
