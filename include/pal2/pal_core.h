@@ -230,7 +230,7 @@ typedef struct {
  * @param bufferSize The size of the buffer.
  * @param buffer The buffer.
  *
- * Thread safety: Thread safe if `buffer` is per thread.
+ * Thread safety: `buffer` must be per thread.
  *
  * @since 2.0
  */
@@ -244,7 +244,7 @@ PAL_API void PAL_CALL palFormatResult(
  *
  * @param version Pointer to PalVersion struct to fill.
  *
- * Thread safety: Thread safe if `version` is per thread.
+ * Thread safety: `version` must be per thread.
  *
  * @since 2.0
  * @sa palGetVersionString
@@ -272,8 +272,9 @@ PAL_API const char* PAL_CALL palGetVersionString();
  *
  * @return Pointer to allocated memory on success, or `nullptr` on failure.
  *
- * Thread safety: Thread safe if the provided allocator is thread safe. The default allocator
- * is thread safe.
+ * Thread safety: `allocator` implementation must be thread safe.
+ * 
+ * @note The default allocator is thread safe.
  *
  * @since 2.0
  * @sa palFree
@@ -289,8 +290,9 @@ PAL_API void* PAL_CALL palAllocate(
  * @param allocator The allocator used to allocate the memory. Set to `nullptr` to use default.
  * @param ptr Pointer to memory to free.
  *
- * Thread safety: Thread safe if the provided allocator is thread
- * safe. The default allocator is thread safe.
+ * Thread safety: `allocator` implementation must be thread safe.
+ * 
+ * @note The default allocator is thread safe.
  *
  * @since 2.0
  * @sa palAllocate

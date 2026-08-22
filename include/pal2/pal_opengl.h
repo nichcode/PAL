@@ -369,7 +369,7 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * The opengl window must have the same PalGLFBConfig used to create the
  * context. If the PalGLFBConfig of the opengl window is not the same as the one
  * used to create the context, this function fails and returns
- * `PAL_RESULT_INVALID_GL_WINDOW`.
+ * `PAL_RESULT_CODE_INVALID_HANDLE`.
  *
  * @param[in] glWindow Pointer to the opengl window.
  * @param[in] context Pointer to the context to make current.
@@ -377,8 +377,7 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe, but only one thread may have the
- * current context at a time.
+ * Thread safety: Only one thread may have the current context at a time.
  *
  * @since 2.0
  */

@@ -1036,7 +1036,7 @@ PAL_API void PAL_CALL palFlashWindow(
  * @param[in] window Pointer to the window.
  * @param[out] outStyle Pointer to a PalWindowStyle to recieve the window style.
  *
- * Thread safety: Thread safe if `outStyle` is per thread.
+ * Thread safety: `outStyle` must be per thread.
  *
  * @since 2.0
  * @sa palSetWindowStyle
@@ -1053,7 +1053,7 @@ PAL_API void PAL_CALL palGetWindowStyle(
  * @param[in] window Pointer to the window.
  * @param[out] outMonitor Pointer to a PalMonitor to recieve the monitor.
  *
- * Thread safety: Thread safe if `outMonitor` is per thread.
+ * Thread safety: `outMonitor` must be per thread.
  *
  * @since 2.0
  */
@@ -1076,7 +1076,7 @@ PAL_API void PAL_CALL palGetWindowMonitor(
  * @param[out] outBuffer Pointer to a user provided buffer to recieve the title.
  * Can be `nullptr`.
  *
- * Thread safety: Thread safe if `outBuffer` is per thread.
+ * Thread safety: `outBuffer` must be per thread.
  *
  * @since 2.0
  * @sa palSetWindowTitle
@@ -1096,7 +1096,7 @@ PAL_API void PAL_CALL palGetWindowTitle(
  * @param[out] x Pointer to recieve the window x position. Can be `nullptr`.
  * @param[out] y Pointer to recieve the window y position. Can be `nullptr`.
  *
- * Thread safety: Thread safe if `x` and `y` are per thread.
+ * Thread safety: `x` and `y` must be per thread.
  *
  * @since 2.0
  * @sa palSetWindowPos
@@ -1115,7 +1115,7 @@ PAL_API void PAL_CALL palGetWindowPos(
  * @param[out] width Pointer to recieve the width. Can be `nullptr`.
  * @param[out] height Pointer to recieve the height. Can be `nullptr`.
  *
- * Thread safety: Thread safe if `width` and `height` are per thread.
+ * Thread safety: `width` and `height` must be per thread.
  *
  * @since 2.0
  * @sa palSetWindowSize
@@ -1133,7 +1133,7 @@ PAL_API void PAL_CALL palGetWindowSize(
  * @param[in] window Pointer to the window.
  * @param[out] outState Pointer to a PalWindowState to recieve the window state.
  *
- * Thread safety: Thread safe if `outState` is per thread.
+ * Thread safety: `outState` must be per thread.
  *
  * @since 2.0
  */
@@ -1627,7 +1627,7 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  *
  * This function unregisters the provided window from PAL video system.
  * The window must not be owned by PAL otherwise the function fails
- * and return `PAL_RESULT_INVALID_WINDOW`.
+ * and return `PAL_RESULT_CODE_INVALID_HANDLE`.
  *
  * Detaching the window does not destroy the window,
  * therefore destroying the window is the users responsibility.

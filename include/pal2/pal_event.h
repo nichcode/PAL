@@ -446,10 +446,11 @@ typedef struct {
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if the provided allocator is
- * thread safe and `outEventDriver` is per thread. The default allocator is
- * thread safe.
+ * 
+ * Thread safety: `allocator` implementation must be thread safe and `outEventDriver` must be
+ * per thread.
+ * 
+ * @note The default allocator is thread safe.
  *
  * @since 2.0
  * @sa palDestroyEventDriver

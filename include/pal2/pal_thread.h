@@ -163,10 +163,11 @@ typedef struct {
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if the provided allocator is
- * thread safe and `outThread` is per thread. The default allocator is
- * thread safe.
+ * 
+ * Thread safety: `info.allocator` implementation must be thread safe and `outThread` must be
+ * per thread.
+ * 
+ * @note The default allocator is thread safe.
  *
  * @since 2.0
  * @sa palDetachThread
@@ -187,7 +188,7 @@ PAL_API PalResult PAL_CALL palCreateThread(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `retval` is per thread.
+ * Thread safety: `retval` must be per thread.
  *
  * @since 2.0
  */
@@ -302,7 +303,7 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @param[out] outBuffer Pointer to a user provided buffer to recieve the name.
  * Can be `nullptr`.
  *
- * Thread safety: Thread safe if `outBuffer` is per thread.
+ * Thread safety: `outBuffer` must be per thread.
  *
  * @note On Linux: Thread names are limited to 16 characters including the null
  * terminator.
@@ -461,9 +462,11 @@ PAL_API void PAL_CALL palSetTLS(
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if the provided allocator is
- * thread safe and `outMutex` is per thread.
+ * 
+ * Thread safety: `allocator` implementation must be thread safe and `outMutex` must be
+ * per thread.
+ * 
+ * @note The default allocator is thread safe.
  *
  * @since 2.0
  * @sa palDestroyMutex
@@ -480,8 +483,7 @@ PAL_API PalResult PAL_CALL palCreateMutex(
  *
  * @param[in] mutex Pointer to the mutex.
  *
- * Thread safety: Thread safe if the allocator used to create
- * the mutex is thread safe and `mutex` is per thread.
+ * Thread safety: `mutex` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateMutex
@@ -524,9 +526,11 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
  *
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if the provided allocator is
- * thread safe and `outCondVar` is per thread.
+ * 
+ * Thread safety: `allocator` implementation must be thread safe and `outCondVar` must be
+ * per thread.
+ * 
+ * @note The default allocator is thread safe.
  *
  * @since 2.0
  * @sa palDestroyCondVar
@@ -544,8 +548,7 @@ PAL_API PalResult PAL_CALL palCreateCondVar(
  *
  * @param[in] condVar Pointer to the condition to destroy
  *
- * Thread safety: Thread safe if the allocator used to create
- * the condition varibale is thread safe and `condVar` is per thread.
+ * Thread safety: `condVar` must be externally synchronized.
  *
  * @since 2.0
  * @sa palCreateCondVar
@@ -581,7 +584,7 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
  *
  * The mutex must be locked before this call. Spurious wakeups may occur, its
  * best to use a loop. If the condition variable is not signaled but the time to
- * wait is up `PAL_RESULT_TIMEOUT` is returned.
+ * wait is up `PAL_RESULT_CODE_TIMEOUT` is returned.
  *
  * @param[in] condVar Pointer to the condition variable.
  * @param[in] mutex Pointer to the mutex.

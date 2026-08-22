@@ -4297,8 +4297,10 @@ typedef struct {
  *
  * The debugger, allocator and custom backends will not not copied, therefore the pointers must
  * remain valid until the graphics system is shutdown. Set the debugger to `nullptr` to disable
- * debugging and validation layers.
- *
+ * debugging and validation layers. The default allocator is thread safe. 
+ * 
+ * If using a custom allocator, the allocator implemetation must be thread safe if PAL APIs
+ * will be called concurrently.
  * If `debugger` is not `nullptr` and there is no debug layers, this function will not fail but
  * debugging will be disabled.
  *
@@ -4363,7 +4365,9 @@ PAL_API void PAL_CALL palShutdownGraphics();
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `count` and `outAdapters` are per thread.
+ * Thread safety: Concurrent calls must be externally synchronized.
+ * 
+ * @note Each call invalidates the previous handles.
  *
  * @since 2.0
  */
@@ -4377,7 +4381,7 @@ PAL_API PalResult PAL_CALL palEnumerateAdapters(
  * @param[in] adapter Adapter to query information on.
  * @param[out] info Pointer to a PalAdapterInfo to fill.
  *
- * Thread safety: Thread safe if `info` is per thread.
+ * Thread safety: `info` must be per thread.
  *
  * @since 2.0
  * @sa palEnumerateAdapters
@@ -4392,7 +4396,7 @@ PAL_API void PAL_CALL palGetAdapterInfo(
  * @param[in] adapter Adapter to query capabilities on.
  * @param[out] caps Pointer to a PalAdapterCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  * @sa palEnumerateAdapters
@@ -4441,7 +4445,7 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  *
  * Every requested feature must be supported by the adapter. Use `palGetAdapterFeatures` to check
  * the supported features of the adapter that can be enabled. Using a feature which is not
- * supported will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * supported will fail and return `PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED`.
  *
  * @param[in] adapter Adapter that creates the device.
  * @param[in] features Adapter features to enable. Must be supported.
@@ -4450,7 +4454,7 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outDevice` is per thread.
+ * Thread safety: `outDevice` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyDevice
@@ -4506,7 +4510,7 @@ PAL_API uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outMemory` is per thread.
+ * Thread safety: `outMemory` must be per thread.
  *
  * @since 2.0
  * @sa palFreeMemory
@@ -4541,7 +4545,7 @@ PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
  * @param[in] device Device to query sampler anisotropy feature capabilities on.
  * @param[out] caps Pointer to a PalSamplerAnisotropyCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4558,7 +4562,7 @@ PAL_API void PAL_CALL palQuerySamplerAnisotropyCapabilities(
  * @param[in] device Device to query multi view feature capabilities on.
  * @param[out] caps Pointer to a PalMultiViewCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4575,7 +4579,7 @@ PAL_API void PAL_CALL palQueryMultiViewCapabilities(
  * @param[in] device Device to query multi viewport feature capabilities on.
  * @param[out] caps Pointer to a PalMultiViewportCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4592,7 +4596,7 @@ PAL_API void PAL_CALL palQueryMultiViewportCapabilities(
  * @param[in] device Device to query depth stencil feature capabilities on.
  * @param[out] caps Pointer to a PalDepthStencilCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4609,7 +4613,7 @@ PAL_API void PAL_CALL palQueryDepthStencilCapabilities(
  * @param[in] device Device to query fragment shading rate feature capabilities on.
  * @param[out] caps Pointer to a PalFragmentShadingRateCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4626,7 +4630,7 @@ PAL_API void PAL_CALL palQueryFragmentShadingRateCapabilities(
  * @param[in] device Device to query mesh shader feature capabilities on.
  * @param[out] caps Pointer to a PalMeshShaderCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4643,7 +4647,7 @@ PAL_API void PAL_CALL palQueryMeshShaderCapabilities(
  * @param[in] device Device to query ray tracing feature capabilities on.
  * @param[out] caps Pointer to a PalRayTracingCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4660,7 +4664,7 @@ PAL_API void PAL_CALL palQueryRayTracingCapabilities(
  * @param[in] device Device to query descriptor indexing feature capabilities on.
  * @param[out] caps Pointer to a PalDescriptorIndexingCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -4676,7 +4680,7 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
  * The number of queues of each type which can be created is limited per adapter. check with
  * PalAdapterCapabilities::maxComputeQueues, PalAdapterCapabilities::maxGraphicsQueues and
  * PalAdapterCapabilities::maxCopyQueues respectively for the limit for each queue type.
- * Creating more queues than the supported will fail and return `PAL_RESULT_OUT_OF_QUEUE`.
+ * Creating more queues than the supported will fail and return `PAL_RESULT_CODE_OUT_OF_MEMORY`.
  *
  * Not all graphics queues support presentation. Create a graphics queue and then check if
  * its support presentation for the provided surface. see `palCanQueuePresent()`. Any graphics
@@ -4689,7 +4693,7 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outQueue` is per thread.
+ * Thread safety: `outQueue` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyQueue
@@ -4798,7 +4802,7 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe.
+ * Thread safety: `queue` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -4819,7 +4823,7 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  * @param[in, out] count Capacity of the PalFormatInfo array.
  * @param[out] outFormats User allocated array of PalFormatInfo.
  *
- * Thread safety: Thread safe if `count` and `outFormats` are per thread.
+ * Thread safety: `count` and `outFormats` must be per thread.
  *
  * @since 2.0
  * @sa palIsFormatSupported
@@ -4899,7 +4903,7 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outImage` is per thread.
+ * Thread safety: `outImage` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyImage
@@ -4929,7 +4933,7 @@ PAL_API void PAL_CALL palDestroyImage(PalImage* image);
  * @param[in] image Image to query information on.
  * @param[out] info Pointer to a PalImageInfo to fill.
  *
- * Thread safety: Thread safe if `info` is per thread.
+ * Thread safety: `info` must be per thread.
  *
  * @since 2.0
  * @sa palCreateImage
@@ -4944,7 +4948,7 @@ PAL_API void PAL_CALL palGetImageInfo(
  * @param[in] image Image to query memory requirements on.
  * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
  *
- * Thread safety: Thread safe if `requirements` is per thread.
+ * Thread safety: `requirements` must be per thread.
  *
  * @since 2.0
  */
@@ -4998,7 +5002,7 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outImageView` is per thread.
+ * Thread safety: `outImageView` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyImageView
@@ -5033,7 +5037,7 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outSampler` is per thread.
+ * Thread safety: `outSampler` must be per thread.
  *
  * @since 2.0
  * @sa palDestroySampler
@@ -5072,7 +5076,7 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outSurface` is per thread.
+ * Thread safety: `outSurface` must be per thread.
  *
  * @since 2.0
  * @sa palDestroySurface
@@ -5106,7 +5110,7 @@ PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
  * @param[in] surface Surface to query capabilities.
  * @param[out] caps Pointer to a PalSurfaceCapabilities to fill.
  *
- * Thread safety: Thread safe if `caps` is per thread.
+ * Thread safety: `caps` must be per thread.
  *
  * @since 2.0
  */
@@ -5132,7 +5136,7 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outSwapchain` is per thread.
+ * Thread safety: `outSwapchain` must be per thread.
  *
  * @since 2.0
  * @sa palDestroySwapchain
@@ -5183,7 +5187,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `swapchain` externally synchronized.
+ * Thread safety: `swapchain` externally synchronized.
  *
  * @since 2.0
  * @sa palGetSwapchainImage
@@ -5225,7 +5229,7 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `swapchain` externally synchronized.
+ * Thread safety: `swapchain` externally synchronized.
  *
  * @since 2.0
  */
@@ -5261,7 +5265,7 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outShader` is per thread.
+ * Thread safety: `outShader` must be per thread.
  *
  * @note The shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
  *
@@ -5298,7 +5302,7 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outFence` is per thread.
+ * Thread safety: `outFence` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyFence
@@ -5324,7 +5328,7 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
  * @brief Wait for a fence.
  *
  * This function blocks for `timeout` until the fence is signaled or there is a timeout.
- * Returns `PAL_RESULT_SUCCESS` or `PAL_RESULT_TIMEOUT` respectively.
+ * Returns `PAL_RESULT_SUCCESS` or `PAL_RESULT_CODE_TIMEOUT` respectively.
  *
  * @param[in] fence Fence to wait for.
  * @param[in] timeout Time to wait for in milliseconds. Set to `PAL_INFINITE` for indefintely.
@@ -5332,7 +5336,7 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `fence` is externally synchronized.
+ * Thread safety: `fence` must be externally synchronized.
  *
  * @since 2.0
  * @sa palIsFenceSignaled
@@ -5352,7 +5356,7 @@ PAL_API PalResult PAL_CALL palWaitFence(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `fence` is externally synchronized.
+ * Thread safety: `fence` must be externally synchronized.
  *
  * @since 2.0
  * @sa palIsFenceSignaled
@@ -5387,7 +5391,7 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outSemaphore` is per thread.
+ * Thread safety: `outSemaphore` must be per thread.
  *
  * @since 2.0
  * @sa palDestroySemaphore
@@ -5421,7 +5425,7 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe.
+ * Thread safety: `semaphore` must be externally synchronized.
  *
  * @since 2.0
  * @sa palSignalSemaphore
@@ -5444,7 +5448,7 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe.
+ * Thread safety: `semaphore` must be externally synchronized.
  *
  * @since 2.0
  * @sa palWaitSemaphore
@@ -5488,7 +5492,7 @@ PAL_API PalResult PAL_CALL palGetSemaphoreValue(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outPool` is per thread.
+ * Thread safety: `outPool` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyCommandPool
@@ -5521,7 +5525,7 @@ PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `pool` is externally synchronized.
+ * Thread safety: `pool` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -5538,7 +5542,7 @@ PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `pool` and `outCmdBuffer` are per thread.
+ * Thread safety: `pool` must be externally synchronized.
  *
  * @since 2.0
  * @sa palFreeCommandBuffer
@@ -5586,7 +5590,7 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe.
+ * Thread safety: `queue` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -6199,7 +6203,7 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  * @param[in] srcUsageState Usage state of the image on the source command buffer.
  * @param[in] srcPipelineStages Source pipeline stages.
  *
- * Thread safety: Thread safe if `srcCmdBuffer` and `dstCmdBuffer` are externally synchronized.
+ * Thread safety: `srcCmdBuffer` and `dstCmdBuffer` must be externally synchronized.
  *
  * @since 2.1
  * @sa palCmdBufferOwnershipTransfer
@@ -6276,7 +6280,7 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
  * @param[in] srcUsageState Usage state of the buffer on the source command buffer.
  * @param[in] srcPipelineStages Source pipeline stages.
  *
- * Thread safety: Thread safe if `srcCmdBuffer` and `dstCmdBuffer` are externally synchronized.
+ * Thread safety: `srcCmdBuffer` and `dstCmdBuffer` must be externally synchronized.
  *
  * @since 2.1
  * @sa palCmdImageOwnershipTransfer
@@ -6579,7 +6583,7 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outAs` is per thread.
+ * Thread safety: `outAs` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyAccelerationStructure
@@ -6614,7 +6618,7 @@ PAL_API void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* 
  * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters.
  * @param[out] size Pointer to a PalAccelerationStructureBuildSize to recieve the build size.
  *
- * Thread safety: Thread safe if `size` is per thread.
+ * Thread safety: `size` must be per thread.
  *
  * @since 2.0
  */
@@ -6645,7 +6649,7 @@ PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outBuffer` is per thread.
+ * Thread safety: `outBuffer` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyBuffer
@@ -6673,7 +6677,7 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
  * @param[in] buffer Buffer to query memory requirements on.
  * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
  *
- * Thread safety: Thread safe if `requirements` is per thread.
+ * Thread safety: `requirements` must be per thread.
  *
  * @since 2.0
  */
@@ -6694,7 +6698,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
  * @param[in] instanceCount Number of instances the instance buffer will hold.
  * @param[out] outSize Pointer to a uint64_t to recieve the required size.
  *
- * Thread safety: Thread safe if `outSize` is per thread.
+ * Thread safety: `outSize` must be per thread.
  *
  * @since 2.0
  * @sa palWriteInstanceStaging
@@ -6720,7 +6724,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * @param[out] requirements Pointer to a PalImageStagingRequirements to recieve the requirements
  *
- * Thread safety: Thread safe if `requirements` is per thread.
+ * Thread safety: `requirements` must be per thread.
  *
  * @since 2.0
  * @sa palWriteImageStaging
@@ -6742,7 +6746,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
  * @param[in] instances Array of PalAccelerationStructureInstance struct to write.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
  *
- * Thread safety: Thread safe.
+ * Thread safety: `ptr` must be externally synchronized.
  *
  * @since 2.0
  * @sa palComputeInstanceStagingSize
@@ -6762,7 +6766,7 @@ PAL_API void PAL_CALL palWriteInstanceStaging(
  * @param[out] srcData Pointer to the CPU visible memory with the data.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
  *
- * Thread safety: Thread safe.
+ * Thread safety: `ptr` must be externally synchronized.
  *
  * @since 2.0
  * @sa palComputeImageStagingRequirements
@@ -6804,7 +6808,7 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
  *
  * Only `PAL_MEMORY_TYPE_CPU_UPLOAD` and `PAL_MEMORY_TYPE_CPU_READBACK` can be mapped to
  * CPU visible space. Mapping `PAL_MEMORY_TYPE_GPU_ONLY` will fail and return
- * `PAL_RESULT_MEMORY_MAP_FAILED`.
+ * `PAL_RESULT_CODE_INVALID_OPERATION`.
  *
  * @param[in] buffer Pointer to buffer to map. Memory must be bound.
  * @param[in] offset Starting point within the buffer.
@@ -6873,7 +6877,7 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outLayout` is per thread.
+ * Thread safety: `outLayout` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyDescriptorSetLayout
@@ -6907,7 +6911,7 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outPool` is per thread.
+ * Thread safety: `outPool` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyDescriptorPool
@@ -6950,7 +6954,7 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  * use except the case where descriptor indexing is enabled.
  *
  * `pool` and `layout` must either be created with descriptor indexing enabled or not. Any other
- * pair will fail and return `PAL_RESULT_INVALID_OPERATION`.
+ * pair will fail and return `PAL_RESULT_CODE_INVALID_OPERATION`.
  *
  * @param[in] device Device to allocate descriptor set on.
  * @param[in] pool Descriptor pool to allocate descriptor set from.
@@ -6960,7 +6964,7 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `pool` and `outSet` are per thread.
+ * Thread safety: `pool` must be externally synchronized.
  *
  * @since 2.0
  */
@@ -7005,7 +7009,7 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outLayout` is per thread.
+ * Thread safety: `outLayout` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyPipelineLayout
@@ -7039,7 +7043,7 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outPipeline` is per thread.
+ * Thread safety: `outPipeline` must be per thread.
  *
  * @since 2.0
  * @sa palDestroyPipeline
@@ -7061,7 +7065,7 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outPipeline` is per thread.
+ * Thread safety: `outPipeline` must be per thread.
  *
  * @note The first entry of the compute shader will be used.
  *
@@ -7088,7 +7092,7 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outPipeline` is per thread.
+ * Thread safety: `outPipeline` must be per thread.
  *
  * @note The shader group array must be in this order [raygen][miss][hitgroup][callable].
  *
@@ -7133,7 +7137,7 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  * @return `PAL_RESULT_SUCCESS` on success or a result code on
  * failure. Call palFormatResult() for more information.
  *
- * Thread safety: Thread safe if `outSbt` is per thread.
+ * Thread safety: `outSbt` must be per thread.
  *
  * @note The records array must be in this order [raygen][miss][hitgroup][callable].
  *
@@ -7196,7 +7200,7 @@ PAL_API void PAL_CALL palUpdateShaderBindingTable(
  * @param[in, out] count Capacity of the PalWorkGroupInfo array.
  * @param[out] infos Pointer to an Array of PalWorkGroupInfo.
  *
- * Thread safety: Thread safe if `count` and `info` are per thread.
+ * Thread safety: `count` and `info` must be per thread.
  *
  * @since 2.0
  * @sa palCmdDrawMeshTasks
