@@ -257,6 +257,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         heap->gpuBase = gpuHandle.ptr;
 
         pool->hasResourceHeap = PAL_TRUE;
+        setDebugNameD3D12(OBJECT_TYPE_DESCRIPTOR_POOL, pool->resourceHeap.handle);
     }
 
     // sampler heap
@@ -295,6 +296,7 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         heap->gpuBase = gpuHandle.ptr;
 
         pool->hasSamplerHeap = PAL_TRUE;
+        setDebugNameD3D12(OBJECT_TYPE_DESCRIPTOR_POOL, pool->samplerHeap.handle);
     }
 
     pool->flags = info->flags;

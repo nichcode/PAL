@@ -29,6 +29,21 @@
 #define DESC_TYPE_SRV 2
 #define DESC_TYPE_UAV 3
 
+typedef enum {
+    OBJECT_TYPE_BUFFER,
+    OBJECT_TYPE_DEVICE,
+    OBJECT_TYPE_QUEUE,
+    OBJECT_TYPE_SEMAPHORE,
+    OBJECT_TYPE_COMMAND_BUFFER,
+    OBJECT_TYPE_FENCE,
+    OBJECT_TYPE_DEVICE_MEMORY,
+    OBJECT_TYPE_IMAGE,
+    OBJECT_TYPE_PIPELINE_LAYOUT,
+    OBJECT_TYPE_PIPELINE,
+    OBJECT_TYPE_PIPELINE_RAY,
+    OBJECT_TYPE_DESCRIPTOR_POOL
+} ObjectType;
+
 typedef HRESULT(WINAPI* PFN_CreateDXGIFactory2)(
     UINT,
     REFIID,
@@ -408,6 +423,10 @@ uint64_t getDescriptorHandleD3D12(
     uint64_t baseOffset);
 
 void pollMessagesD3D12(DeviceD3D12* device);
+
+void setDebugNameD3D12(
+    ObjectType type, 
+    void* handle);
 
 // IIDs
 extern IID IID_Device;

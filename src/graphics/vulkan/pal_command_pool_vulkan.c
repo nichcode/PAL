@@ -33,7 +33,7 @@ PalResult PAL_CALL createCommandPoolVk(
         return makeResultVk(result);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_COMMAND_POOL, pool->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_COMMAND_POOL, pool->handle);
     pool->device = deviceImpl;
     pool->queue = queueImpl;
     *outPool = (PalCommandPool*)pool;
@@ -131,7 +131,7 @@ PalResult PAL_CALL allocateCommandBufferVk(
     }
 
     s_Vk.bindBufferMemory(deviceImpl->handle, cmdBuffer->buffer, cmdBuffer->bufferMemory, 0);
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_COMMAND_BUFFER, cmdBuffer->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_COMMAND_BUFFER, cmdBuffer->handle);
 
     cmdBuffer->device = deviceImpl;
     cmdBuffer->pool = cmdPoolImpl;

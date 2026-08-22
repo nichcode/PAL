@@ -45,6 +45,7 @@ PalResult PAL_CALL createFenceD3D12(
         fence->canReset = PAL_TRUE;
     }
 
+    setDebugNameD3D12(OBJECT_TYPE_FENCE, fence->handle);
     fence->isTimeline = PAL_FALSE; // for semaphores
     fence->value = 0;
     *outFence = (PalFence*)fence;
@@ -142,6 +143,7 @@ PalResult PAL_CALL createSemaphoreD3D12(
             GetLastError());
     }
 
+    setDebugNameD3D12(OBJECT_TYPE_SEMAPHORE, semaphore->handle);
     semaphore->canReset = PAL_FALSE;
     semaphore->value = 0;
     *outSemaphore = (PalSemaphore*)semaphore;

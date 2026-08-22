@@ -167,8 +167,8 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
 
     cmdList->lpVtbl->Release(cmdList);
     cmdBuffer->handle->lpVtbl->Close(cmdBuffer->handle);
-    cmdBuffer->handle->lpVtbl->SetName(cmdBuffer->handle, L"Command Buffer");
 
+    setDebugNameD3D12(OBJECT_TYPE_COMMAND_BUFFER, cmdBuffer->handle);
     cmdBuffer->device = deviceImpl;
     *outCmdBuffer = (PalCommandBuffer*)cmdBuffer;
     return PAL_RESULT_SUCCESS;

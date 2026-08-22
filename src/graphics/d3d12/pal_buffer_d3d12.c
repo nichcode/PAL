@@ -132,6 +132,7 @@ PalResult PAL_CALL createBufferD3D12(
             return makeResultD3D12(result);
         }
 
+        setDebugNameD3D12(OBJECT_TYPE_BUFFER, buffer->handle);
         pollMessagesD3D12(deviceImpl);
         buffer->isMemoryManaged = PAL_TRUE;
     }
@@ -293,6 +294,7 @@ PalResult PAL_CALL bindBufferMemoryD3D12(
     }
     pollMessagesD3D12(device);
 
+    setDebugNameD3D12(OBJECT_TYPE_BUFFER, bufferImpl->handle);
     return PAL_RESULT_SUCCESS;
 }
 

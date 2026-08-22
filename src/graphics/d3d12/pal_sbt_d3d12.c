@@ -341,6 +341,9 @@ PalResult PAL_CALL createShaderBindingTableD3D12(
     sbt->stagingBufferSize = bufferSize;
     sbt->pipeline = pipeline;
 
+    setDebugNameD3D12(OBJECT_TYPE_BUFFER, sbt->buffer);
+    setDebugNameD3D12(OBJECT_TYPE_BUFFER, sbt->stagingBuffer);
+
     sbt->isDirty = PAL_TRUE; // we need to copy from the staging to the gpu buffer
     *outSbt = (PalShaderBindingTable*)sbt;
     return PAL_RESULT_SUCCESS;

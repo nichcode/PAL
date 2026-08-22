@@ -864,7 +864,7 @@ VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages)
     return vkStages;
 }
 
-void setDebugName(
+void setDebugNameVk(
     DeviceVk* device, 
     VkObjectType type, 
     void* handle)
@@ -982,7 +982,7 @@ void setDebugName(
         }
     }
 
-    s_Vk.setDebugName(device->handle, &info);
+    s_Vk.setDebugNameVk(device->handle, &info);
 }
 
 static void* alignedRealloc(
@@ -1740,7 +1740,7 @@ PalBool PAL_CALL initGraphicsVk(
                 instance,
                 "vkDestroyDebugUtilsMessengerEXT");
 
-        s_Vk.setDebugName =
+        s_Vk.setDebugNameVk =
             (PFN_vkSetDebugUtilsObjectNameEXT)s_Vk.getInstanceProcAddr(
                 instance,
                 "vkSetDebugUtilsObjectNameEXT");

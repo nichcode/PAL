@@ -294,6 +294,7 @@ PalResult PAL_CALL createDeviceD3D12(
         device->canFenceReset = PAL_TRUE;
     }
 
+    setDebugNameD3D12(OBJECT_TYPE_DEVICE, device->handle);
     device->adapter = adapterImpl->handle;
     *outDevice = (PalDevice*)device;
     return PAL_RESULT_SUCCESS;
@@ -376,6 +377,7 @@ PalResult PAL_CALL allocateMemoryD3D12(
     }
     pollMessagesD3D12(deviceImpl);
 
+    setDebugNameD3D12(OBJECT_TYPE_DEVICE_MEMORY, memory->handle);
     memory->type = type;
     *outMemory = (PalMemory*)memory;
     return PAL_RESULT_SUCCESS;
@@ -517,7 +519,6 @@ PalResult PAL_CALL createQueueD3D12(
     D3D12_COMMAND_QUEUE_DESC desc = {0};
     PalPipelineStages stages = 0;
 
-    const wchar_t* name = nullptr;
     switch (type) {
         case PAL_QUEUE_TYPE_COMPUTE: {
             desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -525,7 +526,6 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeComputeQueues--;
-            name = L"Compute Queue";
 
             stages = PAL_PIPELINE_STAGE_TRANSFER;
             stages |= PAL_PIPELINE_STAGE_COMPUTE_SHADER;
@@ -543,7 +543,6 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeGraphicsQueues--;
-            name = L"Graphics Queue";
 
             stages = PAL_PIPELINE_STAGE_TRANSFER;
             stages |= PAL_PIPELINE_STAGE_VERTEX_SHADER;
@@ -577,7 +576,6 @@ PalResult PAL_CALL createQueueD3D12(
                 return PAL_RESULT_CODE_OUT_OF_MEMORY;
             }
             deviceImpl->limits.freeCopyQueues--;
-            name = L"Copy Queue";
 
             stages = PAL_PIPELINE_STAGE_TRANSFER;
             break;
@@ -619,7 +617,7 @@ PalResult PAL_CALL createQueueD3D12(
             GetLastError());
     }
 
-    queue->handle->lpVtbl->SetName(queue->handle, name);
+    setDebugNameD3D12(OBJECT_TYPE_QUEUE, queue->handle);
     queue->fenceValue = 0;
     queue->type = type;
     queue->supportedStages = stages;

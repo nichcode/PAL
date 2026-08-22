@@ -194,7 +194,7 @@ PalResult PAL_CALL createPipelineLayoutVk(
         return makeResultVk(result);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_PIPELINE_LAYOUT, layout->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_PIPELINE_LAYOUT, layout->handle);
     layout->device = deviceImpl;
     *outLayout = (PalPipelineLayout*)layout;
     return PAL_RESULT_SUCCESS;
@@ -659,7 +659,7 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         palFree(s_Vk.allocator, blendattachments);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_PIPELINE, pipeline->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_PIPELINE, pipeline->handle);
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     pipeline->device = deviceImpl;
     pipeline->layout = layout->handle;
@@ -704,7 +704,7 @@ PalResult PAL_CALL createComputePipelineVk(
         return makeResultVk(result);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_PIPELINE, pipeline->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_PIPELINE, pipeline->handle);
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
     pipeline->device = deviceImpl;
     pipeline->layout = layout->handle;
@@ -869,7 +869,7 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         return makeResultVk(result);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_PIPELINE, pipeline->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_PIPELINE, pipeline->handle);
     pipeline->bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     pipeline->device = deviceImpl;
     pipeline->layout = layout->handle;

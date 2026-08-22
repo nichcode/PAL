@@ -798,7 +798,7 @@ PalResult PAL_CALL createDeviceVk(
     palFree(s_Vk.allocator, queueFamilyProps);
     palFree(s_Vk.allocator, queueCreateInfos);
 
-    setDebugName(device, VK_OBJECT_TYPE_DEVICE, device->handle);
+    setDebugNameVk(device, VK_OBJECT_TYPE_DEVICE, device->handle);
     device->features = features;
     *outDevice = (PalDevice*)device;
     return PAL_RESULT_SUCCESS;
@@ -865,7 +865,7 @@ PalResult PAL_CALL allocateMemoryVk(
         return makeResultVk(result);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_DEVICE_MEMORY, memory->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_DEVICE_MEMORY, memory->handle);
     memory->device = deviceImpl;
     memory->type = type;
     *outMemory = (PalMemory*)memory;
@@ -1229,7 +1229,7 @@ PalResult PAL_CALL createQueueVk(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_QUEUE, queue->phyQueue->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_QUEUE, queue->phyQueue->handle);
     deviceImpl->phyQueueIndex = (deviceImpl->phyQueueIndex + 1) % deviceImpl->phyQueueCount;
     queue->phyQueue = phyQueue;
     queue->usage = queueFlag;
@@ -1409,7 +1409,7 @@ PalResult PAL_CALL createShaderVk(
         return makeResultVk(result);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_SHADER_MODULE, shader->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_SHADER_MODULE, shader->handle);
     shader->device = deviceImpl;
     shader->entryCount = info->entryCount;
     *outShader = (PalShader*)shader;

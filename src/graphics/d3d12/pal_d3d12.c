@@ -1150,6 +1150,89 @@ void pollMessagesD3D12(DeviceD3D12* device)
     }
 }
 
+void setDebugNameD3D12(
+    ObjectType type, 
+    void* handle)
+{
+    if (!s_D3D12.debugCallback) {
+        return;
+    }
+
+    switch (type) {
+        case OBJECT_TYPE_BUFFER: {
+            ID3D12Resource* buffer = handle;
+            buffer->lpVtbl->SetName(buffer, L"Buffer");
+            return;
+        }
+
+        case OBJECT_TYPE_DEVICE: {
+            ID3D12Device5* device = handle;
+            device->lpVtbl->SetName(device, L"Device");
+            return;
+        }
+
+        case OBJECT_TYPE_QUEUE: {
+            ID3D12CommandQueue* queue = handle;
+            queue->lpVtbl->SetName(queue, L"Queue");
+            return;
+        }
+
+        case OBJECT_TYPE_SEMAPHORE: {
+            ID3D12Fence* semaphore = handle;
+            semaphore->lpVtbl->SetName(semaphore, L"Semaphore");
+            return;
+        }
+
+        case OBJECT_TYPE_COMMAND_BUFFER: {
+            ID3D12GraphicsCommandList6* cmdList = handle;
+            cmdList->lpVtbl->SetName(cmdList, L"Command Buffer");
+            return;
+        }
+
+        case OBJECT_TYPE_FENCE: {
+            ID3D12Fence* fence = handle;
+            fence->lpVtbl->SetName(fence, L"Fence");
+            return;
+        }
+
+        case OBJECT_TYPE_DEVICE_MEMORY: {
+            ID3D12Heap* heap = handle;
+            heap->lpVtbl->SetName(heap, L"Device Memory");
+            return;
+        }
+
+        case OBJECT_TYPE_IMAGE: {
+            ID3D12Resource* image = handle;
+            image->lpVtbl->SetName(image, L"Image");
+            return;
+        }
+
+        case OBJECT_TYPE_PIPELINE_LAYOUT: {
+            ID3D12RootSignature* root = handle;
+            root->lpVtbl->SetName(root, L"Pipeline Layout");
+            return;
+        }
+
+        case OBJECT_TYPE_PIPELINE: {
+            ID3D12PipelineState* state = handle;
+            state->lpVtbl->SetName(state, L"Pipeline");
+            return;
+        }
+
+        case OBJECT_TYPE_PIPELINE_RAY: {
+            ID3D12StateObject* object = handle;
+            object->lpVtbl->SetName(object, L"Pipeline");
+            return;
+        }
+
+        case OBJECT_TYPE_DESCRIPTOR_POOL: {
+            ID3D12DescriptorHeap* pool = handle;
+            pool->lpVtbl->SetName(pool, L"DEscriptor Pool");
+            return;
+        }
+    }
+}
+
 PalBool PAL_CALL initGraphicsD3D12(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator)

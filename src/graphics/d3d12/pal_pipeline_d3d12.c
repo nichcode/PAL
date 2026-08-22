@@ -1043,6 +1043,7 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
     pipeline->shaderExports = nullptr;
     pipeline->localRootSignature = nullptr;
 
+    setDebugNameD3D12(OBJECT_TYPE_PIPELINE, pipeline->handle);
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -1084,6 +1085,7 @@ PalResult PAL_CALL createComputePipelineD3D12(
     pipeline->shaderExports = nullptr;
     pipeline->localRootSignature = nullptr;
 
+    setDebugNameD3D12(OBJECT_TYPE_PIPELINE, pipeline->handle);
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;
 }
@@ -1415,6 +1417,7 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
     pipeline->hasFsr = PAL_FALSE;
     pipeline->layout = layout;
 
+    setDebugNameD3D12(OBJECT_TYPE_PIPELINE_RAY, pipeline->handle);
     pipeline->sbtInfo = sbtInfo;
     *outPipeline = (PalPipeline*)pipeline;
     return PAL_RESULT_SUCCESS;

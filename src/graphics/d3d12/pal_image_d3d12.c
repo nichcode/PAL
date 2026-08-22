@@ -185,6 +185,7 @@ PalResult PAL_CALL createImageD3D12(
             return makeResultD3D12(result);
         }
 
+        setDebugNameD3D12(OBJECT_TYPE_IMAGE, image->handle);
         pollMessagesD3D12(deviceImpl);
         image->isMemoryManaged = PAL_TRUE;
     }
@@ -270,6 +271,7 @@ PalResult PAL_CALL bindImageMemoryD3D12(
         return makeResultD3D12(result);
     }
 
+    setDebugNameD3D12(OBJECT_TYPE_IMAGE, imageImpl->handle);
     pollMessagesD3D12(imageImpl->device);
     return PAL_RESULT_SUCCESS;
 }

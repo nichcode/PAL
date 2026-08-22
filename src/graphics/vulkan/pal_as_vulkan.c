@@ -50,7 +50,7 @@ PalResult PAL_CALL createAccelerationstructureVk(
     addressInfo.accelerationStructure = as->handle;
     as->address = deviceImpl->getAccelerationDeviceAddress(deviceImpl->handle, &addressInfo);
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, as->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, as->handle);
     as->device = deviceImpl;
     *outAs = (PalAccelerationStructure*)as;
     return PAL_RESULT_SUCCESS;

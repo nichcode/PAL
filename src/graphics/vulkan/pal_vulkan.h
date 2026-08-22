@@ -450,7 +450,7 @@ typedef struct {
     PFN_vkDestroyPipeline destroyPipeline;
     PFN_vkCreateDebugUtilsMessengerEXT createMessenger;
     PFN_vkDestroyDebugUtilsMessengerEXT destroyMessenger;
-    PFN_vkSetDebugUtilsObjectNameEXT setDebugName;
+    PFN_vkSetDebugUtilsObjectNameEXT setDebugNameVk;
     PFN_vkQueueWaitIdle waitQueue;
 
     void* handle;
@@ -489,7 +489,7 @@ void fillBuildInfoVk(
 
 VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages);
 
-void setDebugName(
+void setDebugNameVk(
     DeviceVk* device, 
     VkObjectType type, 
     void* handle);

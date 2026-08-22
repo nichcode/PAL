@@ -87,7 +87,7 @@ PalResult PAL_CALL createSurfaceVk(
         return makeResultVk(result);
     }
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_SURFACE_KHR, surface->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_SURFACE_KHR, surface->handle);
     surface->device = deviceImpl;
     surface->handle = tmp;
     *outSurface = (PalSurface*)surface;
@@ -308,7 +308,7 @@ PalResult PAL_CALL createSwapchainVk(
         ImageVk* image = &swapchain->images[i];
         image->device = deviceImpl;
         image->handle = images[i];
-        setDebugName(deviceImpl, VK_OBJECT_TYPE_IMAGE, image->handle);
+        setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_IMAGE, image->handle);
 
         image->info.belongsToSwapchain = PAL_TRUE;
         image->info.arrayLayerCount = createInfo.imageArrayLayers;
@@ -323,7 +323,7 @@ PalResult PAL_CALL createSwapchainVk(
     }
     palFree(s_Vk.allocator, images);
 
-    setDebugName(deviceImpl, VK_OBJECT_TYPE_SWAPCHAIN_KHR, swapchain->handle);
+    setDebugNameVk(deviceImpl, VK_OBJECT_TYPE_SWAPCHAIN_KHR, swapchain->handle);
     swapchain->device = deviceImpl;
     swapchain->queue = queueImpl;
     swapchain->imageCount = count;
