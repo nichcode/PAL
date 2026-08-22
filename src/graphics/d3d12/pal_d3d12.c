@@ -1101,15 +1101,19 @@ void pollMessagesD3D12(DeviceD3D12* device)
         queue->lpVtbl->ClearStoredMessages(queue);
     }
 
-    // check DRED
     HRESULT hr = device->handle->lpVtbl->GetDeviceRemovedReason(device->handle);
-    if (FAILED(hr) && s_D3D12.debugCallback && device->loggedDRED == PAL_FALSE) {
+    if (FAILED(hr) && s_D3D12.debugCallback) {
+        if (device->loggedDRED && device->loggedPageFault) {
+            return;
+        }
+
         ID3D12DeviceRemovedExtendedData* dred = nullptr;
         hr = device->handle->lpVtbl->QueryInterface(device->handle, &IID_DREDData, (void**)&dred);
         if (FAILED(hr)) {
             return;
         }
 
+        // check Breadcrumbs
         D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT breadcrumbs = {0};
         hr = dred->lpVtbl->GetAutoBreadcrumbsOutput(dred, &breadcrumbs);
         if (SUCCEEDED(hr)) {
@@ -1144,9 +1148,48 @@ void pollMessagesD3D12(DeviceD3D12* device)
                 s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "");
                 node = node->pNext;
             }
+
+            device->loggedDRED = PAL_TRUE;
         }
+
+        // check PageFault
+        D3D12_DRED_PAGE_FAULT_OUTPUT pageOutput = {0};
+        hr = dred->lpVtbl->GetPageFaultAllocationOutput(dred, &pageOutput);
+        if (SUCCEEDED(hr)) {
+            PalDebugMessageType type = PAL_DEBUG_MESSAGE_TYPE_VALIDATION;
+            PalDebugMessageSeverity severity = PAL_DEBUG_MESSAGE_SEVERITY_ERROR;
+            s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "");
+
+            char buffer[256];
+            format(buffer, "DRED Fault VA: 0x%llX", pageOutput.PageFaultVA);
+            s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
+
+            s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "");
+            s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, " Existing Allocations:");
+
+            const D3D12_DRED_ALLOCATION_NODE* node = pageOutput.pHeadExistingAllocationNode;
+            while (node) {
+                format(buffer,"  %s", node->ObjectNameA);
+                s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
+            }
+
+            s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "");
+            s_D3D12.debugCallback(
+                s_D3D12.debugUserData, 
+                severity, 
+                type, 
+                " Recently Freed Allocations:");
+
+            node = pageOutput.pHeadRecentFreedAllocationNode;
+            while (node) {
+                format(buffer,"  %s", node->ObjectNameA);
+                s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
+            }
+
+            device->loggedPageFault = PAL_TRUE;
+        }
+
         dred->lpVtbl->Release(dred);
-        device->loggedDRED = PAL_TRUE;
     }
 }
 
