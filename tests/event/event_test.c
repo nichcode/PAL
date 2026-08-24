@@ -8,18 +8,6 @@
 static uint32_t s_CallbackCounter = 0;
 static uint32_t s_PollCounter = 0;
 
-typedef struct {
-    uint64_t frequency;
-    uint64_t startTime;
-} MyTimer;
-
-// get the time in seconds
-static inline double getTime(MyTimer* timer)
-{
-    uint64_t now = palGetPerformanceCounter();
-    return (double)(now - timer->startTime) / (double)timer->frequency;
-}
-
 static void PAL_CALL onEvent(
     void* userData,
     const PalEvent* event)
@@ -85,7 +73,6 @@ PalBool eventTest()
     // callback mode
     // get start time
     double startTime = getTime(&timer);
-
     for (int32_t i = 0; i < MAX_ITERATIONS; i++) {
         PalBool success = eventDispatchTest(PAL_FALSE); // callback mode
         if (success == PAL_FALSE) {
@@ -96,7 +83,6 @@ PalBool eventTest()
     // get end time
     double endTime = getTime(&timer);
     double averageTime = (endTime - startTime) / MAX_ITERATIONS;
-
     palLog(
         nullptr,
         "%.6f seconds per iteration for %d events using callback mode (average "
@@ -108,7 +94,6 @@ PalBool eventTest()
     // poll mode
     // get start time
     startTime = getTime(&timer);
-
     for (int32_t i = 0; i < MAX_ITERATIONS; i++) {
         PalBool success = eventDispatchTest(PAL_TRUE); // poll mode
         if (success == PAL_FALSE) {
@@ -119,7 +104,6 @@ PalBool eventTest()
     // get end time
     endTime = getTime(&timer);
     averageTime = (endTime - startTime) / MAX_ITERATIONS;
-
     palLog(
         nullptr,
         "%.6f seconds per iteration for %d events using poll mode (average "

@@ -57,7 +57,8 @@ project "tests"
             "opengl/opengl_test.c",
             "opengl/opengl_fbconfig_test.c",
             "opengl/opengl_context_test.c",
-            "opengl/opengl_multi_context_test.c"
+            "opengl/opengl_multi_context_test.c",
+            "opengl/opengl_helper.c"
         }
     end
 
@@ -86,7 +87,8 @@ project "tests"
             "graphics/texture_test.c",
             "graphics/geometry_test.c",
             "graphics/indirect_draw_test.c",
-            "graphics/descriptor_indexing_test.c"
+            "graphics/descriptor_indexing_test.c",
+            "graphics/graphics_helper.c"
         }
     end
 

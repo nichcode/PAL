@@ -42,3 +42,34 @@ void runTests()
         palLog(nullptr, statusString);
     }
 }
+
+PalEventDriver* helperCreateEventDriver(
+    uint32_t count,
+    PalDispatchMode mode,
+    PalEventType* types)
+{
+    PalEventDriverCreateInfo createInfo = {0};
+    createInfo.allocator = nullptr;
+    createInfo.callback = nullptr;
+    createInfo.queue = nullptr;
+    createInfo.userData = nullptr;
+
+    PalEventDriver* eventDriver = nullptr;
+    PalResult result = palCreateEventDriver(&createInfo, &eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        logResult(result, "Failed to create event driver");
+        return nullptr;
+    }
+
+    if (count == 0) {
+        palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, mode);
+        palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, mode);
+
+    } else {
+        for (uint32_t i = 0; i < count; i++) {
+            palSetEventDispatchMode(eventDriver, types[i], mode);
+        }
+    }
+
+    return eventDriver;
+}

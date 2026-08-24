@@ -866,10 +866,12 @@ PalBool customDecorationTest()
     }
 
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
+
     palSetEventDispatchMode(
         eventDriver,
         PAL_EVENT_TYPE_WINDOW_DECORATION_MODE,
         PAL_DISPATCH_MODE_POLL);
+
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
 
     // we use PAL_DISPATCH_MODE_CALLBACK for the mouse button to get
@@ -878,7 +880,9 @@ PalBool customDecorationTest()
         eventDriver,
         PAL_EVENT_TYPE_MOUSE_BUTTONDOWN,
         PAL_DISPATCH_MODE_CALLBACK);
+
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_MOUSE_MOVE, PAL_DISPATCH_MODE_CALLBACK);
+    
     palSetEventDispatchMode(
         eventDriver,
         PAL_EVENT_TYPE_MONITOR_DPI_CHANGED,

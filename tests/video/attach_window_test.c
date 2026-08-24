@@ -247,8 +247,6 @@ PalBool attachWindowTest()
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_MOVE, PAL_DISPATCH_MODE_POLL);
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
-
-    // we listen for key release events to attach and detach the window
     palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYUP, PAL_DISPATCH_MODE_POLL);
 
     // PAL allows users create any kind of window not currently or will not
@@ -313,10 +311,8 @@ PalBool attachWindowTest()
                 }
 
                 case PAL_EVENT_TYPE_KEYUP: {
-                    // we detach the window after keyup
-                    // since if the window is detached,
-                    // we wont recieve the key up event
-                    // keycode == low, scancode == high
+                    // we detach the window after keyup since if the window is detached,
+                    // we wont recieve the key up event keycode == low, scancode == high
                     uint32_t keycode;
                     palUnpackUint32(event.data, &keycode, nullptr);
                     if (keycode == PAL_KEYCODE_D) {

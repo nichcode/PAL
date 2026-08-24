@@ -1,12 +1,5 @@
 
-#include "pal2/pal_graphics.h"
-#include "pal2/pal_system.h"
-#include "pal2/pal_video.h"
-#include "tests.h"
-
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
-#define MAX_FRAMES_IN_FLIGHT 2
+#include "graphics_helper.h"
 
 static void PAL_CALL onGraphicsDebug(
     void* userData,
@@ -37,65 +30,15 @@ PalBool clearColorTest()
     PalSemaphore** renderFinishedSemaphores; // count of swapchain images
     PalFence** inFlightImages;               // count of swapchain images
 
-    PalEventDriverCreateInfo eventDriverCreateInfo = {0};
-    result = palCreateEventDriver(&eventDriverCreateInfo, &eventDriver);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to create event driver");
+    eventDriver = helperCreateEventDriver(0, PAL_DISPATCH_MODE_POLL, nullptr);
+    if (!eventDriver) {
         return PAL_FALSE;
     }
 
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_WINDOW_CLOSE, PAL_DISPATCH_MODE_POLL);
-    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_KEYDOWN, PAL_DISPATCH_MODE_POLL);
-
-    result = palInitVideo(nullptr, eventDriver, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to initialize video");
+    window = gfxHelperCreateWindow("Clear Color Window", eventDriver);
+    if (!window) {
         return PAL_FALSE;
     }
-
-    PalWindowCreateInfo windowCreateInfo = {0};
-    windowCreateInfo.height = WINDOW_HEIGHT;
-    windowCreateInfo.width = WINDOW_WIDTH;
-    windowCreateInfo.show = PAL_TRUE;
-    windowCreateInfo.title = "Clear Color Window";
-
-    PalVideoFeatures videoFeatures = palGetVideoFeatures();
-    if (!(videoFeatures & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
-        windowCreateInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
-    }
-
-    result = palCreateWindow(&windowCreateInfo, &window);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to create window");
-        ;
-        return PAL_FALSE;
-    }
-
-    // get window handle. You can use any window from any library
-    // so long as you can get the window handle and display (if on X11, wayland)
-    // If pal video system will not be used, there is no need to initialize it
-    PalWindowHandleInfo winHandle = {0};
-    palGetWindowHandleInfo(window, &winHandle);
-
-    // using pal_system.h will be easy to know the underlying windowing API or use typedefs.
-    // We will use the pal_system module.
-    PalPlatformInfo platformInfo = {0};
-    palGetPlatformInfo(&platformInfo);
-
-    PalWindowInstanceType windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_XCB;
-    if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WAYLAND) {
-        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_WAYLAND;
-
-    } else if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_X11) {
-        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_X11;
-
-    } else if (platformInfo.apiType == PAL_PLATFORM_API_TYPE_WIN32) {
-        windowInstanceType = PAL_WINDOW_INSTANCE_TYPE_WIN32;
-    }
-
-    PalGraphicsDebugger debugger = {0};
-    debugger.callback = onGraphicsDebug;
-    debugger.userData = nullptr;
 
     result = palInitGraphics(nullptr, nullptr, 0, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
@@ -163,16 +106,8 @@ PalBool clearColorTest()
         return PAL_FALSE;
     }
 
-    // create surface
-    result = palCreateSurface(
-        device,
-        winHandle.nativeWindow,
-        winHandle.nativeInstance,
-        windowInstanceType,
-        &surface);
-
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to create surface");
+    surface = gfxHelperCreateSurface(device, window);
+    if (!surface) {
         return PAL_FALSE;
     }
 
@@ -504,8 +439,6 @@ PalBool clearColorTest()
     palFree(nullptr, renderFinishedSemaphores);
     palFree(nullptr, inFlightImages);
 
-    palDestroyWindow(window);
-    palShutdownVideo();
-    palDestroyEventDriver(eventDriver);
+    gfxHelperDestroyWindow(window, eventDriver);
     return PAL_TRUE;
 }

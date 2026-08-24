@@ -183,10 +183,12 @@ PalBool windowTest()
         eventDriver,
         PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN,
         PAL_DISPATCH_MODE_CALLBACK);
+
     palSetEventDispatchMode(
         eventDriver,
         PAL_EVENT_TYPE_WINDOW_MODAL_END,
         PAL_DISPATCH_MODE_CALLBACK);
+        
     palSetEventDispatchMode(
         eventDriver,
         PAL_EVENT_TYPE_WINDOW_DECORATION_MODE,

@@ -1,17 +1,6 @@
 
-#include "pal2/pal_opengl.h"
 #include "pal2/pal_thread.h"
-#include "pal2/pal_video.h"
-#include "tests.h"
-
-// opengl typedefs
-typedef void(PAL_GL_APIENTRY* PFNGLCLEARCOLORPROC)(
-    float red,
-    float green,
-    float blue,
-    float alpha);
-
-typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(uint32_t mask); // use GL typedefs if needed
+#include "opengl_helper.h"
 
 typedef void (*glFlushFn)();
 typedef void (*glBeginFn)(unsigned int);
@@ -51,43 +40,22 @@ static void* PAL_CALL eventDriverWorker(void* arg)
         return nullptr;
     }
 
-    PalEventDriverCreateInfo createInfo = {0};
-    PalResult result = palCreateEventDriver(&createInfo, &shared->videoEventDriver);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to create event driver");
-        return nullptr;
-    }
-
-    // create the opengl driver as well
-    result = palCreateEventDriver(&createInfo, &shared->openglEventDriver);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to create event driver");
-        return nullptr;
-    }
-
-    // set dispatch modes. opengl needs only window resize
-    palSetEventDispatchMode(
-        shared->openglEventDriver,
-        PAL_EVENT_TYPE_WINDOW_SIZE,
-        PAL_DISPATCH_MODE_POLL);
-
-    // video needs window close and resize
-    palSetEventDispatchMode(
-        shared->videoEventDriver,
+    // clang-format off
+    PalEventType eventTypes[3] = {
         PAL_EVENT_TYPE_WINDOW_CLOSE,
-        PAL_DISPATCH_MODE_POLL);
-
-    palSetEventDispatchMode(
-        shared->videoEventDriver,
-        PAL_EVENT_TYPE_WINDOW_SIZE,
-        PAL_DISPATCH_MODE_POLL);
-
-    palSetEventDispatchMode(
-        shared->videoEventDriver,
         PAL_EVENT_TYPE_KEYDOWN,
-        PAL_DISPATCH_MODE_POLL);
+        PAL_EVENT_TYPE_WINDOW_SIZE};
+    // clang-format on
 
-    // we are done
+    PalEventType glDriverEventTypes[1] = { PAL_EVENT_TYPE_WINDOW_SIZE };
+    PalDispatchMode mode = PAL_DISPATCH_MODE_POLL;
+
+    shared->videoEventDriver = helperCreateEventDriver(3, mode, eventTypes);
+    shared->openglEventDriver = helperCreateEventDriver(1, mode, glDriverEventTypes);
+    if (!shared->videoEventDriver || !shared->openglEventDriver) {
+        return nullptr;
+    }
+
     shared->driverCreated = PAL_TRUE;
     return nullptr;
 }
@@ -189,6 +157,11 @@ PalBool multiThreadOpenGlTest()
 {
     palLog(nullptr, "Press Escape or click close button to close Test");
 
+    PalWindow* window = nullptr;
+    uint32_t fbConfigIndex = 0;
+    PalGLWindow glWindow = {0};
+    PalGLContext* context = nullptr;
+
     SharedState* shared = nullptr;
     shared = palAllocate(nullptr, sizeof(SharedState), 0);
     if (!shared) {
@@ -223,140 +196,38 @@ PalBool multiThreadOpenGlTest()
         palDetachThread(eventDriverThread); // we dont need it anymore
     }
 
-    // initialize the video system. We pass the event driver to recieve video
-    // related events the video system does not copy the event driver, it must
-    // be valid till the video system is shutdown
-    result = palInitVideo(nullptr, shared->videoEventDriver, nullptr);
+    PalEventDriver* eventDriver = shared->videoEventDriver;
+    window = glHelperCreateWindow("GL Multi Thread Window", eventDriver, &fbConfigIndex);
+    if (!window) {
+        return PAL_FALSE;
+    }
+
+    glWindow = glHelperGetGLWindow(window);
+    if (!glWindow.window) {
+        return PAL_FALSE;
+    }
+
+    const PalGLInfo* info = palGetGLInfo();
+
+    PalGLContextCreateInfo createInfo = {0};
+    createInfo.debug = PAL_TRUE;
+    createInfo.fbConfig = fbConfigIndex;
+    createInfo.major = info->major;
+    createInfo.minor = info->minor;
+    createInfo.window = &glWindow;
+
+    result = palCreateGLContext(&createInfo, &context);
     if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to initialize video");
+        logResult(result, "Failed to create GL context");
         return PAL_FALSE;
     }
-
-    // check if opengl API is supported or fallback to opengl es
-    PalGLAPI openglAPI;
-    void* videoInstance = palGetInstance();
-    const PalBool* supportedAPIs = palGetSupportedGLAPIs(videoInstance);
-    if (supportedAPIs) {
-        if (supportedAPIs[PAL_GL_API_OPENGL]) {
-            openglAPI = PAL_GL_API_OPENGL;
-
-        } else {
-            openglAPI = PAL_GL_API_OPENGL_ES;
-        }
-
-    } else {
-        palLog(nullptr, "Failed to get supported opengl apis");
-        return PAL_FALSE;
-    }
-
-    // initialize the opengl system. This loads the icd.
-    result = palInitGL(openglAPI, videoInstance, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to initialize opengl");
-        return PAL_FALSE;
-    }
-
-    // get all FBConfigs and select one
-    uint32_t fbCount = 0;
-    result = palEnumerateGLFBConfigs(&fbCount, nullptr);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to query GL FBConfigs");
-        return PAL_FALSE;
-    }
-
-    if (fbCount == 0) {
-        palLog(nullptr, "No supported FBConfig found");
-        return PAL_FALSE;
-    }
-
-    PalGLFBConfig* fbConfigs = nullptr;
-    fbConfigs = palAllocate(nullptr, sizeof(PalGLFBConfig) * fbCount, 0);
-    if (!fbConfigs) {
-        palLog(nullptr, "Failed to allocate memory");
-        return PAL_FALSE;
-    }
-
-    result = palEnumerateGLFBConfigs(&fbCount, fbConfigs);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to query GL FBConfigs");
-        return PAL_FALSE;
-    }
-
-    // we get our desired FBConfig
-    PalGLFBConfig desired = {0};
-    desired.redBits = 8;
-    desired.greenBits = 8;
-    desired.blueBits = 8;
-    desired.alphaBits = 8;
-    desired.alphaBits = 8;
-    desired.depthBits = 24;
-    desired.stencilBits = 8;
-    desired.samples = 2;
-    desired.stereo = PAL_FALSE; // not widely supported
-    desired.sRGB = PAL_TRUE;
-    desired.doubleBuffer = PAL_TRUE;
-
-    const PalGLFBConfig* closest = nullptr;
-    closest = palGetClosestGLFBConfig(fbConfigs, fbCount, &desired);
-
-    // all windows also needs to be created on the main thread
-    PalWindowCreateInfo windowCreateInfo = {0};
-    windowCreateInfo.width = 640;
-    windowCreateInfo.height = 480;
-    windowCreateInfo.show = PAL_TRUE;
-    windowCreateInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
-    windowCreateInfo.title = "Multi Thread OpenGL Window";
-
-    // check if we support decorated windows (title bar, close etc)
-    PalVideoFeatures features = palGetVideoFeatures();
-    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
-        // if we dont support, we need to create a borderless window
-        // and create the decorations ourselves
-        windowCreateInfo.style |= PAL_WINDOW_STYLE_BORDERLESS;
-    }
-
-    // set the backend and the fbConfig. We use PAL_FBCONFIG_BACKEND_PAL_OPENGL
-    // because we are using both pal_video and pal_opengl
-    windowCreateInfo.fbConfigBackend = PAL_FBCONFIG_BACKEND_PAL_OPENGL;
-    windowCreateInfo.fbConfigIndex = closest->index;
-
-    PalWindow* window = nullptr;
-    result = palCreateWindow(&windowCreateInfo, &window);
-    if (result != PAL_RESULT_SUCCESS) {
-        logResult(result, "Failed to create window");
-        return PAL_FALSE;
-    }
-
-    // GL context needs to be created on the main thread
-    const PalGLInfo* glInfo = palGetGLInfo();
-
-    // get the native handles of our created window
-    PalWindowHandleInfo winHandle = {0};
-    palGetWindowHandleInfo(window, &winHandle);
-
-    shared->window.instance = winHandle.nativeInstance;
-    // On Wayland the window is the wl_egl_window
-    if (winHandle.nativeHandle3) {
-        // the window has a valid wl_egl_window
-        shared->window.window = winHandle.nativeHandle3;
-
-    } else {
-        shared->window.window = winHandle.nativeWindow;
-    }
-
-    PalGLContextCreateInfo contextCreateInfo = {0};
-    contextCreateInfo.debug = PAL_TRUE;
-    contextCreateInfo.fbConfig = closest;
-    contextCreateInfo.major = glInfo->major;
-    contextCreateInfo.minor = glInfo->minor;
-    contextCreateInfo.window = &shared->window;
 
     // we dont want to get into GL pipeline for this example
     // so we request a Compatibility profile if supported
     // NOTE: is its not supported, no triangle would be displayed
     shared->fixedPipeline = PAL_FALSE;
-    if (glInfo->extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
-        contextCreateInfo.profile = PAL_GL_PROFILE_COMPATIBILITY;
+    if (info->extensions & PAL_GL_EXTENSION_CONTEXT_PROFILE) {
+        createInfo.profile = PAL_GL_PROFILE_COMPATIBILITY;
         shared->fixedPipeline = PAL_TRUE;
     }
 
@@ -364,7 +235,7 @@ PalBool multiThreadOpenGlTest()
         palLog(nullptr, "Fixed pipeline not supported");
     }
 
-    result = palCreateGLContext(&contextCreateInfo, &shared->context);
+    result = palCreateGLContext(&createInfo, &shared->context);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to create opengl context");
         return PAL_FALSE;
@@ -426,17 +297,8 @@ PalBool multiThreadOpenGlTest()
 
     palDestroyGLContext(shared->context);
     palShutdownGL();
-
-    // shutdown video and opengl systems
-    // we need to shutdown these on the main thread
-    palDestroyWindow(window);
-    palShutdownVideo();
-
-    // The event drivers cn be destroyed on a seperate thread
-    // but we destroy them here for simplicity
-    palDestroyEventDriver(shared->videoEventDriver);
+    glHelperDestroyWindow(window, shared->videoEventDriver);
     palDestroyEventDriver(shared->openglEventDriver);
-    palFree(nullptr, fbConfigs);
 
     return PAL_TRUE;
 }

@@ -670,20 +670,8 @@ PalBool rayTracingTest()
 
     // write to a ppm output file
     FILE* file = fopen("ray_tracing_output.ppm", "wb");
-    fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
-    float* pixels = (float*)ptr;
-    for (int y = 0; y < BUFFER_SIZE; y++) {
-        int row = BUFFER_SIZE - 1 - y; // flip y
-        for (int x = 0; x < BUFFER_SIZE; x++) {
-            int index = row * BUFFER_SIZE + x;
-            uint8_t rgb[3];
-
-            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255 : 0;
-            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255 : 0;
-            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255 : 0;
-            fwrite(rgb, 1, 3, file);
-        }
-    }
+    writePPM(file, BUFFER_SIZE, BUFFER_SIZE, ptr);
+    fclose(file);
 
     // update sbt and trace again
     // since we still have the record array we used to create the pipeline
@@ -772,24 +760,10 @@ PalBool rayTracingTest()
 
     // write to a ppm output file
     file = fopen("ray_tracing_output2.ppm", "wb");
-    fprintf(file, "P6\n%d %d\n255\n", BUFFER_SIZE, BUFFER_SIZE);
-    pixels = (float*)ptr;
-    for (int y = 0; y < BUFFER_SIZE; y++) {
-        int row = BUFFER_SIZE - 1 - y; // flip y
-        for (int x = 0; x < BUFFER_SIZE; x++) {
-            int index = row * BUFFER_SIZE + x;
-            uint8_t rgb[3];
-
-            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255 : 0;
-            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255 : 0;
-            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255 : 0;
-            fwrite(rgb, 1, 3, file);
-        }
-    }
-
+    writePPM(file, BUFFER_SIZE, BUFFER_SIZE, ptr);
     fclose(file);
-    palUnmapBuffer(stagingBuffer);
 
+    palUnmapBuffer(stagingBuffer);
     palDestroyAccelerationStructure(blas);
     palDestroyAccelerationStructure(tlas);
 

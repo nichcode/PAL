@@ -1,13 +1,9 @@
 
-#include "pal2/pal_opengl.h"
-#include "pal2/pal_video.h" // for window
-#include "tests.h"
-
-static const char* g_BoolsToSting[2] = {"False", "True"};
+#include "opengl_helper.h"
 
 PalBool openglFBConfigTest()
 {
-    // initialize the video system and create a window
+    // initialize the video system
     PalResult result = palInitVideo(nullptr, nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to initialize video");
@@ -81,10 +77,10 @@ PalBool openglFBConfigTest()
 
         palLog(nullptr, " Samples: %d", config->samples);
 
-        const char* boolStr = g_BoolsToSting[config->doubleBuffer];
+        const char* boolStr = g_BoolsToString[config->doubleBuffer];
         palLog(nullptr, " DoubleBuffer: %s", boolStr);
-        palLog(nullptr, " Stereo: %s", g_BoolsToSting[config->stereo]);
-        palLog(nullptr, " sRGB: %s", g_BoolsToSting[config->sRGB]);
+        palLog(nullptr, " Stereo: %s", g_BoolsToString[config->stereo]);
+        palLog(nullptr, " sRGB: %s", g_BoolsToString[config->sRGB]);
         palLog(nullptr, "");
     }
 
@@ -117,9 +113,9 @@ PalBool openglFBConfigTest()
     palLog(nullptr, " Stencil Bits: %d", desired.stencilBits);
 
     palLog(nullptr, " Samples: %d", desired.samples);
-    palLog(nullptr, " DoubleBuffer: %s", g_BoolsToSting[desired.doubleBuffer]);
-    palLog(nullptr, " Stereo: %s", g_BoolsToSting[desired.stereo]);
-    palLog(nullptr, " sRGB: %s", g_BoolsToSting[desired.sRGB]);
+    palLog(nullptr, " DoubleBuffer: %s", g_BoolsToString[desired.doubleBuffer]);
+    palLog(nullptr, " Stereo: %s", g_BoolsToString[desired.stereo]);
+    palLog(nullptr, " sRGB: %s", g_BoolsToString[desired.sRGB]);
     palLog(nullptr, "");
 
     palLog(nullptr, "Closest GL FBConfig:");
@@ -132,9 +128,9 @@ PalBool openglFBConfigTest()
     palLog(nullptr, " Stencil Bits: %d", closest->stencilBits);
 
     palLog(nullptr, " Samples: %d", closest->samples);
-    palLog(nullptr, " DoubleBuffer: %s", g_BoolsToSting[closest->doubleBuffer]);
-    palLog(nullptr, " Stereo: %s", g_BoolsToSting[closest->stereo]);
-    palLog(nullptr, " sRGB: %s", g_BoolsToSting[closest->sRGB]);
+    palLog(nullptr, " DoubleBuffer: %s", g_BoolsToString[closest->doubleBuffer]);
+    palLog(nullptr, " Stereo: %s", g_BoolsToString[closest->stereo]);
+    palLog(nullptr, " sRGB: %s", g_BoolsToString[closest->sRGB]);
     palLog(nullptr, "");
 
     // shutdown the opengl system

@@ -5,19 +5,6 @@
 #define USER_CLOSE_EVENT_ID 44568
 #define USER_PRINT_EVENT_ID 4490000
 
-// a simple timer object to hold frequency and start time
-typedef struct {
-    uint64_t frequency;
-    uint64_t startTime;
-} MyTimer;
-
-// get the time in seconds
-static inline double getTime(MyTimer* timer)
-{
-    uint64_t now = palGetPerformanceCounter();
-    return (double)(now - timer->startTime) / (double)timer->frequency;
-}
-
 PalBool userEventTest()
 {
     PalResult result;

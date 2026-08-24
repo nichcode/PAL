@@ -2,15 +2,40 @@
 #ifndef _TESTS_H
 #define _TESTS_H
 
-#include "pal2/pal_core.h"
+#include "pal2/pal_video.h"
 #include <stdio.h>
 
+#define WINDOW_WIDTH 640
+#define WINDOW_HEIGHT 480
+
 typedef PalBool (*TestFn)();
+
+// a simple timer object to hold frequency and start time
+typedef struct {
+    uint64_t frequency;
+    uint64_t startTime;
+} MyTimer;
 
 void registerTest(
     TestFn func,
     const char* name);
 void runTests();
+
+static inline void logResult(
+    PalResult result,
+    const char* msg)
+{
+    char buffer[256];
+    palFormatResult(result, 256, buffer);
+    palLog(nullptr, "%s \n %s", msg, buffer);
+}
+
+// get the time in seconds
+static inline double getTime(MyTimer* timer)
+{
+    uint64_t now = palGetPerformanceCounter();
+    return (double)(now - timer->startTime) / (double)timer->frequency;
+}
 
 static PalBool readFile(
     const char* filename,
@@ -39,72 +64,31 @@ static PalBool readFile(
     return PAL_TRUE;
 }
 
-static inline void logResult(
-    PalResult result,
-    const char* msg)
+static void writePPM(
+    FILE* file, 
+    uint32_t width, 
+    uint32_t height, 
+    void* ptr)
 {
-    char buffer[256];
-    palFormatResult(result, 256, buffer);
-    palLog(nullptr, "%s \n %s", msg, buffer);
+    fprintf(file, "P6\n%d %d\n255\n", width, height);
+    float* pixels = (float*)ptr;
+    for (int y = 0; y < height; y++) {
+        int row = height - 1 - y; // flip y
+        for (int x = 0; x < width; x++) {
+            int index = row * width + x;
+            uint8_t rgb[3];
+
+            rgb[0] = pixels[index * 4 + 0] > 0.5f ? 255 : 0;
+            rgb[1] = pixels[index * 4 + 1] > 0.5f ? 255 : 0;
+            rgb[2] = pixels[index * 4 + 2] > 0.5f ? 255 : 0;
+            fwrite(rgb, 1, 3, file);
+        }
+    }
 }
 
-// core tests
-PalBool loggerTest();
-PalBool timeTest();
-PalBool userEventTest();
-PalBool eventTest();
-
-// system tests
-PalBool platformTest();
-PalBool cpuTest();
-
-// system tests
-PalBool threadTest();
-PalBool tlsTest();
-PalBool mutexTest();
-PalBool condvarTest();
-
-// video test
-PalBool videoTest();
-PalBool monitorTest();
-PalBool monitorModeTest();
-PalBool windowTest();
-PalBool iconTest();
-PalBool cursorTest();
-PalBool inputWindowTest();
-PalBool systemCursorTest();
-PalBool attachWindowTest();
-PalBool charEventTest();
-PalBool nativeIntegrationTest();
-PalBool nativeInstanceTest();
-PalBool customDecorationTest();
-
-// opengl test
-PalBool openglTest();
-
-// opengl and video test
-PalBool openglFBConfigTest();
-PalBool openglContextTest();
-PalBool openglMultiContextTest();
-
-// opengl, video and thread
-PalBool multiThreadOpenGlTest();
-
-// graphics
-PalBool graphicsTest();
-PalBool computeTest();
-PalBool rayTracingTest();
-PalBool multiDescriptorSetTest();
-PalBool customBackendTest();
-PalBool queueOwnershipTest();
-
-// graphics and video
-PalBool clearColorTest();
-PalBool triangleTest();
-PalBool meshTest();
-PalBool textureTest();
-PalBool geometryTest();
-PalBool indirectDrawTest();
-PalBool descriptorIndexingTest();
+PalEventDriver* helperCreateEventDriver(
+    uint32_t count,
+    PalDispatchMode mode,
+    PalEventType* types);
 
 #endif // _TESTS_H
