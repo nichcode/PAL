@@ -23,7 +23,7 @@ typedef void(PAL_GL_APIENTRY* PFNGLCLEARPROC)(uint32_t mask);
 PalWindow* glHelperCreateWindow(
     const char* title,
     PalEventDriver* eventDriver,
-    uint32_t* outFbConfigIndex);
+    PalGLFBConfig* outFbConfig);
 
 void glHelperDestroyWindow(
     PalWindow* window, 
@@ -33,7 +33,7 @@ PalGLWindow glHelperGetGLWindow(PalWindow* window);
 
 PalGLContext* glHelperCreateContext(
     PalGLWindow* glWindow, 
-    uint32_t fbConfigIndex);
+    PalGLFBConfig* fbConfig);
     
 void glHelperDestroyContext(PalGLContext* context);
 

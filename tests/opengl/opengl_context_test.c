@@ -7,29 +7,29 @@ PalBool openglContextTest()
 
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;
-    uint32_t fbConfigIndex = 0;
+    PalGLFBConfig fbConfig = {0};
     PalGLWindow glWindow = {0};
     PalGLContext* context = nullptr;
 
     eventDriver = helperCreateEventDriver(0, PAL_DISPATCH_MODE_POLL, nullptr);
     if (!eventDriver) {
-        return nullptr;
+        return PAL_FALSE;
     }
 
-    window = glHelperCreateWindow("GL Context Window", eventDriver, &fbConfigIndex);
+    window = glHelperCreateWindow("GL Context Window", eventDriver, &fbConfig);
     if (!window) {
-        return nullptr;
+        return PAL_FALSE;
     }
 
-    PalGLInfo* glInfo = palGetGLInfo();
+    const PalGLInfo* glInfo = palGetGLInfo();
     glWindow = glHelperGetGLWindow(window);
     if (!glWindow.window) {
-        return nullptr;
+        return PAL_FALSE;
     }
 
     PalGLContextCreateInfo createInfo = {0};
     createInfo.debug = PAL_FALSE;
-    createInfo.fbConfig = fbConfigIndex;
+    createInfo.fbConfig = &fbConfig;
     createInfo.major = glInfo->major;
     createInfo.minor = glInfo->minor;
 

@@ -51,7 +51,7 @@ PalBool openglMultiContextTest()
 
     PalWindow* window = nullptr;
     PalEventDriver* eventDriver = nullptr;
-    uint32_t fbConfigIndex = 0;
+    PalGLFBConfig fbConfig = {0};
     PalGLWindow glWindow = {0};
     PalGLContext* context = nullptr;
 
@@ -60,7 +60,7 @@ PalBool openglMultiContextTest()
         return PAL_FALSE;
     }
 
-    window = glHelperCreateWindow("GL Multi Context Window", eventDriver, &fbConfigIndex);
+    window = glHelperCreateWindow("GL Multi Context Window", eventDriver, &fbConfig);
     if (!window) {
         return PAL_FALSE;
     }
@@ -70,7 +70,7 @@ PalBool openglMultiContextTest()
         return PAL_FALSE;
     }
 
-    context = glHelperCreateContext(&glWindow, fbConfigIndex);
+    context = glHelperCreateContext(&glWindow, &fbConfig);
     if (!context) {
         return PAL_FALSE;
     }
@@ -88,7 +88,7 @@ PalBool openglMultiContextTest()
     context = nullptr;
 
     // create a new opengl context with the same window the FBConfig of the new context must match
-    context = glHelperCreateContext(&glWindow, fbConfigIndex);
+    context = glHelperCreateContext(&glWindow, &fbConfig);
     if (!context) {
         return PAL_FALSE;
     }

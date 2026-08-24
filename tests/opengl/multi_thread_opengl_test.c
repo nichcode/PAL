@@ -158,7 +158,7 @@ PalBool multiThreadOpenGlTest()
     palLog(nullptr, "Press Escape or click close button to close Test");
 
     PalWindow* window = nullptr;
-    uint32_t fbConfigIndex = 0;
+    PalGLFBConfig fbConfig = {0};
     PalGLWindow glWindow = {0};
     PalGLContext* context = nullptr;
 
@@ -197,7 +197,7 @@ PalBool multiThreadOpenGlTest()
     }
 
     PalEventDriver* eventDriver = shared->videoEventDriver;
-    window = glHelperCreateWindow("GL Multi Thread Window", eventDriver, &fbConfigIndex);
+    window = glHelperCreateWindow("GL Multi Thread Window", eventDriver, &fbConfig);
     if (!window) {
         return PAL_FALSE;
     }
@@ -211,7 +211,7 @@ PalBool multiThreadOpenGlTest()
 
     PalGLContextCreateInfo createInfo = {0};
     createInfo.debug = PAL_TRUE;
-    createInfo.fbConfig = fbConfigIndex;
+    createInfo.fbConfig = &fbConfig;
     createInfo.major = info->major;
     createInfo.minor = info->minor;
     createInfo.window = &glWindow;

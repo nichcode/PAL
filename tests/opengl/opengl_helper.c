@@ -4,7 +4,7 @@
 PalWindow* glHelperCreateWindow(
     const char* title,
     PalEventDriver* eventDriver,
-    uint32_t* outFbConfigIndex)
+    PalGLFBConfig* outFbConfig)
 {
     PalResult result = palInitVideo(nullptr, eventDriver, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
@@ -102,7 +102,7 @@ PalWindow* glHelperCreateWindow(
         return nullptr;
     }
 
-    *outFbConfigIndex = closest->index;
+    *outFbConfig = *closest;
     palFree(nullptr, fbConfigs);
     return window;
 }
@@ -138,17 +138,17 @@ PalGLWindow glHelperGetGLWindow(PalWindow* window)
 
 PalGLContext* glHelperCreateContext(
     PalGLWindow* glWindow, 
-    uint32_t fbConfigIndex)
+    PalGLFBConfig* fbConfig)
 {
     PalGLContext* context = nullptr;
     const PalGLInfo* info = palGetGLInfo();
 
     PalGLContextCreateInfo createInfo = {0};
     createInfo.debug = PAL_TRUE;
-    createInfo.fbConfig = fbConfigIndex;
+    createInfo.fbConfig = fbConfig;
     createInfo.major = info->major;
     createInfo.minor = info->minor;
-    createInfo.window = &glWindow;
+    createInfo.window = glWindow;
 
     if (info->extensions & PAL_GL_EXTENSION_CREATE_CONTEXT) {
         createInfo.forward = PAL_TRUE;
@@ -165,7 +165,7 @@ PalGLContext* glHelperCreateContext(
     }
 
     // make the context current and optionally set vsync if supported
-    result = palMakeContextCurrent(&glWindow, context);
+    result = palMakeContextCurrent(glWindow, context);
     if (result != PAL_RESULT_SUCCESS) {
         logResult(result, "Failed to make GL context current");
         return nullptr;
