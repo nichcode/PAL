@@ -2961,7 +2961,7 @@ typedef struct {
 typedef struct {
     const void* vtable;                      /**< Pointer to the backend vtable.*/
     PalGraphicsBackendVtableVersion version; /**< (eg. `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`).*/
-    uint32_t reserved;                       /**< Must be set to 0.*/
+    uint32_t customId;                       /**< Custom backend id for debugging.*/
 } PalGraphicsBackendInfo;
 
 /**
