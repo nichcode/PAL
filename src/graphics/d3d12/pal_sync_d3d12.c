@@ -22,8 +22,14 @@ PalResult PAL_CALL createFenceD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    result = deviceImpl->handle->lpVtbl
-                 ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&fence->handle);
+    // clang-format off
+    result = deviceImpl->handle->lpVtbl->CreateFence(
+        deviceImpl->handle, 
+        0, 
+        0, 
+        &IID_Fence, 
+        (void**)&fence->handle);
+    // clang-format on
 
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, fence);
@@ -125,8 +131,14 @@ PalResult PAL_CALL createSemaphoreD3D12(
         semaphore->isTimeline = PAL_TRUE;
     }
 
-    result = deviceImpl->handle->lpVtbl
-                 ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&semaphore->handle);
+    // clang-format off
+    result = deviceImpl->handle->lpVtbl->CreateFence(
+        deviceImpl->handle, 
+        0, 
+        0, 
+        &IID_Fence, 
+        (void**)&semaphore->handle);
+    // clang-format on
 
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, semaphore);

@@ -272,9 +272,13 @@ PalResult PAL_CALL createGraphicsPipelineVk(
         stageCount += shader->entryCount;
     }
 
+    // clang-format off
     pipeline = palAllocate(s_Vk.allocator, sizeof(PipelineVk), 0);
-    shaderStages =
-        palAllocate(s_Vk.allocator, sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 0);
+    shaderStages = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 
+        0);
+    // clang-format on
 
     if (!pipeline || !shaderStages) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -608,8 +612,12 @@ PalResult PAL_CALL createGraphicsPipelineVk(
     VkFormat* colorAttachments = nullptr;
     PalRenderingLayoutInfo* renderingLayout = info->renderingLayout;
 
-    colorAttachments =
-        palAllocate(s_Vk.allocator, sizeof(VkFormat) * renderingLayout->colorAttachentCount, 0);
+    // clang-format off
+    colorAttachments = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkFormat) * renderingLayout->colorAttachentCount, 
+        0);
+    // clang-format on
 
     if (!colorAttachments) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -744,8 +752,12 @@ PalResult PAL_CALL createRayTracingPipelineVk(
         sizeof(VkRayTracingShaderGroupCreateInfoKHR) * info->shaderGroupCount,
         0);
 
-    shaderStages =
-        palAllocate(s_Vk.allocator, sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 0);
+    // clang-format off
+    shaderStages = palAllocate(
+        s_Vk.allocator, 
+        sizeof(VkPipelineShaderStageCreateInfo) * stageCount, 
+        0);
+    // clang-format on
 
     if (!pipeline || !groups || !shaderStages) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;

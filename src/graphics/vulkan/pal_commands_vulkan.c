@@ -338,8 +338,14 @@ void PAL_CALL cmdDrawMeshTasksIndirectVk(
     BufferVk* bufferImpl = (BufferVk*)buffer;
 
     uint32_t stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    device
-        ->cmdDrawMeshTaskIndirect(cmdBufferImpl->handle, bufferImpl->handle, 0, drawCount, stride);
+    // clang-format off
+    device->cmdDrawMeshTaskIndirect(
+        cmdBufferImpl->handle, 
+        bufferImpl->handle, 
+        0, 
+        drawCount, 
+        stride);
+    // clang-format on
 }
 
 void PAL_CALL cmdDrawMeshTasksIndirectCountVk(
@@ -377,7 +383,6 @@ void PAL_CALL cmdBuildAccelerationStructureVk(
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = {0};
 
     tmpRangeInfos = palLinearAlloc(&cmdBufferImpl->allocator, sizeof(void*) * info->count, 0);
-
     geometries = palLinearAlloc(
         &cmdBufferImpl->allocator,
         sizeof(VkAccelerationStructureGeometryKHR) * info->count,
@@ -396,8 +401,13 @@ void PAL_CALL cmdBuildAccelerationStructureVk(
         tmpRangeInfos[i] = &rangeInfos[i];
     }
 
-    cmdBufferImpl->device
-        ->cmdBuildAccelerationStructures(cmdBufferImpl->handle, 1, &buildInfo, tmpRangeInfos);
+    // clang-format off
+    cmdBufferImpl->device->cmdBuildAccelerationStructures(
+        cmdBufferImpl->handle, 
+        1, 
+        &buildInfo, 
+        tmpRangeInfos);
+    // clang-format on
 }
 
 void PAL_CALL cmdBeginRenderingVk(
@@ -1169,8 +1179,10 @@ void PAL_CALL cmdTraceRaysVk(
     VkStridedDeviceAddressRegionKHR raygenAddress = {0};
     raygenAddress.size = sbtImpl->raygen.region.size;
     raygenAddress.stride = sbtImpl->raygen.region.stride;
-    raygenAddress.deviceAddress =
-        sbtImpl->baseAddress + raygenIndex * sbtImpl->raygen.region.stride;
+
+    // clang-format off
+    raygenAddress.deviceAddress = sbtImpl->baseAddress + raygenIndex * sbtImpl->raygen.region.stride;
+    // clang-format on
 
     // we need to make sure the SBT is up to date
     commitShaderbindingTableUpdate(cmdBufferImpl, sbtImpl);
@@ -1234,8 +1246,12 @@ void PAL_CALL cmdTraceRaysIndirectVk(
     VkBufferDeviceAddressInfoKHR bufferInfo = {0};
     bufferInfo.buffer = cmdBufferImpl->buffer;
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
-    bufAddress =
-        cmdBufferImpl->device->getBufferrAddress(cmdBufferImpl->device->handle, &bufferInfo);
+
+    // clang-format off
+    bufAddress = cmdBufferImpl->device->getBufferrAddress(
+        cmdBufferImpl->device->handle, 
+        &bufferInfo);
+    // clang-format on
 
     cmdBufferImpl->device->cmdTraceRaysIndirect(
         cmdBufferImpl->handle,

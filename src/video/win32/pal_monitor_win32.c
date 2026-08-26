@@ -310,10 +310,10 @@ PalResult win32SetMonitorOrientation(
     // clang-format off
     // only swap size if switching between landscape and portrait
     PalBool isMonitorLandscape = (monitorOrientation == DMDO_DEFAULT ||
-                               monitorOrientation == DMDO_180);
+                                  monitorOrientation == DMDO_180);
 
     PalBool isLandscape = (win32Orientation == DMDO_DEFAULT ||
-                        win32Orientation == DMDO_180);
+                           win32Orientation == DMDO_180);
     // clang-format on
 
     if (isMonitorLandscape != isLandscape) {

@@ -934,11 +934,20 @@ void getDescriptorTierLimitsD3D12(
     D3D12_FEATURE_DATA_D3D12_OPTIONS options = {0};
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {0};
     ID3D12Device* handle = device;
-    handle->lpVtbl
-        ->CheckFeatureSupport(handle, D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options));
 
-    handle->lpVtbl
-        ->CheckFeatureSupport(handle, D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5));
+    // clang-format off
+    handle->lpVtbl->CheckFeatureSupport(
+        handle, 
+        D3D12_FEATURE_D3D12_OPTIONS, 
+        &options, 
+        sizeof(options));
+
+    handle->lpVtbl->CheckFeatureSupport(
+        handle, 
+        D3D12_FEATURE_D3D12_OPTIONS5, 
+        &options5, 
+        sizeof(options5));
+    // clang-format on
 
     uint32_t perStage = 0;
     if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {

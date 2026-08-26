@@ -223,8 +223,13 @@ void PAL_CALL cmdDrawMeshTasksD3D12(
     uint32_t groupCountZ)
 {
     CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
-    cmdBufferImpl->handle->lpVtbl
-        ->DispatchMesh(cmdBufferImpl->handle, groupCountX, groupCountY, groupCountZ);
+    // clang-format off
+    cmdBufferImpl->handle->lpVtbl->DispatchMesh(
+        cmdBufferImpl->handle, 
+        groupCountX, 
+        groupCountY, 
+        groupCountZ);
+    // clang-format on
 }
 
 void PAL_CALL cmdDrawMeshTasksIndirectD3D12(
@@ -273,6 +278,8 @@ void PAL_CALL cmdBuildAccelerationStructureD3D12(
 {
     CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildInfo = {0};
+
+    // clang-format off
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
         D3D12_RAYTRACING_GEOMETRY_DESC* geometries = nullptr;
         geometries = palLinearAlloc(
@@ -282,14 +289,21 @@ void PAL_CALL cmdBuildAccelerationStructureD3D12(
 
         memset(geometries, 0, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count);
         fillBuildInfoD3D12(PAL_FALSE, info, geometries, &buildInfo);
-        cmdBufferImpl->handle->lpVtbl
-            ->BuildRaytracingAccelerationStructure(cmdBufferImpl->handle, &buildInfo, 0, nullptr);
+        cmdBufferImpl->handle->lpVtbl->BuildRaytracingAccelerationStructure(
+            cmdBufferImpl->handle, 
+            &buildInfo, 
+            0, 
+            nullptr);
 
     } else {
         fillBuildInfoD3D12(PAL_FALSE, info, nullptr, &buildInfo);
-        cmdBufferImpl->handle->lpVtbl
-            ->BuildRaytracingAccelerationStructure(cmdBufferImpl->handle, &buildInfo, 0, nullptr);
+        cmdBufferImpl->handle->lpVtbl->BuildRaytracingAccelerationStructure(
+            cmdBufferImpl->handle, 
+            &buildInfo, 
+            0, 
+            nullptr);
     }
+    // clang-format on
 }
 
 void PAL_CALL cmdBeginRenderingD3D12(
@@ -772,8 +786,13 @@ void PAL_CALL cmdBindVertexBuffersD3D12(
         views[i].StrideInBytes = pipeline->strides[i];
     }
 
-    cmdBufferImpl->handle->lpVtbl
-        ->IASetVertexBuffers(cmdBufferImpl->handle, firstSlot, count, views);
+    // clang-format off
+    cmdBufferImpl->handle->lpVtbl->IASetVertexBuffers(
+        cmdBufferImpl->handle, 
+        firstSlot, 
+        count, 
+        views);
+    // clang-format on
 }
 
 void PAL_CALL cmdBindIndexBufferD3D12(
@@ -1071,8 +1090,13 @@ void PAL_CALL cmdDispatchD3D12(
     uint32_t groupCountZ)
 {
     CommandBufferD3D12* cmdBufferImpl = (CommandBufferD3D12*)cmdBuffer;
-    cmdBufferImpl->handle->lpVtbl
-        ->Dispatch(cmdBufferImpl->handle, groupCountX, groupCountY, groupCountZ);
+    // clang-format off
+    cmdBufferImpl->handle->lpVtbl->Dispatch(
+        cmdBufferImpl->handle, 
+        groupCountX, 
+        groupCountY, 
+        groupCountZ);
+    // clang-format on
 }
 
 void PAL_CALL cmdDispatchIndirectD3D12(

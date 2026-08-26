@@ -131,7 +131,6 @@ PalThreadFeatures PAL_CALL palGetThreadFeatures()
     HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
     if (kernel32) {
         FARPROC setThreadDesc = GetProcAddress(kernel32, "SetThreadDescription");
-
         if (setThreadDesc) {
             features |= PAL_THREAD_FEATURE_NAME;
         }
@@ -259,7 +258,6 @@ PalResult PAL_CALL palSetThreadName(
     wchar_t buffer[128] = {0};
     MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 128);
     HRESULT hr = setThreadDesc((HANDLE)thread, buffer);
-
     if (SUCCEEDED(hr)) {
         return PAL_RESULT_SUCCESS;
 

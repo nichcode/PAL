@@ -699,8 +699,12 @@ PalResult PAL_CALL createGraphicsPipelineD3D12(
             return PAL_RESULT_CODE_OUT_OF_MEMORY;
         }
 
-        elementDescs =
-            palAllocate(s_D3D12.allocator, sizeof(D3D12_INPUT_ELEMENT_DESC) * vertexCount, 0);
+        // clang-format off
+        elementDescs = palAllocate(
+            s_D3D12.allocator, 
+            sizeof(D3D12_INPUT_ELEMENT_DESC) * vertexCount,
+            0);
+        // clang-format on
 
         if (!elementDescs) {
             palFree(s_D3D12.allocator, elementDescs);
@@ -1196,15 +1200,18 @@ PalResult PAL_CALL createRayTracingPipelineD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    libraryDescs =
-        palAllocate(s_D3D12.allocator, sizeof(D3D12_DXIL_LIBRARY_DESC) * info->shaderCount, 0);
+    // clang-format off
+    libraryDescs = palAllocate(
+        s_D3D12.allocator, 
+        sizeof(D3D12_DXIL_LIBRARY_DESC) * info->shaderCount, 
+        0);
 
     exportDescs = palAllocate(s_D3D12.allocator, sizeof(D3D12_EXPORT_DESC) * exportCount, 0);
-
-    pipeline->shaderExports =
-        palAllocate(s_D3D12.allocator, sizeof(ShaderExport) * pipeline->shaderExportCount, 0);
-
     localExports = palAllocate(s_D3D12.allocator, sizeof(wchar_t*) * localExportCount, 0);
+    pipeline->shaderExports = palAllocate(
+        s_D3D12.allocator, 
+        sizeof(ShaderExport) * pipeline->shaderExportCount, 
+        0);
 
     if (!libraryDescs || !exportDescs || !pipeline->shaderExports || !localExports) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;

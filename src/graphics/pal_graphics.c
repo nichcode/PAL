@@ -691,12 +691,14 @@ PalResult PAL_CALL palCreateSurface(
 
     PalSurface* surface = nullptr;
     PalResult ret;
+    // clang-format off
     ret = device->backend->vtbl1->createSurface(
         device, 
         window, 
         windowInstance, 
-        instanceType, 
+        instanceType,
         &surface);
+    // clang-format on
 
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
@@ -1008,9 +1010,11 @@ void PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
+    // clang-format off
     primaryCmdBuffer->backend->vtbl1->cmdExecuteCommandBuffer(
         primaryCmdBuffer, 
         secondaryCmdBuffer);
+    // clang-format on
 }
 
 void PAL_CALL palCmdSetFragmentShadingRate(
@@ -1043,11 +1047,13 @@ void PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
+    // clang-format off
     cmdBuffer->backend->vtbl1->cmdDrawMeshTasksIndirectCount(
         cmdBuffer, 
         buffer, 
         countBuffer, 
         maxDrawCount);
+    // clang-format on
 }
 
 void PAL_CALL palCmdBuildAccelerationStructure(
@@ -1154,12 +1160,14 @@ void PAL_CALL palCmdDraw(
     uint32_t firstVertex,
     uint32_t firstInstance)
 {
+    // clang-format off
     cmdBuffer->backend->vtbl1->cmdDraw(
         cmdBuffer, 
         vertexCount, 
         instanceCount, 
         firstVertex, 
         firstInstance);
+    // clang-format on
 }
 
 void PAL_CALL palCmdDrawIndirect(
@@ -1210,11 +1218,13 @@ void PAL_CALL palCmdDrawIndexedIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
+    // clang-format off
     cmdBuffer->backend->vtbl1->cmdDrawIndexedIndirectCount(
         cmdBuffer, 
         buffer, 
         countBuffer, 
         maxDrawCount);
+    // clang-format on
 }
 
 void PAL_CALL palCmdAccelerationStructureBarrier(
@@ -1389,6 +1399,7 @@ void PAL_CALL palCmdSetStencilOp(
     PalStencilOp depthFailOp,
     PalCompareOp compareOp)
 {
+    // clang-format off
     cmdBuffer->backend->vtbl1->cmdSetStencilOp(
         cmdBuffer, 
         faceMask, 
@@ -1396,6 +1407,7 @@ void PAL_CALL palCmdSetStencilOp(
         passOp, 
         depthFailOp, 
         compareOp);
+    // clang-format on
 }
 
 // ==================================================
@@ -1487,11 +1499,13 @@ void PAL_CALL palComputeImageStagingRequirements(
     const PalBufferImageCopyInfo* copyInfo,
     PalImageStagingRequirements* requirements)
 {
+    // clang-format off
     device->backend->vtbl1->computeImageStagingRequirements(
         device, 
         imageFormat, 
         copyInfo, 
         requirements);
+    // clang-format on
 }
 
 void PAL_CALL palWriteInstanceStaging(

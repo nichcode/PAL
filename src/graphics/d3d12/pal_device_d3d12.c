@@ -104,8 +104,13 @@ PalResult PAL_CALL createDeviceD3D12(
     D3D12_COMMAND_QUEUE_DESC desc = {0};
     desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-    result = device->handle->lpVtbl
-                 ->CreateCommandQueue(device->handle, &desc, &IID_Queue, (void**)&device->queue);
+    // clang-format off
+    result = device->handle->lpVtbl->CreateCommandQueue(
+        device->handle, 
+        &desc, 
+        &IID_Queue, 
+        (void**)&device->queue);
+    // clang-format on
 
     if (FAILED(result)) {
         return makeResultD3D12(result);
@@ -369,8 +374,13 @@ PalResult PAL_CALL allocateMemoryD3D12(
         desc.Properties.Type = D3D12_HEAP_TYPE_UPLOAD;
     }
 
-    result = deviceImpl->handle->lpVtbl
-                 ->CreateHeap(deviceImpl->handle, &desc, &IID_Heap, (void**)&memory->handle);
+    // clang-format off
+    result = deviceImpl->handle->lpVtbl->CreateHeap(
+        deviceImpl->handle, 
+        &desc, 
+        &IID_Heap, 
+        (void**)&memory->handle);
+    // clang-format on
 
     if (FAILED(result)) {
         return makeResultD3D12(result);
@@ -599,9 +609,15 @@ PalResult PAL_CALL createQueueD3D12(
     }
     pollMessagesD3D12(deviceImpl);
 
+    // clang-format off
     // create fence used for queue wait
-    result = deviceImpl->handle->lpVtbl
-                 ->CreateFence(deviceImpl->handle, 0, 0, &IID_Fence, (void**)&queue->fence);
+    result = deviceImpl->handle->lpVtbl->CreateFence(
+        deviceImpl->handle, 
+        0, 
+        0, 
+        &IID_Fence, 
+        (void**)&queue->fence);
+    // clang-format on
 
     if (FAILED(result)) {
         palFree(s_D3D12.allocator, queue);

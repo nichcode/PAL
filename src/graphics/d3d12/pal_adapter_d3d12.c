@@ -74,8 +74,12 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
         palFree(s_D3D12.allocator, s_D3D12.adapters);
     }
 
-    while (
-        SUCCEEDED(s_D3D12.factory->lpVtbl->EnumAdapters(s_D3D12.factory, adapterCount, &adapter))) {
+    // clang-format off
+    while (SUCCEEDED(s_D3D12.factory->lpVtbl->EnumAdapters(
+        s_D3D12.factory, 
+        adapterCount, 
+        &adapter))) {
+    
         if (outAdapters) {
             IDXGIAdapter4* tmp = nullptr;
             if (SUCCEEDED(adapter->lpVtbl->QueryInterface(adapter, &IID_Adapter, (void**)&tmp))) {
@@ -85,8 +89,11 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
             // create a temp device for every adapter to use as an instance to check features.
             ID3D12Device* device = nullptr;
             for (int i = 0; i < 5; i++) {
-                HRESULT result =
-                    s_D3D12.createDevice((IUnknown*)tmp, levels[i], &IID_Device, (void**)&device);
+                HRESULT result = s_D3D12.createDevice(
+                    (IUnknown*)tmp, 
+                    levels[i], 
+                    &IID_Device, 
+                    (void**)&device);
 
                 if (SUCCEEDED(result)) {
                     deviceLevels[adapterCount] = levels[i];
@@ -97,6 +104,7 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
         }
         adapter->lpVtbl->Release(adapter);
         adapterCount++;
+        // clang-format on
     }
 
     if (outAdapters) {
@@ -177,7 +185,6 @@ void PAL_CALL getAdapterInfoD3D12(
         nullptr);
 
     device->lpVtbl->CheckFeatureSupport(device, D3D12_FEATURE_ARCHITECTURE1, &arch, sizeof(arch));
-
     if (arch.UMA == PAL_TRUE) {
         info->type = PAL_ADAPTER_TYPE_INTEGRATED;
 
@@ -490,9 +497,14 @@ void PAL_CALL enumerateFormatsD3D12(
             continue;
         }
 
+        // clang-format off
         support.Format = fmt;
-        device->lpVtbl
-            ->CheckFeatureSupport(device, D3D12_FEATURE_FORMAT_SUPPORT, &support, sizeof(support));
+        device->lpVtbl->CheckFeatureSupport(
+            device, 
+            D3D12_FEATURE_FORMAT_SUPPORT, 
+            &support, 
+            sizeof(support));
+        // clang-format on
 
         if (support.Support1 == 0 && support.Support2 == 0) {
             // format not supported
@@ -528,9 +540,14 @@ PalBool PAL_CALL isFormatSupportedD3D12(
         return PAL_FALSE;
     }
 
+    // clang-format off
     support.Format = fmt;
-    device->lpVtbl
-        ->CheckFeatureSupport(device, D3D12_FEATURE_FORMAT_SUPPORT, &support, sizeof(support));
+    device->lpVtbl->CheckFeatureSupport(
+        device, 
+        D3D12_FEATURE_FORMAT_SUPPORT, 
+        &support, 
+        sizeof(support));
+    // clang-format on
 
     if (support.Support1 == 0 && support.Support2 == 0) {
         return PAL_FALSE;
@@ -553,12 +570,14 @@ PalImageUsages PAL_CALL queryFormatImageUsagesD3D12(
         return 0;
     }
 
+    // clang-format off
     support.Format = fmt;
     result = device->lpVtbl->CheckFeatureSupport(
         device,
         D3D12_FEATURE_FORMAT_SUPPORT,
         &support,
         sizeof(support));
+    // clang-format on
 
     if (FAILED(result)) {
         return 0;
@@ -592,12 +611,14 @@ PalSampleCount PAL_CALL queryFormatSampleCountD3D12(
         return PAL_FALSE;
     }
 
+    // clang-format off
     support.Format = fmt;
     result = device->lpVtbl->CheckFeatureSupport(
         device,
         D3D12_FEATURE_FORMAT_SUPPORT,
         &support,
         sizeof(support));
+    // clang-format on
 
     if (FAILED(result)) {
         return PAL_FALSE;
