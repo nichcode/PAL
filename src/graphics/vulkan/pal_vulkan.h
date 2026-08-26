@@ -490,8 +490,8 @@ void fillBuildInfoVk(
 VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages);
 
 void setDebugNameVk(
-    DeviceVk* device, 
-    VkObjectType type, 
+    DeviceVk* device,
+    VkObjectType type,
     void* handle);
 
 #endif // PAL_HAS_VULKAN_BACKEND

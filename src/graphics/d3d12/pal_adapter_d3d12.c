@@ -68,7 +68,8 @@ PalResult PAL_CALL enumerateAdaptersD3D12(
         D3D_FEATURE_LEVEL_12_1,
         D3D_FEATURE_LEVEL_12_0,
         D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0};
+        D3D_FEATURE_LEVEL_11_0
+    };
 
     if (s_D3D12.adapters) {
         palFree(s_D3D12.allocator, s_D3D12.adapters);

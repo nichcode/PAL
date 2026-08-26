@@ -170,7 +170,7 @@ typedef struct {
     void* scratchBuffer;
     uint32_t shaderModel;
     PalBool canFenceReset;
-    PalBool loggedDRED; 
+    PalBool loggedDRED;
     PalBool loggedPageFault;
     IDXGIAdapter4* adapter;
     ID3D12CommandSignature* meshSignature;
@@ -426,7 +426,7 @@ uint64_t getDescriptorHandleD3D12(
 void pollMessagesD3D12(DeviceD3D12* device);
 
 void setDebugNameD3D12(
-    ObjectType type, 
+    ObjectType type,
     void* handle);
 
 // IIDs

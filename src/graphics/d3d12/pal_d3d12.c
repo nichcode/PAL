@@ -1178,20 +1178,20 @@ void pollMessagesD3D12(DeviceD3D12* device)
 
             const D3D12_DRED_ALLOCATION_NODE* node = pageOutput.pHeadExistingAllocationNode;
             while (node) {
-                format(buffer,"  %s", node->ObjectNameA);
+                format(buffer, "  %s", node->ObjectNameA);
                 s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
             }
 
             s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, "");
             s_D3D12.debugCallback(
-                s_D3D12.debugUserData, 
-                severity, 
-                type, 
+                s_D3D12.debugUserData,
+                severity,
+                type,
                 " Recently Freed Allocations:");
 
             node = pageOutput.pHeadRecentFreedAllocationNode;
             while (node) {
-                format(buffer,"  %s", node->ObjectNameA);
+                format(buffer, "  %s", node->ObjectNameA);
                 s_D3D12.debugCallback(s_D3D12.debugUserData, severity, type, buffer);
             }
 
@@ -1203,7 +1203,7 @@ void pollMessagesD3D12(DeviceD3D12* device)
 }
 
 void setDebugNameD3D12(
-    ObjectType type, 
+    ObjectType type,
     void* handle)
 {
     if (!s_D3D12.debugCallback) {

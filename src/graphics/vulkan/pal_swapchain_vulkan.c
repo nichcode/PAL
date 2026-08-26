@@ -425,7 +425,7 @@ PalResult PAL_CALL presentSwapchainVk(
         swapchainImpl->queue->phyQueue->handle, 
         &presentInfo);
     // clang-format on
-    
+
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
