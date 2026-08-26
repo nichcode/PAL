@@ -691,8 +691,13 @@ PalResult PAL_CALL palCreateSurface(
 
     PalSurface* surface = nullptr;
     PalResult ret;
-    ret = device->backend->vtbl1
-              ->createSurface(device, window, windowInstance, instanceType, &surface);
+    ret = device->backend->vtbl1->createSurface(
+        device, 
+        window, 
+        windowInstance, 
+        instanceType, 
+        &surface);
+
     if (ret != PAL_RESULT_SUCCESS) {
         return ret;
     }
@@ -1003,7 +1008,9 @@ void PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
     PalCommandBuffer* secondaryCmdBuffer)
 {
-    primaryCmdBuffer->backend->vtbl1->cmdExecuteCommandBuffer(primaryCmdBuffer, secondaryCmdBuffer);
+    primaryCmdBuffer->backend->vtbl1->cmdExecuteCommandBuffer(
+        primaryCmdBuffer, 
+        secondaryCmdBuffer);
 }
 
 void PAL_CALL palCmdSetFragmentShadingRate(
@@ -1036,8 +1043,11 @@ void PAL_CALL palCmdDrawMeshTasksIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    cmdBuffer->backend->vtbl1
-        ->cmdDrawMeshTasksIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
+    cmdBuffer->backend->vtbl1->cmdDrawMeshTasksIndirectCount(
+        cmdBuffer, 
+        buffer, 
+        countBuffer, 
+        maxDrawCount);
 }
 
 void PAL_CALL palCmdBuildAccelerationStructure(
@@ -1144,8 +1154,12 @@ void PAL_CALL palCmdDraw(
     uint32_t firstVertex,
     uint32_t firstInstance)
 {
-    cmdBuffer->backend->vtbl1
-        ->cmdDraw(cmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+    cmdBuffer->backend->vtbl1->cmdDraw(
+        cmdBuffer, 
+        vertexCount, 
+        instanceCount, 
+        firstVertex, 
+        firstInstance);
 }
 
 void PAL_CALL palCmdDrawIndirect(
@@ -1196,8 +1210,11 @@ void PAL_CALL palCmdDrawIndexedIndirectCount(
     PalBuffer* countBuffer,
     uint32_t maxDrawCount)
 {
-    cmdBuffer->backend->vtbl1
-        ->cmdDrawIndexedIndirectCount(cmdBuffer, buffer, countBuffer, maxDrawCount);
+    cmdBuffer->backend->vtbl1->cmdDrawIndexedIndirectCount(
+        cmdBuffer, 
+        buffer, 
+        countBuffer, 
+        maxDrawCount);
 }
 
 void PAL_CALL palCmdAccelerationStructureBarrier(
@@ -1372,8 +1389,13 @@ void PAL_CALL palCmdSetStencilOp(
     PalStencilOp depthFailOp,
     PalCompareOp compareOp)
 {
-    cmdBuffer->backend->vtbl1
-        ->cmdSetStencilOp(cmdBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+    cmdBuffer->backend->vtbl1->cmdSetStencilOp(
+        cmdBuffer, 
+        faceMask, 
+        failOp, 
+        passOp, 
+        depthFailOp, 
+        compareOp);
 }
 
 // ==================================================
@@ -1465,8 +1487,11 @@ void PAL_CALL palComputeImageStagingRequirements(
     const PalBufferImageCopyInfo* copyInfo,
     PalImageStagingRequirements* requirements)
 {
-    device->backend->vtbl1
-        ->computeImageStagingRequirements(device, imageFormat, copyInfo, requirements);
+    device->backend->vtbl1->computeImageStagingRequirements(
+        device, 
+        imageFormat, 
+        copyInfo, 
+        requirements);
 }
 
 void PAL_CALL palWriteInstanceStaging(
