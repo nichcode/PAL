@@ -20,16 +20,19 @@ PalBool coreABIDump(uint32_t flags)
     FieldInfo versionFields[] = {
         {"major", {0, 4}, FIELD(PalVersion, major)},
         {"minor", {4, 4}, FIELD(PalVersion, minor)},
-        {"build", {8, 4}, FIELD(PalVersion, build)}};
+        {"build", {8, 4}, FIELD(PalVersion, build)}
+    };
 
     FieldInfo allocatorFields[] = {
         {"allocate", {0, 8}, FIELD(PalAllocator, allocate)},
         {"free", {8, 8}, FIELD(PalAllocator, free)},
-        {"userData", {16, 8}, FIELD(PalAllocator, userData)}};
+        {"userData", {16, 8}, FIELD(PalAllocator, userData)}
+    };
 
     FieldInfo loggerFields[] = {
         {"callback", {0, 8}, FIELD(PalLogger, callback)},
-        {"userData", {8, 8}, FIELD(PalLogger, userData)}};
+        {"userData", {8, 8}, FIELD(PalLogger, userData)}
+    };
 
     StructInfo versionInfo = {0};
     versionInfo.name = "PalVersion";

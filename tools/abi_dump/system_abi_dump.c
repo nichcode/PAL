@@ -24,7 +24,8 @@ PalBool systemABIDump(uint32_t flags)
         {"totalMemory", {8, 4}, FIELD(PalPlatformInfo, totalMemory)},
         {"totalRAM", {12, 4}, FIELD(PalPlatformInfo, totalRAM)},
         {"version", {16, 12}, FIELD(PalPlatformInfo, version)},
-        {"name", {28, 32}, FIELD(PalPlatformInfo, name)}};
+        {"name", {28, 32}, FIELD(PalPlatformInfo, name)}
+    };
 
     FieldInfo cpuInfoFields[] = {
         {"features", {0, 8}, FIELD(PalCPUInfo, features)},
@@ -35,7 +36,8 @@ PalBool systemABIDump(uint32_t flags)
         {"cacheL3", {24, 4}, FIELD(PalCPUInfo, cacheL3)},
         {"numLogicalProcessors", {28, 4}, FIELD(PalCPUInfo, numLogicalProcessors)},
         {"vendor", {32, 16}, FIELD(PalCPUInfo, vendor)},
-        {"model", {48, 64}, FIELD(PalCPUInfo, model)}};
+        {"model", {48, 64}, FIELD(PalCPUInfo, model)}
+    };
 
     StructInfo platformInfo = {0};
     platformInfo.name = "PalPlatformInfo";

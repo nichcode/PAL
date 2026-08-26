@@ -22,12 +22,14 @@ PalBool eventABIDump(uint32_t flags)
         {"data", {0, 8}, FIELD(PalEvent, data)},
         {"data2", {8, 8}, FIELD(PalEvent, data2)},
         {"userId", {16, 4}, FIELD(PalEvent, userId)},
-        {"type", {20, 4}, FIELD(PalEvent, type)}};
+        {"type", {20, 4}, FIELD(PalEvent, type)}
+    };
 
     FieldInfo eventQueueFields[] = {
         {"push", {0, 8}, FIELD(PalEventQueue, push)},
         {"poll", {8, 8}, FIELD(PalEventQueue, poll)},
-        {"userData", {16, 8}, FIELD(PalEventQueue, userData)}};
+        {"userData", {16, 8}, FIELD(PalEventQueue, userData)}
+    };
 
     FieldInfo eventDriverCreateInfoFields[] = {
         {"allocator", {0, 8}, FIELD(PalEventDriverCreateInfo, allocator)},
