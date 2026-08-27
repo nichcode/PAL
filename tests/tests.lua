@@ -8,9 +8,11 @@ project "tests"
     files {
         "tests_main.c",
         "tests.c",
+        
         "core_tests.c",
         "event_tests.c",
         "system_tests.c",
+        "thread_tests.c",
         "video_tests.c"
     }
     

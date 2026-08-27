@@ -4,6 +4,7 @@
 void registerCoreTests();
 void registerEventTests();
 void registerSystemTests();
+void registerThreadTests();
 void registerVideoTests();
 
 // clang-format off
@@ -14,7 +15,8 @@ int main(int argc, char** argv)
 
     // registerCoreTests();
     // registerEventTests();
-    registerSystemTests();
+    // registerSystemTests();
+    registerThreadTests();
     // registerVideoTests();
     runTests();
 
