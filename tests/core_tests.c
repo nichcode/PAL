@@ -1,6 +1,8 @@
 
 #include "tests.h"
 
+#define LOGGER_COUNT 4
+
 #ifdef _WIN32
 #define PLATFORM_SOURCE PAL_RESULT_SOURCE_WIN32
 #define INVALID_ARGUMENT_NATIVE_CODE 87
@@ -57,6 +59,20 @@ static void PAL_CALL freeMemory(
     context->totalDeallocations++;
     uint32_t deallocationRequired = context->totalAllocations - context->totalDeallocations;
     palLog(nullptr, "Deallocations Required: %lu", deallocationRequired);
+}
+
+static void PAL_CALL onLogger(
+    void* userData,
+    const char* msg)
+{
+    // if the logger paramter is not set to nullptr when logging in a log
+    // callback, the log will be discard. Example doing this below: and
+    // myLogger's callback function is the same function. This will trigger a
+    // recursive call and pal will discard the log. palLog(myLogger, "%s - %s",
+    // "Logger1 -", msg);
+
+    char* name = (char*)userData;
+    palLog(nullptr, "%s: %s", name, msg);
 }
 
 PalBool resultTest()
@@ -132,8 +148,34 @@ PalBool allocatorTest()
     return PAL_TRUE;
 }
 
+PalBool loggerTest()
+{
+    // clang-format off
+    static const char* g_LoggerNames[LOGGER_COUNT] = {
+        "Logger1",
+        "Logger2",
+        "Logger3",
+        "Logger4"
+    };
+    // clang-format on
+
+    PalLogger loggers[LOGGER_COUNT];
+    for (int32_t i = 0; i < LOGGER_COUNT; i++) {
+        loggers[i].callback = onLogger;
+        loggers[i].userData = (void*)g_LoggerNames[i];
+    }
+
+    for (int32_t i = 0; i < LOGGER_COUNT; i++) {
+        // push a log message to all loggers
+        palLog(&loggers[i], "This is directed to a logger");
+    }
+
+    return PAL_TRUE;
+}
+
 void registerCoreTests()
 {
     registerTest(resultTest, "Result Test");
     registerTest(allocatorTest, "Allocator Test");
+    registerTest(loggerTest, "Logger Test");
 }
