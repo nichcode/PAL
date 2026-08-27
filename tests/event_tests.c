@@ -2,7 +2,7 @@
 #include "tests.h"
 #include "pal2/pal_event.h"
 
-#define EVENT_COUNT 32
+#define EVENT_COUNT 64
 
 typedef struct {
     uint32_t head;
@@ -11,7 +11,6 @@ typedef struct {
 } QueueData;
 
 typedef struct {
-    PalDispatchMode dispatchMode;
     uint32_t counter;
 } EventContext;
 
@@ -137,28 +136,7 @@ static void logEventDispatchModes(PalEventDriver* eventDriver)
     }
 }
 
-static void pushAndPollEvents(
-    PalEventDriver* eventDriver, 
-    uint32_t* dispatchCounter)
-{
-    int32_t counter = 0;
-    while (counter < EVENT_COUNT) {
-        // push all types of event up to max
-        for (int32_t i = 0; i < EVENT_COUNT; i++) {
-            PalEventType type = i % PAL_EVENT_TYPE_COUNT;
-            PalEvent event = {0};
-            event.type = type;
-            palPushEvent(eventDriver, &event);
-
-            while (palPollEvent(eventDriver, &event)) {
-                *dispatchCounter++;
-            }
-            counter++;
-        }
-    }
-}
-
-PalBool eventDriverTest()
+PalBool customEventQueueTest()
 {
     PalEventDriver* eventDriver = nullptr;
     PalEventQueue* queue = palAllocate(nullptr, sizeof(PalEventQueue), 0);
@@ -172,13 +150,83 @@ PalBool eventDriverTest()
     queue->poll = eventPoll;
     queue->push = eventPush;
 
-    EventContext context = {0};
-    context.counter = 0;
+    PalEventDriverCreateInfo createInfo = {0};
+    createInfo.allocator = nullptr;
+    createInfo.callback = nullptr;
+    createInfo.queue = queue;
+    createInfo.userData = nullptr;
+
+    PalResult result = palCreateEventDriver(&createInfo, &eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        return PAL_FALSE;
+    }
+
+    palLog(nullptr, "Event Driver Created");
+    palDestroyEventDriver(eventDriver);
+    palLog(nullptr, "Event Driver Destroyed");
+
+    palFree(nullptr, queue);
+    palFree(nullptr, queueData);
+    return PAL_TRUE;
+}
+
+PalBool defaultEventQueueTest()
+{
+    PalEventDriver* eventDriver = nullptr;
 
     PalEventDriverCreateInfo createInfo = {0};
     createInfo.allocator = nullptr;
+    createInfo.callback = nullptr;
+    createInfo.queue = nullptr;
+    createInfo.userData = nullptr;
+
+    PalResult result = palCreateEventDriver(&createInfo, &eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        return PAL_FALSE;
+    }
+
+    palLog(nullptr, "Event Driver Created");
+    palDestroyEventDriver(eventDriver);
+    palLog(nullptr, "Event Driver Destroyed");
+
+    return PAL_TRUE;
+}
+
+PalBool eventDispatchModeTest()
+{
+    PalEventDriver* eventDriver = nullptr;
+    PalEventDriverCreateInfo createInfo = {0};
+    PalResult result = palCreateEventDriver(&createInfo, &eventDriver);
+    if (result != PAL_RESULT_SUCCESS) {
+        return PAL_FALSE;
+    }
+
+    palLog(nullptr, "Event Driver Created");
+    for (uint32_t e = 0; e < PAL_EVENT_TYPE_COUNT; e++) {
+        palSetEventDispatchMode(eventDriver, e, PAL_DISPATCH_MODE_CALLBACK);
+    }
+
+    logEventDispatchModes(eventDriver);
+    palLog(nullptr, "");
+
+    for (uint32_t e = 0; e < PAL_EVENT_TYPE_COUNT; e++) {
+        palSetEventDispatchMode(eventDriver, e, PAL_DISPATCH_MODE_POLL);
+    }
+
+    logEventDispatchModes(eventDriver);
+    palDestroyEventDriver(eventDriver);
+    palLog(nullptr, "Event Driver Destroyed");
+
+    return PAL_TRUE;
+}
+
+PalBool eventTest()
+{
+    PalEventDriver* eventDriver = nullptr;
+    EventContext context = {0};
+
+    PalEventDriverCreateInfo createInfo = {0};
     createInfo.callback = onEvent;
-    createInfo.queue = queue;
     createInfo.userData = &context;
 
     PalResult result = palCreateEventDriver(&createInfo, &eventDriver);
@@ -186,33 +234,48 @@ PalBool eventDriverTest()
         return PAL_FALSE;
     }
 
-    palLog(nullptr, "Event Driver Created %p", (void*)eventDriver);
-
-    context.dispatchMode = PAL_DISPATCH_MODE_CALLBACK;
+    palLog(nullptr, "Event Driver Created");
     for (uint32_t e = 0; e < PAL_EVENT_TYPE_COUNT; e++) {
-        palSetEventDispatchMode(eventDriver, e, context.dispatchMode);
+        palSetEventDispatchMode(eventDriver, e, PAL_DISPATCH_MODE_CALLBACK);
     }
 
-    logEventDispatchModes(eventDriver);
-    pushAndPollEvents(eventDriver, &context.counter);
-    palLog(nullptr, "Callback Dispatch Counter: %lu", context.counter);
-    palLog(nullptr, "");
-
-    context.dispatchMode = PAL_DISPATCH_MODE_POLL;
-    for (uint32_t e = 0; e < PAL_EVENT_TYPE_COUNT; e++) {
-        palSetEventDispatchMode(eventDriver, e, context.dispatchMode);
+    for (int32_t i = 0; i < EVENT_COUNT; i++) {
+        PalEventType type = i % PAL_EVENT_TYPE_COUNT;
+        PalEvent event = {0};
+        event.type = type;
+        palPushEvent(eventDriver, &event);
     }
 
-    logEventDispatchModes(eventDriver);
-    pushAndPollEvents(eventDriver, &context.counter);
-    palLog(nullptr, "Poll Dispatch Counter: %lu", context.counter);
+    for (uint32_t e = 0; e < PAL_EVENT_TYPE_COUNT; e++) {
+        palSetEventDispatchMode(eventDriver, e, PAL_DISPATCH_MODE_POLL);
+    }
+
+    for (int32_t i = 0; i < EVENT_COUNT; i++) {
+        PalEventType type = i % PAL_EVENT_TYPE_COUNT;
+        PalEvent event = {0};
+        event.type = type;
+        palPushEvent(eventDriver, &event);
+    }
+
+    uint32_t pollCounter = 0;
+    PalEvent event = {0};
+    while (palPollEvent(eventDriver, &event)) {
+        pollCounter++;
+    }
 
     palDestroyEventDriver(eventDriver);
-    palFree(nullptr, queue);
-    palFree(nullptr, queueData);
+    palLog(nullptr, "Event Driver Destroyed");
+    if (context.counter == pollCounter && pollCounter == EVENT_COUNT) {
+        return PAL_TRUE;
+    }
+
+    return PAL_FALSE;
 }
 
 void registerEventTests()
 {
-    registerTest(eventDriverTest, "Event Driver Test");
+    registerTest(customEventQueueTest, "Custom Event Queue Test");
+    registerTest(defaultEventQueueTest, "Default Event Queue Test");
+    registerTest(eventDispatchModeTest, "Event Dispatch Mode Test");
+    registerTest(eventTest, "Event Test");
 }

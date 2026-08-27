@@ -37,9 +37,6 @@ void runTests()
     // clang-format on
 
     palLog(nullptr, "");
-    palLog(nullptr, "Running Tests ...");
-    palLog(nullptr, "");
-
     for (uint32_t i = 0; i < s_TestManager.count; i++) {
         TestEntry* entry = &s_TestManager.tests[i];
 

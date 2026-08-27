@@ -80,7 +80,6 @@ static void PAL_CALL onLogger(
     palLog(nullptr, "%s: %s", name, msg);
 }
 
-// get the time in seconds
 static inline double getTime(Timer* timer)
 {
     uint64_t now = palGetPerformanceCounter();

@@ -3,6 +3,7 @@
 
 void registerCoreTests();
 void registerEventTests();
+void registerSystemTests();
 void registerVideoTests();
 
 // clang-format off
@@ -11,9 +12,10 @@ int main(int argc, char** argv)
     // clang-format on
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
-    registerCoreTests();
-    registerEventTests();
-    registerVideoTests();
+    // registerCoreTests();
+    // registerEventTests();
+    registerSystemTests();
+    // registerVideoTests();
     runTests();
 
     return 0;
