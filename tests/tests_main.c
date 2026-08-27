@@ -16,8 +16,8 @@ int main(int argc, char** argv)
     // registerCoreTests();
     // registerEventTests();
     // registerSystemTests();
-    registerThreadTests();
-    // registerVideoTests();
+    // registerThreadTests();
+    registerVideoTests();
     runTests();
 
     return 0;

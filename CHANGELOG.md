@@ -5,6 +5,8 @@
 
 ### Features
 
+// TODO: add API to get native handles
+
 - Added `PAL_DEFAULT_QUEUE_EVENT_COUNT`.
 - Improved API documentation.
 - Fixed Thread safety documentation.
