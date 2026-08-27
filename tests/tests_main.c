@@ -2,6 +2,7 @@
 #include "tests.h"
 
 void registerCoreTests();
+void registerEventTests();
 
 // clang-format off
 int main(int argc, char** argv)
@@ -10,6 +11,7 @@ int main(int argc, char** argv)
     palLog(nullptr, "%s: %s", "PAL Version", palGetVersionString());
 
     registerCoreTests();
+    registerEventTests();
     runTests();
 
     return 0;

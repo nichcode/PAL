@@ -8,7 +8,8 @@ project "tests"
     files {
         "tests_main.c",
         "tests.c",
-        "core_tests.c"
+        "core_tests.c",
+        "event_tests.c"
     }
     
     includedirs { 
