@@ -25,6 +25,40 @@ typedef struct {
     PalResultSource source;
 } ResultInfo;
 
+typedef struct {
+    uint32_t totalAllocations;
+    uint32_t totalDeallocations;
+} AllocatorContext;
+
+static void* PAL_CALL allocateMemory(
+    void* userData,
+    uint64_t size,
+    uint64_t alignment)
+{
+    AllocatorContext* context = userData;
+    void* block = palAllocate(nullptr, size, alignment);
+    if (block) {
+        context->totalAllocations++;
+        uint32_t deallocationRequired = context->totalAllocations - context->totalDeallocations;
+        palLog(nullptr, "Deallocations Required: %lu", deallocationRequired);
+        return block;
+    }
+    return nullptr;
+}
+
+static void PAL_CALL freeMemory(
+    void* userData,
+    void* ptr)
+{
+    AllocatorContext* context = userData;
+    palLog(nullptr, "Memory Address %p Freed", ptr);
+    palFree(nullptr, ptr);
+
+    context->totalDeallocations++;
+    uint32_t deallocationRequired = context->totalAllocations - context->totalDeallocations;
+    palLog(nullptr, "Deallocations Required: %lu", deallocationRequired);
+}
+
 PalBool resultTest()
 {
     // clang-format off
@@ -65,7 +99,41 @@ PalBool resultTest()
     return status;
 }
 
+PalBool allocatorTest()
+{
+    AllocatorContext context = {0};
+    context.totalAllocations = 0;
+    context.totalDeallocations = 0;
+
+    PalAllocator allocator = {0};
+    allocator.allocate = allocateMemory;
+    allocator.free = freeMemory;
+    allocator.userData = &context;
+
+    uint32_t* ptr1 = palAllocate(&allocator, sizeof(uint32_t), 0);
+    uint64_t* ptr2 = palAllocate(&allocator, sizeof(uint64_t), 0);
+    uint64_t* ptr3 = palAllocate(&allocator, sizeof(uint64_t), 0);
+    if (!ptr1 || !ptr2 || !ptr3) {
+        return PAL_FALSE;
+    }
+
+    *ptr1 = 100000000;
+    *ptr2 = 5000000000000000;
+    *ptr3 = 2000000000000000;
+
+    palLog(nullptr, "%p value: %lu", ptr1, *ptr1);
+    palLog(nullptr, "%p value: %llu", ptr2, *ptr2);
+    palLog(nullptr, "%p value: %llu", ptr3, *ptr3);
+
+    palFree(&allocator, ptr1);
+    palFree(&allocator, ptr2);
+    palFree(&allocator, ptr3);
+
+    return PAL_TRUE;
+}
+
 void registerCoreTests()
 {
     registerTest(resultTest, "Result Test");
+    registerTest(allocatorTest, "Allocator Test");
 }
