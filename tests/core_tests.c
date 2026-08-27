@@ -32,6 +32,11 @@ typedef struct {
     uint32_t totalDeallocations;
 } AllocatorContext;
 
+typedef struct {
+    uint64_t frequency;
+    uint64_t startTime;
+} Timer;
+
 static void* PAL_CALL allocateMemory(
     void* userData,
     uint64_t size,
@@ -73,6 +78,13 @@ static void PAL_CALL onLogger(
 
     char* name = (char*)userData;
     palLog(nullptr, "%s: %s", name, msg);
+}
+
+// get the time in seconds
+static inline double getTime(Timer* timer)
+{
+    uint64_t now = palGetPerformanceCounter();
+    return (double)(now - timer->startTime) / (double)timer->frequency;
 }
 
 PalBool resultTest()
@@ -173,9 +185,33 @@ PalBool loggerTest()
     return PAL_TRUE;
 }
 
+PalBool timeTest()
+{
+    // create and set the frequency and start time for time related calculations
+    Timer timer;
+    timer.frequency = palGetPerformanceFrequency();
+    timer.startTime = palGetPerformanceCounter();
+
+    // get the start time normalize by timer.startTime
+    double lastTime = getTime(&timer);
+    double totalTime = 0.0;
+    int32_t frameCount = 0;
+
+    // run the loop for 5 seconds
+    while (totalTime < 5.0) {
+        double now = getTime(&timer);
+        totalTime = now - lastTime;
+        frameCount++;
+    }
+
+    palLog(nullptr, "Loop finished after %f seconds and %d frames", totalTime, frameCount);
+    return PAL_TRUE;
+}
+
 void registerCoreTests()
 {
     registerTest(resultTest, "Result Test");
     registerTest(allocatorTest, "Allocator Test");
     registerTest(loggerTest, "Logger Test");
+    registerTest(timeTest, "Time Test");
 }
