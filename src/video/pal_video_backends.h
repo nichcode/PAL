@@ -440,7 +440,8 @@ static VideoBackend s_Win32Backend = {
     .setWindowCursor = win32SetWindowCursor,
     .attachWindow = win32AttachWindow,
     .getInstance = win32GetInstance,
-    .detachWindow = win32DetachWindow};
+    .detachWindow = win32DetachWindow
+};
 
 #endif // _WIN32
 
@@ -691,7 +692,8 @@ static VideoBackend s_XBackend = {
     .setWindowCursor = xSetWindowCursor,
     .attachWindow = xAttachWindow,
     .getInstance = xGetInstance,
-    .detachWindow = xDetachWindow};
+    .detachWindow = xDetachWindow
+};
 
 #endif // PAL_HAS_X11_BACKEND
 
@@ -942,7 +944,8 @@ static VideoBackend s_wlBackend = {
     .setWindowCursor = wlSetWindowCursor,
     .attachWindow = nullptr,
     .getInstance = wlGetInstance,
-    .detachWindow = nullptr};
+    .detachWindow = nullptr
+};
 
 // clang-format on
 

@@ -162,8 +162,14 @@ void PAL_CALL getBufferMemoryRequirementsD3D12(
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
-    allocationInfo =
-        *device->lpVtbl->GetResourceAllocationInfo(device, &__ret, 0, 1, &bufferImpl->desc);
+    // clang-format off
+    allocationInfo = *device->lpVtbl->GetResourceAllocationInfo(
+        device, 
+        &__ret, 
+        0, 
+        1, 
+        &bufferImpl->desc);
+    // clang-format on
 
     requirements->supportedMemoryTypes = getSupportedMemoryTypes(bufferImpl->usages);
     requirements->alignment = allocationInfo.Alignment;

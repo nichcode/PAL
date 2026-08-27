@@ -157,8 +157,12 @@ PalResult PAL_CALL allocateCommandBufferD3D12(
     }
     pollMessagesD3D12(deviceImpl);
 
-    result =
-        cmdList->lpVtbl->QueryInterface(cmdList, &IID_CommandList6, (void**)&cmdBuffer->handle);
+    // clang-format off
+    result = cmdList->lpVtbl->QueryInterface(
+        cmdList, 
+        &IID_CommandList6, 
+        (void**)&cmdBuffer->handle);
+    // clang-format on
 
     if (FAILED(result)) {
         return makeResultD3D12(result);

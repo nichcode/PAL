@@ -17,6 +17,8 @@
 
 #include "pal2/pal_core.h"
 
+#define PAL_DEFAULT_QUEUE_EVENT_COUNT 512
+
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0
 #define PAL_DECORATION_MODE_SERVER_SIDE 1
 #define PAL_DECORATION_MODE_COUNT 2
@@ -438,6 +440,8 @@ typedef struct {
  * be copied, therefore the pointer must remain valid until the event driver is
  * destroyed. Destroy the event driver with `palDestroyEventDriver()` when no
  * longer needed.
+ * 
+ * The default event queue can only take upto `PAL_DEFAULT_QUEUE_EVENT_COUNT` at a time.
  *
  * @param[in] info Pointer to a PalEventDriverCreateInfo struct that specifies
  * parameters.

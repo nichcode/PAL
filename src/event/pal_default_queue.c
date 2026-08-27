@@ -10,7 +10,7 @@
 typedef struct {
     uint32_t head;
     uint32_t tail;
-    PalEvent data[MAX_EVENTS];
+    PalEvent data[PAL_DEFAULT_QUEUE_EVENT_COUNT];
 } QueueData;
 
 static void PAL_CALL eventPush(
@@ -19,7 +19,7 @@ static void PAL_CALL eventPush(
 {
     PalEventQueue* eventQueue = queue;
     QueueData* data = eventQueue->userData;
-    data->data[data->tail++ % MAX_EVENTS] = *event;
+    data->data[data->tail++ % PAL_DEFAULT_QUEUE_EVENT_COUNT] = *event;
 }
 
 static PalBool PAL_CALL eventPoll(
@@ -32,7 +32,7 @@ static PalBool PAL_CALL eventPoll(
         return PAL_FALSE;
     }
 
-    *outEvent = data->data[data->head++ % MAX_EVENTS];
+    *outEvent = data->data[data->head++ % PAL_DEFAULT_QUEUE_EVENT_COUNT];
     return PAL_TRUE;
 }
 

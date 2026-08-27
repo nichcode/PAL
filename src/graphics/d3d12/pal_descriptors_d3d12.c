@@ -184,9 +184,13 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
+    // clang-format off
     memset(pool, 0, sizeof(DescriptorPoolD3D12));
-    pool->sets =
-        palAllocate(s_D3D12.allocator, sizeof(DescriptorSetD3D12) * info->maxDescriptorSets, 0);
+    pool->sets = palAllocate(
+        s_D3D12.allocator, 
+        sizeof(DescriptorSetD3D12) * info->maxDescriptorSets, 
+        0);
+    // clang-format on
 
     if (!pool->sets) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
@@ -248,16 +252,21 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             deviceImpl->handle,
             D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+        // clang-format off
         // get base CPU and GPU base pointer
-        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(heap->handle, &__ret);
+        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__ret);
         heap->cpuBase = handle.ptr;
 
-        gpuHandle =
-            *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(heap->handle, &__gpuRet);
+        gpuHandle = *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__gpuRet);
         heap->gpuBase = gpuHandle.ptr;
 
         pool->hasResourceHeap = PAL_TRUE;
         setDebugNameD3D12(OBJECT_TYPE_DESCRIPTOR_POOL, pool->resourceHeap.handle);
+        // clang-format on
     }
 
     // sampler heap
@@ -287,16 +296,21 @@ PalResult PAL_CALL createDescriptorPoolD3D12(
             deviceImpl->handle,
             D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
+        // clang-format off
         // get base CPU and GPU base pointer
-        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(heap->handle, &__ret);
+        handle = *heap->handle->lpVtbl->GetCPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__ret);
         heap->cpuBase = handle.ptr;
 
-        gpuHandle =
-            *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(heap->handle, &__gpuRet);
+        gpuHandle = *heap->handle->lpVtbl->GetGPUDescriptorHandleForHeapStart(
+            heap->handle, 
+            &__gpuRet);
         heap->gpuBase = gpuHandle.ptr;
 
         pool->hasSamplerHeap = PAL_TRUE;
         setDebugNameD3D12(OBJECT_TYPE_DESCRIPTOR_POOL, pool->samplerHeap.handle);
+        // clang-format on
     }
 
     pool->flags = info->flags;
@@ -498,8 +512,13 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.RaytracingAccelerationStructure.Location = tlas->address;
                 }
 
-                deviceImpl->handle->lpVtbl
-                    ->CreateShaderResourceView(deviceImpl->handle, nullptr, &desc, dst);
+                // clang-format off
+                deviceImpl->handle->lpVtbl->CreateShaderResourceView(
+                    deviceImpl->handle, 
+                    nullptr, 
+                    &desc, 
+                    dst);
+                // clang-format on
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc = {0};
@@ -525,8 +544,13 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 }
 
                 fillSubresourceD3D12(DESC_TYPE_SRV, type, &range, &desc);
-                deviceImpl->handle->lpVtbl
-                    ->CreateShaderResourceView(deviceImpl->handle, handle, &desc, dst);
+                // clang-format off
+                deviceImpl->handle->lpVtbl->CreateShaderResourceView(
+                    deviceImpl->handle, 
+                    handle, 
+                    &desc, 
+                    dst);
+                // clang-format on
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {0};
@@ -550,8 +574,14 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                 }
 
                 fillSubresourceD3D12(DESC_TYPE_UAV, type, &range, &desc);
-                deviceImpl->handle->lpVtbl
-                    ->CreateUnorderedAccessView(deviceImpl->handle, handle, nullptr, &desc, dst);
+                // clang-format off
+                deviceImpl->handle->lpVtbl->CreateUnorderedAccessView(
+                    deviceImpl->handle, 
+                    handle, 
+                    nullptr, 
+                    &desc, 
+                    dst);
+                // clang-format on
 
             } else if (info->descriptorType == PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {0};
@@ -594,8 +624,14 @@ PalResult PAL_CALL updateDescriptorSetD3D12(
                     desc.Buffer.NumElements = (UINT)bufferInfo->size / stride;
                 }
 
-                deviceImpl->handle->lpVtbl
-                    ->CreateUnorderedAccessView(deviceImpl->handle, handle, nullptr, &desc, dst);
+                // clang-format off
+                deviceImpl->handle->lpVtbl->CreateUnorderedAccessView(
+                    deviceImpl->handle, 
+                    handle,
+                    nullptr, 
+                    &desc, 
+                    dst);
+                // clang-format on
             }
         }
     }

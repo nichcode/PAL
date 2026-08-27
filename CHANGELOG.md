@@ -1,7 +1,12 @@
 
 <!-- ===========================================================-->
-<!-- PAL V2.1.1 -->
+<!-- PAL V2.2.0 -->
 <!-- =========================================================== -->
+
+### Features
+
+- Renamed reserved field from `PalGraphicsBackendInfo` to `customId`.
+- Added `PAL_DEFAULT_QUEUE_EVENT_COUNT`.
 
 - Improved API documentation.
 - Fixed Thread safety documentation.

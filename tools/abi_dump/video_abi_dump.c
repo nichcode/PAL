@@ -27,37 +27,43 @@ PalBool videoABIDump(uint32_t flags)
         {"refreshRate", {20, 4}, FIELD(PalMonitorInfo, refreshRate)},
         {"orientation", {24, 4}, FIELD(PalMonitorInfo, orientation)},
         {"primary", {28, 4}, FIELD(PalMonitorInfo, primary)},
-        {"name", {32, 32}, FIELD(PalMonitorInfo, name)}};
+        {"name", {32, 32}, FIELD(PalMonitorInfo, name)}
+    };
 
     FieldInfo monitorModeFields[] = {
         {"bpp", {0, 4}, FIELD(PalMonitorMode, bpp)},
         {"refreshRate", {4, 4}, FIELD(PalMonitorMode, refreshRate)},
         {"width", {8, 4}, FIELD(PalMonitorMode, width)},
-        {"height", {12, 4}, FIELD(PalMonitorMode, height)}};
+        {"height", {12, 4}, FIELD(PalMonitorMode, height)}
+    };
 
     FieldInfo flashInfoFields[] = {
         {"flags", {0, 4}, FIELD(PalFlashInfo, flags)},
         {"interval", {4, 4}, FIELD(PalFlashInfo, interval)},
-        {"count", {8, 4}, FIELD(PalFlashInfo, count)}};
+        {"count", {8, 4}, FIELD(PalFlashInfo, count)}
+    };
 
     FieldInfo iconCreateInfoFields[] = {
         {"pixels", {0, 8}, FIELD(PalIconCreateInfo, pixels)},
         {"width", {8, 4}, FIELD(PalIconCreateInfo, width)},
-        {"height", {12, 4}, FIELD(PalIconCreateInfo, height)}};
+        {"height", {12, 4}, FIELD(PalIconCreateInfo, height)}
+    };
 
     FieldInfo cursorCreateInfoFields[] = {
         {"pixels", {0, 8}, FIELD(PalCursorCreateInfo, pixels)},
         {"width", {8, 4}, FIELD(PalCursorCreateInfo, width)},
         {"height", {12, 4}, FIELD(PalCursorCreateInfo, height)},
         {"xHotspot", {16, 4}, FIELD(PalCursorCreateInfo, xHotspot)},
-        {"yHotspot", {20, 4}, FIELD(PalCursorCreateInfo, yHotspot)}};
+        {"yHotspot", {20, 4}, FIELD(PalCursorCreateInfo, yHotspot)}
+    };
 
     FieldInfo windowHandleInfoFields[] = {
         {"nativeInstance", {0, 8}, FIELD(PalWindowHandleInfo, nativeInstance)},
         {"nativeWindow", {8, 8}, FIELD(PalWindowHandleInfo, nativeWindow)},
         {"nativeHandle1", {16, 8}, FIELD(PalWindowHandleInfo, nativeHandle1)},
         {"nativeHandle2", {24, 8}, FIELD(PalWindowHandleInfo, nativeHandle2)},
-        {"nativeHandle3", {32, 8}, FIELD(PalWindowHandleInfo, nativeHandle3)}};
+        {"nativeHandle3", {32, 8}, FIELD(PalWindowHandleInfo, nativeHandle3)}
+    };
 
     FieldInfo windowCreateInfoFields[] = {
         {"title", {0, 8}, FIELD(PalWindowCreateInfo, title)},
@@ -71,7 +77,8 @@ PalBool videoABIDump(uint32_t flags)
         {"show", {48, 4}, FIELD(PalWindowCreateInfo, show)},
         {"style", {52, 4}, FIELD(PalWindowCreateInfo, style)},
         {"state", {56, 4}, FIELD(PalWindowCreateInfo, state)},
-        {"center", {60, 4}, FIELD(PalWindowCreateInfo, center)}};
+        {"center", {60, 4}, FIELD(PalWindowCreateInfo, center)}
+    };
 
     StructInfo monitorInfo = {0};
     monitorInfo.name = "PalMonitorInfo";

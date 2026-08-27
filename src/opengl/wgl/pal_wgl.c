@@ -335,7 +335,8 @@ PalResult wglEnumerateGLFBConfigs(
             WGL_SAMPLES_ARB,
             WGL_STEREO_ARB,
             WGL_DOUBLE_BUFFER_ARB,
-            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB};
+            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB
+        };
 
         int32_t values[sizeof(attributes) / sizeof(attributes[0])];
         for (int32_t i = 1; i <= nativeCount; i++) {

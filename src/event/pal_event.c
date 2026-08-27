@@ -14,7 +14,7 @@ struct PalEventDriver {
     const PalAllocator* allocator;
     PalEventCallback callback;
     void* userData;
-    PalDispatchMode modes[MAX_EVENTS];
+    PalDispatchMode modes[PAL_DEFAULT_QUEUE_EVENT_COUNT];
 };
 
 PalResult PAL_CALL palCreateEventDriver(

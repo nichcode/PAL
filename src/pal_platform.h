@@ -9,7 +9,6 @@
 #define _PAL_PLATFORM_H
 
 // clang-format off
-
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) \
                        || defined(__NetBSD) || defined(__OpenBSD)
 #define _PAL_HAS_POSIX 1
@@ -24,5 +23,4 @@
 #endif // _PAL_HAS_EGL
 
 // clang-format on
-
 #endif // _PAL_PLATFORM_H

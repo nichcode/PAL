@@ -865,8 +865,8 @@ VkPipelineStageFlags2 pipelineStagesToVk(PalPipelineStages stages)
 }
 
 void setDebugNameVk(
-    DeviceVk* device, 
-    VkObjectType type, 
+    DeviceVk* device,
+    VkObjectType type,
     void* handle)
 {
     if (!s_Vk.callback) {

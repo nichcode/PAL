@@ -428,8 +428,13 @@ PalResult PAL_CALL resizeSwapchainD3D12(
     // fill all images with the creation info
     for (int i = 0; i < swapchainImpl->imageCount; i++) {
         ID3D12Resource* tmp = nullptr;
-        swapchainImpl->handle->lpVtbl
-            ->GetBuffer(swapchainImpl->handle, i, &IID_Resource, (void**)&tmp);
+        // clang-format off
+        swapchainImpl->handle->lpVtbl->GetBuffer(
+            swapchainImpl->handle, 
+            i, 
+            &IID_Resource, 
+            (void**)&tmp);
+        // clang-format on
 
         ImageD3D12* image = &swapchainImpl->images[i];
         image->handle = tmp;

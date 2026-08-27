@@ -232,8 +232,14 @@ void PAL_CALL getImageMemoryRequirementsD3D12(
 
     D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = {0};
     D3D12_RESOURCE_ALLOCATION_INFO __ret = {0};
-    allocationInfo =
-        *device->lpVtbl->GetResourceAllocationInfo(device, &__ret, 0, 1, &imageImpl->desc);
+    // clang-format off
+    allocationInfo = *device->lpVtbl->GetResourceAllocationInfo(
+        device, 
+        &__ret, 
+        0, 
+        1, 
+        &imageImpl->desc);
+    // clang-format on
 
     requirements->supportedMemoryTypes = (1u << PAL_MEMORY_TYPE_GPU_ONLY);
     requirements->alignment = allocationInfo.Alignment;
@@ -309,8 +315,14 @@ PalResult PAL_CALL createImageViewD3D12(
         desc.Format = imageView->format;
         fillSubresourceD3D12(DESC_TYPE_RTV, info->type, &info->subresourceRange, &desc);
         imageView->heapIndex = index;
-        deviceImpl->handle->lpVtbl
-            ->CreateRenderTargetView(deviceImpl->handle, imageImpl->handle, &desc, dst);
+
+        // clang-format off
+        deviceImpl->handle->lpVtbl->CreateRenderTargetView(
+            deviceImpl->handle, 
+            imageImpl->handle, 
+            &desc, 
+            dst);
+        // clang-format on
 
     } else if (info->subresourceRange.aspect != PAL_IMAGE_ASPECT_COLOR && hasDSV) {
         DSVHeapAllocator* allocator = &deviceImpl->dsvAllocator;
@@ -324,8 +336,14 @@ PalResult PAL_CALL createImageViewD3D12(
         desc.Format = imageView->format;
         fillSubresourceD3D12(DESC_TYPE_DSV, info->type, &info->subresourceRange, &desc);
         imageView->heapIndex = index;
-        deviceImpl->handle->lpVtbl
-            ->CreateDepthStencilView(deviceImpl->handle, imageImpl->handle, &desc, dst);
+
+        // clang-format off
+        deviceImpl->handle->lpVtbl->CreateDepthStencilView(
+            deviceImpl->handle, 
+            imageImpl->handle,
+            &desc, 
+            dst);
+        // clang-format on
     }
 
     imageView->range = info->subresourceRange;
@@ -394,8 +412,12 @@ PalResult PAL_CALL createSamplerD3D12(
     sampler->desc.AddressV = addressModeToD3D12(info->addressModeV);
     sampler->desc.AddressW = addressModeToD3D12(info->addressModeW);
 
-    sampler->desc.Filter =
-        filterToD3D12(info->minFilterMode, info->magFilterMode, info->mipmapMode);
+    // clang-format off
+    sampler->desc.Filter = filterToD3D12(
+        info->minFilterMode, 
+        info->magFilterMode, 
+        info->mipmapMode);
+    // clang-format on
 
     *outSampler = (PalSampler*)sampler;
     return PAL_RESULT_SUCCESS;

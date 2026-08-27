@@ -1402,8 +1402,14 @@ PalResult PAL_CALL createShaderVk(
     createInfo.codeSize = info->codeSize;
     createInfo.pCode = (const uint32_t*)info->code;
 
-    result =
-        s_Vk.createShader(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &shader->handle);
+    // clang-format off
+    result = s_Vk.createShader(
+        deviceImpl->handle, 
+        &createInfo, 
+        &s_Vk.allocatorImpl, 
+        &shader->handle);
+    // clang-format on
+
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, shader);
         return makeResultVk(result);

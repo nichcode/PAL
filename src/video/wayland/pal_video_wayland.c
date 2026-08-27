@@ -1752,19 +1752,30 @@ void* wlGetInstance()
 // Listeners
 // ==================================================
 
+// clang-format off
 struct wl_registry_listener s_RegistryListener = {
     .global = globalHandle,
-    .global_remove = globalRemove};
+    .global_remove = globalRemove
+};
 
-struct wl_output_listener s_OutputListener =
-    {.geometry = outputGeometry, .mode = outputMode, .done = outputDone, .scale = outputScale};
+struct wl_output_listener s_OutputListener = {
+    .geometry = outputGeometry, 
+    .mode = outputMode, 
+    .done = outputDone, 
+    .scale = outputScale
+};
 
-struct wl_output_listener s_DefaultModeListener =
-    {.geometry = outputGeometry, .mode = outputMode, .done = outputDone, .scale = outputScale};
+struct wl_output_listener s_DefaultModeListener = {
+    .geometry = outputGeometry, 
+    .mode = outputMode, 
+    .done = outputDone, 
+    .scale = outputScale
+};
 
 struct wl_surface_listener s_SurfaceListener = {
     .enter = surfaceHandleEnter,
-    .leave = surfaceHandleLeave};
+    .leave = surfaceHandleLeave
+};
 
 struct wl_pointer_listener s_PointerListener = {
     .enter = pointerHandleEnter,
@@ -1775,7 +1786,8 @@ struct wl_pointer_listener s_PointerListener = {
     .axis_discrete = pointerHandleAxisDiscrete,
     .frame = pointerHandleFrame,
     .axis_source = pointerHandleAxisSource,
-    .axis_stop = pointerHandleAxisStop};
+    .axis_stop = pointerHandleAxisStop
+};
 
 struct wl_keyboard_listener s_KeyboardListener = {
     .enter = keyboardHandleEnter,
@@ -1783,23 +1795,32 @@ struct wl_keyboard_listener s_KeyboardListener = {
     .keymap = keyboardHandleRemap,
     .key = keyboardHandleKey,
     .repeat_info = keyboardHandleRepeatInfo,
-    .modifiers = keyboardHandleModifiers};
+    .modifiers = keyboardHandleModifiers
+};
 
 struct zxdg_toplevel_decoration_v1_listener s_DecorationListener = {
-    .configure = zxdgDecorationHandleConfigure};
+    .configure = zxdgDecorationHandleConfigure
+};
 
 struct wl_seat_listener s_SeatListener = {
     .capabilities = seatHandleCapabilities,
-    .name = seatHandleName};
+    .name = seatHandleName
+};
 
-struct xdg_wm_base_listener s_WmBaseListener = {.ping = wmBaseHandlePing};
+struct xdg_wm_base_listener s_WmBaseListener = {
+    .ping = wmBaseHandlePing
+};
 
-struct xdg_surface_listener s_XdgSurfaceListener = {.configure = xdgSurfaceHandleConfigure};
+struct xdg_surface_listener s_XdgSurfaceListener = {
+    .configure = xdgSurfaceHandleConfigure
+};
 
 struct xdg_toplevel_listener s_XdgToplevelListener = {
     .configure = xdgToplevelHandleConfigure,
     .close = xdgToplevelHandleClose,
     .configure_bounds = nullptr,
-    .wm_capabilities = nullptr};
+    .wm_capabilities = nullptr
+};
 
+// clang-format on
 #endif // PAL_HAS_WAYLAND_BACKEND

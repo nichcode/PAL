@@ -409,8 +409,13 @@ PalResult PAL_CALL createSamplerVk(
     createInfo.addressModeW = addressModeToVk(info->addressModeW);
     createInfo.borderColor = borderColorToVk(info->borderColor);
 
-    result =
-        s_Vk.createSampler(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &sampler->handle);
+    // clang-format off
+    result = s_Vk.createSampler(
+        deviceImpl->handle, 
+        &createInfo, 
+        &s_Vk.allocatorImpl, 
+        &sampler->handle);
+    // clang-format on
 
     if (result != VK_SUCCESS) {
         palFree(s_Vk.allocator, sampler);

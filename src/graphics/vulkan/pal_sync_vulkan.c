@@ -175,8 +175,12 @@ PalResult PAL_CALL waitSemaphoreVk(
     waitInfo.pSemaphores = &semaphoreImpl->handle;
     waitInfo.pValues = &value;
 
-    result =
-        semaphoreImpl->device->waitSemaphore(semaphoreImpl->device->handle, &waitInfo, timeInNano);
+    // clang-format off
+    result = semaphoreImpl->device->waitSemaphore(
+        semaphoreImpl->device->handle, 
+        &waitInfo, 
+        timeInNano);
+    // clang-format on
 
     if (result != VK_SUCCESS) {
         return makeResultVk(result);

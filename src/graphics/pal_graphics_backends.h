@@ -768,7 +768,8 @@ static const PalGraphicsBackendVtable1 s_VkBackend1 = {
     .destroyPipeline = destroyPipelineVk,
     .createShaderBindingTable = createShaderBindingTableVk,
     .destroyShaderBindingTable = destroyShaderBindingTableVk,
-    .updateShaderBindingTable = updateShaderBindingTableVk};
+    .updateShaderBindingTable = updateShaderBindingTableVk
+};
 
 static const PalGraphicsBackendVtable2 s_VkBackend2 = {
     .vtable1 = &s_VkBackend1,
@@ -776,7 +777,8 @@ static const PalGraphicsBackendVtable2 s_VkBackend2 = {
     .canQueueUseUsageState = canQueueUseUsageStateVk,
     .canQueueUsePipelineStages = canQueueUsePipelineStagesVk,
     .cmdImageOwnershipTransfer = cmdImageOwnershipTransferVk,
-    .cmdBufferOwnershipTransfer = cmdBufferOwnershipTransferVk};
+    .cmdBufferOwnershipTransfer = cmdBufferOwnershipTransferVk
+};
 
 #endif // PAL_HAS_VULKAN_BACKEND
 
@@ -1495,7 +1497,8 @@ static const PalGraphicsBackendVtable1 s_D3D12Backend1 = {
     .destroyPipeline = destroyPipelineD3D12,
     .createShaderBindingTable = createShaderBindingTableD3D12,
     .destroyShaderBindingTable = destroyShaderBindingTableD3D12,
-    .updateShaderBindingTable = updateShaderBindingTableD3D12};
+    .updateShaderBindingTable = updateShaderBindingTableD3D12
+};
 
 static const PalGraphicsBackendVtable2 s_D3D12Backend2 = {
     .vtable1 = &s_D3D12Backend1,
@@ -1503,7 +1506,8 @@ static const PalGraphicsBackendVtable2 s_D3D12Backend2 = {
     .canQueueUseUsageState = canQueueUseUsageStateD3D12,
     .canQueueUsePipelineStages = canQueueUsePipelineStagesD3D12,
     .cmdImageOwnershipTransfer = cmdImageOwnershipTransferD3D12,
-    .cmdBufferOwnershipTransfer = cmdBufferOwnershipTransferD3D12};
+    .cmdBufferOwnershipTransfer = cmdBufferOwnershipTransferD3D12
+};
 
 #endif // PAL_HAS_D3D12_BACKEND
 

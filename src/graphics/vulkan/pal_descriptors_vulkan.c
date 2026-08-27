@@ -285,13 +285,14 @@ PalResult PAL_CALL updateDescriptorSetVk(
     }
 
     if (tlasCount) {
-        uint32_t tlasInfoSize =
-            sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasInfoCount;
+        // clang-format off
+        uint32_t tlasInfoSize = sizeof(VkWriteDescriptorSetAccelerationStructureKHR) * tlasInfoCount;
         tlasInfos = palAllocate(s_Vk.allocator, tlasInfoSize, 0);
         tlas = palAllocate(s_Vk.allocator, sizeof(VkAccelerationStructureKHR) * count, 0);
         if (!tlasInfos || !tlas) {
             return PAL_RESULT_CODE_OUT_OF_MEMORY;
         }
+        // clang-format on
 
         memset(tlasInfos, 0, tlasInfoSize);
         memset(tlas, 0, sizeof(VkAccelerationStructureKHR) * tlasCount);

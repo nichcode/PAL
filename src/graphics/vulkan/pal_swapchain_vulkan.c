@@ -420,8 +420,12 @@ PalResult PAL_CALL presentSwapchainVk(
     presentInfo.pWaitSemaphores = &semaphoreHandle;
     presentInfo.waitSemaphoreCount = semaphoreCount;
 
-    result =
-        swapchainImpl->device->queuePresent(swapchainImpl->queue->phyQueue->handle, &presentInfo);
+    // clang-format off
+    result = swapchainImpl->device->queuePresent(
+        swapchainImpl->queue->phyQueue->handle, 
+        &presentInfo);
+    // clang-format on
+
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }

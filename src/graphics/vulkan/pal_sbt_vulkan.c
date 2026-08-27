@@ -119,8 +119,14 @@ PalResult PAL_CALL createShaderBindingTableVk(
     bufCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bufCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    result =
-        s_Vk.createBuffer(deviceImpl->handle, &bufCreateInfo, &s_Vk.allocatorImpl, &sbt->buffer);
+    // clang-format off
+    result = s_Vk.createBuffer(
+        deviceImpl->handle, 
+        &bufCreateInfo, 
+        &s_Vk.allocatorImpl, 
+        &sbt->buffer);
+    // clang-format on
+
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
@@ -206,13 +212,21 @@ PalResult PAL_CALL createShaderBindingTableVk(
         return makeResultVk(result);
     }
 
+    // clang-format off
     // copy handles into the buffer
     void* ptr = nullptr;
-    result =
-        s_Vk.mapMemory(deviceImpl->handle, sbt->stagingBufferMemory, 0, VK_WHOLE_SIZE, 0, &ptr);
+    result = s_Vk.mapMemory(
+        deviceImpl->handle, 
+        sbt->stagingBufferMemory, 
+        0, 
+        VK_WHOLE_SIZE, 
+        0, 
+        &ptr);
+        
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }
+    // clang-format on
 
     offset = 0; // reuse variable
     uint8_t* srcPtr = (uint8_t*)handles;

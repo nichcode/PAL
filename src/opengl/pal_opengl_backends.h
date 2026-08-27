@@ -90,7 +90,8 @@ static OpenglBackend s_WglBackend = {
     .getGLProcAddress = wglGetGLProcAddress,
     .swapBuffers = wglSwapBuffers,
     .setSwapInterval = wglSetSwapInterval,
-    .GetSupportedGLAPIs = wglGetSupportedGLAPIs};
+    .GetSupportedGLAPIs = wglGetSupportedGLAPIs
+};
 
 #endif // _WIN32
 
@@ -142,10 +143,10 @@ static OpenglBackend s_EglBackend = {
     .getGLProcAddress = eglGetGLProcAddress,
     .swapBuffers = eglSwapBuffers,
     .setSwapInterval = eglSetSwapInterval,
-    .GetSupportedGLAPIs = eglGetSupportedGLAPIs};
+    .GetSupportedGLAPIs = eglGetSupportedGLAPIs
+};
 
 // clang-format on
-
 #endif // _PAL_HAS_EGL
 
 #endif // _PAL_OPENGL_BACKENDS_H

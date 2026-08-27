@@ -10,8 +10,6 @@
 
 #include "pal2/pal_event.h"
 
-#define MAX_EVENTS 512
-
 PalEventQueue* createDefaultEventQueue(const PalAllocator* allocator);
 
 void destroyDefaultEventQueue(

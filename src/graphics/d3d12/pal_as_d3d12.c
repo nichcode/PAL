@@ -48,8 +48,12 @@ void PAL_CALL getAccelerationStructureBuildSizeD3D12(
 
     if (info->type == PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL) {
         D3D12_RAYTRACING_GEOMETRY_DESC* geometries = nullptr;
-        geometries =
-            palAllocate(s_D3D12.allocator, sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count, 0);
+        // clang-format off
+        geometries = palAllocate(
+            s_D3D12.allocator, 
+            sizeof(D3D12_RAYTRACING_GEOMETRY_DESC) * info->count, 
+            0);
+        // clang-format on
 
         if (!geometries) {
             return;

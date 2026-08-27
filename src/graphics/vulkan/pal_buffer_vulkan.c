@@ -217,8 +217,14 @@ PalResult PAL_CALL createBufferVk(
     createInfo.size = info->size;
     createInfo.usage = bufferUsageToVk(info->usages);
 
-    result =
-        s_Vk.createBuffer(deviceImpl->handle, &createInfo, &s_Vk.allocatorImpl, &buffer->handle);
+    // clang-format off
+    result = s_Vk.createBuffer(
+        deviceImpl->handle, 
+        &createInfo, 
+        &s_Vk.allocatorImpl, 
+        &buffer->handle);
+    // clang-format on
+
     if (result != VK_SUCCESS) {
         return makeResultVk(result);
     }

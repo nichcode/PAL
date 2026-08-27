@@ -22,7 +22,8 @@ PalBool threadABIDump(uint32_t flags)
         {"stackSize", {0, 8}, FIELD(PalThreadCreateInfo, stackSize)},
         {"allocator", {8, 8}, FIELD(PalThreadCreateInfo, allocator)},
         {"entry", {16, 8}, FIELD(PalThreadCreateInfo, entry)},
-        {"arg", {24, 8}, FIELD(PalThreadCreateInfo, arg)}};
+        {"arg", {24, 8}, FIELD(PalThreadCreateInfo, arg)}
+    };
 
     StructInfo threadCreateInfo = {0};
     threadCreateInfo.name = "PalThreadCreateInfo";

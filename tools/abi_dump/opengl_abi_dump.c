@@ -26,7 +26,8 @@ PalBool openglABIDump(uint32_t flags)
         {"api", {20, 4}, FIELD(PalGLInfo, api)},
         {"vendor", {24, 32}, FIELD(PalGLInfo, vendor)},
         {"graphicsCard", {56, 64}, FIELD(PalGLInfo, graphicsCard)},
-        {"version", {120, 64}, FIELD(PalGLInfo, version)}};
+        {"version", {120, 64}, FIELD(PalGLInfo, version)}
+    };
 
     FieldInfo fbConfigFields[] = {
         {"doubleBuffer", {0, 4}, FIELD(PalGLFBConfig, doubleBuffer)},
@@ -39,11 +40,13 @@ PalBool openglABIDump(uint32_t flags)
         {"alphaBits", {20, 2}, FIELD(PalGLFBConfig, alphaBits)},
         {"depthBits", {22, 2}, FIELD(PalGLFBConfig, depthBits)},
         {"stencilBits", {24, 2}, FIELD(PalGLFBConfig, stencilBits)},
-        {"samples", {26, 2}, FIELD(PalGLFBConfig, samples)}};
+        {"samples", {26, 2}, FIELD(PalGLFBConfig, samples)}
+    };
 
     FieldInfo windowFields[] = {
         {"instance", {0, 8}, FIELD(PalGLWindow, instance)},
-        {"window", {8, 8}, FIELD(PalGLWindow, window)}};
+        {"window", {8, 8}, FIELD(PalGLWindow, window)}
+    };
 
     FieldInfo contextCreateInfoFields[] = {
         {"window", {0, 8}, FIELD(PalGLContextCreateInfo, window)},
@@ -56,7 +59,8 @@ PalBool openglABIDump(uint32_t flags)
         {"noError", {40, 4}, FIELD(PalGLContextCreateInfo, noError)},
         {"debug", {44, 4}, FIELD(PalGLContextCreateInfo, debug)},
         {"major", {48, 4}, FIELD(PalGLContextCreateInfo, major)},
-        {"minor", {52, 4}, FIELD(PalGLContextCreateInfo, minor)}};
+        {"minor", {52, 4}, FIELD(PalGLContextCreateInfo, minor)}
+    };
 
     StructInfo glInfo = {0};
     glInfo.name = "PalGLInfo";
