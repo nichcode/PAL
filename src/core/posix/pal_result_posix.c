@@ -20,7 +20,9 @@ void PAL_CALL palFormatResult(
 {
     char tmpBuffer[256];
     uint32_t nativeCode = palGetResultNativeCode(result);
-    if (nativeCode != 0) {
+    PalResultSource source = palGetResultSource(result);
+    
+    if (nativeCode != 0 && source == PAL_RESULT_SOURCE_POSIX) {
         strerror_r(nativeCode, tmpBuffer, 256);
         formatResultMsg(result, buffer, tmpBuffer);
 

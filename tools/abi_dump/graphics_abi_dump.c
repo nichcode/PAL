@@ -1951,7 +1951,7 @@ PalBool graphicsABIDump(uint32_t flags)
     FieldInfo graphicsBackendInfoFields[] = {
         { "vtable", {0, 8}, FIELD(PalGraphicsBackendInfo, vtable) },
         { "version", {8, 4}, FIELD(PalGraphicsBackendInfo, version) },
-        { "customId", {12, 4}, FIELD(PalGraphicsBackendInfo, customId) }
+        { "reserved", {12, 4}, FIELD(PalGraphicsBackendInfo, reserved) }
     };
     // clang-format on
 

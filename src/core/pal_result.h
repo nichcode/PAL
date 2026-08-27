@@ -116,14 +116,14 @@ static void formatResultMsg(
     const char* baseDescription = resultCodeToDescription(result);
     uint32_t nativeCode = palGetResultNativeCode(result);
 
-    const char* description = "";
+    const char* description = "\n";
     if (msg) {
         description = msg;
     }
 
     format(
         buffer,
-        "Source: %s\n PAL Code: %s\n Native Code: 0x%08x\n PAL Description: %s\n Native "
+        "Source: %s\n PAL Code: %s\n Native Code: 0x%08X\n PAL Description: %s\n Native "
         "Description: %s",
         sourceString,
         baseString,

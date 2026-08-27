@@ -5,9 +5,7 @@
 
 ### Features
 
-- Renamed reserved field from `PalGraphicsBackendInfo` to `customId`.
 - Added `PAL_DEFAULT_QUEUE_EVENT_COUNT`.
-
 - Improved API documentation.
 - Fixed Thread safety documentation.
 - Improved Vulkan backend debugging.
