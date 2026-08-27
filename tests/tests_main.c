@@ -3,6 +3,7 @@
 
 void registerCoreTests();
 void registerEventTests();
+void registerVideoTests();
 
 // clang-format off
 int main(int argc, char** argv)
@@ -12,6 +13,7 @@ int main(int argc, char** argv)
 
     registerCoreTests();
     registerEventTests();
+    registerVideoTests();
     runTests();
 
     return 0;

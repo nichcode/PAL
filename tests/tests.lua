@@ -9,7 +9,8 @@ project "tests"
         "tests_main.c",
         "tests.c",
         "core_tests.c",
-        "event_tests.c"
+        "event_tests.c",
+        "video_tests.c"
     }
     
     includedirs { 
