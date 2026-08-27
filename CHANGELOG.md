@@ -6,6 +6,7 @@
 ### Features
 
 // TODO: add API to get native handles
+// TODO: add API for window client/drawable area
 
 - Added `PAL_DEFAULT_QUEUE_EVENT_COUNT`.
 - Improved API documentation.
