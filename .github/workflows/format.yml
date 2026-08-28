@@ -1,5 +1,5 @@
-name: Clang Format Check
 
+name: Clang Format Check
 on:
   pull_request:
   push:

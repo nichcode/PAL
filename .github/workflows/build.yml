@@ -1,0 +1,58 @@
+
+name: Build
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    #TODO: remove comment branches: [ master ]
+
+jobs:
+  build-linux-gcc:
+    name: Linux (GCC)
+    runs-on: ubuntu-lastest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor \
+            libwayland-dev \
+            libvulkan-dev
+
+      - name: Generate project files
+        run: ./premake/premake5 gmake --ci
+
+      - name: Build project
+        run: make -j config=release
+
+  build-windows-msvc:
+    name: Window (MSVC)
+    runs-on: windows-lastest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Generate project files
+        shell: cmd
+        run: premake\premake5.exe vs2022 --ci
+
+      - name: Build project
+        shell: cmd
+        run: msbuild PALWorkspace.sln /m /p:Configuration=Release
+
+
+
+
+
+

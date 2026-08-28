@@ -104,20 +104,20 @@ local function writeTasksConfiguration(file, actionType)
 
     if actionType == "buildDebug" then
         name = "build debug"
-        command = "make all config=debug"
+        command = "make all -j config=debug"
         isDefault = "true"
 
     elseif actionType == "buildRelease" then
         name = "build release"
-        command = "make all config=release"
+        command = "make all -j config=release"
 
     elseif actionType == "cleanDebug" then
         name = "clean debug"
-        command = "make clean config=debug"
+        command = "make -j clean config=debug"
 
     elseif actionType == "cleanRelease" then
         name = "clean release"
-        command = "make clean config=release"
+        command = "make -j clean config=release"
     end
     
     file:write("        {\n")
@@ -304,6 +304,11 @@ newoption {
     }
 }
 
+newoption {
+    trigger = "ci",
+    description = "Build all PAL systems for CI"
+}
+
 workspace(workspaceName)
     if PAL_BUILD_TEST_APPLICATION then
         startproject("tests")
@@ -337,6 +342,18 @@ workspace(workspaceName)
         optimize "full"
 
     filter {}
+
+    -- override
+    if _OPTIONS["ci"] then
+        PAL_BUILD_STATIC_LIBRARY = false
+        PAL_BUILD_TEST_APPLICATION = true
+        PAL_BUILD_ABI_DUMP = true
+        PAL_BUILD_SYSTEM_MODULE = true
+        PAL_BUILD_THREAD_MODULE = true
+        PAL_BUILD_VIDEO_MODULE = true
+        PAL_BUILD_OPENGL_MODULE = true
+        PAL_BUILD_GRAPHICS_MODULE = true
+    end
 
     if (_ACTION == "gmake") then
         if os.target() == "windows" then
