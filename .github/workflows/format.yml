@@ -10,19 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install clang-format
+      - name: Install Clang Format
         run: |
           sudo apt-get update
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 22
-          sudo apt-get install -y clang-format-22
-          sudo ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format
+          sudo apt-get install -y clang-format-14
+          sudo ln -sf /usr/bin/clang-format-14 /usr/bin/clang-format
 
       - name: Make source files writable
         run: chmod -R u+w .

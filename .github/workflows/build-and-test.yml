@@ -1,0 +1,87 @@
+name: Build and Test Debug
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-lastest
+            compiler: gcc
+            toolset: gcc
+
+          - os: ubuntu-lastest
+            compiler: clang
+            toolset: gcc
+
+          # Windows
+          - os: windows-lastest
+            compiler: msvc
+            toolset: msvc
+
+          - os: windows-lastest
+            compiler: gcc
+            toolset: gcc
+
+          - os: windows-lastest
+            compiler: clang
+            toolset: gcc
+
+          - os: windows-lastest
+            compiler: clang
+            toolset: msvc
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configuration
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          echo "Compiler: ${{ matrix.compiler }}"
+          echo "Toolset: ${{ matrix.toolset }}"
+          echo "Configuration: Release"
+
+      - name: Generate Project # GNU Make (GCC)
+        if: matrix.compiler == 'gcc' && runner.os == 'Linux'
+        run: ./premake/premake5 gmake
+
+      - name: Generate Project # GNU Make (GCC)
+        if: matrix.compiler == 'gcc' && runner.os == 'Windows'
+        shell: cmd
+        run: premake\premake5.exe gmake
+
+      - name: Generate Project # GNU Make (Clang)
+        if: matrix.compiler == 'clang' && matrix.toolset == 'gcc' && runner.os == 'Linux'
+        run: ./premake/premake5 gmake --compiler=clang
+
+      - name: Generate Project # GNU Make (Clang)
+        if: matrix.compiler == 'clang' && matrix.toolset == 'gcc' && runner.os == 'Linux'
+        shell: cmd
+        run: premake\premake5.exe gmake --compiler=clang
+
+      - name: Generate Project # Visual Studio 2022 (MSVC)
+        if: matrix.compiler == 'msvc'
+        shell: cmd
+        run: premake\premake5.exe vs2022
+
+      - name: Generate Project # Visual Studio 2022 (Clang)
+        if: matrix.compiler == 'clang' && matrix.toolset == 'msvc'
+        shell: cmd
+        run: premake\premake5.exe vs2022 --compiler=clang
+
+
+
+
+
+
+
+
