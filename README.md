@@ -1,5 +1,7 @@
+
 # PAL (Prime Abstraction Layer)
 
+[![Build](https://github.com/nichcode/PAL/actions/workflows/build.yml/badge.svg)](https://github.com/nichcode/PAL/actions/workflows/build.yml)
 ![License: Zlib](https://img.shields.io/badge/License-Zlib-blue.svg)
 ![Language: C99](https://img.shields.io/badge/language-C99-green.svg)
 
@@ -9,7 +11,19 @@ platform and graphics APIs with support for modular builds and custom backends.
 PAL is stateless and transparent. Queries return current state, 
 reflecting changes made through native API calls.
 
+The goal of PAL is very simple, write your engine, framework or application on top
+of PAL once with full flexibility. If a feature is required and PAL does not support it, the
+native handles (eg. `ID3D12Device` or `VkDevice`) can be retrieved and used directly. The natve
+handles can be used directly with the API of PAL.
+
+PAL is a capability-first system. This means it does not make arbitrary decisions for the
+application. PAL exposes the capability and information of the underlying APIs, and you
+decide on how to use them. Example, if an adapter has multiple queues which some can share
+resources (which removes the need for transfer ownersip), PAL does not decide which queues
+are "best" for your application. That decision belongs to you.
+
 PAL supports Windows, Linux, Vulkan and D3D12. Both Wayland and X11 are supported on Linux.
+PAL supports both callback and poll event dispatch mode, custom allocators, custom loggers and custom graphics backends. 
 
 PAL is released under the [Zlib License](https://opensource.org/licenses/Zlib).
 
@@ -81,18 +95,9 @@ cd Release
 
 To view additional commands, run the abi dump tool with `--help`.
 
-## Examples
-// TODO:
-PAL tests are blueprints that can be copy-paste with little code changes. See below for some examples:
-- [Triangle Example](./tests/graphics/triangle_test.c)
-- [Texture Example](./tests/graphics/texture_test.c)
-- [Compute Example](./tests/graphics/compute_test.c)
-- [Mesh Example](./tests/graphics/mesh_test.c)
-- [Ray Tracing Example](./tests/graphics/ray_tracing_test.c)
-- [Custom Graphics Backend Example](./tests/graphics/custom_backend_test.c)
-- [Queue Ownership Example](./tests/graphics/queue_ownership_test.c)
-- [Window Example](./tests/video/window_test.c)
-- [Input Window Example](./tests/video/input_window_test.c)
+## Using PAL
+See the [HTML Documentation](./docs/html/index.html) for the complete list of available functions.
+See [Pal Samples](https://github.com/nichcode/PAL-Samples) repository for practical examples of the API. This is the best way to learn PAL.
 
 ## Documentation
 PAL uses [Doxygen](https://www.doxygen.nl/) for generating API documentation.
@@ -106,5 +111,5 @@ The generated HTML docs will be available in `docs/html/`.
 
 ## Contributing
 Contributions are welcome! Please open an issue or pull request.  
-See  [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for how and what to contribute.  
+See [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for how and what to contribute.  
 Thanks for contributing to PAL.
