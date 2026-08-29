@@ -52,7 +52,7 @@ jobs:
       - name: Install Vulkan SDK
         shell: pwsh
         run: |
-          Start-Process .\vulkan-sdk.exe -ArgumentList "/S" -Wait
+          .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
 
       - name: Remove Vulkan SDK
         shell: pwsh
