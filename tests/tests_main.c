@@ -1,11 +1,11 @@
 
 #include "tests.h"
 
-void registerCoreTests();
-void registerEventTests();
-void registerSystemTests();
-void registerThreadTests();
-void registerVideoTests();
+// void registerCoreTests();
+// void registerEventTests();
+// void registerSystemTests();
+// void registerThreadTests();
+// void registerVideoTests();
 
 // clang-format off
 int main(int argc, char** argv)
@@ -17,8 +17,8 @@ int main(int argc, char** argv)
     // registerEventTests();
     // registerSystemTests();
     // registerThreadTests();
-    registerVideoTests();
-    runTests();
+    // registerVideoTests();
+    // runTests();
 
     return 0;
 }

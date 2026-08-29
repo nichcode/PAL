@@ -369,11 +369,7 @@ workspace(workspaceName)
                     "-target x86_64-w64-windows-gnu",
                     "-I" .. gccBasePath .. "/include",
                     "-I" .. gccBasePath .. "/ucrt/include",
-                    "-I" .. gccBasePath .. "/mingw/include",
-    
-                    -- warnings
-                    "-Wno-switch",        -- for switch statements
-                    "-Wno-switch-enum"    -- for switch statements
+                    "-I" .. gccBasePath .. "/mingw/include"
                 }
     
                 linkoptions {
@@ -394,12 +390,6 @@ workspace(workspaceName)
             if (_OPTIONS["compiler"] == "clang") then
                 toolset("clang")
 
-                buildoptions {
-                    -- warnings
-                    "-Wno-switch",        -- for switch statements
-                    "-Wno-switch-enum"    -- for switch statements
-                }
-
                 intellisenseMode = "linux-clang-x64"
                 compilerPath = "/usr/bin/clang"
             else
@@ -410,6 +400,19 @@ workspace(workspaceName)
 
             debuggerPath = "/usr/bin/gdb"
         end
+
+        -- Warnings for both linux and windows
+        buildoptions {
+            "-Wno-switch",         -- for switch statements
+            "-Wno-switch-enum",    -- for switch statements
+            -- "-Wall",
+            -- "-Wextra",
+            -- "-Wpedantic",
+            -- "-Wconversion",
+            -- "-Wsign-conversion",
+            -- "-Werror"
+            -- TODO: uncomment
+        }
     end
 
     if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
@@ -419,6 +422,12 @@ workspace(workspaceName)
 
         defines {
             "_CRT_SECURE_NO_WARNINGS"
+        }
+
+        buildoptions {
+            -- "/W4",
+            -- "-WX"
+            -- TODO: uncomment
         }
 
         disablewarnings {

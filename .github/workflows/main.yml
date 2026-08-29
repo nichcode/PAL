@@ -12,9 +12,29 @@ jobs:
     timeout-minutes: 4
 
     steps:
-      - name: Configuration
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
         run: |
-          echo "Linux"
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libvulkan-dev
+
+      - name: Generate
+        run: ./premake/premake5 gmake --ci
+
+      - name: Build
+        run: make -j config=release
+
+      - name: Run
+        run: ./bin/Release/tests
 
   main-windows:
     name: main-windows
@@ -22,6 +42,20 @@ jobs:
     timeout-minutes: 4
 
     steps:
-      - name: Configuration
-        run: |
-          echo "Windows"
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Generate
+        shell: cmd
+        run: premake\premake5.exe vs2022 --ci
+
+      - name: Build
+        shell: cmd
+        run: msbuild PALWorkspace.sln /m /p:Configuration=Release
+
+      - name: Build
+        shell: cmd
+        run: bin\Release\tests.exe
