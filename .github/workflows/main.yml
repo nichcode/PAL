@@ -1,0 +1,96 @@
+
+name: Main
+on:
+  pull_request:
+  push:
+    #TODO: remove comment branches: [ master ]
+
+jobs:
+  main:
+    name: main
+    strategy:
+      matrix:
+        include:
+            # GNU Make
+          - os: ununtu-latest
+            generate_cmd: gmake
+
+            # GNU Make (Clang)
+          - os: ubuntu-latest
+            generate_cmd: gmake --compiler=clang
+
+            # Visual Studio 2022 (MSVC)
+          - os: windows-2022
+            generate_cmd: vs2022
+            build_cmd: ""
+
+            # Visual Studio 2022 (Clang)
+          - os: windows-2022
+            generate_cmd: vs2022 --compiler=clang
+            build_cmd: /p:PlatformToolset=ClangCl
+
+            # Visual Studio 2026 (MSVC)
+          - os: windows-2026
+            generate_cmd: vs2026
+            build_cmd: ""
+
+            # Visual Studio 2026 (Clang)
+          - os: windows-2026
+            generate_cmd: vs2026 --compiler=clang
+            build_cmd: /p:PlatformToolset=ClangCl
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # Linux GCC
+      - name: Setup Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libvulkan-dev
+
+        # Linux Clang
+      - name: Setup Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libvulkan-dev
+
+        # Windows (2022 and 2026)
+      - name: Setup Dependencies
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v3
+
+        # Generate Project Linux
+      - name: Generate Project
+        run: ./premake/premake5 --ci ${{ matrix.generate_cmd }}
+
+        # Generate Project Windows
+      - name: Generate Project
+        shell: cmd
+        run: premake\premake5.exe --ci ${{ matrix.generate_cmd }}
+
+        # Build Project Linux
+      - name: Build Project
+        run: make -j config=release
+
+        # Build Project Windows
+      - name: Build Project
+        run: msbuild PALWorkspace.sln /m /p:Configuration=Release ${{ matrix.build_cmd }}
