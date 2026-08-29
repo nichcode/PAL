@@ -3,7 +3,7 @@ name: Main
 on:
   pull_request:
   push:
-    #TODO: remove comment branches: [ master ]
+    branches: [ master ]
 
 jobs:
   main-linux:
@@ -30,6 +30,9 @@ jobs:
 
       - name: Build
         run: make -j config=release
+
+      - name: Verify ABI
+        run: ./bin/Release/abi-dump --quick
 
       - name: Run
         run: ./bin/Release/tests
@@ -65,6 +68,10 @@ jobs:
       - name: Build
         shell: cmd
         run: msbuild PALWorkspace.sln /m /p:Configuration=Release
+
+      - name: Verify ABI
+        shell: cmd
+        run: bin\Release\abi-dump.exe --quick
 
       - name: Run
         shell: cmd

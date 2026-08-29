@@ -405,13 +405,12 @@ workspace(workspaceName)
         buildoptions {
             "-Wno-switch",         -- for switch statements
             "-Wno-switch-enum",    -- for switch statements
-            -- "-Wall",
-            -- "-Wextra",
-            -- "-Wpedantic",
-            -- "-Wconversion",
-            -- "-Wsign-conversion",
-            -- "-Werror"
-            -- TODO: uncomment
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Wconversion",
+            "-Wsign-conversion",
+            "-Werror"
         }
     end
 
@@ -425,9 +424,8 @@ workspace(workspaceName)
         }
 
         buildoptions {
-            -- "/W4",
-            -- "-WX"
-            -- TODO: uncomment
+            "/W4",
+            "-WX"
         }
 
         disablewarnings {

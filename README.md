@@ -104,16 +104,12 @@ Replace **Release** with **Debug** if using debug build.
 
 ### Windows
 ```bash
-cd bin
-cd Release
-abi-dump.exe --quick
+bin\Release\abi-dump.exe --quick
 ```
 
 ### Linux
 ```bash
-cd bin
-cd Release
-./abi-dump --quick
+./bin/Release/abi-dump --quick
 ```
 
 To view additional commands, run the abi dump tool with `--help`.
