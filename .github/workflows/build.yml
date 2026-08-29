@@ -7,13 +7,14 @@ on:
     #TODO: remove comment branches: [ master ]
 
 jobs:
+  # Linux (GNU Make GCC)
   build-linux-gcc:
     name: Linux (GCC)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -36,13 +37,44 @@ jobs:
       - name: Run project
         run: ./bin/Release/tests
 
-  build-windows-msvc:
-    name: Window (MSVC)
-    runs-on: windows-latest
+  # Linux (GNU Make Clang)
+  build-linux-clang:
+    name: Linux (Clang)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libvulkan-dev
+
+      - name: Generate project files
+        run: ./premake/premake5 gmake --compiler=clang --ci
+
+      - name: Build project
+        run: make -j config=release
+
+      - name: Run project
+        run: ./bin/Release/tests
+
+  # Windows Visual Studio 2022 (MSVC)
+  build-windows-msvc:
+    name: Windows 2022 (MSVC)
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v3
@@ -57,7 +89,79 @@ jobs:
 
       - name: Run project
         shell: cmd
-        run: bin/Release/tests.exe
+        run: bin\Release\tests.exe
+
+  # Windows Visual Studio 2022 (Clang)
+  build-windows-msvc:
+    name: Windows 2022 (Clang)
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Generate project files
+        shell: cmd
+        run: premake\premake5.exe vs2022 --compiler=clang --ci
+
+      - name: Build project
+        shell: cmd
+        run: msbuild PALWorkspace.sln /m /p:Configuration=Release /p:PlatformToolset=ClangCl
+
+      - name: Run project
+        shell: cmd
+        run: bin\Release\tests.exe
+
+  # Windows Visual Studio 2026 (MSVC)
+  build-windows-msvc:
+    name: Windows 2026 (MSVC)
+    runs-on: windows-2026
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Generate project files
+        shell: cmd
+        run: premake\premake5.exe vs2026 --ci
+
+      - name: Build project
+        shell: cmd
+        run: msbuild PALWorkspace.sln /m /p:Configuration=Release
+
+      - name: Run project
+        shell: cmd
+        run: bin\Release\tests.exe
+
+  # Windows Visual Studio 2026 (Clang)
+  build-windows-msvc:
+    name: Windows 2026 (Clang)
+    runs-on: windows-2026
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Generate project files
+        shell: cmd
+        run: premake\premake5.exe vs2026 --compiler=clang --ci
+
+      - name: Build project
+        shell: cmd
+        run: msbuild PALWorkspace.sln /m /p:Configuration=Release /p:PlatformToolset=ClangCl
+
+      - name: Run project
+        shell: cmd
+        run: bin\Release\tests.exe
 
 
 
