@@ -9,7 +9,7 @@ on:
 jobs:
   build-linux-gcc:
     name: Linux (GCC)
-    runs-on: ubuntu-lastest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -22,7 +22,7 @@ jobs:
             gcc \
             libx11-dev \
             libxrandr-dev \
-            libxcursor \
+            libxcursor-dev \
             libwayland-dev \
             libvulkan-dev
 
@@ -34,7 +34,7 @@ jobs:
 
   build-windows-msvc:
     name: Window (MSVC)
-    runs-on: windows-lastest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
