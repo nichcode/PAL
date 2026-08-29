@@ -48,6 +48,13 @@ jobs:
       - name: Setup
         uses: microsoft/setup-msbuild@v3
 
+      - name: Install Vulkan SDK
+        shell: pwsh
+        run: |
+          curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
+          Start-Process .\vulkan-sdk.exe -ArgumentList "/S" -Wait
+          Remove-Item .\vulkan-sdk.exe
+
       - name: Generate
         shell: cmd
         run: premake\premake5.exe vs2022 --ci
@@ -56,6 +63,6 @@ jobs:
         shell: cmd
         run: msbuild PALWorkspace.sln /m /p:Configuration=Release
 
-      - name: Build
+      - name: Run
         shell: cmd
         run: bin\Release\tests.exe
