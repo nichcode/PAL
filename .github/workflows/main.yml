@@ -6,43 +6,22 @@ on:
     #TODO: remove comment branches: [ master ]
 
 jobs:
-  main:
-    name: main
-    strategy:
-      matrix:
-        include:
-            # GNU Make
-          - os: ununtu-latest
-            generate_cmd: gmake
-
-            # GNU Make (Clang)
-          - os: ubuntu-latest
-            generate_cmd: gmake --compiler=clang
-
-            # Visual Studio 2022 (MSVC)
-          - os: windows-2022
-            generate_cmd: vs2022
-            build_cmd: ""
-
-            # Visual Studio 2022 (Clang)
-          - os: windows-2022
-            generate_cmd: vs2022 --compiler=clang
-            build_cmd: /p:PlatformToolset=ClangCl
-
-            # Visual Studio 2026 (MSVC)
-          - os: windows-2026
-            generate_cmd: vs2026
-            build_cmd: ""
-
-            # Visual Studio 2026 (Clang)
-          - os: windows-2026
-            generate_cmd: vs2026 --compiler=clang
-            build_cmd: /p:PlatformToolset=ClangCl
-
-    runs-on: ${{ matrix.os }}
+  main-linux:
+    name: main-linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
 
     steps:
       - name: Configuration
         run: |
-          echo "OS: ${{ runner.os }}"
-          echo "Command: ${{ matrix.generate_cmd }}"
+          echo "Linux"
+
+  main-windows:
+    name: main-windows
+    runs-on: windows-latest
+    timeout-minutes: 4
+
+    steps:
+      - name: Configuration
+        run: |
+          echo "Windows"
