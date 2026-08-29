@@ -68,7 +68,7 @@ jobs:
         run: ./bin/Release/tests
 
   # Windows Visual Studio 2022 (MSVC)
-  build-windows-msvc:
+  build-windows-msvc-2022:
     name: Windows 2022 (MSVC)
     runs-on: windows-2022
 
@@ -92,7 +92,7 @@ jobs:
         run: bin\Release\tests.exe
 
   # Windows Visual Studio 2022 (Clang)
-  build-windows-msvc:
+  build-windows-clang-2022:
     name: Windows 2022 (Clang)
     runs-on: windows-2022
 
@@ -116,7 +116,7 @@ jobs:
         run: bin\Release\tests.exe
 
   # Windows Visual Studio 2026 (MSVC)
-  build-windows-msvc:
+  build-windows-msvc-2026:
     name: Windows 2026 (MSVC)
     runs-on: windows-2026
 
@@ -140,7 +140,7 @@ jobs:
         run: bin\Release\tests.exe
 
   # Windows Visual Studio 2026 (Clang)
-  build-windows-msvc:
+  build-windows-clang-2026:
     name: Windows 2026 (Clang)
     runs-on: windows-2026
 
