@@ -180,15 +180,26 @@ project "PAL2"
 
     if (PAL_BUILD_GRAPHICS_MODULE) then
         -- check for vulkan support. This is cross compiler
-        local vulkanSdk = os.getenv("VULKAN_SDK")
+        local vulkanPath = os.getenv("VULKAN_SDK")
         local hasVulkan = false
-        if (vulkanSdk) then
-            hasVulkan = true
-            -- add to include path if compiler does not see it
-            includedirs {
-                path.join(vulkanSdk, "include")
-            }
 
+        if (vulkanPath) then
+            hasVulkan = true
+
+            -- add to include path incase compiler does not sees it
+            includedirs {
+                path.join(vulkanPath, "include")
+            }
+        end
+
+        if not hasVulkan then
+            -- The SDK path was not found, we check the package paths as well
+            if (os.isfile("/usr/include/vulkan/vulkan.h")) then
+                hasVulkan = true
+            end
+        end
+
+        if (hasVulkan) then
             defines { "PAL_HAS_VULKAN_BACKEND=1" }
         else
             defines { "PAL_HAS_VULKAN_BACKEND=0" }
