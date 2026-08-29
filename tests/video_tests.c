@@ -264,7 +264,8 @@ static const char* s_MouseButtonNames[PAL_MOUSE_BUTTON_COUNT] = {
 
 static const char* orientationToString(PalOrientation orientation)
 {
-    switch (orientation) {
+    switch (orientation) 
+    {
         case PAL_ORIENTATION_LANDSCAPE:
             return "Landscape";
 
@@ -372,6 +373,7 @@ PalBool monitorTest()
 
     palShutdownVideo();
     palFree(nullptr, monitors);
+    return PAL_TRUE;
 }
 
 PalBool simpleWindowTest()

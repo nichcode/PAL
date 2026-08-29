@@ -111,6 +111,7 @@ static const char* eventTypeToString(PalEventType type)
         case PAL_EVENT_TYPE_WINDOW_DECORATION_MODE:
             return "PAL_EVENT_TYPE_WINDOW_DECORATION_MODE";
     }
+    return nullptr;
 }
 
 static void logEventDispatchModes(PalEventDriver* eventDriver)

@@ -24,6 +24,7 @@ jobs:
             libxrandr-dev \
             libxcursor-dev \
             libwayland-dev \
+            libxkbcommon-dev \
             libvulkan-dev
 
       - name: Generate project files
@@ -31,6 +32,9 @@ jobs:
 
       - name: Build project
         run: make -j config=release
+
+      - name: Run project
+        run: ./bin/Release/tests
 
   build-windows-msvc:
     name: Window (MSVC)
@@ -50,6 +54,10 @@ jobs:
       - name: Build project
         shell: cmd
         run: msbuild PALWorkspace.sln /m /p:Configuration=Release
+
+      - name: Run project
+        shell: cmd
+        run: bin/Release/tests.exe
 
 
 
