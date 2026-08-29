@@ -44,11 +44,19 @@ jobs:
       - name: Setup
         uses: microsoft/setup-msbuild@v3
 
-      - name: Install Vulkan SDK
+      - name: Download Vulkan SDK
         shell: pwsh
         run: |
           curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
+
+      - name: Install Vulkan SDK
+        shell: pwsh
+        run: |
           Start-Process .\vulkan-sdk.exe -ArgumentList "/S" -Wait
+
+      - name: Remove Vulkan SDK
+        shell: pwsh
+        run: |
           Remove-Item .\vulkan-sdk.exe
 
       - name: Generate
