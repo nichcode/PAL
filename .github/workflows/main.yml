@@ -54,10 +54,9 @@ jobs:
         run: |
           .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
 
-      - name: Remove Vulkan SDK
-        shell: pwsh
+      - name: Setup Vulkan Environment
         run: |
-          Remove-Item .\vulkan-sdk.exe
+          "VULKAN_SDK=C:\VulkanSDK\1.4.357.0" >> $env:GITHUB_ENV
 
       - name: Generate
         shell: cmd
@@ -70,3 +69,8 @@ jobs:
       - name: Run
         shell: cmd
         run: bin\Release\tests.exe
+
+      - name: Remove Vulkan SDK
+        shell: pwsh
+        run: |
+          Remove-Item .\vulkan-sdk.exe
