@@ -63,7 +63,7 @@ jobs:
       - name: Download Clang Tidys
         shell: pwsh
         run: |
-          curl.exe -L -o "$env:RUNNER_TEMP\LLVM.exe" "https://github.com/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-win64.exe"
+          curl.exe -L -o LLVM.exe https://github.com/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-win64.exe
 
       - name: Install Vulkan SDK
         shell: pwsh
@@ -73,7 +73,7 @@ jobs:
       - name: Install Clang Tidy
         shell: pwsh
         run: |
-          Start-Process "$env:RUNNER_TEMP\LLVM.exe" -ArgumentList "/S" -Wait
+          Start-Process LLVM.exe -ArgumentList "/S" -Wait
           echo "Clang Tidy Installed"
           Add-Content $env:GITHUB_PATH "C:\Program Files\LLVM\bin"
 
