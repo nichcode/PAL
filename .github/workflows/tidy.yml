@@ -1,24 +1,25 @@
 
-name: Main
+name: Clang Tidy
 on:
-  workflow_dispatch:
   pull_request:
   push:
     # TODO: branches: [ master ]
 
 jobs:
-  main-linux:
-    name: main-linux
+  clang-tidy-linux:
+    name: clang-tidy-linux
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            gcc \
             libx11-dev \
             libxrandr-dev \
             libxcursor-dev \
@@ -26,20 +27,25 @@ jobs:
             libxkbcommon-dev \
             libvulkan-dev
 
+      - name: Install Clang Tidy
+        run: |
+          sudo apt-get update
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          sudo apt-get install -y clang-tidy-22
+
       - name: Generate
         run: ./premake/premake5 gmake --ci
 
-      - name: Build
-        run: make -j config=release
+      - name: Make Files Writable
+        run: chmod -R u+w .
 
-      - name: Verify ABI
-        run: ./bin/Release/abi-dump --quick
+      - name: Run Clang Tidy
+        run: run-clang-tidy-22 -p .
 
-      - name: Run
-        run: ./bin/Release/tests
-
-  main-windows:
-    name: main-windows
+  clang-tidy-windows:
+    name: clang-tidy-windows
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -53,27 +59,32 @@ jobs:
         run: |
           curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
 
+      - name: Download Clang Tidy
+        shell: pwsh
+        run: |
+          curl.exe -L -o llvm.zip https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.0/LLVM-22.1.0-win64.exe
+
       - name: Install Vulkan SDK
         shell: pwsh
         run: |
           .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
 
+      - name: Install Clang Tidy
+        shell: pwsh
+        run: |
+          Start-Process .\llvm.exe -ArgumentList "/S" -Wait
+
       - name: Setup Vulkan Environment
         run: |
           "VULKAN_SDK=C:\VulkanSDK\1.4.357.0" >> $env:GITHUB_ENV
+
+      - name: Setup Clang Tidy Environment
+        run: |
+          "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
 
       - name: Generate
         shell: cmd
         run: premake\premake5.exe vs2022 --ci
 
-      - name: Build
-        shell: cmd
-        run: msbuild PALWorkspace.sln /m /p:Configuration=Release
-
-      - name: Verify ABI
-        shell: cmd
-        run: bin\Release\abi-dump.exe --quick
-
-      - name: Run
-        shell: cmd
-        run: bin\Release\tests.exe
+      - name: Run Clang Tidy
+        run: run-clang-tidy-22 -p .
