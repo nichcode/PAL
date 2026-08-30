@@ -44,7 +44,6 @@ jobs:
 
       - name: Run Clang Tidy
         run: |
-          clang-tidy --explain-config
           run-clang-tidy -p .
 
   clang-tidy-windows:
@@ -84,5 +83,4 @@ jobs:
       - name: Run Clang Tidy
         shell: pwsh
         run: |
-          clang-tidy --explain-config
-          clang-tidy tests/tests_main.c -p . -extra-arg-before=--driver-mode=cl
+          clang-tidy tests/tests_main.c -p .
