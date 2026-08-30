@@ -1,6 +1,7 @@
 
 name: Clang Format Check
 on:
+  workflow_dispatch:
   pull_request:
   push:
     # TODO: branches: [ master ]
@@ -9,7 +10,6 @@ jobs:
   clang-format:
     name: clang-format
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
