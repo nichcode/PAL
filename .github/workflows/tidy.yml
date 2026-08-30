@@ -67,7 +67,7 @@ jobs:
 
       - name: Install Clang Tidy
         run: |
-          choco install llvm --version=22.0.0 -y
+          choco install llvm --version=22.1.0 -y
           pip install clang-tools
 
       - name: Setup Vulkan Environment
