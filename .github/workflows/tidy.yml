@@ -81,7 +81,4 @@ jobs:
         run: premake\premake5.exe vs2022 --ci
 
       - name: Run Clang Tidy
-        shell: pwsh
-        run: |
-          clang-tidy tests/tests_main.c -p .
-          run-clang-tidy -p .
+        run: python tidy-windows.py
