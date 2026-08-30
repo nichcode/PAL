@@ -43,7 +43,7 @@ jobs:
         run: chmod -R u+w .
 
       - name: Run Clang Tidy
-        run: run-clang-tidy.py -p .
+        run: run-clang-tidy -p .
 
   clang-tidy-windows:
     name: clang-tidy-windows
@@ -78,5 +78,8 @@ jobs:
         shell: cmd
         run: premake\premake5.exe vs2022 --ci
 
+      - name: Probe Clang Tidy
+        run: where.exe run-clang-tidy
+
       - name: Run Clang Tidy
-        run: python "$env:LLVM_PATH\bin\run-clang-tidy.py" -p .
+        run: run-clang-tidy --help
