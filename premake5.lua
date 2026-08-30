@@ -285,6 +285,24 @@ local function generateLaunchJson()
     end
 end
 
+local function generateSettingsJson()
+    print("\n=======================================================")
+    print("Generating .vscode/settings.json")
+
+    local file = io.open(".vscode/settings.json", "w")
+    if file then
+        file:write('{\n')
+        file:write('    "files.associations":\n')
+        file:write('    {\n')
+        file:write('        ".clang-tidy":"yaml",\n')
+        file:write('        ".clang-format":"yaml"\n')
+
+        file:write('    }\n')
+        file:write('}\n')
+        file:close()
+    end
+end
+
 local function generateCompileCommands()
     print("\n=======================================================")
     print("Generating compile_commands.json")
@@ -383,6 +401,7 @@ premake.override(premake.action, "call", function(base, action)
         generateVscodeProperties()
         generateTasksJson()
         generateLaunchJson()
+        generateSettingsJson()
     end
     generateCompileCommands()
     
