@@ -1,9 +1,9 @@
 
-name: Clang Format Check
+name: Clang Tools Check
 on:
   pull_request:
   push:
-    branches: [ master ]
+    # TODO: branches: [ master ]
 
 jobs:
   clang-format:
@@ -15,18 +15,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Clang Format
+      - name: Install Clang Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format-14
-          sudo ln -sf /usr/bin/clang-format-14 /usr/bin/clang-format
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo apt-get install -y clang-format-22 clang-tidy-22
 
       - name: Make source files writable
         run: chmod -R u+w .
 
-      - name: Check Formatting
+      - name: Clang Tidy
+        run: run-clang-tidy-22 -p .
+
+      - name: Clang Format
         run: |
           files=$(git ls-files '*.c' '*.cpp' '*.h' '*.hpp')
           if [ -n "$files" ]; then
-            clang-format --dry-run --Werror $files
+            clang-format-22 --dry-run --Werror $files
           fi

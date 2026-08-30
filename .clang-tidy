@@ -1,8 +1,8 @@
 ---
 Checks: >
   -*,
-  clang-analyzer-core,
-  clang-analyzer-valist,
+  clang-analyzer-core.*,
+  clang-analyzer-security.VAList,
   clang-analyzer-unix.Malloc,
   bugprone-assert-side-effect,
   bugprone-assignment-in-if-condition,
@@ -34,8 +34,23 @@ Checks: >
   readability-redundant-declaration,
   readability-redundant-function-ptr-dereference,
   readability-redundant-preprocessor,
-  readability-simplify-boolean-expr,
-  readability-trailing-comma'
+  readability-simplify-boolean-expr
+
+CheckOptions:
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.StaticVariablePrefix
+    value: s_
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
 
 WarningsAsErrors: ""
 FormatStyle: file
