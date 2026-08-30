@@ -78,5 +78,8 @@ jobs:
         shell: cmd
         run: premake\premake5.exe vs2022 --ci
 
+      - name: Probe Clang Tidy
+        run: clang-tidy --version
+
       - name: Run Clang Tidy
         run: run-clang-tidy -p .
