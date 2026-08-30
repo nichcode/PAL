@@ -60,19 +60,26 @@ jobs:
         run: |
           curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
 
+      - name: Download Clang Tidys
+        shell: pwsh
+        run: |
+          curl.exe -L -o "$env:RUNNER_TEMP\LLVM.exe" "https://github.com/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-win64.exe"
+
       - name: Install Vulkan SDK
         shell: pwsh
         run: |
           .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
 
+      - name: Install Clang Tidy
+        shell: pwsh
+        run: |
+          Start-Process "$env:RUNNER_TEMP\LLVM.exe" -ArgumentList "/S" -Wait
+          echo "Clang Tidy Installed"
+          Add-Content $env:GITHUB_PATH "C:\Program Files\LLVM\bin"
+
       - name: Setup Vulkan Environment
         run: |
           "VULKAN_SDK=C:\VulkanSDK\1.4.357.0" >> $env:GITHUB_ENV
-
-      - name: Setup Clang Tidy Environment
-        uses: ZhongRuoyu/setup-llvm@v0
-        with:
-          llvm-version: 22
 
       - name: Generate
         shell: cmd
@@ -81,5 +88,5 @@ jobs:
       - name: Probe Clang Tidy
         run: where.exe run-clang-tidy
 
-      - name: Run Clang Tidy
-        run: run-clang-tidy --help
+      # - name: Run Clang Tidy
+      #   run: run-clang-tidy --help
