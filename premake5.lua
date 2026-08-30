@@ -25,6 +25,10 @@ local function getCommandOutput(cmd)
     return nil
 end
 
+local function escape(value)
+    return value:gsub('\\', '\\\\'):gsub('"', '\\"')
+end
+
 local function removeDuplicates(list)
     local seen = {}
     local out = {}
@@ -281,6 +285,96 @@ local function generateLaunchJson()
     end
 end
 
+local function generateCompileCommands()
+    print("\n=======================================================")
+    print("Generating compile_commands.json")
+
+    local file = io.open("compile_commands.json", "w")
+    if not file then
+        print("Failed to write to compile_commands.json")
+    end
+
+    file:write('[\n')
+
+    local projects = {}
+    local workspace = premake.global.getWorkspace(workspaceName)
+    for prj in premake.workspace.eachproject(workspace) do
+        table.insert(projects, prj)
+    end
+
+    for prjI, prj in ipairs(projects) do
+        local flags = {}
+        local isLastProject = prjI == #projects
+
+        if (_ACTION == "gmake") then
+            if (_OPTIONS["compiler"] == "clang") then
+                if os.target() == "windows" then
+                    table.insert(flags, "clang.exe")
+                else
+                    table.insert(flags, "clang")
+                end
+            else
+                if os.target() == "windows" then
+                    table.insert(flags, "gcc.exe")
+                else
+                    table.insert(flags, "gcc")
+                end
+            end
+
+            table.insert(flags, " -g -m64 -std=c99 -Wno-switch -Wno-switch-enum")
+            table.insert(flags, " -Wall -Wextra -Wpedantic -Wconversion")
+            table.insert(flags, " -Wsign-conversion -Werror")
+
+            if prj.kind == "SharedLib" then
+                table.insert(flags, " -fPIC")
+            else
+                table.insert(flags, " -O3")
+            end
+
+            for _, path in ipairs(prj.includedirs or {}) do
+                table.insert(flags, " -I " .. string.format('"%s"', path))
+            end
+
+            for _, define in ipairs(prj.defines or {}) do
+                table.insert(flags, " -D " .. define)
+            end
+        end
+
+        if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
+            table.insert(flags, "cl.exe")
+            table.insert(flags, " /Zi /std:c11 /W4 /WX /MP /c /wd6387")
+            table.insert(flags, " /wd4018 /wd4133 /wd4101")
+
+            for _, path in ipairs(prj.includedirs or {}) do
+                table.insert(flags, " /I " .. string.format('"%s"', path))
+            end
+
+            for _, define in ipairs(prj.defines or {}) do
+                table.insert(flags, " /D " .. define)
+            end
+        end
+
+        local cmdBase = table.concat(flags, "")
+        for i, f in ipairs(prj.files) do
+            local command = string.format('%s %s', cmdBase, f)
+            file:write('    {\n')
+            file:write(string.format('        "directory": "%s",\n', workspace.location))
+            file:write(string.format('        "file": "%s",\n', f))
+            file:write(string.format('        "command": "%s"\n', escape(command)))
+
+            if i == #prj.files and isLastProject == true then
+                file:write('    }\n')
+            else
+                file:write('    },\n')
+                file:write('\n')
+            end
+        end
+    end
+
+    file:write(']\n')
+    file:close()
+end
+
 -- generate vscode properties if using gmake
 premake.override(premake.action, "call", function(base, action)
     base(action)
@@ -290,6 +384,7 @@ premake.override(premake.action, "call", function(base, action)
         generateTasksJson()
         generateLaunchJson()
     end
+    generateCompileCommands()
     
 end)
 

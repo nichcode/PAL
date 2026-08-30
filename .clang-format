@@ -1,33 +1,63 @@
 
-# Version 14
-BasedOnStyle: LLVM
-Language: C
-IndentWidth: 4
-ContinuationIndentWidth: 4
-
-ColumnLimit: 0
-LineEnding: LF
+---
+Language:        C
+ColumnLimit:     80
+IndentWidth:     4
 PointerAlignment: Left
-AlignAfterOpenBracket: false
 
-AllowShortFunctionsOnASingleLine: None
-AllowShortBlocksOnASingleLine: Never
-AllowShortIfStatementsOnASingleLine: Never
+AlignAfterOpenBracket: true
+BreakAfterOpenBracketFunction: true
 AllowShortEnumsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackLongBracedList: false
+BinPackParameters: AlwaysOnePerLine
+IndentGotoLabels: false
 
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterCaseLabel: false
-  AfterControlStatement: Never
-  AfterEnum: false
-  AfterFunction: true
-  AfterStruct: false
-  AfterUnion: false
+  AfterEnum:       false
   AfterExternBlock: false
-  BeforeCatch: false
-  BeforeElse: false
-  BeforeWhile: false
-  IndentBraces: false
-  SplitEmptyFunction: true
-  SplitEmptyRecord: true
+  AfterFunction:   true
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: false
+
+BreakAfterOpenBracketBracedList: true
+BreakAfterOpenBracketIf: false
+BreakAfterOpenBracketLoop: false
+BreakAfterOpenBracketSwitch: false
+BreakAfterReturnType: Automatic
+
+BreakBeforeBinaryOperators: None
+BreakBeforeCloseBracketBracedList: false
+BreakBeforeCloseBracketFunction: false
+BreakBeforeCloseBracketIf: false
+BreakBeforeCloseBracketLoop: false
+BreakBeforeCloseBracketSwitch: false
+BreakBeforeTernaryOperators: true
+
+Cpp11BracedListStyle: true
+BreakArrays:     true
+BreakBinaryOperations: Never
+BreakFunctionDefinitionParameters: false
+
+PenaltyBreakAssignment: 30000
+PenaltyBreakBeforeFirstCallParameter: 0
+PenaltyBreakBeforeMemberAccess: 30000
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 500
+PenaltyBreakOpenParenthesis: 0
+PenaltyBreakScopeResolution: 1000
+PenaltyBreakString: 2000
+PenaltyExcessCharacter: 3000000
+PenaltyIndentedWhitespace: 0
+PenaltyReturnTypeOnItsOwnLine: 30000
+...

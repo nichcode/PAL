@@ -9,8 +9,8 @@
 /bin/
 /build/
 
-# build reflection
-include/pal/pal_config.h
+# compile commands
+compile_commands.json
 
 # MakeFiles
 Makefile
