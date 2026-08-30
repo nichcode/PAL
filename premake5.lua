@@ -360,7 +360,7 @@ local function generateCompileCommands()
 
         if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
             table.insert(flags, "clang-cl.exe")
-            table.insert(flags, " /Zi /std:c11 /W4 /WX /MP /c /wd6387")
+            table.insert(flags, " /Zi /std:c11 /W4 /WX /wd6387")
             table.insert(flags, " /wd4018 /wd4133 /wd4101")
 
             for _, path in ipairs(prj.includedirs or {}) do

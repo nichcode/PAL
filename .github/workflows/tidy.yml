@@ -84,3 +84,4 @@ jobs:
         shell: pwsh
         run: |
           clang-tidy tests/tests_main.c -p .
+          run-clang-tidy -p .
