@@ -393,6 +393,49 @@ local function generateCompileCommands()
     file:close()
 end
 
+local function generateTestsJsonCommands()
+    print("\n=======================================================")
+    print("Generating tests.json")
+
+    local file = io.open("tests.json", "w")
+    if not file then
+        print("Failed to write to tests.json")
+    end
+
+    file:write('[\n')
+
+    local projects = {}
+    local workspace = premake.global.getWorkspace(workspaceName)
+    for prj in premake.workspace.eachproject(workspace) do
+        table.insert(projects, prj)
+    end
+
+    for prjI, prj in ipairs(projects) do
+        file:write('    {\n')
+
+
+        
+        for i, f in ipairs(prj.files) do
+
+
+
+            local command = string.format('%s %s', cmdBase, f)
+            
+            file:write(string.format('        "path": "%s",\n', f))
+
+            if i == #prj.files and isLastProject == true then
+                file:write('    }\n')
+            else
+                file:write('    },\n')
+                file:write('\n')
+            end
+        end
+    end
+
+    file:write(']\n')
+    file:close()
+end
+
 -- generate vscode properties if using gmake
 premake.override(premake.action, "call", function(base, action)
     base(action)
@@ -406,6 +449,10 @@ premake.override(premake.action, "call", function(base, action)
 
     if PAL_GENERATE_COMPILE_COMMANDS then
         generateCompileCommands()
+    end
+
+    if PAL_BUILD_TESTS then
+        generateTestsJsonCommands()
     end
 end)
 
@@ -421,12 +468,6 @@ newoption {
 }
 
 workspace(workspaceName)
-    if PAL_BUILD_TESTS then
-        startproject("tests")
-    else
-        startproject("abi-dump")
-    end
-
     if PAL_BUILD_STATIC then
         staticruntime "on"
     else
