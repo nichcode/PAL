@@ -10,8 +10,8 @@ def worker(info):
     print(f"Checking: {file}")
 
     config = os.path.join(path, ".clang-tidy")
-    cmd = ["clang-tidy-22", file, "-p", path, f"--config-file={config}"]
-    subprocess.run(cmd, shell=True)
+    cmd = ["clang-tidy", file, "-p", path, f"--config-file={config}"]
+    subprocess.run(cmd, shell=False)
 
 def main():
     path = os.path.abspath("../../compile_commands.json")
@@ -19,7 +19,7 @@ def main():
         path = os.path.abspath("compile_commands.json")
 
     if not os.path.exists(path):
-        print(f"Failed to find compile_commands.json")
+        print(f"Failed to find compile_commands.json: {path}")
         sys.exit(1)
 
     buildpath = os.path.dirname(path)

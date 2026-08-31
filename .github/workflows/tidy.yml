@@ -35,6 +35,7 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 22
           sudo apt-get install -y clang-tidy-22
+          sudo ln -sf /usr/bin/clang-tidy-22 /usr/bin/clang-tidy
 
       - name: Generate
         run: ./premake/premake5 gmake --ci
