@@ -4,28 +4,24 @@ import json
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 def worker(info):
-    file, path = info
+    file, buildpath = info
     print(f"Checking: {file}")
 
-    config = os.path.join(path, ".clang-tidy")
-    cmd = ["clang-tidy", file, "-p", path, f"--config-file={config}"]
+    cmd = ["clang-tidy", file, "-p", buildpath]
     subprocess.run(cmd, shell=False)
 
 def main():
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        path = os.path.abspath("compile_commands.json")
-    else:
-        path = os.path.abspath("../../compile_commands.json")
+    root_dir = Path(__file__).resolve().parents[2]
+    path = root_dir / "build/compile_commands.json"
 
     if not os.path.exists(path):
         print(f"Failed to find compile_commands.json: {path}")
         sys.exit(1)
 
     buildpath = os.path.dirname(path)
-
-    # Load the files
     with open(path, "r") as file:
         commands = json.load(file)
 
@@ -41,7 +37,6 @@ def main():
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         pool.map(worker, workers)
-
 
 if __name__ == "__main__":
     main()

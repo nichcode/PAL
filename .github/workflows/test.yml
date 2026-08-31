@@ -1,6 +1,5 @@
 
-# TODO: Find a way to make this a script and break tests into seperate executables
-name: Main
+name: Test
 on:
   workflow_dispatch:
   pull_request:
@@ -8,8 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  main-linux:
-    name: main-linux
+  test-linux:
+    name: test-linux
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,7 +27,7 @@ jobs:
             libvulkan-dev
 
       - name: Generate
-        run: ./premake/premake5 gmake
+        run: ./premake/premake5 gmake --override
 
       - name: Build
         run: make -j config=release
@@ -39,8 +38,8 @@ jobs:
       - name: Run
         run: ./bin/Release/tests
 
-  main-windows:
-    name: main-windows
+  test-windows:
+    name: test-windows
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -51,13 +50,11 @@ jobs:
 
       - name: Download Vulkan SDK
         shell: pwsh
-        run: |
-          curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
+        run: curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
 
       - name: Install Vulkan SDK
         shell: pwsh
-        run: |
-          .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
+        run: .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
 
       - name: Setup Vulkan Environment
         run: |
@@ -65,7 +62,7 @@ jobs:
 
       - name: Generate
         shell: cmd
-        run: premake\premake5.exe vs2022
+        run: premake\premake5.exe vs2022 --override
 
       - name: Build
         shell: cmd

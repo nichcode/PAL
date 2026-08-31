@@ -307,7 +307,7 @@ local function generateCompileCommands()
     print("\n=======================================================")
     print("Generating compile_commands.json")
 
-    local file = io.open("compile_commands.json", "w")
+    local file = io.open("build/compile_commands.json", "w")
     if not file then
         print("Failed to write to compile_commands.json")
     end
@@ -397,7 +397,7 @@ local function generateTestsJsonCommands()
     print("\n=======================================================")
     print("Generating tests.json")
 
-    local file = io.open("tests.json", "w")
+    local file = io.open("build/tests.json", "w")
     if not file then
         print("Failed to write to tests.json")
     end
@@ -427,26 +427,6 @@ local function generateTestsJsonCommands()
 
     file:write(']\n')
     file:close()
-        
-
-
-        
-    --     for i, f in ipairs(prj.files) do
-
-
-
-    --         local command = string.format('%s %s', cmdBase, f)
-            
-    --         file:write(string.format('        "path": "%s",\n', f))
-
-    --         if i == #prj.files and isLastProject == true then
-    --             file:write('    }\n')
-    --         else
-    --             file:write('    },\n')
-    --             file:write('\n')
-    --         end
-    --     end
-    -- end
 end
 
 -- generate vscode properties if using gmake
@@ -461,10 +441,12 @@ premake.override(premake.action, "call", function(base, action)
     end
 
     if PAL_GENERATE_COMPILE_COMMANDS then
+        os.mkdir("build")
         generateCompileCommands()
     end
 
     if PAL_BUILD_TESTS then
+        os.mkdir("build")
         generateTestsJsonCommands()
     end
 end)
@@ -478,6 +460,11 @@ newoption {
         { "clang", "Clang" },
         { "msvc", "MSVC" }
     }
+}
+
+newoption {
+    trigger = "override",
+    description = "Override the build options with the default"
 }
 
 workspace(workspaceName)
@@ -508,8 +495,7 @@ workspace(workspaceName)
 
     filter {}
 
-    -- Check if we are running in CI and override configurations
-    if os.getenv("GITHUB_ACTIONS") == "true" then
+    if (_OPTIONS["override"]) then
         PAL_BUILD_STATIC = false
         PAL_BUILD_TESTS = true
         PAL_GENERATE_COMPILE_COMMANDS = true

@@ -38,13 +38,13 @@ jobs:
           sudo ln -sf /usr/bin/clang-tidy-22 /usr/bin/clang-tidy
 
       - name: Generate
-        run: ./premake/premake5 gmake
+        run: ./premake/premake5 gmake --override
 
       - name: Make Files Writable
         run: chmod -R u+w .
 
       - name: Run Clang Tidy
-        run: python3 .github/workflows/run-tidy.py
+        run: python3 .github/workflows/run-clang-tidy.py
 
   clang-tidy-windows:
     name: clang-tidy-windows
@@ -58,19 +58,15 @@ jobs:
 
       - name: Download Vulkan SDK
         shell: pwsh
-        run: |
-          curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
+        run: curl.exe -L -o vulkan-sdk.exe https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkan_sdk.exe
 
       - name: Install Vulkan SDK
         shell: pwsh
-        run: |
-          .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
+        run: .\vulkan-sdk.exe --accept-licenses --default-answer --confirm-command install
 
       - name: Install Clang Tidy
         shell: pwsh
-        run: |
-          choco install llvm --version=22.1.0 -y
-          pip install clang-tools
+        run: choco install llvm --version=22.1.0 -y
 
       - name: Setup Vulkan Environment
         run: |
@@ -78,7 +74,7 @@ jobs:
 
       - name: Generate
         shell: cmd
-        run: premake\premake5.exe vs2022
+        run: premake\premake5.exe vs2022 --override
 
       - name: Run Clang Tidy
-        run: python3.exe .github/workflows/run-tidy.py
+        run: python3.exe .github/workflows/run-clang-tidy.py
