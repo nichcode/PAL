@@ -1,10 +1,11 @@
 
+# TODO: Find a way to make this a script and break tests into seperate executables
 name: Main
 on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [ master ]
+    #branches: [ master ]
 
 jobs:
   main-linux:
@@ -27,7 +28,7 @@ jobs:
             libvulkan-dev
 
       - name: Generate
-        run: ./premake/premake5 gmake --ci
+        run: ./premake/premake5 gmake
 
       - name: Build
         run: make -j config=release
@@ -64,7 +65,7 @@ jobs:
 
       - name: Generate
         shell: cmd
-        run: premake\premake5.exe vs2022 --ci
+        run: premake\premake5.exe vs2022
 
       - name: Build
         shell: cmd

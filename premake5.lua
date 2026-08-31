@@ -457,8 +457,8 @@ workspace(workspaceName)
 
     filter {}
 
-    -- override
-    if _OPTIONS["ci"] then
+    -- Check if we are running in CI and override configurations
+    if os.getenv("GITHUB_ACTIONS") == "true" then
         PAL_BUILD_STATIC_LIBRARY = false
         PAL_BUILD_TEST_APPLICATION = true
         PAL_BUILD_ABI_DUMP = true

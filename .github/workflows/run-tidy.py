@@ -14,9 +14,10 @@ def worker(info):
     subprocess.run(cmd, shell=False)
 
 def main():
-    path = os.path.abspath("../../compile_commands.json")
-    if len(sys.argv) > 1:
+    if os.getenv("GITHUB_ACTIONS") == "true":
         path = os.path.abspath("compile_commands.json")
+    else:
+        path = os.path.abspath("../../compile_commands.json")
 
     if not os.path.exists(path):
         print(f"Failed to find compile_commands.json: {path}")
