@@ -10,7 +10,7 @@
 /build/
 
 # compile commands
-compile_commands.json
+**.json
 
 # MakeFiles
 Makefile

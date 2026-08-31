@@ -1,24 +1,30 @@
 
--- build PAL as a static library
-PAL_BUILD_STATIC_LIBRARY = false
+-- Build PAL as a static library
+PAL_BUILD_STATIC = false
 
--- build PAL tests as a single application
-PAL_BUILD_TEST_APPLICATION = true -- TODO: remove
+-- Build tests
+PAL_BUILD_TESTS = true
 
--- build PAL abi dump
+-- Generate compile_commands
+PAL_GENERATE_COMPILE_COMMANDS = true
+
+-- Generate .vscode folder if running gmake
+PAL_GENERATE_VSCODE_FOLDER = true
+
+-- Build abi dump
 PAL_BUILD_ABI_DUMP = true
 
--- build system module
+-- Build system module
 PAL_BUILD_SYSTEM_MODULE = true
 
--- build thread module
+-- Build thread module
 PAL_BUILD_THREAD_MODULE = true
 
--- build video module
-PAL_BUILD_VIDEO_MODULE = false
+-- Build video module
+PAL_BUILD_VIDEO_MODULE = true
 
--- build opengl module
-PAL_BUILD_OPENGL_MODULE = false
+-- Build opengl module
+PAL_BUILD_OPENGL_MODULE = true
 
--- build graphics module
-PAL_BUILD_GRAPHICS_MODULE = false
+-- Build graphics module
+PAL_BUILD_GRAPHICS_MODULE = true

@@ -397,14 +397,16 @@ end
 premake.override(premake.action, "call", function(base, action)
     base(action)
 
-    if action == "gmake" then
+    if action == "gmake" and PAL_GENERATE_VSCODE_FOLDER then
         generateVscodeProperties()
         generateTasksJson()
         generateLaunchJson()
         generateSettingsJson()
     end
-    generateCompileCommands()
-    
+
+    if PAL_GENERATE_COMPILE_COMMANDS then
+        generateCompileCommands()
+    end
 end)
 
 newoption {
@@ -418,19 +420,14 @@ newoption {
     }
 }
 
-newoption {
-    trigger = "ci",
-    description = "Build all PAL systems for CI"
-}
-
 workspace(workspaceName)
-    if PAL_BUILD_TEST_APPLICATION then
+    if PAL_BUILD_TESTS then
         startproject("tests")
     else
         startproject("abi-dump")
     end
 
-    if PAL_BUILD_STATIC_LIBRARY then
+    if PAL_BUILD_STATIC then
         staticruntime "on"
     else
         staticruntime "off"
@@ -459,8 +456,9 @@ workspace(workspaceName)
 
     -- Check if we are running in CI and override configurations
     if os.getenv("GITHUB_ACTIONS") == "true" then
-        PAL_BUILD_STATIC_LIBRARY = false
-        PAL_BUILD_TEST_APPLICATION = true
+        PAL_BUILD_STATIC = false
+        PAL_BUILD_TESTS = true
+        PAL_GENERATE_COMPILE_COMMANDS = true
         PAL_BUILD_ABI_DUMP = true
         PAL_BUILD_SYSTEM_MODULE = true
         PAL_BUILD_THREAD_MODULE = true
@@ -580,7 +578,7 @@ workspace(workspaceName)
         defines { "PAL_HAS_GRAPHICS_MODULE=0" }
     end
 
-    if (PAL_BUILD_TEST_APPLICATION) then
+    if (PAL_BUILD_TESTS) then
         include "tests/tests.lua"
     end
 

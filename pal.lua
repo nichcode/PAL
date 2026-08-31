@@ -1,6 +1,6 @@
 
 project "PAL2"
-    if PAL_BUILD_STATIC_LIBRARY then
+    if PAL_BUILD_STATIC then
         kind "StaticLib"
     else
         kind "SharedLib"
