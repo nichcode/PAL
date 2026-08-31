@@ -8,8 +8,6 @@ from pathlib import Path
 
 def worker(info):
     file, buildpath = info
-    print(f"Checking: {file}")
-
     cmd = ["clang-tidy", file, "-p", buildpath]
     subprocess.run(cmd, shell=False)
 
@@ -29,13 +27,13 @@ def main():
     for entry in commands:
         files.append(os.path.normpath(entry["file"]))
 
-    print(f"Found {len(files)} targets. Running parallel analysis...")
+    print(f"Found {len(files)} targets. Running parallel...")
 
     workers = []
     for f in files:
         workers.append((f, buildpath))
 
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor() as pool:
         pool.map(worker, workers)
 
 if __name__ == "__main__":

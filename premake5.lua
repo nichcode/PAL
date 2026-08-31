@@ -414,14 +414,10 @@ local function generateTestsJsonCommands()
     end
 
     for prjI, prj in ipairs(projects) do
-        file:write('    {\n')
-        file:write(string.format('        "file": "%s"\n', prj.files[1]))
-
         if prjI == #projects then
-            file:write('    }\n')
+            file:write(string.format('    "%s"\n', prj.name))
         else
-            file:write('    },\n')
-            file:write('\n')
+            file:write(string.format('    "%s",\n', prj.name))
         end
     end
 

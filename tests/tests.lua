@@ -8,8 +8,8 @@ local function addTest(file)
         objdir(objDir)
         files("src/" .. file)
 
-        includedirs { "%{wks.location}/include" }
-        links { "PAL2" }
+        -- TODO: remove comments includedirs { "%{wks.location}/include" }
+        -- links { "PAL2" }
 end
 
 addTest("test_result.c")
