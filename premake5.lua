@@ -176,115 +176,6 @@ local function generateTasksJson()
     end
 end
 
-local function writeLaunchConfiguration(file, app, isDebug)
-    local name = ""
-    local preLaunchTask = ""
-    local dir = ""
-    local cwd = ""
-
-    if isDebug then
-        name = "launch debug"
-        preLaunchTask = "build debug"
-        dir = "Debug"
-    else
-        name = "launch release"
-        preLaunchTask = "build release"
-        dir = "Release"
-    end
-
-    if app == "tests" then
-        cwd = "tests"
-        if isDebug then
-            name = "launch tests debug"
-        else
-            name = "launch tests release"
-        end
-
-        if os.target() == "windows" then
-            program = "tests.exe"
-        else
-            program = "tests"
-        end
-
-    else
-        cwd = "tools/abi_dump"
-        if isDebug then
-            name = "launch abi-dump debug"
-        else
-            name = "launch abi-dump release"
-        end
-
-        if os.target() == "windows" then
-            program = "abi-dump.exe"
-        else
-            program = "abi-dump"
-        end
-    end
-
-    file:write("        {\n")
-    file:write(string.format('            "name": "%s %s",\n', workspaceName, name))
-    file:write('            "type": "cppdbg",\n')
-    file:write('            "request": "launch",\n')
-    file:write('            "stopAtEntry": false,\n')
-    file:write(string.format('            "cwd": "${workspaceFolder}/%s",\n', cwd))
-
-    file:write('            "environment": [],\n')
-    file:write('            "externalConsole": false,\n')
-    file:write(string.format('            "preLaunchTask": "%s %s",\n', workspaceName, preLaunchTask))
-    file:write(string.format('            "program": "${workspaceFolder}/bin/%s/%s",\n', dir, program))
-    file:write('            "MIMode": "gdb",\n')
-    file:write(string.format('            "miDebuggerPath": "%s",\n', debuggerPath))
-
-    if isDebug then
-        file:write('            "setupCommands": [\n')
-
-        file:write('                {\n')
-        file:write('                    "description": "Enable pretty printing for gdb",\n')
-        file:write('                    "text": "-enable-pretty-printing",\n')
-        file:write('                    "ignoreFailures": false,\n')
-        file:write('                },\n')
-
-        file:write('                {\n')
-        file:write('                    "description": "Set disassembly flavor to intel",\n')
-        file:write('                    "text": "-gdb-set disassembly-flavor intel",\n')
-        file:write('                    "ignoreFailures": false,\n')
-        file:write('                }\n')
-
-        file:write('            ]\n')
-    end
-end
-
-local function generateLaunchJson()
-    print("\n=======================================================")
-    print("Generating .vscode/launch.json")
-
-    local file = io.open(".vscode/launch.json", "w")
-    if file then
-        file:write('{\n')
-        file:write('    "configurations": [\n')
-
-        writeLaunchConfiguration(file, "tests", true)
-        file:write("        },\n")
-        file:write('\n')
-
-        writeLaunchConfiguration(file, "tests", false)
-        file:write("        },\n")
-        file:write('\n')
-
-        writeLaunchConfiguration(file, "abi-dump", true)
-        file:write("        },\n")
-        file:write('\n')
-
-        writeLaunchConfiguration(file, "abi-dump", false)
-        file:write("        }\n")
-
-        file:write("    ],\n")
-        file:write('    "version": "0.2.0"\n')
-        file:write("}\n")
-        file:close()
-    end
-end
-
 local function generateSettingsJson()
     print("\n=======================================================")
     print("Generating .vscode/settings.json")
@@ -425,14 +316,12 @@ local function generateTestsJsonCommands()
     file:close()
 end
 
--- generate vscode properties if using gmake
 premake.override(premake.action, "call", function(base, action)
     base(action)
 
     if action == "gmake" and PAL_GENERATE_VSCODE_FOLDER then
         generateVscodeProperties()
         generateTasksJson()
-        generateLaunchJson()
         generateSettingsJson()
     end
 
@@ -619,7 +508,7 @@ workspace(workspaceName)
     end
 
     if (PAL_BUILD_ABI_DUMP) then
-        include "tools/abi_dump/abi_dump.lua"
+        include "abi-dump/abi-dump.lua"
     end
 
     include "pal.lua"

@@ -6,11 +6,13 @@ local function addTest(file)
 
         targetdir(targetDir)
         objdir(objDir)
-        files("src/" .. file)
+        files(file)
 
         includedirs { "%{wks.location}/include" }
         links { "PAL2" }
 end
 
-addTest("test_result.c")
-addTest("test_allocator.c")
+local files = os.matchfiles("src/**.c")
+for _, file in ipairs(files) do
+    addTest(file)
+end
