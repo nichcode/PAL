@@ -9,7 +9,7 @@
 /bin/
 /build/
 
-# compile commands
+# Json files
 **.json
 
 # MakeFiles

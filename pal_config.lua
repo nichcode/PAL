@@ -8,7 +8,7 @@ PAL_BUILD_TESTS = true
 -- Generate compile_commands
 PAL_GENERATE_COMPILE_COMMANDS = true
 
--- Generate .vscode folder if running gmake
+-- Generate .vscode folder (GNU Makefiles)
 PAL_GENERATE_VSCODE_FOLDER = true
 
 -- Build abi dump
