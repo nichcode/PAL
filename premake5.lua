@@ -407,33 +407,46 @@ local function generateTestsJsonCommands()
     local projects = {}
     local workspace = premake.global.getWorkspace(workspaceName)
     for prj in premake.workspace.eachproject(workspace) do
-        table.insert(projects, prj)
+        -- Add only test projects
+        if prj.name:sub(1, 5) == "test_" then
+            table.insert(projects, prj)
+        end
     end
 
     for prjI, prj in ipairs(projects) do
         file:write('    {\n')
+        file:write(string.format('        "file": "%s"\n', prj.files[1]))
 
-
-        
-        for i, f in ipairs(prj.files) do
-
-
-
-            local command = string.format('%s %s', cmdBase, f)
-            
-            file:write(string.format('        "path": "%s",\n', f))
-
-            if i == #prj.files and isLastProject == true then
-                file:write('    }\n')
-            else
-                file:write('    },\n')
-                file:write('\n')
-            end
+        if prjI == #projects then
+            file:write('    }\n')
+        else
+            file:write('    },\n')
+            file:write('\n')
         end
     end
 
     file:write(']\n')
     file:close()
+        
+
+
+        
+    --     for i, f in ipairs(prj.files) do
+
+
+
+    --         local command = string.format('%s %s', cmdBase, f)
+            
+    --         file:write(string.format('        "path": "%s",\n', f))
+
+    --         if i == #prj.files and isLastProject == true then
+    --             file:write('    }\n')
+    --         else
+    --             file:write('    },\n')
+    --             file:write('\n')
+    --         end
+    --     end
+    -- end
 end
 
 -- generate vscode properties if using gmake
