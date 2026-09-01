@@ -194,8 +194,6 @@ local function generateLaunch()
             debuggerPath = lldbPath
         end
 
-        print(debuggerPath)
-
         file:write('            ]\n')
         file:write("        },\n")
 
@@ -227,6 +225,12 @@ local function generateLaunch()
         file:write('            "setupCommands": [\n')
         if (PAL_VSCODE_DEBUGGER == "gdb") then
             file:write('                {\n')
+            file:write('                    "description": "Let gdb load our script",\n')
+            file:write('                    "text": "Source ${workspaceFolder}/debug/pal-gdb.py",\n')
+            file:write('                    "ignoreFailures": false,\n')
+            file:write('                },\n')
+
+            file:write('                {\n')
             file:write('                    "description": "Enable pretty printing for gdb",\n')
             file:write('                    "text": "-enable-pretty-printing",\n')
             file:write('                    "ignoreFailures": false,\n')
@@ -238,11 +242,24 @@ local function generateLaunch()
             file:write('                    "ignoreFailures": false,\n')
             file:write('                }\n')
         end
+
+        if (PAL_VSCODE_DEBUGGER == "lldb") then
+            file:write('                {\n')
+            file:write('                    "description": "Let lldb load our script",\n')
+            file:write('                    "text": "command script import ${workspaceFolder}/debug/pal-lldb.py",\n')
+            file:write('                    "ignoreFailures": false,\n')
+            file:write('                },\n')
+
+            file:write('                {\n')
+            file:write('                    "description": "Set disassembly flavor to intel",\n')
+            file:write('                    "text": "settings set target.x86-disassembly-flavor intel",\n')
+            file:write('                    "ignoreFailures": false,\n')
+            file:write('                }\n')
+        end
+
         file:write('            ]\n')
 
         file:write("        }\n")
-
-        -- TODO: load our formatter and add setup commands for lldb
 
         file:write("    ],\n")
         file:write('    "version": "0.2.0"\n')
