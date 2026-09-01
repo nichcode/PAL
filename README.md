@@ -38,7 +38,7 @@ or `false` to disable a build option. It is best not disable
 `PAL_BUILD_ABI_DUMP` build option.
 
 By default PAL generates `.vscode` folder when generating GNU Make projects. Set
-`PAL_GENERATE_VSCODE_FOLDER` to `false` to not generate the folder.
+`PAL_GENERATE_VSCODE` to `false` to not generate the folder.
 
 On Linux, both X11 and Wayland are built if PAL can find the development 
 packages. If the X11 developement package is installed, PAL requires 

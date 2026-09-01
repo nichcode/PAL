@@ -7,7 +7,6 @@ objDir = "%{wks.location}/build"
 workspaceName = "PALWorkspace"
 compilerPath = ""
 intellisenseMode = ""
-debuggerPath = ""
 gccBasePath = ""
 
 local function getCommandOutput(cmd)
@@ -43,7 +42,7 @@ local function removeDuplicates(list)
     return out
 end
 
-local function generateVscodeProperties()
+local function generateProperties()
     print("\n=======================================================")
     print("Generating .vscode/c_cpp_properties.json")
 
@@ -101,71 +100,42 @@ local function generateVscodeProperties()
     end
 end
 
-local function writeTasksConfiguration(file, actionType)
-    local name = ""
-    local isDefault = "false"
-    local command = ""
-
-    if actionType == "buildDebug" then
-        name = "build debug"
-        command = "make all -j config=debug"
-        isDefault = "true"
-
-    elseif actionType == "buildRelease" then
-        name = "build release"
-        command = "make all -j config=release"
-
-    elseif actionType == "cleanDebug" then
-        name = "clean debug"
-        command = "make -j clean config=debug"
-
-    elseif actionType == "cleanRelease" then
-        name = "clean release"
-        command = "make -j clean config=release"
-    end
-    
-    file:write("        {\n")
-    file:write('            "type": "shell",\n')
-    file:write(string.format('            "label": "%s %s",\n', workspaceName, name))
-    file:write(string.format('            "command": "%s",\n', command))
-
-    file:write('            "options": {\n')
-    file:write('                "cwd": "${workspaceFolder}"\n')
-    file:write('            },\n')
-
-    file:write('            "problemMatcher": [\n')
-    file:write('                "$gcc",\n')
-    file:write('            ],\n')
-
-    file:write('            "group": {\n')
-    file:write('                "kind": "build",\n')
-    file:write(string.format('                "isDefault": %s\n', isDefault))
-    file:write('            }\n')
-end
-
-local function generateTasksJson()
+local function generateTasks()
     print("\n=======================================================")
     print("Generating .vscode/tasks.json")
 
     local file = io.open(".vscode/tasks.json", "w")
     if file then
+        cmd = "make -j config="
+
         file:write('{\n')
+        file:write('    "inputs": [\n')
+        file:write("        {\n")
+        file:write('            "id": "option",\n')
+        file:write('            "type": "pickString",\n')
+        file:write('            "description": "select option",\n')
+        file:write('            "options": [\n')
+        file:write('                "debug",\n')
+        file:write('                "release",\n')
+        file:write('                "clean"\n')
+        file:write('            ]\n')
+        file:write("        }\n")
+        file:write("    ],\n")
+
         file:write('    "tasks": [\n')
-        
-        writeTasksConfiguration(file, "buildDebug")
-        file:write("        },\n")
-        file:write('\n')
+        file:write("        {\n")
+        file:write('            "type": "shell",\n')
+        file:write(string.format('            "label": "%s",\n', workspaceName))
+        file:write(string.format('            "command": "%s%s",\n', cmd, "${input:option}"))
 
-        writeTasksConfiguration(file, "buildRelease")
-        file:write("        },\n")
-        file:write('\n')
+        file:write('            "problemMatcher": [\n')
+        file:write('                "$gcc",\n')
+        file:write('            ],\n')
 
-        -- clean configurations
-        writeTasksConfiguration(file, "cleanDebug")
-        file:write("        },\n")
-        file:write('\n')
-
-        writeTasksConfiguration(file, "cleanRelease")
+        file:write('            "group": {\n')
+        file:write('                "kind": "build",\n')
+        file:write(string.format('                "isDefault": "true"\n'))
+        file:write('            }\n')
         file:write("        }\n")
 
         file:write("    ],\n")
@@ -176,7 +146,112 @@ local function generateTasksJson()
     end
 end
 
-local function generateSettingsJson()
+local function generateLaunch()
+    print("\n=======================================================")
+    print("Generating .vscode/launch.json")
+
+    local file = io.open(".vscode/launch.json", "w")
+    if file then
+        local projects = {}
+        local workspace = premake.global.getWorkspace(workspaceName)
+        for prj in premake.workspace.eachproject(workspace) do
+            -- Add only executable projects
+            if prj.kind == "ConsoleApp" then
+                table.insert(projects, prj)
+            end
+        end
+
+        file:write('{\n')
+        file:write('    "inputs": [\n')
+        file:write("        {\n")
+        file:write('            "id": "program",\n')
+        file:write('            "type": "pickString",\n')
+        file:write('            "description": "select program",\n')        
+        file:write('            "options": [\n')
+
+        for prjI, prj in ipairs(projects) do
+            if prjI == #projects then
+                file:write(string.format('                "%s"\n', prj.name))
+            else
+                file:write(string.format('                "%s",\n', prj.name))
+            end
+        end
+
+        local extention = ""
+        local gdbPath = "/usr/bin/gdb"
+        local lldbPath = "/usr/bin/lldb"
+
+        if os.target() == "windows" then
+            extention = ".exe"
+            gdbPath = getCommandOutput("where gdb.exe 2>nul")
+            lldbPath = getCommandOutput("where lldb.exe 2>nul")
+        end
+
+        local debuggerPath = ""
+        if (PAL_VSCODE_DEBUGGER == "gdb") then
+            debuggerPath = gdbPath
+        elseif (PAL_VSCODE_DEBUGGER == "lldb") then
+            debuggerPath = lldbPath
+        end
+
+        print(debuggerPath)
+
+        file:write('            ]\n')
+        file:write("        },\n")
+
+        file:write("        {\n")
+        file:write('            "id": "config",\n')
+        file:write('            "type": "pickString",\n')
+        file:write('            "description": "select configuration",\n')
+        file:write('            "options": [\n')
+        file:write('                "debug",\n')
+        file:write('                "release"\n')
+        file:write('            ]\n')
+        file:write("        }\n")
+        file:write("    ],\n")
+
+        file:write('    "configurations": [\n')
+        file:write("        {\n")
+        file:write(string.format('            "name": "%s",\n', "${input:program}"))
+        file:write('            "type": "cppdbg",\n')
+        file:write('            "request": "launch",\n')
+        file:write('            "stopAtEntry": false,\n')
+        file:write('            "cwd": "${workspaceFolder}",\n')
+
+        file:write('            "environment": [],\n')
+        file:write('            "externalConsole": false,\n')
+        file:write(string.format('            "program": "${workspaceFolder}/bin/%s/%s%s",\n', "${input:config}", "${input:program}", extention))
+        file:write(string.format('            "MIMode": "%s",\n', PAL_VSCODE_DEBUGGER))
+        file:write(string.format('            "miDebuggerPath": "%s",\n', debuggerPath))
+
+        file:write('            "setupCommands": [\n')
+        if (PAL_VSCODE_DEBUGGER == "gdb") then
+            file:write('                {\n')
+            file:write('                    "description": "Enable pretty printing for gdb",\n')
+            file:write('                    "text": "-enable-pretty-printing",\n')
+            file:write('                    "ignoreFailures": false,\n')
+            file:write('                },\n')
+
+            file:write('                {\n')
+            file:write('                    "description": "Set disassembly flavor to intel",\n')
+            file:write('                    "text": "-gdb-set disassembly-flavor intel",\n')
+            file:write('                    "ignoreFailures": false,\n')
+            file:write('                }\n')
+        end
+        file:write('            ]\n')
+
+        file:write("        }\n")
+
+        -- TODO: load our formatter and add setup commands for lldb
+
+        file:write("    ],\n")
+        file:write('    "version": "0.2.0"\n')
+        file:write("}\n")
+        file:close()
+    end
+end
+
+local function generateSettings()
     print("\n=======================================================")
     print("Generating .vscode/settings.json")
 
@@ -284,7 +359,7 @@ local function generateCompileCommands()
     file:close()
 end
 
-local function generateTestsJsonCommands()
+local function generateTests()
     print("\n=======================================================")
     print("Generating tests.json")
 
@@ -319,10 +394,11 @@ end
 premake.override(premake.action, "call", function(base, action)
     base(action)
 
-    if action == "gmake" and PAL_GENERATE_VSCODE_FOLDER then
-        generateVscodeProperties()
-        generateTasksJson()
-        generateSettingsJson()
+    if action == "gmake" and PAL_GENERATE_VSCODE then
+        generateProperties()
+        generateTasks()
+        generateLaunch()
+        generateSettings()
     end
 
     if PAL_GENERATE_COMPILE_COMMANDS then
@@ -332,7 +408,7 @@ premake.override(premake.action, "call", function(base, action)
 
     if PAL_BUILD_TESTS then
         os.mkdir("build")
-        generateTestsJsonCommands()
+        generateTests()
     end
 end)
 
@@ -397,7 +473,6 @@ workspace(workspaceName)
             local gccPath = getCommandOutput("where gcc.exe 2>nul")
             local gccBinPath = path.getdirectory(gccPath)
             gccBasePath = path.getdirectory(gccBinPath)
-            debuggerPath = getCommandOutput("where gdb.exe 2>nul")
 
             if (_OPTIONS["compiler"] == "clang") then
                 toolset("clang")
@@ -434,8 +509,6 @@ workspace(workspaceName)
                 intellisenseMode = "linux-gcc-x64"
                 compilerPath = "/usr/bin/gcc"
             end
-
-            debuggerPath = "/usr/bin/gdb"
         end
 
         -- Warnings for both linux and windows
