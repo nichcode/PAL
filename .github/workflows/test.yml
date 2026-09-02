@@ -36,7 +36,7 @@ jobs:
         run: ./bin/Release/abi-dump --quick
 
       - name: Run
-        run: ./bin/Release/tests
+        run: python3 scripts/run-test.py
 
   test-windows:
     name: test-windows
@@ -73,5 +73,4 @@ jobs:
         run: bin\Release\abi-dump.exe --quick
 
       - name: Run
-        shell: cmd
-        run: bin\Release\tests.exe
+        run: python3.exe scripts/run-test.py

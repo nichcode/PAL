@@ -22,4 +22,10 @@ def lookup(value):
 
     return SetPrinter(value, values)
 
+addSet("Status", {
+    0: "STATUS_GOOD",
+    1: "STATUS_BAD",
+    2: "STATUS_NORMAL",
+})
+
 gdb.pretty_printers.append(lookup)

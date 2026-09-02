@@ -34,7 +34,9 @@ Checks: >
   readability-redundant-declaration,
   readability-redundant-function-ptr-dereference,
   readability-redundant-preprocessor,
-  readability-simplify-boolean-expr
+  readability-simplify-boolean-expr,
+  clang-diagnostic-strict-prototypes,
+  clang-diagnostic-unused-*
 
 CheckOptions:
   - key: readability-identifier-naming.FunctionCase
@@ -52,6 +54,6 @@ CheckOptions:
   - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE
 
-WarningsAsErrors: ""
+WarningsAsErrors: '*'
 FormatStyle: file
 HeaderFilterRegex: ".*"

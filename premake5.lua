@@ -116,8 +116,7 @@ local function generateTasks()
         file:write('            "description": "select option",\n')
         file:write('            "options": [\n')
         file:write('                "debug",\n')
-        file:write('                "release",\n')
-        file:write('                "clean"\n')
+        file:write('                "release"\n')
         file:write('            ]\n')
         file:write("        }\n")
         file:write("    ],\n")
@@ -179,19 +178,9 @@ local function generateLaunch()
 
         local extention = ""
         local gdbPath = "/usr/bin/gdb"
-        local lldbPath = "/usr/bin/lldb"
-
         if os.target() == "windows" then
             extention = ".exe"
             gdbPath = getCommandOutput("where gdb.exe 2>nul")
-            lldbPath = getCommandOutput("where lldb.exe 2>nul")
-        end
-
-        local debuggerPath = ""
-        if (PAL_VSCODE_DEBUGGER == "gdb") then
-            debuggerPath = gdbPath
-        elseif (PAL_VSCODE_DEBUGGER == "lldb") then
-            debuggerPath = lldbPath
         end
 
         file:write('            ]\n')
@@ -219,43 +208,27 @@ local function generateLaunch()
         file:write('            "environment": [],\n')
         file:write('            "externalConsole": false,\n')
         file:write(string.format('            "program": "${workspaceFolder}/bin/%s/%s%s",\n', "${input:config}", "${input:program}", extention))
-        file:write(string.format('            "MIMode": "%s",\n', PAL_VSCODE_DEBUGGER))
-        file:write(string.format('            "miDebuggerPath": "%s",\n', debuggerPath))
+        file:write('            "MIMode": "gdb",\n')
+        file:write(string.format('            "miDebuggerPath": "%s",\n', gdbPath))
 
         file:write('            "setupCommands": [\n')
-        if (PAL_VSCODE_DEBUGGER == "gdb") then
-            file:write('                {\n')
-            file:write('                    "description": "Let gdb load our script",\n')
-            file:write('                    "text": "Source ${workspaceFolder}/debug/pal-gdb.py",\n')
-            file:write('                    "ignoreFailures": false,\n')
-            file:write('                },\n')
+        file:write('                {\n')
+        file:write('                    "description": "Let gdb load our script",\n')
+        file:write('                    "text": "source ${workspaceFolder}/scripts/pal-gdb.py",\n')
+        file:write('                    "ignoreFailures": false,\n')
+        file:write('                },\n')
 
-            file:write('                {\n')
-            file:write('                    "description": "Enable pretty printing for gdb",\n')
-            file:write('                    "text": "-enable-pretty-printing",\n')
-            file:write('                    "ignoreFailures": false,\n')
-            file:write('                },\n')
+        file:write('                {\n')
+        file:write('                    "description": "Enable pretty printing for gdb",\n')
+        file:write('                    "text": "-enable-pretty-printing",\n')
+        file:write('                    "ignoreFailures": false,\n')
+        file:write('                },\n')
 
-            file:write('                {\n')
-            file:write('                    "description": "Set disassembly flavor to intel",\n')
-            file:write('                    "text": "-gdb-set disassembly-flavor intel",\n')
-            file:write('                    "ignoreFailures": false,\n')
-            file:write('                }\n')
-        end
-
-        if (PAL_VSCODE_DEBUGGER == "lldb") then
-            file:write('                {\n')
-            file:write('                    "description": "Let lldb load our script",\n')
-            file:write('                    "text": "command script import ${workspaceFolder}/debug/pal-lldb.py",\n')
-            file:write('                    "ignoreFailures": false,\n')
-            file:write('                },\n')
-
-            file:write('                {\n')
-            file:write('                    "description": "Set disassembly flavor to intel",\n')
-            file:write('                    "text": "settings set target.x86-disassembly-flavor intel",\n')
-            file:write('                    "ignoreFailures": false,\n')
-            file:write('                }\n')
-        end
+        file:write('                {\n')
+        file:write('                    "description": "Set disassembly flavor to intel",\n')
+        file:write('                    "text": "-gdb-set disassembly-flavor intel",\n')
+        file:write('                    "ignoreFailures": false,\n')
+        file:write('                }\n')
 
         file:write('            ]\n')
 
@@ -457,16 +430,16 @@ workspace(workspaceName)
     architecture "x64"
     language "C"
 
-    configurations { "Debug", "Release" }
+    configurations { "debug", "release" }
 
     filter {"system:windows", "configurations:*"}
         systemversion "latest"
 
-    filter "configurations:Debug"
+    filter "configurations:debug"
         symbols "on"
         runtime "Debug"
 
-    filter "configurations:Release"
+    filter "configurations:release"
         symbols "off"
         runtime "Release"
         optimize "full"

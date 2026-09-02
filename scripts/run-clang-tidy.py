@@ -12,7 +12,8 @@ def worker(info):
     subprocess.run(cmd, shell=False)
 
 def main():
-    root_dir = Path(__file__).resolve().parents[2]
+    root_dir = Path(__file__).resolve().parents[1]
+    print(root_dir)
     path = root_dir / "build/compile_commands.json"
 
     if not os.path.exists(path):

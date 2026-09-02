@@ -11,9 +11,6 @@ PAL_GENERATE_COMPILE_COMMANDS = true
 -- Generate .vscode folder (GNU Makefiles)
 PAL_GENERATE_VSCODE = true
 
--- The debugger to use for .vscode/launch.jon. Possible values: "gdb", "lldb"
-PAL_VSCODE_DEBUGGER = "gdb"
-
 -- Build abi dump
 PAL_BUILD_ABI_DUMP = true
 

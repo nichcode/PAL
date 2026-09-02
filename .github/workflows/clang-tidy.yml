@@ -44,7 +44,7 @@ jobs:
         run: chmod -R u+w .
 
       - name: Run Clang Tidy
-        run: python3 .github/workflows/run-clang-tidy.py
+        run: python3 scripts/run-clang-tidy.py
 
   clang-tidy-windows:
     name: clang-tidy-windows
@@ -77,4 +77,4 @@ jobs:
         run: premake\premake5.exe vs2022 --override
 
       - name: Run Clang Tidy
-        run: python3.exe .github/workflows/run-clang-tidy.py
+        run: python3.exe scripts/run-clang-tidy.py
