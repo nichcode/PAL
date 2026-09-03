@@ -91,16 +91,39 @@ def lookup(value):
     
     return None
 
-add_set("Status", {
-    0: "STATUS_GOOD",
-    1: "STATUS_BAD",
-    2: "STATUS_NORMAL",
+# Core
+add_set("PalBool", {
+    0: "false",
+    1: "true"
 })
 
-add_bitmask("Result", {
-    0: "RESULT_SUCCESS",
-    1 << 0: "RESULT_FAILED_IO",
-    1 << 1: "RESULT_FAILED_HANDLE",
+add_set("PalResult", {
+    0: "PAL_RESULT_SUCCESS"
+})
+
+add_set("PalResultCode", {
+    0: "PAL_RESULT_CODE_NONE",
+    1: "PAL_RESULT_CODE_INVALID_ARGUMENT",
+    2: "PAL_RESULT_CODE_OUT_OF_MEMORY",
+    3: "PAL_RESULT_CODE_PLATFORM_FAILURE",
+    4: "PAL_RESULT_CODE_TIMEOUT",
+    5: "PAL_RESULT_CODE_INVALID_HANDLE",
+    6: "PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED",
+    7: "PAL_RESULT_CODE_INVALID_OPERATION",
+    8: "PAL_RESULT_CODE_DEVICE_LOST",
+    9: "PAL_RESULT_CODE_OUT_OF_DATE",
+    10: "PAL_RESULT_CODE_COUNT"
+})
+
+add_set("PalResultSource", {
+    0: "PAL_RESULT_SOURCE_NONE",
+    1: "PAL_RESULT_SOURCE_WIN32",
+    2: "PAL_RESULT_SOURCE_POSIX",
+    3: "PAL_RESULT_SOURCE_EGL",
+    4: "PAL_RESULT_SOURCE_VULKAN",
+    5: "PAL_RESULT_SOURCE_D3D12",
+    6: "PAL_RESULT_SOURCE_METAL",
+    7: "PAL_RESULT_SOURCE_COUNT"
 })
 
 gdb.pretty_printers.append(lookup)

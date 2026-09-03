@@ -76,9 +76,11 @@
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
 
+#define PAL_INFINITE UINT32_MAX
+
 #define PAL_TRUE 1
 #define PAL_FALSE 0
-#define PAL_INFINITE UINT32_MAX
+
 #define PAL_RESULT_SUCCESS 0
 
 #define PAL_RESULT_CODE_NONE 0
@@ -128,7 +130,7 @@ typedef uint32_t PalBool;
 typedef uint64_t PalResult;
 
 /**
- * Result codes that are extracted from a `PalResult`.
+ * Result codes that are extracted from a result value.
  * 
  * The result code of a `PAL_RESULT_SUCCESS` value will always be 
  * `PAL_RESULT_CODE_NONE.`
