@@ -25,22 +25,13 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
-#if PLATFORM_POSIX
-#define _POSIX_C_SOURCE 200112L
+#ifndef __PLATFORM_H
+#define __PLATFORM_H
 
-#include "core/result_priv.h"
+#ifdef __linux__
+#define PLATFORM_POSIX 1
+#else
+#define PLATFORM_POSIX 0
+#endif // __linux__
 
-void formatResult(
-    PalResult result,
-    char* buffer)
-{
-    uint32_t code = palGetResultNativeCode(result);
-    PalResultSource source = palGetResultSource(result);
-
-    if (code != 0 && source == PAL_RESULT_SOURCE_POSIX) {
-        strerror_r(code, buffer, FORMAT_BUFFER_SIZE);
-    }
-}
-
-#endif // PLATFORM_POSIX
+#endif // __PLATFORM_H

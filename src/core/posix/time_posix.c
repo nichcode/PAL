@@ -29,18 +29,19 @@
 #if PLATFORM_POSIX
 #define _POSIX_C_SOURCE 200112L
 
-#include "core/result_priv.h"
+#include "pal2/pal_core.h"
+#include <time.h>
 
-void formatResult(
-    PalResult result,
-    char* buffer)
+uint64_t PAL_CALL palGetPerformanceCounter()
 {
-    uint32_t code = palGetResultNativeCode(result);
-    PalResultSource source = palGetResultSource(result);
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
+}
 
-    if (code != 0 && source == PAL_RESULT_SOURCE_POSIX) {
-        strerror_r(code, buffer, FORMAT_BUFFER_SIZE);
-    }
+uint64_t PAL_CALL palGetPerformanceFrequency()
+{
+    return 1000000000LL;
 }
 
 #endif // PLATFORM_POSIX
