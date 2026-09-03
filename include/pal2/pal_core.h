@@ -81,6 +81,7 @@
 #define PAL_INFINITE UINT32_MAX
 #define PAL_RESULT_SUCCESS 0
 
+#define PAL_RESULT_CODE_NONE 0
 #define PAL_RESULT_CODE_INVALID_ARGUMENT 1
 #define PAL_RESULT_CODE_OUT_OF_MEMORY 2
 #define PAL_RESULT_CODE_PLATFORM_FAILURE 3
@@ -102,65 +103,121 @@
 #define PAL_RESULT_SOURCE_COUNT 7
 
 /**
- * @typedef PalBool
- * @brief Must be `PAL_TRUE` or `PAL_FALSE`.
+ * A boolean type
+ * 
+ * Possible values:
+ * 
+ * - `PAL_TRUE` - Represents true or 1.
+ * 
+ * - `PAL_FALSE` - Represents false or 0.
+ * 
+ * @since 2.0
  */
 typedef uint32_t PalBool;
 
 /**
- * @typedef PalResult
- * @brief Value returned by most PAL functions.
- *
- * `PalResult` constains the PAL result code (eg. `PAL_RESULT_CODE_INVALID_HANDLE`), the native
- * source (eg. `PAL_RESULT_SOURCE_POSIX`) and the native code itself.
- * The native code and the source are optional and both can be zero if not provided.
- *
- * Only `PAL_RESULT_SUCCESS` is guarantee to be checked directly with the result value.
- * To check specific result codes for fast path error handling,
- * Call `palGetResultCode(result)` to get the PAL result code from the result value.
- *
- * Call `palGetResultSource(result)` and `palGetResultNativeCode(result)` to get the native
- * source and native code. The native source shows where the native code was retrieved from.
- * Example: `PAL_RESULT_SOURCE_WIN32` means the native code was retrieved from win32
- * (`GetLastError()`).
+ * A value returned by most PAL functions.
+ * 
+ * This value constains the PAL result code, the result source and 
+ * the native code itself. The result source and native code are optional.
+ * 
+ * Possible values:
+ * 
+ * - `PAL_RESULT_SUCCESS` - indicates that the function completed successfully.
+ * This is the only value that can be checked directly with standard checks.
+ * (eg. result == `PAL_RESULT_SUCCESS`).
  *
  * @since 2.0
  */
 typedef uint64_t PalResult;
 
 /**
- * @typedef PalResultCode
- * @brief Result codes that are extracted from `PalResult`.
- *
- * `palGetResultCode(result)` to get the result code from a result value.
- *
- * All result codes follow the format `PAL_RESULT_CODE_**` for consistency and API use.
- *
+ * Result codes that are extracted from a `PalResult`.
+ * 
+ * The result code of a `PAL_RESULT_SUCCESS` value will always be 
+ * `PAL_RESULT_CODE_NONE.`
+ * 
+ * palGetResultCode() to get the result code from the result.
+ * 
+ * Possible Values:
+ * 
+ * - `PAL_RESULT_CODE_NONE` - No result code
+ * 
+ * - `PAL_RESULT_CODE_INVALID_ARGUMENT` - The supplied argument is invalid
+ * 
+ * - `PAL_RESULT_CODE_OUT_OF_MEMORY` - Memory allocation failed
+ * 
+ * - `PAL_RESULT_CODE_PLATFORM_FAILURE` - The operation failed due to a 
+ * platform specific error.
+ * 
+ * - `PAL_RESULT_CODE_TIMEOUT` - The operation did not complete within the 
+ * specified time
+ * 
+ * - `PAL_RESULT_CODE_INVALID_HANDLE` - The supplied handle is invalid
+ * 
+ * - `PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED` - The requested feature or feature
+ * used is not supported
+ * 
+ * - `PAL_RESULT_CODE_INVALID_OPERATION` - The operation performed is invalid
+ * for the context
+ * 
+ * - `PAL_RESULT_CODE_DEVICE_LOST` - The device has been losted
+ * 
+ * - `PAL_RESULT_CODE_OUT_OF_DATE` - The handle is out of date.
+ * 
  * @since 2.0
  */
 typedef uint16_t PalResultCode;
 
 /**
- * @typedef PalResultSource
- * @brief Result sources that are extracted from `PalResult`.
+ * Result sources that are extracted from a `PalResult`.
+ * 
+ * The result source of a `PAL_RESULT_SUCCESS` value will always be 
+ * `PAL_RESULT_SOURCE_NONE`.
  *
- * `palGetResultSource(result)` to get the result source from a result value.
- *
- * All result sources follow the format `PAL_RESULT_SOURCE_**` for consistency and API use.
+ * palGetResultSource() to get the result source from the result.
+ * 
+ * Possible Values:
+ * 
+ * - `PAL_RESULT_SOURCE_NONE` - No result source
+ * 
+ * - `PAL_RESULT_SOURCE_WIN32` - The result native code is from win32
+ * GetLastError()
+ * 
+ * - `PAL_RESULT_SOURCE_POSIX` - The result native code is from win32
+ * (errno)
+ * 
+ * - `PAL_RESULT_SOURCE_EGL` - The result native code is from egl 
+ * eglGetError()
+ * 
+ * - `PAL_RESULT_SOURCE_VULKAN` - The result native code is from vulkan 
+ * (VkResult)
+ * 
+ * - `PAL_RESULT_SOURCE_D3D12` - The result native code is from d3d12
+ * (HRESULT)
+ * 
+ * - `PAL_RESULT_SOURCE_METAL` - The result native code is from metal
+ * (NSError)
  *
  * @since 2.0
  */
 typedef uint16_t PalResultSource;
 
 /**
- * @typedef PalAllocateFn
- * @brief Function pointer type used for memory allocations.
+ * Function pointer type used for memory allocations.
+ * 
+ * The allocated memory must be freed with the corresponding free function.
+ * Freeing memory with a different free function is undefined behavior.
  *
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
- * @param[in] size Number of bytes to allocate.
- * @param[in] alignment Must be power of two. Set to 0 to use implementation-defined default.
+ * @param[in] size Number of bytes to allocate. 0 size allocation must be
+ * valid. 
+ * @param[in] alignment Must be power of two. Set to 0 to use 
+ * implementation-defined default.
  *
  * @return Pointer to the allocated memory on success or `nullptr` on failure.
+ * The returned pointer can be zero-initialized or not, its 
+ * implementation-defined.
  *
  * @since 2.0
  * @sa PalFreeFn
@@ -171,11 +228,14 @@ typedef void*(PAL_CALL* PalAllocateFn)(
     uint64_t alignment);
 
 /**
- * @typedef PalFreeFn
- * @brief Function pointer type used for memory deallocations.
+ * Function pointer type used for memory deallocations.
+ * 
+ * The freed memory must have been allocated by the corresponding allocate 
+ * function. Passing a `nullptr` or already freed memory is undefined behavior.
  *
  * @param[in] userData Optional pointer to user data. Can be `nullptr`.
- * @param[in] ptr Pointer to memory previously allocated by PalAllocateFn.
+ * @param[in] ptr Pointer to memory previously allocated by corresponding
+ * PalAllocateFn.
  *
  * @since 2.0
  * @sa PalAllocateFn
@@ -185,10 +245,16 @@ typedef void(PAL_CALL* PalFreeFn)(
     void* ptr);
 
 /**
- * @typedef PalLogCallback
- * @brief Function pointer type used for log callbacks.
+ * Function pointer type used for log callbacks.
+ * 
+ * The message is only valid for the duration of the callback and must not be
+ * modified or freed by the callback.
+ * 
+ * The callback may be called concurrently from multiple threads. The callback
+ * must be thread safe if the same callback is used by multiple threads or a
+ * seperate callback must be provided for each thread.
  *
- * @param userData Optional pointer to user data passed from ::PalLogger. Can be `nullptr`.
+ * @param userData Optional pointer to user data. Can be `nullptr`.
  * @param msg Null-terminated UTF-8 log message.
  *
  * @since 2.0
@@ -199,46 +265,78 @@ typedef void(PAL_CALL* PalLogCallback)(
     const char* msg);
 
 /**
- * @struct PalVersion
- * @brief Describes the version of PAL.
+ * Contains information about the version of PAL.
+ * 
+ * The version consists of a major version, minor version and build number.
+ * 
+ * Uninitialized fields may result in undefined behavior.
+ * 
+ * `::major` - The major version. This is incremented for breaking changes.
+ * 
+ * `::minor` - The minor version. This is incremented for backward-compatible
+ * additions or features.
+ * 
+ * `::build` - The build version. This is incremented for bug fixes.
  *
  * @since 2.0
  */
-typedef struct {
-    uint32_t major; /**< Major version (breaking changes).*/
-    uint32_t minor; /**< Minor version (adding features).*/
-    uint32_t build; /**< Build version (bug fixes).*/
+typedef struct PalVersion 
+{
+    uint32_t major;
+    uint32_t minor;
+    uint32_t build;
 } PalVersion;
 
 /**
- * @struct PalAllocator
- * @brief Custom memory allocator.
- *
- * Provides user-defined memory allocation and free functions.
- *
+ * Contains information about a memory allocator.
+ * 
+ * This struct provides a way to use a custom allocator with PAL. Some
+ * APIs are thread safe, therefore the custom allocator must be thread
+ * safe if those APIs will be used. 
+ * 
+ * The default allocator is thread safe. A simple way to have a custom
+ * allocator is to use the default allocator with your context (userData).
+ * You get a cross platform thread-safe allocator which your own context 
+ * (eg. number of allocations, number of frees etc).
+ * 
  * Uninitialized fields may result in undefined behavior.
+ * 
+ * `::allocate` - Allocate function. This is the function used for allocations
+ * 
+ * `::free` - Free function. This is the function used for frees.
+ * 
+ * `::userData` - User data passed to the allocate and free functions. 
+ * This can be `nullptr`.
  *
  * @since 2.0
  */
-typedef struct {
-    PalAllocateFn allocate; /**< Allocate function pointer.*/
-    PalFreeFn free;         /**< Free function pointer.*/
-    void* userData;         /**< Optional user-provided data. Can be `nullptr`.*/
+typedef struct PalAllocator
+{
+    PalAllocateFn allocate;
+    PalFreeFn free;
+    void* userData;
 } PalAllocator;
 
 /**
- * @struct PalLogger
- * @brief Logging configuration.
- *
- * Provides a callback and user data for handling log messages.
+ * Contains information about a logger.
+ * 
+ * This struct provides a way to use custom loggers with PAL. This allows
+ * interception of log messages made through the log API. The logger may
+ * be called concurrently from multiple threads, therefore it must
+ * be thread safe or each thread having its own logger.
  *
  * Uninitialized fields may result in undefined behavior.
+ * 
+ * `::callback` - Callback function. This is called when a log call is made.
+ * 
+ * `::userData` - User data passed to the callback. This can be `nullptr`.
  *
  * @since 2.0
  */
-typedef struct {
-    PalLogCallback callback; /**< Callback function pointer.*/
-    void* userData;          /** Optional user-provided data. Can be `nullptr`.*/
+typedef struct PalLogger
+{
+    PalLogCallback callback;
+    void* userData;
 } PalLogger;
 
 /**
