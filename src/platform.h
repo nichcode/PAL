@@ -29,9 +29,9 @@
 #define __PLATFORM_H
 
 #ifdef __linux__
-#define PLATFORM_POSIX 1
+#define PLATFORM_POSIX_ 1
 #else
-#define PLATFORM_POSIX 0
+#define PLATFORM_POSIX_ 0
 #endif // __linux__
 
 #endif // __PLATFORM_H

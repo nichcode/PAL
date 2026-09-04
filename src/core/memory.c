@@ -25,23 +25,44 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
-#if PLATFORM_POSIX_
-#define _POSIX_C_SOURCE 200112L
-
 #include "pal2/pal_core.h"
-#include <time.h>
+#include "shared.h"
+#include <stdlib.h>
 
-uint64_t PAL_CALL palGetPerformanceCounter()
+void* PAL_CALL palAllocate(
+    const PalAllocator* allocator,
+    uint64_t size,
+    uint64_t alignment)
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
+    uint64_t align = alignment;
+    if (align == 0) {
+        align = 16;
+    }
+
+    if (allocator) {
+        return allocator->allocate(allocator->userData, size, align);
+    }
+
+    uint64_t totalSize = (size + align - 1) * sizeof(void*);
+    void* block = malloc(totalSize);
+    if (!block) {
+        return nullptr;
+    }
+
+    uintptr_t address = (uintptr_t)block + sizeof(void*);
+    uintptr_t aligned = ALIGN_(address, align);
+
+    ((void**)aligned)[-1] = block;
+    return (void*)aligned;
 }
 
-uint64_t PAL_CALL palGetPerformanceFrequency()
+void PAL_CALL palFree(
+    const PalAllocator* allocator,
+    void* ptr)
 {
-    return 1000000000LL;
+    if (allocator) {
+        allocator->free(allocator->userData, ptr);
+    } else {
+        free(((void**)ptr)[-1]);
+    }
 }
-
-#endif // PLATFORM_POSIX_

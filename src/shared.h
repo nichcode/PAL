@@ -25,23 +25,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
-#if PLATFORM_POSIX_
-#define _POSIX_C_SOURCE 200112L
+#ifndef __SHARED_H
+#define __SHARED_H
 
-#include "pal2/pal_core.h"
-#include <time.h>
+#ifdef _MSC_VER
+#define ALIGNOF_(type) __alignof(type)
+#else
+#define ALIGNOF_(type) __alignof__(type)
+#endif // _MSC_VER
 
-uint64_t PAL_CALL palGetPerformanceCounter()
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
-}
+#define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
+#define ALIGN_(v, a) (v + a - 1) & ~(a - 1)
 
-uint64_t PAL_CALL palGetPerformanceFrequency()
-{
-    return 1000000000LL;
-}
-
-#endif // PLATFORM_POSIX_
+#endif // __SHARED_H

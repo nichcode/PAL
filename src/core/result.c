@@ -135,15 +135,15 @@ void PAL_CALL palFormatResult(
     uint32_t nativeCode = palGetResultNativeCode(result);
 
     const char* description = "\n";
-    char tmp[FORMAT_BUFFER_SIZE];
-    memset(tmp, 0, FORMAT_BUFFER_SIZE);
+    char tmp[FORMAT_BUFFER_SIZE_];
+    memset(tmp, 0, FORMAT_BUFFER_SIZE_);
 
-    formatResult(result, tmp);
+    formatResult_(result, tmp);
     if (tmp[0] != 0) {
         description = tmp;
     }
 
-    format(
+    format_(
         buffer,
         "Source: %s\n PAL Code: %s\n Native Code: 0x%08X\n PAL Description: %s\n Native "
         "Description: %s",

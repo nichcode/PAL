@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-static void formatArgs(
+static void formatArgs_(
     const char* fmt,
     va_list argsList,
     char* buffer)
@@ -47,14 +47,14 @@ static void formatArgs(
     buffer[len] = 0;
 }
 
-static void format(
+static void format_(
     char* buffer,
     const char* fmt,
     ...)
 {
     va_list argPtr;
     va_start(argPtr, fmt);
-    formatArgs(fmt, argPtr, buffer);
+    formatArgs_(fmt, argPtr, buffer);
     va_end(argPtr);
 }
 

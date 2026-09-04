@@ -26,12 +26,12 @@
  */
 
 #include "platform.h"
-#if PLATFORM_POSIX
+#if PLATFORM_POSIX_
 #define _POSIX_C_SOURCE 200112L
 
 #include "core/result_priv.h"
 
-void formatResult(
+void formatResult_(
     PalResult result,
     char* buffer)
 {
@@ -39,8 +39,8 @@ void formatResult(
     PalResultSource source = palGetResultSource(result);
 
     if (code != 0 && source == PAL_RESULT_SOURCE_POSIX) {
-        strerror_r(code, buffer, FORMAT_BUFFER_SIZE);
+        strerror_r(code, buffer, FORMAT_BUFFER_SIZE_);
     }
 }
 
-#endif // PLATFORM_POSIX
+#endif // PLATFORM_POSIX_

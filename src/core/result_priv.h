@@ -30,9 +30,9 @@
 
 #include "pal2/pal_core.h"
 
-#define FORMAT_BUFFER_SIZE 256
+#define FORMAT_BUFFER_SIZE_ 256
 
-void formatResult(
+void formatResult_(
     PalResult result,
     char* buffer);
 
