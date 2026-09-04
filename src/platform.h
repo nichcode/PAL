@@ -30,6 +30,7 @@
 
 #ifdef __linux__
 #define PLATFORM_POSIX_ 1
+#define _POSIX_C_SOURCE 200112L
 #else
 #define PLATFORM_POSIX_ 0
 #endif // __linux__

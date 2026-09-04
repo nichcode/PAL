@@ -571,7 +571,8 @@ workspace(workspaceName)
     end
 
     if (PAL_BUILD_ABI_DUMP) then
-        include "abi-dump/abi-dump.lua"
+        -- TODO: remove
+        -- include "abi-dump/abi-dump.lua"
     end
 
     include "pal.lua"

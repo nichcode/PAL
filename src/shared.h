@@ -25,6 +25,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include <stdbool.h>
+
 #ifndef __SHARED_H
 #define __SHARED_H
 
@@ -33,6 +35,10 @@
 #else
 #define ALIGNOF_(type) __alignof__(type)
 #endif // _MSC_VER
+
+#ifndef __cplusplus
+#define bool _Bool
+#endif // __cplusplus
 
 #define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
 #define ALIGN_(v, a) (v + a - 1) & ~(a - 1)

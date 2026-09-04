@@ -28,18 +28,32 @@
 #include "platform.h"
 #if PLATFORM_POSIX_
 
-#include "core/result_priv.h"
+#include "core/log_priv.h"
+#include <pthread.h>
 
-void formatResult_(
-    PalResult result,
-    char* buffer)
+static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
+static pthread_key_t s_TLSID = 0;
+
+static void createTLSID()
 {
-    uint32_t code = palGetResultNativeCode(result);
-    PalResultSource source = palGetResultSource(result);
-
-    if (code != 0 && source == PAL_RESULT_SOURCE_POSIX) {
-        strerror_r(code, buffer, FORMAT_BUFFER_SIZE_);
+    if (pthread_key_create(&s_TLSID, destroyTlsData_) != 0) {
+        return;
     }
+}
+
+void createLogTLS_()
+{
+    pthread_once(&s_TLSCreation, createTLSID);
+}
+
+LogTLSData* getLogTLSData_()
+{
+    return pthread_getspecific(s_TLSID);
+}
+
+void setLogTLSData_(LogTLSData* data)
+{
+    pthread_setspecific(s_TLSID, data);
 }
 
 #endif // PLATFORM_POSIX_

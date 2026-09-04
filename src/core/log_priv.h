@@ -25,21 +25,26 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
-#if PLATFORM_POSIX_
+#ifndef __LOG_PRIV_H
+#define __LOG_PRIV_H
 
-#include "core/result_priv.h"
+#include "pal2/pal_core.h"
+#include "shared.h"
 
-void formatResult_(
-    PalResult result,
-    char* buffer)
-{
-    uint32_t code = palGetResultNativeCode(result);
-    PalResultSource source = palGetResultSource(result);
+#define LOG_MSG_SIZE_ 4096
 
-    if (code != 0 && source == PAL_RESULT_SOURCE_POSIX) {
-        strerror_r(code, buffer, FORMAT_BUFFER_SIZE_);
-    }
-}
+typedef struct {
+    char tmp[LOG_MSG_SIZE_];
+    char buffer[LOG_MSG_SIZE_];
+    bool isLogging;
+} LogTLSData;
 
-#endif // PLATFORM_POSIX_
+// This is declared over here so other platforms will have accessed to it
+// for this TLS creation. The definition is in log.c
+void destroyTlsData_(void* data);
+
+void createLogTLS_();
+LogTLSData* getLogTLSData_();
+void setLogTLSData_(LogTLSData* data);
+
+#endif // __LOG_PRIV_H

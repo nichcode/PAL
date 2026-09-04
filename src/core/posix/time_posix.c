@@ -27,7 +27,6 @@
 
 #include "platform.h"
 #if PLATFORM_POSIX_
-#define _POSIX_C_SOURCE 200112L
 
 #include "pal2/pal_core.h"
 #include <time.h>
