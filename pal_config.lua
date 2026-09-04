@@ -14,17 +14,20 @@ PAL_GENERATE_VSCODE = true
 -- Build abi dump
 PAL_BUILD_ABI_DUMP = true
 
+-- Build event module
+PAL_BUILD_EVENT_MODULE = flags
+
 -- Build system module
-PAL_BUILD_SYSTEM_MODULE = true
+PAL_BUILD_SYSTEM_MODULE = false
 
 -- Build thread module
-PAL_BUILD_THREAD_MODULE = true
+PAL_BUILD_THREAD_MODULE = false
 
 -- Build video module
-PAL_BUILD_VIDEO_MODULE = true
+PAL_BUILD_VIDEO_MODULE = false
 
 -- Build opengl module
-PAL_BUILD_OPENGL_MODULE = true
+PAL_BUILD_OPENGL_MODULE = false
 
 -- Build graphics module
-PAL_BUILD_GRAPHICS_MODULE = true
+PAL_BUILD_GRAPHICS_MODULE = false

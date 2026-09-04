@@ -25,12 +25,24 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdbool.h>
+#include "abi_dump.h"
 
-#ifndef SHARED_H_
-#define SHARED_H_
+bool versionDump(uint32_t flags)
+{
+    FieldInfo fields[] = {
+        {"major", {0, 4}, FIELD(PalVersion, major)},
+        {"minor", {4, 4}, FIELD(PalVersion, minor)},
+        {"build", {8, 4}, FIELD(PalVersion, build)}
+    };
 
-#define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
-#define ALIGN_UP_(value, alignment) (((value) + (alignment) - 1) & ~((alignment) - 1))
+    StructInfo info = {0};
+    info.name = "PalVersion";
+    info.fields = fields;
+    info.fieldCount = ARRAY_SIZE(fields);
+    info.expected.align = 4;
+    info.expected.size = 12;
+    info.expected.padding = 0;
+    info.actual = STRUCT(PalVersion);
 
-#endif // SHARED_H_
+    return checkABI(&info, flags);
+}

@@ -25,12 +25,24 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdbool.h>
+#include "abi_dump.h"
 
-#ifndef SHARED_H_
-#define SHARED_H_
+bool allocatorDump(uint32_t flags)
+{
+    FieldInfo fields[] = {
+        {"allocate", {0, 8}, FIELD(PalAllocator, allocate)},
+        {"free", {8, 8}, FIELD(PalAllocator, free)},
+        {"userData", {16, 8}, FIELD(PalAllocator, userData)}
+    };
 
-#define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
-#define ALIGN_UP_(value, alignment) (((value) + (alignment) - 1) & ~((alignment) - 1))
+    StructInfo info = {0};
+    info.name = "PalAllocator";
+    info.fields = fields;
+    info.fieldCount = ARRAY_SIZE(fields);
+    info.expected.align = 8;
+    info.expected.size = 24;
+    info.expected.padding = 0;
+    info.actual = STRUCT(PalAllocator);
 
-#endif // SHARED_H_
+    return checkABI(&info, flags);
+}

@@ -12,7 +12,8 @@ local function addTest(file)
         links { "PAL2" }
 end
 
-local files = os.matchfiles("src/**.c")
-for _, file in ipairs(files) do
+-- Core tests
+local coreFiles = os.matchfiles("src/core/*.c")
+for _, file in ipairs(coreFiles) do
     addTest(file)
 end

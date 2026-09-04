@@ -14,6 +14,4 @@ project "PAL2"
     objdir(objDir)
     includedirs { "include", "src" }
     files { "src/core/*.c" }
-
-    filter {}
     

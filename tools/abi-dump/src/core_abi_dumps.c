@@ -25,12 +25,31 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdbool.h>
+#include "abi_dump.h"
 
-#ifndef SHARED_H_
-#define SHARED_H_
+bool allocatorDump(uint32_t flags);
+bool versionDump(uint32_t flags);
+bool loggerDump(uint32_t flags);
 
-#define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
-#define ALIGN_UP_(value, alignment) (((value) + (alignment) - 1) & ~((alignment) - 1))
+bool coreABIDumps(uint32_t flags)
+{
+    if (!(flags & ABI_DUMP_FLAG_QUICK)) {
+        palLog(nullptr, "");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "Core ABI Dumps");
+        palLog(nullptr, "===========================================");
+        palLog(nullptr, "");
+    }
 
-#endif // SHARED_H_
+    bool status = allocatorDump(flags);
+    if (status == PAL_FALSE) {
+        return PAL_FALSE;
+    }
+
+    status = versionDump(flags);
+    if (status == PAL_FALSE) {
+        return PAL_FALSE;
+    }
+
+    return loggerDump(flags);
+}

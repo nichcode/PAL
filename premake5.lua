@@ -451,6 +451,7 @@ workspace(workspaceName)
         PAL_BUILD_TESTS = true
         PAL_GENERATE_COMPILE_COMMANDS = true
         PAL_BUILD_ABI_DUMP = true
+        PAL_BUILD_EVENT_MODULE = true
         PAL_BUILD_SYSTEM_MODULE = true
         PAL_BUILD_THREAD_MODULE = true
         PAL_BUILD_VIDEO_MODULE = true
@@ -536,6 +537,12 @@ workspace(workspaceName)
         }
     end
 
+    if (PAL_BUILD_EVENT_MODULE) then
+        defines { "PAL_HAS_EVENT_MODULE=1" }
+    else
+        defines { "PAL_HAS_EVENT_MODULE=0" }
+    end
+
     if (PAL_BUILD_SYSTEM_MODULE) then
         defines { "PAL_HAS_SYSTEM_MODULE=1" }
     else
@@ -571,8 +578,7 @@ workspace(workspaceName)
     end
 
     if (PAL_BUILD_ABI_DUMP) then
-        -- TODO: remove
-        -- include "abi-dump/abi-dump.lua"
+        include "tools/abi-dump/abi-dump.lua"
     end
 
     include "pal.lua"

@@ -25,12 +25,23 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdbool.h>
+#include "abi_dump.h"
 
-#ifndef SHARED_H_
-#define SHARED_H_
+bool loggerDump(uint32_t flags)
+{
+    FieldInfo fields[] = {
+        {"callback", {0, 8}, FIELD(PalLogger, callback)},
+        {"userData", {8, 8}, FIELD(PalLogger, userData)}
+    };
 
-#define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
-#define ALIGN_UP_(value, alignment) (((value) + (alignment) - 1) & ~((alignment) - 1))
+    StructInfo info = {0};
+    info.name = "PalLogger";
+    info.fields = fields;
+    info.fieldCount = ARRAY_SIZE(fields);
+    info.expected.align = 8;
+    info.expected.size = 16;
+    info.expected.padding = 0;
+    info.actual = STRUCT(PalLogger);
 
-#endif // SHARED_H_
+    return checkABI(&info, flags);
+}
