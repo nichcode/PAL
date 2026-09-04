@@ -138,13 +138,16 @@ void PAL_CALL palFormatResult(
     char tmp[FORMAT_BUFFER_SIZE_];
     memset(tmp, 0, FORMAT_BUFFER_SIZE_);
 
+    char formatted[FORMAT_BUFFER_SIZE_ * 2];
+    memset(formatted, 0, FORMAT_BUFFER_SIZE_ * 2);
+
     formatResult_(result, tmp);
     if (tmp[0] != 0) {
         description = tmp;
     }
 
     format_(
-        buffer,
+        formatted,
         "Source: %s\n PAL Code: %s\n Native Code: 0x%08X\n PAL Description: %s\n Native "
         "Description: %s",
         sourceString,
@@ -152,4 +155,6 @@ void PAL_CALL palFormatResult(
         nativeCode,
         baseDescription,
         description);
+
+    (void)strncpy(buffer, formatted, bufferSize);
 }

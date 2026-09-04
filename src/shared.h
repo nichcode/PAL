@@ -27,8 +27,8 @@
 
 #include <stdbool.h>
 
-#ifndef __SHARED_H
-#define __SHARED_H
+#ifndef SHARED_H_
+#define SHARED_H_
 
 #ifdef _MSC_VER
 #define ALIGNOF_(type) __alignof(type)
@@ -41,6 +41,6 @@
 #endif // __cplusplus
 
 #define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
-#define ALIGN_(v, a) (v + a - 1) & ~(a - 1)
+#define ALIGN_UP_(value, alignment) (((value) + (alignment) - 1) & ~((alignment) - 1))
 
-#endif // __SHARED_H
+#endif // SHARED_H_

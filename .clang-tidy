@@ -17,9 +17,8 @@ Checks: >
   bugprone-suspicious-string-compare,
   bugprone-unused-return-value,
   bugprone-unsafe-functions,
+  bugprone-suspicious-semicolon,
   cert-err33-c,
-  cert-exp42-c,
-  cert-sig30-c,
   concurrency-mt-unsafe,
   misc-misleading-bidirectional,
   misc-misleading-identifier,
@@ -35,24 +34,7 @@ Checks: >
   readability-redundant-function-ptr-dereference,
   readability-redundant-preprocessor,
   readability-simplify-boolean-expr,
-  clang-diagnostic-strict-prototypes,
-  clang-diagnostic-unused-*
-
-CheckOptions:
-  - key: readability-identifier-naming.FunctionCase
-    value: camelBack
-  - key: readability-identifier-naming.VariableCase
-    value: camelBack
-  - key: readability-identifier-naming.StaticVariablePrefix
-    value: s_
-  - key: readability-identifier-naming.StructCase
-    value: CamelCase
-  - key: readability-identifier-naming.EnumCase
-    value: CamelCase
-  - key: readability-identifier-naming.TypedefCase
-    value: CamelCase
-  - key: readability-identifier-naming.MacroDefinitionCase
-    value: UPPER_CASE
+  clang-diagnostic-*,
 
 WarningsAsErrors: '*'
 FormatStyle: file

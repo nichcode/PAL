@@ -25,8 +25,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef __LOG_PRIV_H
-#define __LOG_PRIV_H
+#ifndef LOG_PRIV_H_
+#define LOG_PRIV_H_
 
 #include "pal2/pal_core.h"
 #include "shared.h"
@@ -43,8 +43,8 @@ typedef struct {
 // for this TLS creation. The definition is in log.c
 void destroyTlsData_(void* data);
 
-void createLogTLS_();
-LogTLSData* getLogTLSData_();
+void createLogTLS_(void);
+LogTLSData* getLogTLSData_(void);
 void setLogTLSData_(LogTLSData* data);
 
-#endif // __LOG_PRIV_H
+#endif // LOG_PRIV_H_

@@ -32,8 +32,8 @@
 
 /** @{ */
 
-#ifndef _PAL_OPENGL_H
-#define _PAL_OPENGL_H
+#ifndef PAL_OPENGL_H
+#define PAL_OPENGL_H
 
 #include "pal_core.h"
 
@@ -475,4 +475,4 @@ PAL_API const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance);
 
 /** @} */
 
-#endif // _PAL_OPENGL_H
+#endif // PAL_OPENGL_H

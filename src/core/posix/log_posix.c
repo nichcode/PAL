@@ -34,19 +34,19 @@
 static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
 static pthread_key_t s_TLSID = 0;
 
-static void createTLSID()
+static void createTLSID(void)
 {
     if (pthread_key_create(&s_TLSID, destroyTlsData_) != 0) {
         return;
     }
 }
 
-void createLogTLS_()
+void createLogTLS_(void)
 {
     pthread_once(&s_TLSCreation, createTLSID);
 }
 
-LogTLSData* getLogTLSData_()
+LogTLSData* getLogTLSData_(void)
 {
     return pthread_getspecific(s_TLSID);
 }

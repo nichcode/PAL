@@ -32,8 +32,8 @@
 
 /** @{ */
 
-#ifndef _PAL_VIDEO_H
-#define _PAL_VIDEO_H
+#ifndef PAL_VIDEO_H
+#define PAL_VIDEO_H
 
 #include "pal_event.h"
 
@@ -1674,4 +1674,4 @@ PAL_API PalResult PAL_CALL palDetachWindow(
 
 /** @} */
 
-#endif // _PAL_VIDEO_H
+#endif // PAL_VIDEO_H

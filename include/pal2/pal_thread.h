@@ -32,8 +32,8 @@
 
 /** @{ */
 
-#ifndef _PAL_THREAD_H
-#define _PAL_THREAD_H
+#ifndef PAL_THREAD_H
+#define PAL_THREAD_H
 
 #include "pal_core.h"
 
@@ -646,4 +646,4 @@ PAL_API void PAL_CALL palBroadcastCondVar(PalCondVar* condVar);
 
 /** @} */
 
-#endif // _PAL_THREAD_H
+#endif // PAL_THREAD_H

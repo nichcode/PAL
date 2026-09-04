@@ -25,37 +25,19 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef __FORMAT_H
-#define __FORMAT_H
+#ifndef FORMAT_H_
+#define FORMAT_H_
 
-#include <stdio.h>
 #include <stdarg.h>
 
-static void formatArgs_(
+void formatArgs_(
     const char* fmt,
     va_list argsList,
-    char* buffer)
-{
-    va_list argsListCopy;
-    va_copy(argsListCopy, argsList);
-    int len = vsnprintf(nullptr, 0, fmt, argsListCopy);
-    va_end(argsListCopy);
+    char* buffer);
 
-    va_copy(argsListCopy, argsList);
-    vsnprintf(buffer, len + 1, fmt, argsListCopy);
-    va_end(argsListCopy);
-    buffer[len] = 0;
-}
-
-static void format_(
+void format_(
     char* buffer,
     const char* fmt,
-    ...)
-{
-    va_list argPtr;
-    va_start(argPtr, fmt);
-    formatArgs_(fmt, argPtr, buffer);
-    va_end(argPtr);
-}
+    ...);
 
-#endif // __FORMAT_H
+#endif // FORMAT_H_

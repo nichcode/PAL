@@ -28,6 +28,7 @@
 #include "format.h"
 #include "log_priv.h"
 #include <string.h>
+#include <stdio.h>
 
 void destroyTlsData_(void* data)
 {
@@ -65,7 +66,7 @@ void PAL_CALL palLog(
         }
 
         // update the tls to stop recursive calls
-        memcpy(data->buffer, data->tmp, LOG_MSG_SIZE_);
+        (void)memcpy(data->buffer, data->tmp, LOG_MSG_SIZE_);
         data->isLogging = PAL_TRUE;
         setLogTLSData_(data);
         logger->callback(logger->userData, data->buffer);
@@ -75,8 +76,8 @@ void PAL_CALL palLog(
         format_(data->buffer, "%s\n", data->tmp);
 
         // write to console
-        fprintf(stdout, "%s", data->buffer);
-        fflush(stdout);
+        (void)fprintf(stdout, "%s", data->buffer);
+        (void)fflush(stdout);
     }
 
     data->isLogging = PAL_FALSE;

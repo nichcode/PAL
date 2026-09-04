@@ -32,8 +32,8 @@
 
 /** @{ */
 
-#ifndef _PAL_GRAPHICS_H
-#define _PAL_GRAPHICS_H
+#ifndef PAL_GRAPHICS_H
+#define PAL_GRAPHICS_H
 
 #include "pal_core.h"
 
@@ -7264,4 +7264,4 @@ static inline PalBool PAL_CALL palIsSupported(
 
 /** @} */
 
-#endif // _PAL_GRAPHICS_H
+#endif // PAL_GRAPHICS_H

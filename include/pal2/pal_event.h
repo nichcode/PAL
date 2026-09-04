@@ -32,8 +32,8 @@
 
 /** @{ */
 
-#ifndef _PAL_EVENT_H
-#define _PAL_EVENT_H
+#ifndef PAL_EVENT_H
+#define PAL_EVENT_H
 
 #include "pal2/pal_core.h"
 
@@ -580,4 +580,4 @@ PAL_API PalBool PAL_CALL palPollEvent(
 
 /** @} */
 
-#endif // _PAL_EVENT_H
+#endif // PAL_EVENT_H

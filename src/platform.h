@@ -25,8 +25,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef __PLATFORM_H
-#define __PLATFORM_H
+#ifndef PLATFORM_H_
+#define PLATFORM_H_
 
 #ifdef __linux__
 #define PLATFORM_POSIX_ 1
@@ -35,4 +35,4 @@
 #define PLATFORM_POSIX_ 0
 #endif // __linux__
 
-#endif // __PLATFORM_H
+#endif // PLATFORM_H_

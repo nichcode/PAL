@@ -32,8 +32,8 @@
 
 /** @{ */
 
-#ifndef _PAL_CORE_H
-#define _PAL_CORE_H
+#ifndef PAL_CORE_H
+#define PAL_CORE_H
 
 #include <stdint.h>
 #include <string.h>
@@ -366,7 +366,7 @@ PAL_API void PAL_CALL palGetVersion(PalVersion* version);
  * @since 2.0
  * @sa palGetVersion
  */
-PAL_API const char* PAL_CALL palGetVersionString();
+PAL_API const char* PAL_CALL palGetVersionString(void);
 
 /**
  * Allocate memory using a custom or default allocator.
@@ -442,7 +442,7 @@ PAL_API void PAL_CALL palLog(
  * @since 2.0
  * @sa palGetPerformanceFrequency
  */
-PAL_API uint64_t PAL_CALL palGetPerformanceCounter();
+PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
 
 /**
  * Retrieve the frequency of the high-resolution performance counter.
@@ -454,7 +454,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter();
  * @since 2.0
  * @sa palGetPerformanceCounter
  */
-PAL_API uint64_t PAL_CALL palGetPerformanceFrequency();
+PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
 
 /**
  * Get the result code from the result value.
@@ -628,7 +628,7 @@ static inline void PAL_CALL palUnpackUint32(
     }
 
     if (outHigh) {
-        *outHigh = (uint32_t)((uint64_t)data >> 32);
+        *outHigh = (uint32_t)(data >> 32);
     }
 }
 
@@ -653,7 +653,7 @@ static inline void PAL_CALL palUnpackInt32(
     }
 
     if (outHigh) {
-        *outHigh = (int32_t)((uint64_t)data >> 32);
+        *outHigh = (int32_t)(data >> 32);
     }
 }
 
@@ -710,4 +710,4 @@ static inline void PAL_CALL palUnpackFloat(
 
 /** @} */
 
-#endif // _PAL_CORE_H
+#endif // PAL_CORE_H

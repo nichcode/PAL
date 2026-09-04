@@ -25,8 +25,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef __RESULT_PRIV_H
-#define __RESULT_PRIV_H
+#ifndef RESULT_PRIV_H_
+#define RESULT_PRIV_H_
 
 #include "pal2/pal_core.h"
 
@@ -36,4 +36,4 @@ void formatResult_(
     PalResult result,
     char* buffer);
 
-#endif // __RESULT_PRIV_H
+#endif // RESULT_PRIV_H_

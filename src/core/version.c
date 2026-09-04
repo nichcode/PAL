@@ -39,7 +39,7 @@ void PAL_CALL palGetVersion(PalVersion* version)
     version->build = VERSION_BUILD;
 }
 
-const char* PAL_CALL palGetVersionString()
+const char* PAL_CALL palGetVersionString(void)
 {
     return VERSION_STRING;
 }

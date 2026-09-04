@@ -50,7 +50,7 @@ void* PAL_CALL palAllocate(
     }
 
     uintptr_t address = (uintptr_t)block + sizeof(void*);
-    uintptr_t aligned = ALIGN_(address, align);
+    uintptr_t aligned = ALIGN_UP_(address, align);
 
     ((void**)aligned)[-1] = block;
     return (void*)aligned;

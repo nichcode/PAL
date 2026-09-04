@@ -32,8 +32,8 @@
 
 /** @{ */
 
-#ifndef _PAL_SYSTEM_H
-#define _PAL_SYSTEM_H
+#ifndef PAL_SYSTEM_H
+#define PAL_SYSTEM_H
 
 #include "pal_core.h"
 
@@ -195,4 +195,4 @@ PAL_API void PAL_CALL palGetCPUInfo(
 
 /** @} */
 
-#endif // _PAL_SYSTEM_H
+#endif // PAL_SYSTEM_H

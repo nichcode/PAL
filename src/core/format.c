@@ -25,22 +25,34 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
-#if PLATFORM_POSIX_
-
 #include "pal2/pal_core.h"
-#include <time.h>
+#include "format.h"
+#include <stdio.h>
 
-uint64_t PAL_CALL palGetPerformanceCounter(void)
+void formatArgs_(
+    const char* fmt,
+    va_list argsList,
+    char* buffer)
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
+    va_list argsListCopy;
+    va_copy(argsListCopy, argsList);
+    int len = vsnprintf(nullptr, 0, fmt, argsListCopy);
+    va_end(argsListCopy);
+
+    size_t maxLen = (size_t)len + 1;
+    va_copy(argsListCopy, argsList);
+    (void)vsnprintf(buffer, maxLen, fmt, argsListCopy);
+    va_end(argsListCopy);
+    buffer[len] = 0;
 }
 
-uint64_t PAL_CALL palGetPerformanceFrequency(void)
+void format_(
+    char* buffer,
+    const char* fmt,
+    ...)
 {
-    return 1000000000LL;
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    formatArgs_(fmt, argPtr, buffer);
+    va_end(argPtr);
 }
-
-#endif // PLATFORM_POSIX_
