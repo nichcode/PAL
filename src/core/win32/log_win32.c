@@ -3,7 +3,7 @@
  * PAL - Prime Abstraction Layer (PAL)
  * A cross platform abstraction layer over graphics and windowing APIs
  * -------------------------------------------------------------------
- * 
+ *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -39,7 +39,11 @@ static volatile LONG s_TLSID = 0;
 void createLogTLS_(void)
 {
     DWORD TLSIndex = FlsAlloc(destroyTLSData_);
-    LONG prev = InterlockedCompareExchange((volatile LONG*)&s_TLSID, (LONG)TLSIndex, 0);
+    LONG prev = InterlockedCompareExchange(
+        (volatile LONG*)&s_TLSID,
+        (LONG)TLSIndex,
+        0);
+
     if (prev != 0) {
         FlsFree(TLSIndex);
     }

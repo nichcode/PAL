@@ -3,7 +3,7 @@
  * PAL - Prime Abstraction Layer (PAL)
  * A cross platform abstraction layer over graphics and windowing APIs
  * -------------------------------------------------------------------
- * 
+ *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -38,7 +38,7 @@ void formatResult_(
     char* buffer)
 {
     PalResultSource source = palGetResultSource(result);
-    if (source != PAL_RESULT_SOURCE_WIN32 || 
+    if (source != PAL_RESULT_SOURCE_WIN32 ||
         source != PAL_RESULT_SOURCE_D3D12) {
         return;
     }

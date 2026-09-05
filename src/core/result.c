@@ -3,7 +3,7 @@
  * PAL - Prime Abstraction Layer (PAL)
  * A cross platform abstraction layer over graphics and windowing APIs
  * -------------------------------------------------------------------
- * 
+ *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -25,8 +25,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "result_priv.h"
 #include "format.h"
+#include "result_priv.h"
 
 static const char* resultCodeToString(PalResult result)
 {
@@ -148,7 +148,8 @@ void PAL_CALL palFormatResult(
 
     format_(
         formatted,
-        "Source: %s\n PAL Code: %s\n Native Code: 0x%08X\n PAL Description: %s\n Native "
+        "Source: %s\n PAL Code: %s\n Native Code: 0x%08X\n PAL Description: "
+        "%s\n Native "
         "Description: %s",
         sourceString,
         baseString,
