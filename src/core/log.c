@@ -30,7 +30,7 @@
 #include <string.h>
 #include <stdio.h>
 
-void destroyTlsData_(void* data)
+void destroyTLSData_(void* data)
 {
     LogTLSData* tlsData = data;
     if (tlsData) {

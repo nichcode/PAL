@@ -25,26 +25,26 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef LOG_PRIV_H_
-#define LOG_PRIV_H_
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
 
 #include "pal2/pal_core.h"
-#include "shared.h"
+#include <windows.h>
 
-#define LOG_MSG_SIZE_ 4096
+uint64_t PAL_CALL palGetPerformanceCounter(void)
+{
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+    return (uint64_t)counter.QuadPart;
+}
 
-typedef struct {
-    char tmp[LOG_MSG_SIZE_];
-    char buffer[LOG_MSG_SIZE_];
-    bool isLogging;
-} LogTLSData;
+uint64_t PAL_CALL palGetPerformanceFrequency(void)
+{
+    LARGE_INTEGER frequency;
+    QueryPerformanceFrequency(&frequency);
+    return (uint64_t)frequency.QuadPart;
+}
 
-// This is declared over here so other platforms will have accessed to it
-// for this TLS creation. The definition is in log.c
-void destroyTLSData_(void* data);
-
-void createLogTLS_(void);
-LogTLSData* getLogTLSData_(void);
-void setLogTLSData_(LogTLSData* data);
-
-#endif // LOG_PRIV_H_
+#endif // _WIN32

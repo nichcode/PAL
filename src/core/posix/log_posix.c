@@ -36,7 +36,7 @@ static pthread_key_t s_TLSID = 0;
 
 static void createTLSID(void)
 {
-    if (pthread_key_create(&s_TLSID, destroyTlsData_) != 0) {
+    if (pthread_key_create(&s_TLSID, destroyTLSData_) != 0) {
         return;
     }
 }

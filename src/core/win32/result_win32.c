@@ -25,26 +25,35 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef LOG_PRIV_H_
-#define LOG_PRIV_H_
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
 
-#include "pal2/pal_core.h"
-#include "shared.h"
+#include "core/result_priv.h"
+#include <windows.h>
 
-#define LOG_MSG_SIZE_ 4096
+void formatResult_(
+    PalResult result,
+    char* buffer)
+{
+    PalResultSource source = palGetResultSource(result);
+    if (source != PAL_RESULT_SOURCE_WIN32 || 
+        source != PAL_RESULT_SOURCE_D3D12) {
+        return;
+    }
 
-typedef struct {
-    char tmp[LOG_MSG_SIZE_];
-    char buffer[LOG_MSG_SIZE_];
-    bool isLogging;
-} LogTLSData;
+    uint32_t code = palGetResultNativeCode(result);
+    if (code != 0) {
+        FormatMessageA(
+            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            nullptr,
+            code,
+            0,
+            buffer,
+            FORMAT_BUFFER_SIZE_,
+            nullptr);
+    }
+}
 
-// This is declared over here so other platforms will have accessed to it
-// for this TLS creation. The definition is in log.c
-void destroyTLSData_(void* data);
-
-void createLogTLS_(void);
-LogTLSData* getLogTLSData_(void);
-void setLogTLSData_(LogTLSData* data);
-
-#endif // LOG_PRIV_H_
+#endif // _WIN32
