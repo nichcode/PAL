@@ -19,11 +19,11 @@ IndentGotoLabels: false
 
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterEnum:       true
+  AfterEnum:       false
   AfterExternBlock: false
   AfterFunction:   true
-  AfterStruct:     true
-  AfterUnion:      true
+  AfterStruct:     false
+  AfterUnion:      false
   BeforeCatch:     false
   BeforeElse:      false
   BeforeWhile:     false

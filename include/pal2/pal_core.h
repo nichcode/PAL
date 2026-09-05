@@ -45,7 +45,7 @@
 #define nullptr ((void*)0)
 #endif // __cplusplus
 
-// Set up shared library dependencies
+/** Set up shared library dependencies */
 #ifdef _WIN32
 #define PAL_CALL __stdcall
 #ifdef _PAL_EXPORT
@@ -54,7 +54,7 @@
 #define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport)
 #endif // PAL_EXPORT
 #else
-// other plafforms
+/** Other platforms */
 #define PAL_CALL
 #ifdef _PAL_EXPORT
 #define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default")))
@@ -76,40 +76,172 @@
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
 
+/** 
+ * A sentinel representing an infinite time period.
+ * 
+ * @since 2.0
+ */
 #define PAL_INFINITE UINT32_MAX
 
+/** 
+ * Represents `true` or `1`.
+ * 
+ * @since 2.0
+ */
 #define PAL_TRUE 1
+
+/** 
+ * Represents `false` or `0`.
+ * 
+ * @since 2.0
+ */
 #define PAL_FALSE 0
 
+/**
+ * Operation completed successfully.
+ * 
+ * This is the only value that can be checked directly with standard checks.
+ * (eg. result == `PAL_RESULT_SUCCESS`).
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SUCCESS 0
 
+/** 
+ * No result code.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_NONE 0
+
+/** 
+ * The suupplied argument is invalid.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_INVALID_ARGUMENT 1
+
+/** 
+ * Memory allocation failed.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_OUT_OF_MEMORY 2
+
+/** 
+ * The operation failed due to a platform specific error.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_PLATFORM_FAILURE 3
+
+/** 
+ * The operation did not complete within the specified time.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_TIMEOUT 4
+
+/** 
+ * The supplied handle is invalid.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_INVALID_HANDLE 5
+
+/** 
+ * The requested feature or feature used is not supported.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED 6
+
+/** 
+ * The operation performed is invalid for the context.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_INVALID_OPERATION 7
+
+/** 
+ * The device has been lost.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_DEVICE_LOST 8
+
+/** 
+ * The supplied handle out of date.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_OUT_OF_DATE 9
+
+/** 
+ * A sentinel representing the count of result codes.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_CODE_COUNT 10
 
+/** 
+ * No result source.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_NONE 0
+
+/** 
+ * Result native code is from win32 `GetLastError()`.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_WIN32 1
+
+/** 
+ * Result native code is from posix `errno`.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_POSIX 2
+
+/** 
+ * Result native code is from egl `eglGetError()`.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_EGL 3
+
+/** 
+ * Result native code is from vulkan `VkResult`.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_VULKAN 4
+
+/** 
+ * Result native code is from d3d12 `HRESULT`.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_D3D12 5
+
+/** 
+ * Result native code is from metal `NSError`.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_METAL 6
+
+/** 
+ * A sentinel representing the count of result sources.
+ * 
+ * @since 2.0
+ */
 #define PAL_RESULT_SOURCE_COUNT 7
 
 /**
  * A boolean type
- * 
- * ::PAL_TRUE - Represents `true` or `1`.
- * 
- * ::PAL_FALSE - Represents `false` or `0`.
  * 
  * @since 2.0
  */
@@ -119,75 +251,33 @@ typedef uint32_t PalBool;
  * A value returned by most PAL functions.
  * 
  * This value constains the PAL result code, the result source and 
- * the native code itself. The result source and native code are optional.
+ * the native code itself. 
  * 
- * ::PAL_RESULT_SUCCESS - indicates that the function completed successfully.
- * This is the only value that can be checked directly with standard checks.
- * (eg. result == `PAL_RESULT_SUCCESS`).
- *
+ * The result source and native code are optional.
+ * 
  * @since 2.0
  */
 typedef uint64_t PalResult;
 
 /**
- * Result codes that are extracted from a result value.
+ * Result codes from a result value.
  * 
  * The result code of a `PAL_RESULT_SUCCESS` value will always be 
  * `PAL_RESULT_CODE_NONE.`
  * 
- * `palGetResultCode()` to get the result code from the result.
- * 
- * ::PAL_RESULT_CODE_NONE - No result code
- * 
- * ::PAL_RESULT_CODE_INVALID_ARGUMENT - The supplied argument is invalid
- * 
- * ::PAL_RESULT_CODE_OUT_OF_MEMORY - Memory allocation failed
- * 
- * ::PAL_RESULT_CODE_PLATFORM_FAILURE - The operation failed due to a 
- * platform specific error.
- * 
- * ::PAL_RESULT_CODE_TIMEOUT - The operation did not complete within the 
- * specified time
- * 
- * ::PAL_RESULT_CODE_INVALID_HANDLE - The supplied handle is invalid
- * 
- * ::PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED - The requested feature or feature
- * used is not supported
- * 
- * ::PAL_RESULT_CODE_INVALID_OPERATION - The operation performed is invalid
- * for the context
- * 
- * ::PAL_RESULT_CODE_DEVICE_LOST - The device has been losted
- * 
- * ::PAL_RESULT_CODE_OUT_OF_DATE - The handle is out of date.
- * 
  * @since 2.0
+ * @sa palGetResultCode
  */
 typedef uint16_t PalResultCode;
 
 /**
- * Result sources that are extracted from a `PalResult`.
+ * Result sources from a result value.
  * 
  * The result source of a `PAL_RESULT_SUCCESS` value will always be 
  * `PAL_RESULT_SOURCE_NONE`.
- *
- * `palGetResultSource()` to get the result source from the result.
  * 
- * ::PAL_RESULT_SOURCE_NONE - No result source
- * 
- * ::PAL_RESULT_SOURCE_WIN32 - The native code is from win32: `GetLastError()`
- * 
- * ::PAL_RESULT_SOURCE_POSIX - The native code is from posix: `errno`
- * 
- * ::PAL_RESULT_SOURCE_EGL - The native code is from egl: `eglGetError()`
- * 
- * ::PAL_RESULT_SOURCE_VULKAN - The native code is from vulkan: `VkResult`
- * 
- * ::PAL_RESULT_SOURCE_D3D12 - The native code is from d3d12: `HRESULT`
- * 
- * ::PAL_RESULT_SOURCE_METAL - The native code is from metal: `NSError`
- *
  * @since 2.0
+ * @sa palGetResultSource
  */
 typedef uint16_t PalResultSource;
 
@@ -262,44 +352,43 @@ typedef void(PAL_CALL* PalLogCallback)(
  * 
  * Uninitialized fields may result in undefined behavior.
  * 
- * ::major - The major version. This is incremented for breaking changes.
- * 
- * ::minor - The minor version. This is incremented for backward-compatible
- * additions or features.
- * 
- * ::build - The build version. This is incremented for bug fixes.
- *
  * @since 2.0
  */
 typedef struct PalVersion 
 {
+    /** The major version. This is incremented for breaking changes.*/
     uint32_t major;
+
+    /**
+     * The minor version. This is incremented for backward-compatible
+     * additions or features.
+     */
     uint32_t minor;
+
+    /** The build version. This is incremented for bug fixes.*/
     uint32_t build;
 } PalVersion;
 
 /**
  * Contains information about a memory allocator.
  * 
- * This struct provides a way to use a custom allocator with PAL. Some
- * APIs are thread safe, therefore the custom allocator must be thread
+ * This struct provides a way to use a custom allocator with PAL. 
+ * Some APIs are thread safe, therefore the custom allocator must be thread
  * safe if those APIs will be used. 
  * 
  * Uninitialized fields may result in undefined behavior.
- * 
- * ::allocate - Allocate function.
- * 
- * ::free - Free function.
- * 
- * ::userData - User data passed to the allocate and free functions. 
- * Can be `nullptr`.
  *
  * @since 2.0
  */
-typedef struct PalAllocator
+typedef struct PalAllocator 
 {
+    /** Allocate function. Must not be `nullptr`.*/
     PalAllocateFn allocate;
+
+    /** Free function. Must not be `nullptr`.*/
     PalFreeFn free;
+
+    /** User data passed to allocate and free functions. Can be `nullptr`.*/
     void* userData;
 } PalAllocator;
 
@@ -313,15 +402,13 @@ typedef struct PalAllocator
  *
  * Uninitialized fields may result in undefined behavior.
  * 
- * ::callback - Callback function.
- * 
- * ::userData - User data passed to the callback. Can be `nullptr`.
- *
  * @since 2.0
  */
-typedef struct PalLogger
-{
+typedef struct PalLogger {
+    /** Callback function. Must not be `nullptr`.*/
     PalLogCallback callback;
+
+    /** User data passed to callback. Can be `nullptr`.*/
     void* userData;
 } PalLogger;
 
