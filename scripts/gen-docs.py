@@ -16,10 +16,12 @@ def main():
     log_file = build_path / "doxygen.log"
     with open(log_file, "r") as file:
         if not file:
+            print(f"")
             print(f"Failed to load doxygen.log: {log_file}")
             sys.exit(1)
 
         if not file.read(1) == "":
+            print(f"")
             print(f"There are errors with the documentation generation")
             sys.exit(1)
 
