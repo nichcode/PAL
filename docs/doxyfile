@@ -1366,7 +1366,6 @@ HTML_EXTRA_STYLESHEET  = theme/base.css \
 
 HTML_EXTRA_FILES       = theme/darkmode.js \
                          theme/copy_button.js \
-                         theme/paragraph_link.js \
                          theme/interactive_toc.js
 
 # The HTML_COLORSTYLE tag can be used to specify if the generated HTML output
