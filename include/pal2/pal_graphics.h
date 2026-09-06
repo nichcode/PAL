@@ -1241,7 +1241,7 @@ typedef uint32_t PalBorderColor;
 typedef uint32_t PalSurfaceFormat;
 
 /**
- * @typedef WindowInstanceType
+ * @typedef PalWindowInstanceType
  * @brief Display types for a window.
  *
  * All window display types follow the format `PAL_WINDOW_INSTANCE_TYPE_**` for
@@ -2719,7 +2719,7 @@ typedef struct {
 } PalImageCreateInfo;
 
 /**
- * @struct PalImageCreateInfo
+ * @struct PalImageViewCreateInfo
  * @brief Creation parameters for an image view.
  *
  * Uninitialized fields may result in undefined behavior.
@@ -2964,7 +2964,7 @@ typedef struct {
 } PalShaderBindingTableCreateInfo;
 
 /**
- * @struct PalGraphicsBackendRegistrationInfo
+ * @struct PalGraphicsBackendInfo
  * @brief Custom graphics backend information.
  *
  * Uninitialized fields may result in undefined behavior.
@@ -2978,7 +2978,7 @@ typedef struct {
  *
  * @since 2.0
  */
-typedef struct {
+typedef struct PalGraphicsBackendInfo {
     const void* vtable;                      /**< Pointer to the backend vtable.*/
     PalGraphicsBackendVtableVersion version; /**< (eg. `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`).*/
     uint32_t reserved;                       /**< 0 for now.*/
