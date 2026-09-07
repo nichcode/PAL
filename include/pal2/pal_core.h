@@ -32,7 +32,6 @@
 
 /** @{ */
 
-// TODO: add @brief to the docs except struct fields
 #ifndef PAL_CORE_H
 #define PAL_CORE_H
 
@@ -40,70 +39,122 @@
 #include <string.h>
 
 #ifdef __cplusplus
-/**This is used to specify the C linkage for the API declarations.*/
+/**
+ * @brief This is used to specify the C linkage for the API declarations.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_EXTERN_C extern "C"
 #else
-/**This is used to specify the C linkage for the API declarations.*/
+/**
+ * @brief This is used to specify the C linkage for the API declarations.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_EXTERN_C
 
-/**Represents `((void*)0)` or `NULL`.*/
+/**
+ * @brief Represents `NULL`.
+ *
+ * @since Added in version 2.0
+ */
 #define nullptr ((void*)0)
 #endif // __cplusplus
 
 #ifdef _WIN32
-/**This is used to specify PAL calling convention.*/
+/**
+ * @brief This is used to specify PAL calling convention.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_CALL __stdcall
 #ifdef _PAL_EXPORT
-/**This is used to specify PAL API symbol.*/
+/**
+ * @brief This is used to specify PAL API symbol.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllexport)
 #else
-/**This is used to specify PAL API symbol.*/
+/**
+ * @brief This is used to specify PAL API symbol.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport)
 #endif // PAL_EXPORT
 #else
-/**This is used to specify PAL calling convention.*/
+/**
+ * @brief This is used to specify PAL calling convention.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_CALL
 #ifdef _PAL_EXPORT
-/**This is used to specify PAL API symbol.*/
+/**
+ * @brief This is used to specify PAL API symbol.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default")))
 #else
-/**This is used to specify PAL API symbol.*/
+/**
+ * @brief This is used to specify PAL API symbol.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_DECLSPEC PAL_EXTERN_C
 #endif // PAL_EXPORT
 #endif // _WIN32
 
 #ifdef _PAL_BUILD_DLL
-/**This is used to specify PAL API functions attributes.*/
+/**
+ * @brief This is used to specify PAL API functions attributes.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_API PAL_EXTERN_C PAL_DECLSPEC
 #else
-/**This is used to specify PAL API functions attributes.*/
+/**
+ * @brief This is used to specify PAL API functions attributes.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_API PAL_EXTERN_C
 #endif // _PAL_BUILD_DLL
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-/**Indicates whether a system uses big-endian byte order.*/
+/**
+ * @brief Indicates whether a system uses big-endian byte order.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_BIG_ENDIAN 1
 #else
-/**Indicates whether a system uses big-endian byte order.*/
+/**
+ * @brief Indicates whether a system uses big-endian byte order.
+ *
+ * @since Added in version 2.0
+ */
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
 
 /**
- * Represents an infinite time period.
+ * @brief Represents an infinite time period.
  *
  * @since Added in version 2.0
  */
 #define PAL_INFINITE UINT32_MAX
 
 /**
- * Represents `true` or `1`.
+ * @brief Represents `true` or `1`.
  *
  * @since Added in version 2.0
  */
 #define PAL_TRUE 1
 
 /**
- * Represents `false` or `0`.
+ * @brief Represents `false` or `0`.
  *
  * @since Added in version 2.0
  */
@@ -122,56 +173,56 @@
 #define PAL_RESULT_SUCCESS 0
 
 /**
- * No result code.
+ * @brief No result code.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_NONE 0
 
 /**
- * The suupplied argument is invalid.
+ * @brief The suupplied argument is invalid.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_INVALID_ARGUMENT 1
 
 /**
- * Memory allocation failed.
+ * @brief Memory allocation failed.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_OUT_OF_MEMORY 2
 
 /**
- * The operation failed due to a platform specific error.
+ * @brief The operation failed due to a platform specific error.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_PLATFORM_FAILURE 3
 
 /**
- * The operation did not complete within the specified time.
+ * @brief The operation did not complete within the specified time.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_TIMEOUT 4
 
 /**
- * The supplied handle is invalid.
+ * @brief The supplied handle is invalid.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_INVALID_HANDLE 5
 
 /**
- * The requested feature or feature used is not supported.
+ * @brief The requested feature or feature used is not supported.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED 6
 
 /**
- * The operation performed is invalid for the context.
+ * @brief The operation performed is invalid for the context.
  *
  * @since Added in version 2.0
  */
@@ -185,70 +236,70 @@
 #define PAL_RESULT_CODE_DEVICE_LOST 8
 
 /**
- * The supplied handle out of date.
+ * @brief The supplied handle out of date.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_OUT_OF_DATE 9
 
 /**
- * A sentinel representing the count of result codes.
+ * @brief A value representing the count of result codes.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_CODE_COUNT 10
 
 /**
- * No result source.
+ * @brief No result source.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_SOURCE_NONE 0
 
 /**
- * Result native code is from win32 `GetLastError()`.
+ * @brief Result native code is from win32 `GetLastError()`.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_SOURCE_WIN32 1
 
 /**
- * Result native code is from posix `errno`.
+ * @brief Result native code is from posix `errno`.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_SOURCE_POSIX 2
 
 /**
- * Result native code is from egl `eglGetError()`.
+ * @brief Result native code is from egl `eglGetError()`.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_SOURCE_EGL 3
 
 /**
- * Result native code is from vulkan `VkResult`.
+ * @brief Result native code is from vulkan `VkResult`.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_SOURCE_VULKAN 4
 
 /**
- * Result native code is from d3d12 `HRESULT`.
+ * @brief Result native code is from d3d12 `HRESULT`.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_SOURCE_D3D12 5
 
 /**
- * Result native code is from metal `NSError`.
+ * @brief Result native code is from metal `NSError`.
  *
  * @since Added in version 2.0
  */
 #define PAL_RESULT_SOURCE_METAL 6
 
 /**
- * A sentinel representing the count of result sources.
+ * @brief A value representing the count of result sources.
  *
  * @since Added in version 2.0
  */
@@ -446,9 +497,9 @@ typedef struct PalLogger {
 /**
  * @brief Converts a result value to a human-readable string.
  *
- * @param result The result value to format.
- * @param bufferSize The size of the buffer. Must not be `0`.
- * @param buffer The buffer to write to. The string will be truncated if
+ * @param[in] result The result value to format.
+ * @param[in] bufferSize The size of the buffer. Must not be `0`.
+ * @param[out] buffer The buffer to write to. The string will be truncated if
  * `bufferSize` is insufficient.
  *
  * @Thread-safety `buffer` parameter must be per thread.
@@ -463,7 +514,7 @@ PAL_API void PAL_CALL palFormatResult(
 /**
  * @brief Retrieves the PAL runtime version number.
  *
- * @param version The struct to recieve the runtime version. Must not be
+ * @param[out] version The struct to recieve the runtime version. Must not be
  * `nullptr`.
  *
  * @Thread-safety `version` must be per thread.
@@ -499,10 +550,10 @@ PAL_API const char* PAL_CALL palGetVersionString(void);
  * If allocations will be made from multiple threads, the `allocator`
  * parameter must be thread safe. The default allocator is thread safe.
  *
- * @param allocator The allocator. `nullptr` to use the default allocator.
- * @param size Number of bytes to allocate. A size of `0` is
+ * @param[in] allocator The allocator. `nullptr` to use the default allocator.
+ * @param[in] size Number of bytes to allocate. A size of `0` is
  * implementation-defined.
- * @param alignment Must be power of two. An alignment of `0` uses the
+ * @param[in] alignment Must be power of two. An alignment of `0` uses the
  * implementation-defined default.
  *
  * @return Allocated memory on success, or `nullptr` on failure.
@@ -528,9 +579,9 @@ PAL_API void* PAL_CALL palAllocate(
  * If deallocations will be made from multiple threads, the `allocator`
  * parameter must be thread safe. The default allocator is thread safe.
  *
- * @param allocator The allocator used to allocate the memory. `nullptr` for
+ * @param[in] allocator The allocator used to allocate the memory. `nullptr` for
  * the default allocator. The default allocator is thread safe.
- * @param ptr Memory to free. Must be valid.
+ * @param[in] ptr Memory to free. Must be valid.
  *
  * @Thread-safety `allocator` implementation must be thread safe.
  *
@@ -544,10 +595,10 @@ PAL_API void PAL_CALL palFree(
 /**
  * @brief Logs a formatted message to a custom or default logger.
  *
- * @param logger Logger instance. `nullptr` to use the default logger. The
+ * @param[in] logger Logger instance. `nullptr` to use the default logger. The
  * default logger is thread safe.
- * @param fmt printf-style format string.
- * @param ... Arguments for the format string.
+ * @param[in] fmt printf-style format string.
+ * @param[in] ... Arguments for the format string.
  *
  * @Thread-safety Thread safe, but log output and
  * callbacks may be invoked concurrently. The user must ensure the callback
@@ -588,7 +639,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
 /**
  * @brief Gets the result code from the result value.
  *
- * @param result The result value.
+ * @param[in] result The result value.
  *
  * @return The result code from the result value.
  *
@@ -604,7 +655,7 @@ static inline PalResultCode PAL_CALL palGetResultCode(PalResult result)
 /**
  * @brief Gets the result source from the result value.
  *
- * @param result The result value.
+ * @param[in] result The result value.
  *
  * @return The result source from the result value.
  *
@@ -620,7 +671,7 @@ static inline PalResultSource PAL_CALL palGetResultSource(PalResult result)
 /**
  * @brief Gets the result native code from the result value.
  *
- * @param result The result value.
+ * @param[in] result The result value.
  *
  * @return The result native code from the result value.
  *
@@ -643,9 +694,9 @@ static inline uint32_t PAL_CALL palGetResultNativeCode(PalResult result)
  * `PAL_RESULT_CODE_NONE`, `PAL_RESULT_SOURCE_NONE` and `0` respectively is
  * valid, but that will creating a result value same as `PAL_RESULT_SUCCESS`.
  *
- * @param code The result code.
- * @param source The result source.
- * @param nativeCode The result native code.
+ * @param[in] code The result code.
+ * @param[in] source The result source.
+ * @param[in] nativeCode The result native code.
  *
  * @return The created result value.
  *
@@ -754,25 +805,25 @@ static inline uint64_t PAL_CALL palPackFloat(
  * @brief Retrieves two 32-bit unsigned integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
- * @param[out] outLow Low value of the 64-bit unsigned integer.
- * @param[out] outHigh High value of the 64-bit unsigned integer.
+ * @param[out] low Low value of the 64-bit unsigned integer.
+ * @param[out] high High value of the 64-bit unsigned integer.
  *
- * @Thread-safety `outLow` and `outHigh` must be per thread.
+ * @Thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
  * @sa palPackUint32
  */
 static inline void PAL_CALL palUnpackUint32(
     uint64_t data,
-    uint32_t* outLow,
-    uint32_t* outHigh)
+    uint32_t* low,
+    uint32_t* high)
 {
-    if (outLow) {
-        *outLow = (uint32_t)(data & 0xFFFFFFFF);
+    if (low) {
+        *low = (uint32_t)(data & 0xFFFFFFFF);
     }
 
-    if (outHigh) {
-        *outHigh = (uint32_t)(data >> 32);
+    if (high) {
+        *high = (uint32_t)(data >> 32);
     }
 }
 
@@ -780,25 +831,25 @@ static inline void PAL_CALL palUnpackUint32(
  * @brief Retrieves two 32-bit signed integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
- * @param[out] outLow Low value of the 64-bit unsigned integer.
- * @param[out] outHigh High value of the 64-bit unsigned integer.
+ * @param[out] low Low value of the 64-bit unsigned integer.
+ * @param[out] high High value of the 64-bit unsigned integer.
  *
- * @Thread-safety `outLow` and `outHigh` must be per thread.
+ * @Thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
  * @sa palPackInt32
  */
 static inline void PAL_CALL palUnpackInt32(
     uint64_t data,
-    int32_t* outLow,
-    int32_t* outHigh)
+    int32_t* low,
+    int32_t* high)
 {
-    if (outLow) {
-        *outLow = (int32_t)(data & 0xFFFFFFFF);
+    if (low) {
+        *low = (int32_t)(data & 0xFFFFFFFF);
     }
 
-    if (outHigh) {
-        *outHigh = (int32_t)(data >> 32);
+    if (high) {
+        *high = (int32_t)(data >> 32);
     }
 }
 
@@ -822,34 +873,34 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
  * @brief Retrieves two floats from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
- * @param[out] outLow Low value of the 64-bit unsigned integer.
- * @param[out] outHigh High value of the 64-bit unsigned integer.
+ * @param[out] low Low value of the 64-bit unsigned integer.
+ * @param[out] high High value of the 64-bit unsigned integer.
  *
- * @Thread-safety `outLow` and `outHigh` must be per thread.
+ * @Thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
  * @sa palPackFloat
  */
 static inline void PAL_CALL palUnpackFloat(
     uint64_t data,
-    float* outLow,
-    float* outHigh)
+    float* low,
+    float* high)
 {
 #if PAL_BIG_ENDIAN
-    if (outLow) {
-        memcpy(outLow, &((uint32_t*)&data)[1], sizeof(float));
+    if (low) {
+        memcpy(low, &((uint32_t*)&data)[1], sizeof(float));
     }
 
-    if (outHigh) {
-        memcpy(outHigh, &((uint32_t*)&data)[0], sizeof(float));
+    if (high) {
+        memcpy(high, &((uint32_t*)&data)[0], sizeof(float));
     }
 #else
-    if (outLow) {
-        memcpy(outLow, &((uint32_t*)&data)[0], sizeof(float));
+    if (low) {
+        memcpy(low, &((uint32_t*)&data)[0], sizeof(float));
     }
 
-    if (outHigh) {
-        memcpy(outHigh, &((uint32_t*)&data)[1], sizeof(float));
+    if (high) {
+        memcpy(high, &((uint32_t*)&data)[1], sizeof(float));
     }
 
 #endif // PAL_BIG_ENDIAN

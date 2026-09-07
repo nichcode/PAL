@@ -11,23 +11,23 @@ def main():
     build_path.mkdir(parents=True, exist_ok=True)
 
     os.chdir(root_dir / "docs")
-    subprocess.run(["doxygen", "doxyfile_public"])
+    subprocess.run(["doxygen", "doxyfile_internal"])
 
-    log_file = build_path / "doxygen_public.log"
+    log_file = build_path / "doxygen_internal.log"
     with open(log_file, "r") as file:
         if not file:
             print(f"")
-            print(f"Failed to load doxygen_public.log: {log_file}")
+            print(f"Failed to load doxygen_internal.log: {log_file}")
             sys.exit(1)
 
         if not file.read(1) == "":
             print(f"")
-            print(f"There are errors with the documentation generation")
+            print(f"There are documentation errors with the internal files")
             print(f"See {log_file} for the errors and fix them")
             sys.exit(1)
 
     print(f"")
-    print(f"Documentation generated successfully")
+    print(f"Internal documentation check was successful")
     return 0
 
 if __name__ == "__main__":
