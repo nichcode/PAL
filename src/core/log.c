@@ -26,7 +26,7 @@
  */
 
 #include "format.h"
-#include "log_priv.h"
+#include "log.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -30,7 +30,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
 
-#include "core/result_priv.h"
+#include "core/result.h"
 #include <windows.h>
 
 void formatResult_(

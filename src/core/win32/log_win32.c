@@ -30,7 +30,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
 
-#include "core/log_priv.h"
+#include "core/log.h"
 #include <windows.h>
 
 static volatile LONG s_TLSID = 0;
