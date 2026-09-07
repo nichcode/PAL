@@ -32,6 +32,7 @@
 
 /** @{ */
 
+// TODO: add @brief to the docs except struct fields
 #ifndef PAL_CORE_H
 #define PAL_CORE_H
 
@@ -177,7 +178,7 @@
 #define PAL_RESULT_CODE_INVALID_OPERATION 7
 
 /**
- * The device has been lost.
+ * @brief The device has been lost.
  *
  * @since Added in version 2.0
  */

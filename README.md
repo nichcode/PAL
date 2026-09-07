@@ -5,7 +5,7 @@
 ![License: Zlib](https://img.shields.io/badge/License-Zlib-blue.svg)
 ![Language: C99](https://img.shields.io/badge/language-C99-green.svg)
 
-## Overview
+## Introduction
 PAL is a lightweight, low-level, explicit cross-platform abstraction layer 
 in C over platform and graphics APIs. PAL is stateless and transparent. 
 Queries return current state, reflecting changes made through native API calls.
@@ -138,8 +138,8 @@ or engine that uses the graphics API, see the guides below show how to move
 your code to PAL. This makes your code work on all PAL backends, 
 core and custom.
 
-- [Vulkan](./docs/migration-vulkan.md)
-- [D3D12](./docs/migration-vulkan.md)
+- [Vulkan](./docs/guides/migrating_vulkan.md)
+- [D3D12](./docs/guides/migrating_d3d12.md)
 
 ## Contributing
 Contributions are welcome! Please open an issue or pull request.  

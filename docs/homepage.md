@@ -1,5 +1,5 @@
 
-# Prime Abstraction Layer
+## Introduction
 
 PAL is a lightweight, low-level, explicit cross-platform abstraction layer 
 in C over platform and graphics APIs. PAL is stateless and transparent. 
