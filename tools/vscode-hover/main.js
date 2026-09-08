@@ -117,9 +117,11 @@ function findFieldDescription(document, definition, field)
     // }
 }
 
-// Get the hovered markdown text using PALs tags
-// this function defaults to the norma hover behavior if it
-// does not get the definitions. An error is logged to the debug console
+/**
+ * Get the markdown text for PAL documentation. This defaults to the normal
+ * hover if it fails to get the definitions. An error is logged to the 
+ * debug console.
+*/
 async function provideHover(
     document, 
     position, 

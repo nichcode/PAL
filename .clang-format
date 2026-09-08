@@ -22,7 +22,7 @@ BraceWrapping:
   AfterEnum:       false
   AfterExternBlock: false
   AfterFunction:   true
-  AfterStruct:     false
+  AfterStruct:     true
   AfterUnion:      false
   BeforeCatch:     false
   BeforeElse:      false

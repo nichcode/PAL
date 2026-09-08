@@ -214,7 +214,7 @@ local function generateLaunch()
         file:write('            "setupCommands": [\n')
         file:write('                {\n')
         file:write('                    "description": "Let gdb load our script",\n')
-        file:write('                    "text": "source ${workspaceFolder}/scripts/pal-gdb.py",\n')
+        file:write('                    "text": "source ${workspaceFolder}/scripts/gdb-format.py",\n')
         file:write('                    "ignoreFailures": false,\n')
         file:write('                },\n')
 

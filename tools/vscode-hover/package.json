@@ -1,6 +1,7 @@
 {
-    "displayName": "PAL-docs-hover",
-    "name": "PAL documentation hover",
+    "name": "vscode-hover",
+    "displayName": "PAL API VS Code hover",
+    "description": "Provides hover documentation for PAL API",
     "version": "1.0.0",
     "publisher": "PAL",
     "engines": {

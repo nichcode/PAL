@@ -48,14 +48,6 @@ class BitmaskPrinter:
 
         return " | ".join(names)
 
-        # for bit, name in self.values.items():
-        #     print(f"bit={bit} name={name}")
-        #     if bit != 0 and value & bit:
-        #         print(f"bit={bit} name={name}")
-        #         names.append(name)
-
-        # return " | ".join(names)
-
 def lookup(value):
     type_name = str(value.type)
 
