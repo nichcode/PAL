@@ -10,15 +10,7 @@
         "Other"
     ],
     "activationEvents": [
-        "onLanguage:C"
+        "onLanguage:c"
     ],
-    "main" : "./main.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "PAL-docs-hover.hello",
-                "title": "Hello world"
-            }
-        ]
-    }
+    "main" : "./main.js"
 }

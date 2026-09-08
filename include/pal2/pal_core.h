@@ -430,29 +430,24 @@ typedef void(PAL_CALL* PalLogCallback)(
     const char* msg);
 
 /**
+ * @struct PalVersion
  * @brief Contains information about the version of PAL.
- *
- * The version consists of a major version, minor version and build number.
- *
- * Uninitialized fields may result in undefined behavior.
- *
  * @since Added in version 2.0
+ * 
+ * @major: This is incremented for breaking changes.
+ * @minor: This is incremented for backward-compatible 
+ * additions or features.
+ * @build: This is incremented for bug fixes.
  */
-typedef struct PalVersion {
-    /** The major version. This is incremented for breaking changes.*/
+typedef struct PalVersion 
+{
     uint32_t major;
-
-    /**
-     * The minor version. This is incremented for backward-compatible
-     * additions or features.
-     */
     uint32_t minor;
-
-    /** The build version. This is incremented for bug fixes.*/
     uint32_t build;
 } PalVersion;
 
 /**
+ * @struct PalAllocator
  * @brief Contains information about a memory allocator.
  *
  * This struct provides a way to use a custom allocator with PAL.
@@ -463,7 +458,8 @@ typedef struct PalVersion {
  *
  * @since Added in version 2.0
  */
-typedef struct PalAllocator {
+typedef struct PalAllocator 
+{
     /** Allocate function. Must not be `nullptr`.*/
     PalAllocateFn allocate;
 
@@ -475,6 +471,7 @@ typedef struct PalAllocator {
 } PalAllocator;
 
 /**
+ * @struct PalLogger
  * @brief Contains information about a logger.
  *
  * This struct provides a way to use custom loggers with PAL. This allows
@@ -486,7 +483,8 @@ typedef struct PalAllocator {
  *
  * @since Added in version 2.0
  */
-typedef struct PalLogger {
+typedef struct PalLogger 
+{
     /** Callback function. Must not be `nullptr`.*/
     PalLogCallback callback;
 
