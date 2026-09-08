@@ -209,7 +209,7 @@ SHORT_NAMES            = NO
 # explicit @brief command for a brief description.)
 # The default value is: NO.
 
-JAVADOC_AUTOBRIEF      = NO
+JAVADOC_AUTOBRIEF      = YES
 
 # If the JAVADOC_BANNER tag is set to YES then Doxygen will interpret a line
 # such as
@@ -472,7 +472,7 @@ INLINE_SIMPLE_STRUCTS  = NO
 # types are typedef'ed and only the typedef is referenced, never the tag name.
 # The default value is: NO.
 
-TYPEDEF_HIDES_STRUCT   = NO
+TYPEDEF_HIDES_STRUCT   = YES
 
 # The size of the symbol lookup cache can be set using LOOKUP_CACHE_SIZE. This
 # cache is used to resolve symbols given their name and scope. Since this can be
