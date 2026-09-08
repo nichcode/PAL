@@ -1,7 +1,7 @@
 
 /**
  * @file pal_core.h
- * This is the header file for PAL Core API.
+ * @brief This is the header file for PAL Core API.
  *
  * It defines all the types and functions of the core system.
  *
@@ -38,284 +38,104 @@
 #include <stdint.h>
 #include <string.h>
 
-#ifdef __cplusplus
 /**
- * This is used to specify the C linkage for the API declarations.
- *
- * @since Added in version 2.0
+ * @def PAL_EXTERN_C
+ * @brief This is used to specify the C linkage for the API declarations.
  */
+#ifdef __cplusplus
 #define PAL_EXTERN_C extern "C"
 #else
-/**
- * This is used to specify the C linkage for the API declarations.
- *
- * @since Added in version 2.0
- */
 #define PAL_EXTERN_C
-
-/**
- * Represents `NULL`.
- *
- * @since Added in version 2.0
- */
+/** @brief Represents `NULL` or Cpp `nullptr`.*/
 #define nullptr ((void*)0)
 #endif // __cplusplus
 
-#ifdef _WIN32
 /**
- * This is used to specify PAL calling convention.
- *
- * @since Added in version 2.0
+ * @def PAL_DECLSPEC
+ * @brief This is used to specify PAL API symbol.
+ * 
+ * @def PAL_CALL
+ * @brief This is used to specify PAL calling convention.
  */
+#ifdef _WIN32
 #define PAL_CALL __stdcall
 #ifdef _PAL_EXPORT
-/**
- * This is used to specify PAL API symbol.
- *
- * @since Added in version 2.0
- */
 #define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllexport)
 #else
-/**
- * This is used to specify PAL API symbol.
- *
- * @since Added in version 2.0
- */
 #define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport)
 #endif // PAL_EXPORT
 #else
-/**
- * This is used to specify PAL calling convention.
- *
- * @since Added in version 2.0
- */
 #define PAL_CALL
 #ifdef _PAL_EXPORT
-/**
- * This is used to specify PAL API symbol.
- *
- * @since Added in version 2.0
- */
 #define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default")))
 #else
-/**
- * This is used to specify PAL API symbol.
- *
- * @since Added in version 2.0
- */
 #define PAL_DECLSPEC PAL_EXTERN_C
 #endif // PAL_EXPORT
 #endif // _WIN32
 
-#ifdef _PAL_BUILD_DLL
 /**
- * This is used to specify PAL API functions attributes.
- *
- * @since Added in version 2.0
+ * @def PAL_API
+ * @brief This is used to specify PAL API functions attributes.
  */
+#ifdef _PAL_BUILD_DLL
 #define PAL_API PAL_EXTERN_C PAL_DECLSPEC
 #else
-/**
- * This is used to specify PAL API functions attributes.
- *
- * @since Added in version 2.0
- */
 #define PAL_API PAL_EXTERN_C
 #endif // _PAL_BUILD_DLL
 
-#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 /**
- * Indicates whether a system uses big-endian byte order.
- *
- * @since Added in version 2.0
+ * @def PAL_BIG_ENDIAN
+ * @brief Indicates whether a system uses big-endian byte order.
  */
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define PAL_BIG_ENDIAN 1
 #else
-/**
- * Indicates whether a system uses big-endian byte order.
- *
- * @since Added in version 2.0
- */
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
 
-/**
- * Represents an infinite time period.
- *
- * @since Added in version 2.0
- */
+/** @brief Represents an infinite time period.*/
 #define PAL_INFINITE UINT32_MAX
 
-/**
- * Represents `true` or `1`.
- *
- * @since Added in version 2.0
- */
 #define PAL_TRUE 1
-
-/**
- * Represents `false` or `0`.
- *
- * @since Added in version 2.0
- */
 #define PAL_FALSE 0
-
-/**
- * Operation completed successfully.
- *
- * This is returned by a function if it was successful without any errors.
- *
- * This is the only value that can be checked directly with standard checks.
- * (eg. result == `PAL_RESULT_SUCCESS`).
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SUCCESS 0
 
-/**
- * No result code.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_NONE 0
-
-/**
- * The suupplied argument is invalid.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_INVALID_ARGUMENT 1
-
-/**
- * Memory allocation failed.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_OUT_OF_MEMORY 2
-
-/**
- * The operation failed due to a platform specific error.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_PLATFORM_FAILURE 3
-
-/**
- * The operation did not complete within the specified time.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_TIMEOUT 4
-
-/**
- * The supplied handle is invalid.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_INVALID_HANDLE 5
-
-/**
- * The requested feature or feature used is not supported.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED 6
-
-/**
- * The operation performed is invalid for the context.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_INVALID_OPERATION 7
-
-/**
- * The device has been lost.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_DEVICE_LOST 8
-
-/**
- * The supplied handle out of date.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_OUT_OF_DATE 9
-
-/**
- * A value representing the count of result codes.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_CODE_COUNT 10
 
-/**
- * No result source.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_NONE 0
-
-/**
- * Result native code is from win32 `GetLastError()`.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_WIN32 1
-
-/**
- * Result native code is from posix `errno`.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_POSIX 2
-
-/**
- * Result native code is from egl `eglGetError()`.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_EGL 3
-
-/**
- * Result native code is from vulkan `VkResult`.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_VULKAN 4
-
-/**
- * Result native code is from d3d12 `HRESULT`.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_D3D12 5
-
-/**
- * Result native code is from metal `NSError`.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_METAL 6
-
-/**
- * A value representing the count of result sources.
- *
- * @since Added in version 2.0
- */
 #define PAL_RESULT_SOURCE_COUNT 7
 
 /**
- * A boolean type.
- *
- * Must be `PAL_TRUE` or `PAL_FALSE`.
- *
+ * @typedef PalBool
+ * @brief A boolean type.
  * @since Added in version 2.0
+ * 
+ * @var PAL_TRUE
+ * Represents `true` or `1`.
+ * @var PAL_FALSE
+ * Represents `false` or `0`.
  */
 typedef uint32_t PalBool;
 
 /**
- * Value returned by most PAL functions.
+ * @typedef PalResult
+ * @brief Value returned by most PAL functions.
  *
  * This value constains the PAL result code, the result source and
  * the native code itself. If a function completed successfully, it returns
@@ -323,13 +143,20 @@ typedef uint32_t PalBool;
  *
  * All values of this type follow the format `PAL_RESULT_*` for API consistency
  * and ease of use.
- *
  * @since Added in version 2.0
+ * 
+ * @var PAL_RESULT_SUCCESS
+ * The operation completed successfully.
+ * This is returned by a function if it was successful without any errors.
+ *
+ * This is the only value that can be checked directly with standard checks.
+ * (eg. result == `PAL_RESULT_SUCCESS`).
  */
 typedef uint64_t PalResult;
 
 /**
- * Result codes from a result value.
+ * @typedef PalResultCode
+ * @brief Result codes from a result value.
  *
  * The result code of a `PAL_RESULT_SUCCESS` value will always be
  * `PAL_RESULT_CODE_NONE.`
@@ -339,25 +166,65 @@ typedef uint64_t PalResult;
  *
  * @since Added in version 2.0
  * @sa palGetResultCode
+ * 
+ * @var PAL_RESULT_CODE_NONE
+ * The result value contains no result code.
+ * @var PAL_RESULT_CODE_INVALID_ARGUMENT
+ * The supplied argument is invalid.
+ * @var PAL_RESULT_CODE_OUT_OF_MEMORY
+ * Memory allocation failed.
+ * @var PAL_RESULT_CODE_PLATFORM_FAILURE
+ * The operation failed due to a platform specific error.
+ * @var PAL_RESULT_CODE_TIMEOUT
+ * The operation did not complete within the specified time.
+ * @var PAL_RESULT_CODE_INVALID_HANDLE
+ * The supplied handle is invalid.
+ * @var PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ * The requested feature or feature used is not supported.
+ * @var PAL_RESULT_CODE_INVALID_OPERATION
+ * The operation performed is invalid for the context.
+ * @var PAL_RESULT_CODE_DEVICE_LOST
+ * The device has been lost.
+ * @var PAL_RESULT_CODE_OUT_OF_DATE
+ * The supplied handle is out of date.
+ * @var PAL_RESULT_CODE_COUNT
+ * The number of result codes. The literal value must not be used.
  */
 typedef uint16_t PalResultCode;
 
 /**
- * Result sources from a result value.
- *
+ * @typedef PalResultSource
+ * @brief Result sources from a result value.
  * The result source of a `PAL_RESULT_SUCCESS` value will always be
  * `PAL_RESULT_SOURCE_NONE`.
- *
+
  * All values of this type follow the format `PAL_RESULT_SOURCE_*` for API
  * consistency and ease of use.
- *
+ * 
  * @since Added in version 2.0
  * @sa palGetResultSource
+ * 
+ * @var PAL_RESULT_SOURCE_NONE
+ * The result value contains no result native code.
+ * @var PAL_RESULT_SOURCE_WIN32
+ * Result native code is from win32 `GetLastError()`.
+ * @var PAL_RESULT_SOURCE_POSIX
+ * Result native code is from posix `errno`.
+ * @var PAL_RESULT_SOURCE_EGL
+ * Result native code is from egl `eglGetError()`.
+ * @var PAL_RESULT_SOURCE_VULKAN
+ * Result native code is from vulkan `VkResult`.
+ * @var PAL_RESULT_SOURCE_D3D12
+ * Result native code is from D3D12 `HRESULT`.
+ * @var PAL_RESULT_SOURCE_METAL
+ * Result native code is from metal `NSError`.
+ * @var PAL_RESULT_SOURCE_COUNT
+ * The number of result sources. The literal value must not be used.
  */
 typedef uint16_t PalResultSource;
 
 /**
- * Function pointer type used for memory allocations.
+ * @brief Function pointer type used for memory allocations.
  *
  * The callback must allocate atleast `size` parameter with the requested
  * `alignment` parameter or return `nullptr` if the allocation failed.
@@ -391,7 +258,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
     uint64_t alignment);
 
 /**
- * Function pointer type used for memory deallocations.
+ * @brief Function pointer type used for memory deallocations.
  *
  * The memory must have been allocated by the corresponding allocation
  * callback and must not have been deallocated. The callback will not
@@ -409,7 +276,7 @@ typedef void(PAL_CALL* PalFreeFn)(
     void* ptr);
 
 /**
- * Function pointer type used for log callbacks.
+ * @brief Function pointer type used for log callbacks.
  *
  * The message is only valid for the duration of the callback and must not be
  * modified or freed by the callback, the memory is owned by PAL.
@@ -431,17 +298,15 @@ typedef void(PAL_CALL* PalLogCallback)(
 
 /**
  * @struct PalVersion
- * Contains information about the version of PAL.
+ * @brief Contains information about the version of PAL.
  * @since Added in version 2.0
  * 
  * @var PalVersion::major
  * The major version number of the PAL runtime. This is incremented when
- * breaking changes are made
- * 
+ * breaking changes are made.
  * @var PalVersion::minor
  * The minor version number of the PAL runtime. This is incremented when 
  * backward-compatible features are added.
- * 
  * @var PalVersion::build
  * The build version number of the PAL runtime. This is incremented when 
  * bugs are fixed without breaking changes or new features.
@@ -455,7 +320,7 @@ typedef struct PalVersion
 
 /**
  * @struct PalAllocator
- * Contains information about a memory allocator.
+ * @brief Contains information about a memory allocator.
  *
  * This struct provides a way to use a custom allocator with PAL.
  * Some APIs are thread safe, therefore the custom allocator must be thread
@@ -466,10 +331,8 @@ typedef struct PalVersion
  * 
  * @var PalAllocator::allocate
  * The allocate function of the allocator. Must not be `nullptr`.
- * 
  * @var PalAllocator::free
  * The free function of the allocator. Must not be `nullptr`.
- * 
  * @var PalAllocator::userData
  * User data passed to allocate and free function. Can be `nullptr`.
  */
@@ -482,7 +345,7 @@ typedef struct PalAllocator
 
 /**
  * @struct PalLogger
- * Contains information about a logger.
+ * @brief Contains information about a logger.
  *
  * This struct provides a way to use custom loggers with PAL. This allows
  * interception of log messages made through the log API. The logger may
@@ -494,7 +357,6 @@ typedef struct PalAllocator
  * 
  * @var PalLogger::callback
  * The function to forward log messages to. Must not be `nullptr`.
- * 
  * @var PalLogger::userData
  * User data passed to allocate and free function. Can be `nullptr`.
  */
@@ -505,7 +367,7 @@ typedef struct PalLogger
 } PalLogger;
 
 /**
- * Converts a result value to a human-readable string.
+ * @brief Converts a result value to a human-readable string.
  *
  * @param[in] result The result value to format.
  * @param[in] bufferSize The size of the buffer. Must not be `0`.
@@ -522,7 +384,7 @@ PAL_API void PAL_CALL palFormatResult(
     char* buffer);
 
 /**
- * Retrieves the PAL runtime version number.
+ * @brief Retrieves the PAL runtime version number.
  *
  * @param[out] version The struct to recieve the runtime version. Must not be
  * `nullptr`.
@@ -535,7 +397,7 @@ PAL_API void PAL_CALL palFormatResult(
 PAL_API void PAL_CALL palGetVersion(PalVersion* version);
 
 /**
- * Retrieves the PAL runtime version as a string.
+ * @brief Retrieves the PAL runtime version as a string.
  *
  * @return Null-terminated string containing the PAL runtime version. The
  * returned string is owned by PAL and must not be freed or modified.
@@ -548,7 +410,7 @@ PAL_API void PAL_CALL palGetVersion(PalVersion* version);
 PAL_API const char* PAL_CALL palGetVersionString(void);
 
 /**
- * Allocates memory using a custom or default allocator.
+ * @brief Allocates memory using a custom or default allocator.
  *
  * This function allocate atleast `size` parameter of memory with the requested
  * `alignment` parameter. If the requested alignment is `0`, an
@@ -579,7 +441,7 @@ PAL_API void* PAL_CALL palAllocate(
     uint64_t alignment);
 
 /**
- * Deallocates memory allocated by palAllocate.
+ * @brief Deallocates memory allocated by palAllocate.
  *
  * Deallocating memory that has been deallocated will cause undefined behavior.
  * This function does not set the s`ptr` parameter to `nullptr` after
@@ -603,7 +465,7 @@ PAL_API void PAL_CALL palFree(
     void* ptr);
 
 /**
- * Logs a formatted message to a custom or default logger.
+ * @brief Logs a formatted message to a custom or default logger.
  *
  * @param[in] logger Logger instance. `nullptr` to use the default logger. The
  * default logger is thread safe.
@@ -623,7 +485,7 @@ PAL_API void PAL_CALL palLog(
     ...);
 
 /**
- * Retrieves the current high-resolution performance counter value.
+ * @brief Retrieves the current high-resolution performance counter value.
  *
  * @return Current monotonically increasing performance counter value.
  *
@@ -635,7 +497,7 @@ PAL_API void PAL_CALL palLog(
 PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
 
 /**
- * Retrieves the frequency of the high-resolution performance counter.
+ * @brief Retrieves the frequency of the high-resolution performance counter.
  *
  * @return Performance counter frequency, in counts per second.
  *
@@ -647,7 +509,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
 
 /**
- * Gets the result code from the result value.
+ * @brief Gets the result code from the result value.
  *
  * @param[in] result The result value.
  *
@@ -665,7 +527,7 @@ static inline PalResultCode PAL_CALL palGetResultCode(PalResult result)
 }
 
 /**
- * Gets the result source from the result value.
+ * @brief Gets the result source from the result value.
  *
  * @param[in] result The result value.
  *
@@ -683,7 +545,7 @@ static inline PalResultSource PAL_CALL palGetResultSource(PalResult result)
 }
 
 /**
- * Gets the result native code from the result value.
+ * @brief Gets the result native code from the result value.
  *
  * @param[in] result The result value.
  *
@@ -701,7 +563,7 @@ static inline uint32_t PAL_CALL palGetResultNativeCode(PalResult result)
 }
 
 /**
- * Creates a result value.
+ * @brief Creates a result value.
  *
  * If `nativeCode` is not `0` and the result source is `PAL_RESULT_SOURCE_NONE`,
  * it will be ignored when formatting the result value.
@@ -733,7 +595,7 @@ static inline PalResult PAL_CALL palMakeResult(
 }
 
 /**
- * Combines two 32-bit unsigned integers into a single 64-bit unsigned
+ * @brief Combines two 32-bit unsigned integers into a single 64-bit unsigned
  * integer.
  * 
  * @param[in] low The low 32-bit unsigned integer.
@@ -754,7 +616,7 @@ static inline uint64_t PAL_CALL palPackUint32(
 }
 
 /**
- * Combines two 32-bit signed integers into a single 64-bit unsigned integer.
+ * @brief Combines two 32-bit signed integers into a single 64-bit unsigned integer.
  * 
  * @param[in] low The low 32-bit signed integer.
  * @param[in] high The high 32-bit signed integer.
@@ -774,7 +636,7 @@ static inline uint64_t PAL_CALL palPackInt32(
 }
 
 /**
- * Packs a pointer into a 64-bit unsigned integer.
+ * @brief Packs a pointer into a 64-bit unsigned integer.
  * 
  * @param[in] ptr The pointer to pack.
  *
@@ -791,7 +653,7 @@ static inline uint64_t PAL_CALL palPackPointer(void* ptr)
 }
 
 /**
- * Combines two floats into a single 64-bit unsigned integer.
+ * @brief Combines two floats into a single 64-bit unsigned integer.
  * 
  * @param[in] low The low float value.
  * @param[in] high The high float value.
@@ -820,7 +682,7 @@ static inline uint64_t PAL_CALL palPackFloat(
 }
 
 /**
- * Retrieves two 32-bit unsigned integers from a 64-bit unsigned integer.
+ * @brief Retrieves two 32-bit unsigned integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low Low value of the 64-bit unsigned integer.
@@ -846,7 +708,7 @@ static inline void PAL_CALL palUnpackUint32(
 }
 
 /**
- * Retrieves two 32-bit signed integers from a 64-bit unsigned integer.
+ * @brief Retrieves two 32-bit signed integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low Low value of the 64-bit unsigned integer.
@@ -872,7 +734,7 @@ static inline void PAL_CALL palUnpackInt32(
 }
 
 /**
- * Unpacks a pointer from a 64-bit unsigned integer.
+ * @brief Unpacks a pointer from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @return The pointer from the 64-bit unsigned integer.
@@ -888,7 +750,7 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
 }
 
 /**
- * Retrieves two floats from a 64-bit unsigned integer.
+ * @brief Retrieves two floats from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low Low value of the 64-bit unsigned integer.
