@@ -435,8 +435,7 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @since Added in version 2.0
  * 
  * @major: This is incremented for breaking changes.
- * @minor: This is incremented for backward-compatible 
- * additions or features.
+ * @minor: This is incremented for backward-compatible additions or features.
  * @build: This is incremented for bug fixes.
  */
 typedef struct PalVersion 

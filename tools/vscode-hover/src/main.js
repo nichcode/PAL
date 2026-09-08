@@ -75,46 +75,7 @@ function findFieldDescription(document, definition, field)
         return undefined;
     }
 
-    return descriptionLines.join('');
-
-
-    // const description = [];
-    // let found = false;
-    // const regex = new RegExp('^\\s*\\*\\s*@${name}\\s*:\\s*(.*)$');
-
-    // for (const line of lines) {
-    //     const match = line.match(regex);
-    //     if (match !== null) {
-    //         found = true;
-
-    //         const tmp = match[1].trim();
-    //         if (tmp !== '') {
-    //             description.push(tmp);
-    //             continue;
-    //         }
-    //     }
-
-    //     if (!found) {
-    //         continue;
-    //     }
-            
-    //     if (line.includes('*/')) {
-    //         break;
-    //     }
-
-    //     if (/^\s*\*\s*@/.test(line)) {
-    //         break;
-    //     }
-
-    //     const trimLine = line.trim().replace(/^\*+/, '').trim()
-    //     if (trimLine) {
-    //         description.push(trimLine);
-    //     }
-            
-        
-
-    //     return description.join('');
-    // }
+    return descriptionLines.join(' ');
 }
 
 /**
@@ -132,7 +93,6 @@ async function provideHover(
         return;
     }
 
-    const hoveredWord = document.getText();
     try {
         const definitions = await vscode.commands.executeCommand(
             'vscode.executeDefinitionProvider',
@@ -167,7 +127,7 @@ async function provideHover(
 function activate(context)
 {
     const provider = vscode.languages.registerHoverProvider(
-        'c',
+        ['c', 'cpp'],
         { provideHover }
         );
 

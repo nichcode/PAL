@@ -1,6 +1,6 @@
 {
     "name": "vscode-hover",
-    "displayName": "PAL API VS Code hover",
+    "displayName": "PAL API hover",
     "description": "Provides hover documentation for PAL API",
     "version": "1.0.0",
     "publisher": "PAL",
@@ -11,7 +11,13 @@
         "Other"
     ],
     "activationEvents": [
-        "onLanguage:c"
+        "onLanguage:c",
+        "onLanguage:cpp"
     ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nichcode/PAL.git"
+        
+    },
     "main" : "./main.js"
 }
