@@ -454,18 +454,16 @@ typedef struct PalVersion
  * safe if those APIs will be used.
  *
  * Uninitialized fields may result in undefined behavior.
- *
  * @since Added in version 2.0
+ * 
+ * @allocate: The allocate function of the allocator. Must not be `nullptr`.
+ * @free: The free function of the allocator. Must not be `nullptr`.
+ * @userData: User data passed to allocate and free function. Can be `nullptr`.
  */
 typedef struct PalAllocator 
 {
-    /** Allocate function. Must not be `nullptr`.*/
     PalAllocateFn allocate;
-
-    /** Free function. Must not be `nullptr`.*/
     PalFreeFn free;
-
-    /** User data passed to allocate and free functions. Can be `nullptr`.*/
     void* userData;
 } PalAllocator;
 
@@ -479,15 +477,14 @@ typedef struct PalAllocator
  * be thread safe or each thread having its own logger.
  *
  * Uninitialized fields may result in undefined behavior.
- *
  * @since Added in version 2.0
+ * 
+ * @callback: The function to forward log messages to. Must not be `nullptr`.
+ * @userData: User data passed to callback. Can be `nullptr`.
  */
 typedef struct PalLogger 
 {
-    /** Callback function. Must not be `nullptr`.*/
     PalLogCallback callback;
-
-    /** User data passed to callback. Can be `nullptr`.*/
     void* userData;
 } PalLogger;
 
