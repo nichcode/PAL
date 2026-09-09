@@ -38,27 +38,18 @@
 #include <stdint.h>
 #include <string.h>
 
-/**
- * @def PAL_EXTERN_C
- * @brief This is used to specify the C linkage for the API declarations.
- */
+#ifndef __cplusplus
+/** @brief Represents `NULL`.*/
+#define nullptr ((void*)0)
+#endif // __cplusplus
+
+/** @cond SKIP_DOXYGEN */
 #ifdef __cplusplus
 #define PAL_EXTERN_C extern "C"
 #else
 #define PAL_EXTERN_C
-/** @brief Represents `NULL` or Cpp `nullptr`.*/
-#define nullptr ((void*)0)
 #endif // __cplusplus
 
-/**
- * @def PAL_DECLSPEC
- * @brief This is used to specify PAL API symbol.
- */
-
-/**
- * @def PAL_CALL
- * @brief This is used to specify PAL calling convention.
- */
 #ifdef _WIN32
 #define PAL_CALL __stdcall
 #ifdef _PAL_EXPORT
@@ -75,25 +66,18 @@
 #endif // PAL_EXPORT
 #endif // _WIN32
 
-/**
- * @def PAL_API
- * @brief This is used to specify PAL API functions attributes.
- */
 #ifdef _PAL_BUILD_DLL
 #define PAL_API PAL_EXTERN_C PAL_DECLSPEC
 #else
 #define PAL_API PAL_EXTERN_C
 #endif // _PAL_BUILD_DLL
 
-/**
- * @def PAL_BIG_ENDIAN
- * @brief Indicates whether a system uses big-endian byte order.
- */
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define PAL_BIG_ENDIAN 1
 #else
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
+/** @endcond */
 
 /** @brief Represents an infinite time period.*/
 #define PAL_INFINITE UINT32_MAX
