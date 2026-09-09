@@ -11,13 +11,13 @@ def main():
     build_path.mkdir(parents=True, exist_ok=True)
 
     os.chdir(root_dir / "docs")
-    subprocess.run(["doxygen", "doxyfile_public"])
+    subprocess.run(["doxygen", "doxyfile"])
 
-    log_file = build_path / "doxygen_public.log"
+    log_file = build_path / "doxygen.log"
     with open(log_file, "r") as file:
         if not file:
             print(f"")
-            print(f"Failed to load doxygen_public.log: {log_file}")
+            print(f"Failed to load doxygen.log: {log_file}")
             sys.exit(1)
 
         if not file.read(1) == "":

@@ -90,10 +90,12 @@ function findFieldDescription(document, definition, field)
             continue;
         }
 
+        // end of documentation block
         if (line.includes('*/')) {
             break;
         }
-        
+
+        // next @tag
         if (/^\s*\*\s*@/.test(line)) {
             break;
         }
