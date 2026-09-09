@@ -309,7 +309,7 @@ typedef void(PAL_CALL* PalLogCallback)(
  * backward-compatible features are added.
  * @var PalVersion::build
  * The build version number of the PAL runtime. This is incremented when 
- * bugs are fixed without breaking changes or new features.
+ * bugs are fixed without breaking changes or feature additions.
  */
 typedef struct PalVersion 
 {

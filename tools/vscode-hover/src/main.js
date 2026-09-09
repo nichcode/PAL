@@ -24,10 +24,11 @@ function findFieldDescription(document, definition, field)
     }
     
     let structTagLine = -1;
+    structName = '';
     for (let i = openBraceLine; i >= 0; i--) {
         if (lines[i].includes('@struct')) {
-            console.log('Struct tag line', i);
             structTagLine = i;
+            structName = lines[i].replace(/^\s*\*\s*@struct\s+/, '').trim();
             break;
         }
     }
@@ -36,7 +37,7 @@ function findFieldDescription(document, definition, field)
         return undefined;
     }
 
-    const fieldTag = '@' + field + ':';
+    const fieldTag = '@var ' + structName + '::' + field;
     const descriptionLines = [];
     let found = false;
 
