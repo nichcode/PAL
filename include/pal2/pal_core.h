@@ -53,7 +53,9 @@
 /**
  * @def PAL_DECLSPEC
  * @brief This is used to specify PAL API symbol.
- * 
+ */
+
+/**
  * @def PAL_CALL
  * @brief This is used to specify PAL calling convention.
  */
@@ -126,9 +128,9 @@
  * @brief A boolean type.
  * @since Added in version 2.0
  * 
- * @var PAL_TRUE
+ * @def PAL_TRUE
  * Represents `true` or `1`.
- * @var PAL_FALSE
+ * @def PAL_FALSE
  * Represents `false` or `0`.
  */
 typedef uint32_t PalBool;
@@ -145,7 +147,7 @@ typedef uint32_t PalBool;
  * and ease of use.
  * @since Added in version 2.0
  * 
- * @var PAL_RESULT_SUCCESS
+ * @def PAL_RESULT_SUCCESS
  * The operation completed successfully.
  * This is returned by a function if it was successful without any errors.
  *
@@ -167,27 +169,27 @@ typedef uint64_t PalResult;
  * @since Added in version 2.0
  * @sa palGetResultCode
  * 
- * @var PAL_RESULT_CODE_NONE
+ * @def PAL_RESULT_CODE_NONE
  * The result value contains no result code.
- * @var PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @def PAL_RESULT_CODE_INVALID_ARGUMENT
  * The supplied argument is invalid.
- * @var PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @def PAL_RESULT_CODE_OUT_OF_MEMORY
  * Memory allocation failed.
- * @var PAL_RESULT_CODE_PLATFORM_FAILURE
+ * @def PAL_RESULT_CODE_PLATFORM_FAILURE
  * The operation failed due to a platform specific error.
- * @var PAL_RESULT_CODE_TIMEOUT
+ * @def PAL_RESULT_CODE_TIMEOUT
  * The operation did not complete within the specified time.
- * @var PAL_RESULT_CODE_INVALID_HANDLE
+ * @def PAL_RESULT_CODE_INVALID_HANDLE
  * The supplied handle is invalid.
- * @var PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ * @def PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  * The requested feature or feature used is not supported.
- * @var PAL_RESULT_CODE_INVALID_OPERATION
+ * @def PAL_RESULT_CODE_INVALID_OPERATION
  * The operation performed is invalid for the context.
- * @var PAL_RESULT_CODE_DEVICE_LOST
+ * @def PAL_RESULT_CODE_DEVICE_LOST
  * The device has been lost.
- * @var PAL_RESULT_CODE_OUT_OF_DATE
+ * @def PAL_RESULT_CODE_OUT_OF_DATE
  * The supplied handle is out of date.
- * @var PAL_RESULT_CODE_COUNT
+ * @def PAL_RESULT_CODE_COUNT
  * The number of result codes. The literal value must not be used.
  */
 typedef uint16_t PalResultCode;
@@ -204,21 +206,21 @@ typedef uint16_t PalResultCode;
  * @since Added in version 2.0
  * @sa palGetResultSource
  * 
- * @var PAL_RESULT_SOURCE_NONE
+ * @def PAL_RESULT_SOURCE_NONE
  * The result value contains no result native code.
- * @var PAL_RESULT_SOURCE_WIN32
+ * @def PAL_RESULT_SOURCE_WIN32
  * Result native code is from win32 `GetLastError()`.
- * @var PAL_RESULT_SOURCE_POSIX
+ * @def PAL_RESULT_SOURCE_POSIX
  * Result native code is from posix `errno`.
- * @var PAL_RESULT_SOURCE_EGL
+ * @def PAL_RESULT_SOURCE_EGL
  * Result native code is from egl `eglGetError()`.
- * @var PAL_RESULT_SOURCE_VULKAN
+ * @def PAL_RESULT_SOURCE_VULKAN
  * Result native code is from vulkan `VkResult`.
- * @var PAL_RESULT_SOURCE_D3D12
+ * @def PAL_RESULT_SOURCE_D3D12
  * Result native code is from D3D12 `HRESULT`.
- * @var PAL_RESULT_SOURCE_METAL
+ * @def PAL_RESULT_SOURCE_METAL
  * Result native code is from metal `NSError`.
- * @var PAL_RESULT_SOURCE_COUNT
+ * @def PAL_RESULT_SOURCE_COUNT
  * The number of result sources. The literal value must not be used.
  */
 typedef uint16_t PalResultSource;

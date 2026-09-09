@@ -5,51 +5,83 @@ const vscode = require('vscode');
  * Get the field description from its parent struct, gets the position of the
  * field. Use the field position to find the struct tag @struct. This works
  * with multiline comments and only on a predefined doc style.
+ * 
+ * The field parameter is still kept as field even though this function
+ * works for constants as well.
 */
 function findFieldDescription(document, definition, field)
 {
     const lines = document.getText().split(/\r?\n/);
-    const fieldLine = definition.range.start.line;
-
-    let openBraceLine = -1;
-    for (let i = fieldLine; i >= 0; i--) {
-        if (lines[i].includes('{')) {
-            openBraceLine = i;
-            break
-        }
-    }
-
-    if (openBraceLine === -1) {
-        return undefined;
-    }
-    
-    let structTagLine = -1;
-    structName = '';
-    for (let i = openBraceLine; i >= 0; i--) {
-        if (lines[i].includes('@struct')) {
-            structTagLine = i;
-            structName = lines[i].replace(/^\s*\*\s*@struct\s+/, '').trim();
-            break;
-        }
-    }
-
-    if (structTagLine === -1) {
-        return undefined;
-    }
-
-    const fieldTag = '@var ' + structName + '::' + field;
     const descriptionLines = [];
+    const fieldLine = definition.range.start.line;
     let found = false;
 
-    for (let i = structTagLine; i < openBraceLine; i++) {
+    let isMacro = false;
+    let startIndex = -1;
+    let endIndex = -1;
+    fieldTag = '';
+
+    const tmp = document.lineAt(fieldLine).text;
+    if (tmp.includes('#define')) {
+        isMacro = true;
+    }
+
+    if (!isMacro) {
+        for (let i = fieldLine; i >= 0; i--) {
+            if (lines[i].includes('{')) {
+                endIndex = i;
+                break
+            }
+        }
+
+        if (endIndex === -1) {
+            return undefined;
+        }
+
+        structName = '';
+        for (let i = endIndex; i >= 0; i--) {
+            if (lines[i].includes('@struct')) {
+                startIndex = i;
+                structName = lines[i].replace(/^\s*\*\s*@struct\s+/, '').trim();
+                break;
+            }
+        }
+
+        if (startIndex === -1) {
+            return undefined;
+        }
+
+        fieldTag = '@var ' + structName + '::' + field;
+
+    } else {
+        startIndex = 0;
+        endIndex = lines.length;
+        for (let i = 0; i < endIndex; i++) {
+            if (lines[i].includes('@def')) {
+                const tmp = lines[i].substring(lines[i].indexOf('@def') + 4).trim();
+                if (tmp === field) {
+                    startIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (startIndex === -1) {
+            return undefined;
+        }
+
+        fieldTag = '@def ' + field;
+    }
+
+    for (let i = startIndex; i < endIndex; i++) {
         const line = lines[i];
         if (!found) {
-            const position = line.indexOf(fieldTag);
-            if (position === -1) {
+            const pos = line.indexOf(fieldTag);
+            if (pos === -1) {
                 continue;
             }
 
-            const description = line.substring(position + fieldTag.length).trim();
+            const description = line.substring(pos + fieldTag.length).trim();
             if (description !== '') {
                 descriptionLines.push(description);
             }
