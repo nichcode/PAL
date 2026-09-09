@@ -26,7 +26,7 @@
  */
 
 #include "format.h"
-#include "result_priv.h"
+#include "result.h"
 
 static const char* resultCodeToString(PalResult result)
 {

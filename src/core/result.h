@@ -25,15 +25,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef RESULT_PRIV_H_
-#define RESULT_PRIV_H_
+#ifndef RESULT_H_
+#define RESULT_H_
 
 #include "pal2/pal_core.h"
 
 #define FORMAT_BUFFER_SIZE_ 256
 
+/** This will be implemented by the platforms.*/
 void formatResult_(
     PalResult result,
     char* buffer);
 
-#endif // RESULT_PRIV_H_
+#endif // RESULT_H_

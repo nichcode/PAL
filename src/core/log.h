@@ -25,26 +25,33 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef LOG_PRIV_H_
-#define LOG_PRIV_H_
+#ifndef LOG_H_
+#define LOG_H_
 
 #include "pal2/pal_core.h"
 #include "shared.h"
 
 #define LOG_MSG_SIZE_ 4096
 
-typedef struct {
+/** Contains Log TLS state.*/
+typedef struct LogTLSData
+{
     char tmp[LOG_MSG_SIZE_];
     char buffer[LOG_MSG_SIZE_];
     bool isLogging;
 } LogTLSData;
 
-// This is declared over here so other platforms will have accessed to it
-// for this TLS creation. The definition is in log.c
+/** This is declared over here so other platforms will have accessed to it
+ * for this TLS creation. The definition is in log.c.*/
 void destroyTLSData_(void* data);
 
+/** This will be implemented by the platforms.*/
 void createLogTLS_(void);
+
+/** This will be implemented by the platforms.*/
 LogTLSData* getLogTLSData_(void);
+
+/** This will be implemented by the platforms.*/
 void setLogTLSData_(LogTLSData* data);
 
-#endif // LOG_PRIV_H_
+#endif // LOG_H_

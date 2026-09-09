@@ -47,8 +47,6 @@ void PAL_CALL palLog(
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 0);
         memset(data, 0, sizeof(LogTLSData));
-
-        // create TLS if it has not been created
         createLogTLS_();
         setLogTLSData_(data);
     }
@@ -58,24 +56,20 @@ void PAL_CALL palLog(
     formatArgs_(fmt, argPtr, data->tmp);
     va_end(argPtr);
 
-    // check to see if a user supplied a logger
     if (logger && logger->callback) {
         if (data->isLogging) {
             // block recursion
             return;
         }
 
-        // update the tls to stop recursive calls
+        // we update the isLogging field to stop recursive calls
         (void)memcpy(data->buffer, data->tmp, LOG_MSG_SIZE_);
         data->isLogging = PAL_TRUE;
         setLogTLSData_(data);
         logger->callback(logger->userData, data->buffer);
 
     } else {
-        // add newline character to the string
         format_(data->buffer, "%s\n", data->tmp);
-
-        // write to console
         (void)fprintf(stdout, "%s", data->buffer);
         (void)fflush(stdout);
     }
