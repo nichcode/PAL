@@ -82,6 +82,9 @@
 /** @brief Represents an infinite time period.*/
 #define PAL_INFINITE UINT32_MAX
 
+/** @brief Represents the maximum log buffer size.*/
+#define PAL_LOG_MSG_SIZE 4096
+
 #define PAL_TRUE 1
 #define PAL_FALSE 0
 #define PAL_RESULT_SUCCESS 0
@@ -357,8 +360,8 @@ typedef struct PalLogger
  *
  * @param[in] result The result value to format.
  * @param[in] bufferSize The size of the buffer. Must not be `0`.
- * @param[out] buffer The buffer to write to. The string will be truncated if
- * `bufferSize` is insufficient.
+ * @param[out] buffer The buffer to write to. The string will be truncated and
+ * null-terminated if `bufferSize` is insufficient.
  *
  * @Thread-safety `buffer` parameter must be per thread.
  *
@@ -401,9 +404,15 @@ PAL_API const char* PAL_CALL palGetVersionString(void);
  * This function allocate atleast `size` parameter of memory with the requested
  * `alignment` parameter. 
  * If allocations will be made from multiple threads, the `allocator`
- * parameter must be thread safe. The default allocator is thread safe.
+ * parameter must be thread safe.
+ * 
+ * After memory has been allocated, the allocator must stay valid untill
+ * the memory is deallocated. We strictly require the allocator
+ * used to allocate the memory is the same used to free the memory.
+ * PAL does not validate this and might crash your system.
  *
- * @param[in] allocator The allocator. `nullptr` to use the default allocator.
+ * @param[in] allocator The allocator. `nullptr` to use the default 
+ * thread-safe allocator.
  * @param[in] size Number of bytes to allocate. A size of `0` is
  * implementation-defined.
  * @param[in] alignment Must be power of two. An alignment of `0` uses the
@@ -430,10 +439,10 @@ PAL_API void* PAL_CALL palAllocate(
  * prevent any double deallocations.
  *
  * If deallocations will be made from multiple threads, the `allocator`
- * parameter must be thread safe. The default allocator is thread safe.
+ * parameter must be thread safe.
  *
  * @param[in] allocator The allocator used to allocate the memory. `nullptr` for
- * the default allocator. The default allocator is thread safe.
+ * the default thread-safe allocator.
  * @param[in] ptr Memory to free. Must be valid.
  *
  * @Thread-safety `allocator` implementation must be thread safe.
@@ -447,9 +456,12 @@ PAL_API void PAL_CALL palFree(
 
 /**
  * @brief Logs a formatted message to a custom or default logger.
+ * 
+ * Log messages have a limit of `PAL_LOG_MSG_SIZE` (4096), any message greater
+ * than the limit will be truncated and the remaining discarded. 
  *
- * @param[in] logger Logger instance. `nullptr` to use the default logger. The
- * default logger is thread safe.
+ * @param[in] logger Logger instance. `nullptr` to use the default 
+ * thread-safe logger.
  * @param[in] fmt printf-style format string.
  * @param[in] ... Arguments for the format string.
  *

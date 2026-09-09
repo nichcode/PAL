@@ -21,3 +21,5 @@ project "PAL2"
     filter {"system:windows", "configurations:*"}
         files { "src/core/posix/*.c" }
     
+    filter { }
+    

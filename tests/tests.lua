@@ -1,4 +1,7 @@
 
+-- All tests have the same structure so we create a function
+-- that checks all tests file and check projects for each.
+-- The limitation is all tests must be exactly 1 file.
 local function addTest(file)
     local name = path.getbasename(file)
     project(name)

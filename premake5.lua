@@ -9,6 +9,8 @@ compilerPath = ""
 intellisenseMode = ""
 gccBasePath = ""
 
+-- Windows binaries can be installed in custom locations on a users system.
+-- This function provides a way to find the binaries
 local function getCommandOutput(cmd)
     local result, exitCode = os.outputof(cmd)
     if result then
@@ -60,12 +62,10 @@ local function generateProperties()
         end
     end
 
-    -- remove duplicates
     prjIncludes = removeDuplicates(prjIncludes)
     prjDefines = removeDuplicates(prjDefines)
 
-    -- write to file
-    os.mkdir(".vscode") -- ensure .vscode directory exists
+    os.mkdir(".vscode")
     local file = io.open(".vscode/c_cpp_properties.json", "w")
     if file then
         file:write('{\n')
@@ -73,14 +73,12 @@ local function generateProperties()
         file:write('        {\n')
         file:write(string.format('            "name": "%s",\n', workspaceName))
 
-        -- includes
         file:write('            "includePath": [\n')
         for i, dir in ipairs(prjIncludes) do
             file:write(string.format('                "%s"%s\n', dir, i < #prjIncludes and "," or ""))
         end
         file:write('            ],\n')
 
-        -- defines
         file:write('            "defines": [\n')
         for i, define in ipairs(prjDefines) do
             file:write(string.format('                "%s"%s\n', define, i < #prjDefines and "," or ""))
@@ -154,7 +152,6 @@ local function generateLaunch()
         local projects = {}
         local workspace = premake.global.getWorkspace(workspaceName)
         for prj in premake.workspace.eachproject(workspace) do
-            -- Add only executable projects
             if prj.kind == "ConsoleApp" then
                 table.insert(projects, prj)
             end
@@ -363,7 +360,7 @@ local function generateTests()
     local projects = {}
     local workspace = premake.global.getWorkspace(workspaceName)
     for prj in premake.workspace.eachproject(workspace) do
-        -- Add only test projects
+        -- All tests use a prefix to make identifying them straight forward
         if prj.name:sub(1, 5) == "test_" then
             table.insert(projects, prj)
         end
@@ -502,7 +499,8 @@ workspace(workspaceName)
             end
         end
 
-        -- Warnings for both linux and windows
+        -- We diable these warnings because they dont provide much
+        -- and causes compiler noise
         buildoptions {
             "-Wno-switch",         -- for switch statements
             "-Wno-switch-enum",    -- for switch statements
@@ -529,6 +527,8 @@ workspace(workspaceName)
             "-WX"
         }
 
+        -- We diable these warnings because they dont provide much
+        -- and causes compiler noise
         disablewarnings {
             "6387",
             "4018",

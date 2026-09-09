@@ -31,8 +31,6 @@
 #include "pal2/pal_core.h"
 #include "shared.h"
 
-#define LOG_MSG_SIZE_ 4096
-
 /** Contains Log TLS state.*/
 typedef struct LogTLSData
 {

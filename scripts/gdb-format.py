@@ -1,4 +1,9 @@
 
+# This file provides custom formatting for PAL API.
+# PAL uses #defines instead of enums which makes debugging
+# somewhat difficult. This file fixes that by making the constants
+# behave like enums. This is only for gdb debugger
+
 import gdb # type: ignore
 
 sets = {}
