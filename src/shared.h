@@ -25,13 +25,34 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include <stdbool.h>
+#ifndef SHARED_H
+#define SHARED_H
 
-#ifndef SHARED_H_
-#define SHARED_H_
+#ifdef __linux__
+#define PLATFORM_POSIX_ 1
+#define _POSIX_C_SOURCE 200112L
+#else
+#define PLATFORM_POSIX_ 0
+#endif // __linux__
+
+#include <stdbool.h>
+#include <stdarg.h>
+#include <stdint.h>
 
 #define ARRAY_SIZE_(array) (sizeof(array) / sizeof((array)[0]))
 #define ALIGN_UP_(value, alignment)                                            \
     (((value) + (alignment) - 1) & ~((alignment) - 1))
 
-#endif // SHARED_H_
+void formatMsgArgs(
+    const char* fmt, 
+    va_list argsList, 
+    char* buffer, 
+    uint64_t bufferSize);
+
+void formatMsg(
+    char* buffer, 
+    uint64_t bufferSize, 
+    const char* fmt, 
+    ...);
+
+#endif // SHARED_H

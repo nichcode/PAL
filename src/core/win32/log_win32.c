@@ -25,7 +25,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "core/log.h"
+#include "core/core_platform.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -36,10 +36,18 @@
 
 static volatile LONG s_TLSID = 0;
 
-// Create the TLS using atomic operations to avoid thread race
-void createLogTLS_(void)
+static void destroyTLSData(void* data)
 {
-    DWORD TLSIndex = FlsAlloc(destroyTLSData_);
+    LogTLSData* tlsData = data;
+    if (tlsData) {
+        palFree(nullptr, tlsData);
+    }
+}
+
+void corePlatformCreateLogTLS(void)
+{
+    /** Create the TLS using atomic operations to avoid thread race.*/
+    DWORD TLSIndex = FlsAlloc(destroyTLSData);
     LONG prev = InterlockedCompareExchange(
         (volatile LONG*)&s_TLSID,
         (LONG)TLSIndex,
@@ -50,12 +58,12 @@ void createLogTLS_(void)
     }
 }
 
-LogTLSData* getLogTLSData_(void)
+LogTLSData* corePlatformGetLogTLSData(void)
 {
     return FlsGetValue((DWORD)s_TLSID);
 }
 
-void setLogTLSData_(LogTLSData* data)
+void corePlatformSetLogTLSData(LogTLSData* data)
 {
     FlsSetValue((DWORD)s_TLSID, data);
 }

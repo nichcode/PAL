@@ -25,12 +25,11 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
-#include "core/result.h"
-
+#include "shared.h"
+#include "core/core_platform.h"
 #if PLATFORM_POSIX_
 
-void formatResult_(
+void corePlatformFormatResult(
     PalResult result,
     char* buffer)
 {
@@ -38,7 +37,7 @@ void formatResult_(
     PalResultSource source = palGetResultSource(result);
 
     if (code != 0 && source == PAL_RESULT_SOURCE_POSIX) {
-        strerror_r(code, buffer, FORMAT_BUFFER_SIZE_);
+        strerror_r((int)code, buffer, FORMAT_BUFFER_SIZE);
     }
 }
 

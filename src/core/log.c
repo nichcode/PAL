@@ -25,55 +25,45 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "format.h"
-#include "log.h"
+#include "core_platform.h"
+#include "shared.h"
 #include <stdio.h>
 #include <string.h>
-
-void destroyTLSData_(void* data)
-{
-    LogTLSData* tlsData = data;
-    if (tlsData) {
-        palFree(nullptr, tlsData);
-    }
-}
 
 void PAL_CALL palLog(
     const PalLogger* logger,
     const char* fmt,
     ...)
 {
-    LogTLSData* data = getLogTLSData_();
+    LogTLSData* data = corePlatformGetLogTLSData();
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 0);
         memset(data, 0, sizeof(LogTLSData));
-        createLogTLS_();
-        setLogTLSData_(data);
+        corePlatformCreateLogTLS();
+        corePlatformSetLogTLSData(data);
     }
 
     va_list argPtr;
     va_start(argPtr, fmt);
-    formatArgs_(fmt, argPtr, data->tmp);
+    formatMsgArgs(fmt, argPtr, data->tmp, PAL_LOG_MSG_SIZE);
     va_end(argPtr);
 
     if (logger && logger->callback) {
         if (data->isLogging) {
-            // block recursion
             return;
         }
 
-        // we update the isLogging field to stop recursive calls
-        (void)memcpy(data->buffer, data->tmp, LOG_MSG_SIZE_);
+        (void)memcpy(data->buffer, data->tmp, PAL_LOG_MSG_SIZE);
         data->isLogging = PAL_TRUE;
-        setLogTLSData_(data);
+        corePlatformSetLogTLSData(data);
         logger->callback(logger->userData, data->buffer);
 
     } else {
-        format_(data->buffer, "%s\n", data->tmp);
+        formatMsg(data->buffer, PAL_LOG_MSG_SIZE, "%s\n", data->tmp);
         (void)fprintf(stdout, "%s", data->buffer);
         (void)fflush(stdout);
     }
 
     data->isLogging = PAL_FALSE;
-    setLogTLSData_(data);
+    corePlatformSetLogTLSData(data);
 }

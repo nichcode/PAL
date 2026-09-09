@@ -60,6 +60,8 @@ void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr)
 {
+    /** explicit behavior. the free function does not expect nullptr 
+     * memory pointers*/
     if (ptr == nullptr) {
         return;
     }

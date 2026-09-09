@@ -25,8 +25,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "format.h"
-#include "result.h"
+#include "shared.h"
+#include "core_platform.h"
 
 static const char* resultCodeToString(PalResult result)
 {
@@ -135,19 +135,20 @@ void PAL_CALL palFormatResult(
     uint32_t nativeCode = palGetResultNativeCode(result);
 
     const char* description = "\n";
-    char tmp[FORMAT_BUFFER_SIZE_];
-    memset(tmp, 0, FORMAT_BUFFER_SIZE_);
+    char tmp[FORMAT_BUFFER_SIZE];
+    memset(tmp, 0, FORMAT_BUFFER_SIZE);
 
-    char formatted[FORMAT_BUFFER_SIZE_ * 2];
-    memset(formatted, 0, FORMAT_BUFFER_SIZE_ * 2);
+    char formatted[FORMAT_BUFFER_SIZE * 2];
+    memset(formatted, 0, FORMAT_BUFFER_SIZE * 2);
 
-    formatResult_(result, tmp);
+    corePlatformFormatResult(result, tmp);
     if (tmp[0] != 0) {
         description = tmp;
     }
 
-    format_(
+    formatMsg(
         formatted,
+        FORMAT_BUFFER_SIZE,
         "Source: %s\n PAL Code: %s\n Native Code: 0x%08X\n PAL Description: "
         "%s\n Native "
         "Description: %s",

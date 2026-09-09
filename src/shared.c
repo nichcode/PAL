@@ -25,14 +25,34 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PLATFORM_H_
-#define PLATFORM_H_
+#include "shared.h"
+#include "pal2/pal_core.h"
+#include <stdio.h>
 
-#ifdef __linux__
-#define PLATFORM_POSIX_ 1
-#define _POSIX_C_SOURCE 200112L
-#else
-#define PLATFORM_POSIX_ 0
-#endif // __linux__
+void formatMsgArgs(
+    const char* fmt,
+    va_list argsList,
+    char* buffer, 
+    uint64_t bufferSize)
+{
+    va_list argsListCopy;
+    va_copy(argsListCopy, argsList);
+    (void)vsnprintf(nullptr, 0, fmt, argsListCopy);
+    va_end(argsListCopy);
 
-#endif // PLATFORM_H_
+    va_copy(argsListCopy, argsList);
+    (void)vsnprintf(buffer, bufferSize, fmt, argsListCopy);
+    va_end(argsListCopy);
+}
+
+void formatMsg(
+    char* buffer,
+    uint64_t bufferSize,
+    const char* fmt,
+    ...)
+{
+    va_list argPtr;
+    va_start(argPtr, fmt);
+    formatMsgArgs(fmt, argPtr, buffer, bufferSize);
+    va_end(argPtr);
+}

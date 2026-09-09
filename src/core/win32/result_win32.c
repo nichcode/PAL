@@ -25,7 +25,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "core/result.h"
+#include "core/core_platform.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -34,7 +34,7 @@
 
 #include <windows.h>
 
-void formatResult_(
+void corePlatformFormatResult(
     PalResult result,
     char* buffer)
 {

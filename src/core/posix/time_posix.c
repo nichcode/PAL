@@ -25,23 +25,24 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
+#include "shared.h"
 #include "pal2/pal_core.h"
 
 #if PLATFORM_POSIX_
-
 #include <time.h>
+
+#define FREQUENCY 1000000000LL
 
 uint64_t PAL_CALL palGetPerformanceCounter(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
+    return (uint64_t)ts.tv_sec * FREQUENCY + (uint64_t)ts.tv_nsec;
 }
 
 uint64_t PAL_CALL palGetPerformanceFrequency(void)
 {
-    return 1000000000LL;
+    return FREQUENCY;
 }
 
 #endif // PLATFORM_POSIX_

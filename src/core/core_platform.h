@@ -25,19 +25,33 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef FORMAT_H_
-#define FORMAT_H_
+#ifndef CORE_PLATFORM_H
+#define CORE_PLATFORM_H
 
-#include <stdarg.h>
+#include "pal2/pal_core.h"
+#include <stdbool.h>
 
-void formatArgs_(
-    const char* fmt,
-    va_list argsList,
-    char* buffer);
+/** 
+ * A sensible default for native code format buffer size. It can be increased.
+ * A heap allocation must be avoided at all cost.
+ */
+#define FORMAT_BUFFER_SIZE 256
 
-void format_(
-    char* buffer,
-    const char* fmt,
-    ...);
+/** Contains Log TLS state. Every platform must use this exact data structure*/
+typedef struct LogTLSData
+{
+    char tmp[PAL_LOG_MSG_SIZE];
+    char buffer[PAL_LOG_MSG_SIZE];
+    bool isLogging;
+} LogTLSData;
 
-#endif // FORMAT_H_
+/**
+ * Create a TLS for logging. This function returns nothing because
+ * it leaves the actual TLS handle to the implementation.
+ */
+void corePlatformCreateLogTLS(void);
+LogTLSData* corePlatformGetLogTLSData(void);
+void corePlatformSetLogTLSData(LogTLSData* data);
+void corePlatformFormatResult(PalResult result, char* buffer);
+
+#endif // CORE_PLATFORM_H

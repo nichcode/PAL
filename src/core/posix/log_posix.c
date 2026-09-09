@@ -25,8 +25,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
-#include "core/log.h"
+#include "shared.h"
+#include "core/core_platform.h"
 
 #if PLATFORM_POSIX_
 #include <pthread.h>
@@ -34,24 +34,32 @@
 static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
 static pthread_key_t s_TLSID = 0;
 
+static void destroyTLSData(void* data)
+{
+    LogTLSData* tlsData = data;
+    if (tlsData) {
+        palFree(nullptr, tlsData);
+    }
+}
+
 static void createTLSID(void)
 {
-    if (pthread_key_create(&s_TLSID, destroyTLSData_) != 0) {
+    if (pthread_key_create(&s_TLSID, destroyTLSData) != 0) {
         return;
     }
 }
 
-void createLogTLS_(void)
+void corePlatformCreateLogTLS(void)
 {
     pthread_once(&s_TLSCreation, createTLSID);
 }
 
-LogTLSData* getLogTLSData_(void)
+LogTLSData* corePlatformGetLogTLSData(void)
 {
     return pthread_getspecific(s_TLSID);
 }
 
-void setLogTLSData_(LogTLSData* data)
+void corePlatformSetLogTLSData(LogTLSData* data)
 {
     pthread_setspecific(s_TLSID, data);
 }
