@@ -399,12 +399,7 @@ PAL_API const char* PAL_CALL palGetVersionString(void);
  * @brief Allocates memory using a custom or default allocator.
  *
  * This function allocate atleast `size` parameter of memory with the requested
- * `alignment` parameter. If the requested alignment is `0`, an
- * implementation default will be used.
- *
- * If the requested size is `0`, the behavior is implementation defined.
- * Therefore its recommended the caller avoids `0` size allocations.
- *
+ * `alignment` parameter. 
  * If allocations will be made from multiple threads, the `allocator`
  * parameter must be thread safe. The default allocator is thread safe.
  *
@@ -429,8 +424,8 @@ PAL_API void* PAL_CALL palAllocate(
 /**
  * @brief Deallocates memory allocated by palAllocate.
  *
- * Deallocating memory that has been deallocated will cause undefined behavior.
- * This function does not set the s`ptr` parameter to `nullptr` after
+ * The memory must be valid and not deallocated before this call.
+ * This function does not set the `ptr` parameter to `nullptr` after
  * deallocation. It is recommended the caller does that after this call to
  * prevent any double deallocations.
  *

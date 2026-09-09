@@ -25,12 +25,13 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "core/log.h"
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
 
-#include "core/log.h"
 #include <windows.h>
 
 static volatile LONG s_TLSID = 0;
@@ -56,7 +57,7 @@ LogTLSData* getLogTLSData_(void)
 
 void setLogTLSData_(LogTLSData* data)
 {
-    FlsSetValue(s_TLSID, data);
+    FlsSetValue((DWORD)s_TLSID, data);
 }
 
 #endif // _WIN32

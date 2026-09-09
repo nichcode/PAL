@@ -26,9 +26,9 @@
  */
 
 #include "platform.h"
-#if PLATFORM_POSIX_
-
 #include "core/result.h"
+
+#if PLATFORM_POSIX_
 
 void formatResult_(
     PalResult result,

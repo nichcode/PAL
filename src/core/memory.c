@@ -60,6 +60,10 @@ void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr)
 {
+    if (ptr == nullptr) {
+        return;
+    }
+
     if (allocator) {
         allocator->free(allocator->userData, ptr);
     } else {

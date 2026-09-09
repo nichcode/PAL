@@ -25,12 +25,13 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "pal2/pal_core.h"
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
 
-#include "pal2/pal_core.h"
 #include <windows.h>
 
 uint64_t PAL_CALL palGetPerformanceCounter(void)

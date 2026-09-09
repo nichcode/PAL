@@ -25,12 +25,13 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "core/result.h"
+
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
 
-#include "core/result.h"
 #include <windows.h>
 
 void formatResult_(

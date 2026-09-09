@@ -26,9 +26,10 @@
  */
 
 #include "platform.h"
+#include "pal2/pal_core.h"
+
 #if PLATFORM_POSIX_
 
-#include "pal2/pal_core.h"
 #include <time.h>
 
 uint64_t PAL_CALL palGetPerformanceCounter(void)

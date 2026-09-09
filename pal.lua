@@ -13,5 +13,11 @@ project "PAL2"
     targetdir(targetDir)
     objdir(objDir)
     includedirs { "include", "src" }
+
     files { "src/core/*.c" }
+    filter {"system:windows", "configurations:*"}
+         files { "src/core/win32/*.c" }
+
+    filter {"system:windows", "configurations:*"}
+        files { "src/core/posix/*.c" }
     

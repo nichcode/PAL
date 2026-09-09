@@ -26,9 +26,9 @@
  */
 
 #include "platform.h"
-#if PLATFORM_POSIX_
-
 #include "core/log.h"
+
+#if PLATFORM_POSIX_
 #include <pthread.h>
 
 static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
