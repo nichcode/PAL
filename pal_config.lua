@@ -12,7 +12,7 @@ PAL_GENERATE_COMPILE_COMMANDS = true
 PAL_GENERATE_VSCODE = true
 
 -- Build abi dump
-PAL_BUILD_ABI_DUMP = false
+PAL_BUILD_ABI_DUMP = true
 
 -- Build event module
 PAL_BUILD_EVENT_MODULE = flags

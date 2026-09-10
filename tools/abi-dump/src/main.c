@@ -1,31 +1,5 @@
 
-/**
- * PAL - Prime Abstraction Layer (PAL)
- * A cross platform abstraction layer over graphics and windowing APIs
- * -------------------------------------------------------------------
- * 
- * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
- *
- * This software is provided 'as-is', without any express or implied
- * warranty.  In no event will the authors be held liable for any damages
- * arising from the use of this software.
- *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- *
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
- *
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- *
- * 3. This notice may not be removed or altered from any source distribution.
- */
-
-#include "abi_dump.h"
+#include "helpers.h"
 
 #define VERSION "1.0"
 #define LOG_NAME "PAL ABI Dump"
@@ -35,9 +9,6 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif // NOMINMAX
 #include <windows.h>
 
 #define DLL_HANDLE HMODULE
@@ -57,14 +28,6 @@
 
 typedef void(PAL_CALL* GetVersionFn)(PalVersion* version);
 
-bool coreABIDumps(uint32_t flags);
-bool eventABIDumps(uint32_t flags);
-bool threadABIDumps(uint32_t flags);
-bool systemABIDumps(uint32_t flags);
-bool videoABIDumps(uint32_t flags);
-bool openglABIDumps(uint32_t flags);
-bool graphicsABIDumps(uint32_t flags);
-
 static int logDumpStatus(bool status)
 {
     int ret = -1;
@@ -78,7 +41,7 @@ static int logDumpStatus(bool status)
     return ret;
 }
 
-static bool checkPALVersion(uint32_t flags)
+static bool checkPALVersion()
 {
     GetVersionFn getVersion = nullptr;
     DLL_HANDLE handle = LOAD_DLL;
@@ -98,7 +61,7 @@ static bool checkPALVersion(uint32_t flags)
     getVersion(&version);
     FREE_DLL(handle);
 
-    if (!(flags & ABI_DUMP_FLAG_QUICK)) {
+    if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
         palLog(nullptr, "===========================================");
         palLog(nullptr, "PAL ABI Dump");
@@ -109,7 +72,7 @@ static bool checkPALVersion(uint32_t flags)
     if (strcmp(VERSION, "1.0") == 0) {
         // ABI Dump v1.0 == PAL v2
         if (version.major == 2) {
-            if (flags & ABI_DUMP_FLAG_VERBOSE) {
+            if (g_DumpFlags & ABI_DUMP_VERBOSE) {
                 palLog(nullptr, "Expected PAL ABI Generation: 2");
                 palLog(nullptr, "Actual PAL ABI Generation:: %d", version.major);
                 palLog(nullptr, "Target Library: PAL2");
@@ -126,31 +89,30 @@ int main(int argc, char** argv)
     PalBool status = PAL_FALSE;
     PalBool dumpVersion = PAL_FALSE;
     PalBool dumpHelp = PAL_FALSE;
-    uint32_t flags = 0;
     uint32_t passed = 0;
     uint32_t dumps = 0;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--core") == 0) {
-            dumps |= ABI_DUMP_FLAG_CORE;
+            dumps |= ABI_DUMP_CORE;
 
         } else if (strcmp(argv[i], "--event") == 0) {
-            dumps |= ABI_DUMP_FLAG_EVENT;
+            dumps |= ABI_DUMP_EVENT;
 
         } else if (strcmp(argv[i], "--graphics") == 0) {
-            dumps |= ABI_DUMP_FLAG_GRAPHICS;
+            dumps |= ABI_DUMP_GRAPHICS;
 
         } else if (strcmp(argv[i], "--opengl") == 0) {
-            dumps |= ABI_DUMP_FLAG_OPENGL;
+            dumps |= ABI_DUMP_OPENGL;
 
         } else if (strcmp(argv[i], "--system") == 0) {
-            dumps |= ABI_DUMP_FLAG_SYSTEM;
+            dumps |= ABI_DUMP_SYSTEM;
 
         } else if (strcmp(argv[i], "--thread") == 0) {
-            dumps |= ABI_DUMP_FLAG_THREAD;
+            dumps |= ABI_DUMP_THREAD;
 
         } else if (strcmp(argv[i], "--video") == 0) {
-            dumps |= ABI_DUMP_FLAG_VIDEO;
+            dumps |= ABI_DUMP_VIDEO;
 
         } else if (strcmp(argv[i], "--version") == 0) {
             dumpVersion = PAL_TRUE;
@@ -159,34 +121,34 @@ int main(int argc, char** argv)
             dumpHelp = PAL_TRUE;
 
         } else if (strcmp(argv[i], "--verbose") == 0) {
-            flags &= ~ABI_DUMP_FLAG_QUICK;
-            flags |= ABI_DUMP_FLAG_VERBOSE;
+            g_DumpFlags &= ~ABI_DUMP_QUICK;
+            g_DumpFlags |= ABI_DUMP_VERBOSE;
 
         } else if (strcmp(argv[i], "--quick") == 0) {
-            flags &= ~ABI_DUMP_FLAG_VERBOSE;
-            flags |= ABI_DUMP_FLAG_QUICK;
+            g_DumpFlags &= ~ABI_DUMP_VERBOSE;
+            g_DumpFlags |= ABI_DUMP_QUICK;
         }
     }
 
     if (dumps == 0 && dumpHelp == PAL_FALSE && dumpVersion == PAL_FALSE) {
-        dumps |= ABI_DUMP_FLAG_ALL;
+        dumps |= ABI_DUMP_ALL;
     }
 
-    status = checkPALVersion(flags);
+    status = checkPALVersion();
     if (!status) {
-        if (flags & ABI_DUMP_FLAG_QUICK) {
+        if (g_DumpFlags & ABI_DUMP_QUICK) {
             return logDumpStatus(status);
         } else {
             return -1;
         }
     }
 
-    if (dumps & ABI_DUMP_FLAG_CORE) {
-        status = coreABIDumps(flags);
+    if (dumps & ABI_DUMP_CORE) {
+        status = coreStructs();
         if (status) {
-            passed |= ABI_DUMP_FLAG_CORE;
+            passed |= ABI_DUMP_CORE;
         } else {
-            if (flags & ABI_DUMP_FLAG_QUICK) {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
                 return logDumpStatus(status);
             } else {
                 return -1;
@@ -194,12 +156,12 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps & ABI_DUMP_FLAG_EVENT) {
-        status = eventABIDumps(flags);
+    if (dumps & ABI_DUMP_EVENT) {
+        status = eventStructs();
         if (status) {
-            passed |= ABI_DUMP_FLAG_EVENT;
+            passed |= ABI_DUMP_EVENT;
         } else {
-            if (flags & ABI_DUMP_FLAG_QUICK) {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
                 return logDumpStatus(status);
             } else {
                 return -1;
@@ -207,12 +169,12 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps & ABI_DUMP_FLAG_THREAD) {
-        status = threadABIDumps(flags);
+    if (dumps & ABI_DUMP_THREAD) {
+        status = threadStructs();
         if (status) {
-            passed |= ABI_DUMP_FLAG_THREAD;
+            passed |= ABI_DUMP_THREAD;
         } else {
-            if (flags & ABI_DUMP_FLAG_QUICK) {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
                 return logDumpStatus(status);
             } else {
                 return -1;
@@ -220,12 +182,12 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps & ABI_DUMP_FLAG_SYSTEM) {
-        status = systemABIDumps(flags);
+    if (dumps & ABI_DUMP_SYSTEM) {
+        status = systemStructs();
         if (status) {
-            passed |= ABI_DUMP_FLAG_SYSTEM;
+            passed |= ABI_DUMP_SYSTEM;
         } else {
-            if (flags & ABI_DUMP_FLAG_QUICK) {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
                 return logDumpStatus(status);
             } else {
                 return -1;
@@ -233,12 +195,12 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps & ABI_DUMP_FLAG_VIDEO) {
-        status = videoABIDumps(flags);
+    if (dumps & ABI_DUMP_VIDEO) {
+        status = videoStructs();
         if (status) {
-            passed |= ABI_DUMP_FLAG_VIDEO;
+            passed |= ABI_DUMP_VIDEO;
         } else {
-            if (flags & ABI_DUMP_FLAG_QUICK) {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
                 return logDumpStatus(status);
             } else {
                 return -1;
@@ -246,12 +208,12 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps & ABI_DUMP_FLAG_OPENGL) {
+    if (dumps & ABI_DUMP_OPENGL) {
         if (status) {
-            status = openglABIDumps(flags);
-            passed |= ABI_DUMP_FLAG_OPENGL;
+            status = openglStructs();
+            passed |= ABI_DUMP_OPENGL;
         } else {
-            if (flags & ABI_DUMP_FLAG_QUICK) {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
                 return logDumpStatus(status);
             } else {
                 return -1;
@@ -259,12 +221,12 @@ int main(int argc, char** argv)
         }
     }
 
-    if (dumps & ABI_DUMP_FLAG_GRAPHICS) {
-        status = graphicsABIDumps(flags);
+    if (dumps & ABI_DUMP_GRAPHICS) {
+        status = graphicsStructs();
         if (status) {
-            passed |= ABI_DUMP_FLAG_GRAPHICS;
+            passed |= ABI_DUMP_GRAPHICS;
         } else {
-            if (flags & ABI_DUMP_FLAG_QUICK) {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
                 return logDumpStatus(status);
             } else {
                 return -1;
@@ -292,12 +254,11 @@ int main(int argc, char** argv)
         palLog(nullptr, "  --video         Check ABI for video PAL structs");
     }
 
-    if (flags & ABI_DUMP_FLAG_QUICK) {
+    if (g_DumpFlags & ABI_DUMP_QUICK) {
         if (dumps == 0) {
             return 0;
         }
 
-        // check if all dumps that were executed passed
         if (dumps == passed) {
             return logDumpStatus(PAL_TRUE);
         } else {
