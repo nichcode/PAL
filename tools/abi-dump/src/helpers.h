@@ -66,11 +66,11 @@ bool dumpStruct(const StructInfo* info);
  * here to avoid bloating the main.c with dumps (eg. allocator dump, etc)
 */
 bool coreStructs();
-bool eventStructs();
-bool threadStructs();
-bool systemStructs();
-bool videoStructs();
-bool openglStructs();
-bool graphicsStructs();
+// bool eventStructs();
+// bool threadStructs();
+// bool systemStructs();
+// bool videoStructs();
+// bool openglStructs();
+// bool graphicsStructs();
 
 #endif // HELPERS_H

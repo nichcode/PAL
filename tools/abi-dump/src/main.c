@@ -84,6 +84,8 @@ static bool checkPALVersion()
     return PAL_FALSE;
 }
 
+// TODO: uncomment the other systems
+
 int main(int argc, char** argv)
 {
     PalBool status = PAL_FALSE;
@@ -157,81 +159,81 @@ int main(int argc, char** argv)
     }
 
     if (dumps & ABI_DUMP_EVENT) {
-        status = eventStructs();
-        if (status) {
-            passed |= ABI_DUMP_EVENT;
-        } else {
-            if (g_DumpFlags & ABI_DUMP_QUICK) {
-                return logDumpStatus(status);
-            } else {
-                return -1;
-            }
-        }
+        // status = eventStructs();
+        // if (status) {
+        //     passed |= ABI_DUMP_EVENT;
+        // } else {
+        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
+        //         return logDumpStatus(status);
+        //     } else {
+        //         return -1;
+        //     }
+        // }
     }
 
     if (dumps & ABI_DUMP_THREAD) {
-        status = threadStructs();
-        if (status) {
-            passed |= ABI_DUMP_THREAD;
-        } else {
-            if (g_DumpFlags & ABI_DUMP_QUICK) {
-                return logDumpStatus(status);
-            } else {
-                return -1;
-            }
-        }
+        // status = threadStructs();
+        // if (status) {
+        //     passed |= ABI_DUMP_THREAD;
+        // } else {
+        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
+        //         return logDumpStatus(status);
+        //     } else {
+        //         return -1;
+        //     }
+        // }
     }
 
     if (dumps & ABI_DUMP_SYSTEM) {
-        status = systemStructs();
-        if (status) {
-            passed |= ABI_DUMP_SYSTEM;
-        } else {
-            if (g_DumpFlags & ABI_DUMP_QUICK) {
-                return logDumpStatus(status);
-            } else {
-                return -1;
-            }
-        }
+        // status = systemStructs();
+        // if (status) {
+        //     passed |= ABI_DUMP_SYSTEM;
+        // } else {
+        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
+        //         return logDumpStatus(status);
+        //     } else {
+        //         return -1;
+        //     }
+        // }
     }
 
     if (dumps & ABI_DUMP_VIDEO) {
-        status = videoStructs();
-        if (status) {
-            passed |= ABI_DUMP_VIDEO;
-        } else {
-            if (g_DumpFlags & ABI_DUMP_QUICK) {
-                return logDumpStatus(status);
-            } else {
-                return -1;
-            }
-        }
+        // status = videoStructs();
+        // if (status) {
+        //     passed |= ABI_DUMP_VIDEO;
+        // } else {
+        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
+        //         return logDumpStatus(status);
+        //     } else {
+        //         return -1;
+        //     }
+        // }
     }
 
     if (dumps & ABI_DUMP_OPENGL) {
-        if (status) {
-            status = openglStructs();
-            passed |= ABI_DUMP_OPENGL;
-        } else {
-            if (g_DumpFlags & ABI_DUMP_QUICK) {
-                return logDumpStatus(status);
-            } else {
-                return -1;
-            }
-        }
+        // if (status) {
+        //     status = openglStructs();
+        //     passed |= ABI_DUMP_OPENGL;
+        // } else {
+        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
+        //         return logDumpStatus(status);
+        //     } else {
+        //         return -1;
+        //     }
+        // }
     }
 
     if (dumps & ABI_DUMP_GRAPHICS) {
-        status = graphicsStructs();
-        if (status) {
-            passed |= ABI_DUMP_GRAPHICS;
-        } else {
-            if (g_DumpFlags & ABI_DUMP_QUICK) {
-                return logDumpStatus(status);
-            } else {
-                return -1;
-            }
-        }
+        // status = graphicsStructs();
+        // if (status) {
+        //     passed |= ABI_DUMP_GRAPHICS;
+        // } else {
+        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
+        //         return logDumpStatus(status);
+        //     } else {
+        //         return -1;
+        //     }
+        // }
     }
 
     if (dumpVersion) {

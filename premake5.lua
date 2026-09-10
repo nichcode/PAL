@@ -509,7 +509,10 @@ workspace(workspaceName)
             "-Wpedantic",
             "-Wconversion",
             "-Wsign-conversion",
-            "-Werror"
+            "-Werror",
+
+            -- Casting function pointers gives errors for GCC
+            "-Wno-cast-function-type"
         }
     end
 

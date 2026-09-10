@@ -31,9 +31,10 @@ bool dumpStruct(const StructInfo* info)
 
     fieldSize += 2;
     uint32_t seperatorSize = fieldSize + expectedSize + actualSize + 4; // add 4 spaces
-    for (int i = 0; i < seperatorSize; i++) {
+    for (uint32_t i = 0; i < seperatorSize; i++) {
         seperator[i] = '=';
     }
+    
     seperator[seperatorSize] = '\0';
 
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
