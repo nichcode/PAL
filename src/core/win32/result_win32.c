@@ -52,7 +52,7 @@ void corePlatformFormatResult(
             code,
             0,
             buffer,
-            FORMAT_BUFFER_SIZE_,
+            FORMAT_BUFFER_SIZE,
             nullptr);
     }
 }

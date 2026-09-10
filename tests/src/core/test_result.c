@@ -1,38 +1,52 @@
 
-#include <stdio.h>
-#include <stdint.h>
+#include "pal2/pal_core.h"
 
-typedef int Status;
-typedef uint32_t Result;
+#define MAX_RESULT 4
 
-// TODO: remove after testing formatter script for gdb and lldg
-#define STATUS_GOOD 0
-#define STATUS_BAD 1
-#define STATUS_NORMAL 2
+typedef struct ResultInfo
+{
+    PalResultCode code;
+    PalResultSource source;
+    uint32_t nativeCode;
+} ResultInfo;
 
-#define RESULT_SUCCESS 0
-#define RESULT_FAILED_IO (1 << 0)
-#define RESULT_FAILED_HANDLE (1 << 1)
-#define UNKNOWN1 (1 << 2)
-#define UNKNOWN2 (1 << 3)
-
-// The formatter should show the value like an enum not the literal
 int main(void)
 {
-    Status good =  STATUS_GOOD;
-    Status bad =  STATUS_BAD;
-    Status normal =  STATUS_NORMAL;
+    palLog(nullptr, "Running result test...");
 
-    Result result1 = RESULT_SUCCESS;
-    Result result2 = RESULT_FAILED_IO | RESULT_FAILED_HANDLE | UNKNOWN1 | UNKNOWN2;
+    PalResult results[MAX_RESULT] = {0};
 
-    printf("%u\n", good);
-    printf("%u\n", bad);
-    printf("%u\n", normal);
+    /**
+     * We use dummy native code. This is fine because we are not formatting
+     * the result value.
+     */
+    ResultInfo resultInfos[MAX_RESULT] = {
+        { PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED, PAL_RESULT_SOURCE_NONE, 0 },
+        { PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_D3D12, 122 },
+        { PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_D3D12, 12882 },
+        { PAL_RESULT_CODE_DEVICE_LOST, PAL_RESULT_SOURCE_VULKAN, 122266 }
+    };
 
-    printf("%u\n", result1);
-    printf("%u\n", result2);
-    (void)fflush(stdout);
+    for (int i = 0; i < MAX_RESULT; i++) {
+        ResultInfo* info = &resultInfos[i];
+        results[i] = palMakeResult(info->code, info->source, info->nativeCode);
+    }
+
+    for (int i = 0; i < MAX_RESULT; i++) {
+        ResultInfo* info = &resultInfos[i];
+        PalResult result = results[i];
+
+        PalResultCode code = palGetResultCode(result);
+        PalResultSource source = palGetResultSource(result);
+        uint32_t nativeCode = palGetResultNativeCode(result);
+
+        if (code != info->code     || 
+            source != info->source || 
+            nativeCode != info->nativeCode) {
+            palLog(nullptr, "Result values do not match");
+            return -1;
+        }
+    }
 
     return 0;
 }

@@ -31,12 +31,13 @@ void PAL_CALL freeFunction(void* userData, void* ptr)
     context->deallocations++;
 }
 
-bool defaultAllocatorTest()
+bool defaultAllocator()
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     uint64_t* ptr2 = palAllocate(nullptr, sizeof(uint64_t), 8);
 
     if (!ptr1 || !ptr2) {
+        palLog(nullptr, "Failed to allocate memory with default allocator");
         return false;
     }
 
@@ -49,10 +50,11 @@ bool defaultAllocatorTest()
     return true;
 }
 
-bool nullFreeTest()
+bool nullFree()
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     if (!ptr1) {
+        palLog(nullptr, "Failed to allocate memory with default allocator");
         return false;
     }
 
@@ -63,7 +65,7 @@ bool nullFreeTest()
     return true;
 }
 
-bool customAllocatorTest()
+bool customAllocator()
 {
     AllocatorContext context = {0};
     context.allocations = 0;
@@ -78,6 +80,7 @@ bool customAllocatorTest()
     uint64_t* ptr2 = palAllocate(&allocator, sizeof(uint64_t), 8);
 
     if (!ptr1 || !ptr2) {
+        palLog(nullptr, "Failed to allocate memory with custom allocator");
         return false;
     }
 
@@ -92,17 +95,19 @@ bool customAllocatorTest()
 
 int main(void)
 {
-    bool ret = defaultAllocatorTest();
+    palLog(nullptr, "Running allocator test...");
+
+    bool ret = defaultAllocator();
     if (!ret) {
         return -1;
     }
 
-    ret = nullFreeTest();
+    ret = nullFree();
     if (!ret) {
         return -1;
     }
 
-    ret = customAllocatorTest();
+    ret = customAllocator();
     if (!ret) {
         return -1;
     }
