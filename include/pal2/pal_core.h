@@ -458,7 +458,11 @@ PAL_API void PAL_CALL palFree(
  * @brief Logs a formatted message to a custom or default logger.
  * 
  * Log messages have a limit of `PAL_LOG_MSG_SIZE` (4096), any message greater
- * than the limit will be truncated and the remaining discarded. 
+ * than the limit will be truncated and the remaining discarded.
+ * 
+ * Logging in a log callback with the default logger is valid. Double logging
+ * with the same custom logger will trigger recursive logging. PAL guards
+ * against this and will discard the whole message.
  *
  * @param[in] logger Logger instance. `nullptr` to use the default 
  * thread-safe logger.
