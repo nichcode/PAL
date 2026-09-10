@@ -13,6 +13,8 @@ static void PAL_CALL onLogger(
     void* userData,
     const char* msg)
 {
+    (void)msg;
+
     LoggerContext* context = userData;
     context->triggered = true;
 }

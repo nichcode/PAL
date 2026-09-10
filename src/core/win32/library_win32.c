@@ -28,21 +28,29 @@
 #include "shared.h"
 #include "pal2/pal_core.h"
 
-#if PLATFORM_POSIX
-#include <time.h>
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
 
-#define FREQUENCY 1000000000LL
+#include <windows.h>
 
-uint64_t PAL_CALL palGetPerformanceCounter(void)
+// TODO: implement
+PalLibrary* PAL_CALL palLoadLibrary(const char* path)
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * FREQUENCY + (uint64_t)ts.tv_nsec;
+
 }
 
-uint64_t PAL_CALL palGetPerformanceFrequency(void)
+void* PAL_CALL palGetSymbol(
+    PalLibrary* library, 
+    const char* name)
 {
-    return FREQUENCY;
+
 }
 
-#endif // PLATFORM_POSIX
+void PAL_CALL palFreeLibrary(PalLibrary* library)
+{
+
+}
+
+#endif // _WIN32

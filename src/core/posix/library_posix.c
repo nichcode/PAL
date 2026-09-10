@@ -29,20 +29,48 @@
 #include "pal2/pal_core.h"
 
 #if PLATFORM_POSIX
-#include <time.h>
+#include <dlfcn.h>
+#include <string.h>
+#include <stdio.h>
 
-#define FREQUENCY 1000000000LL
+#if defined(__APPLE__)
+#define EXT ".dylib"
+#else
+#define EXT ".so"
+#endif // EXT
 
-uint64_t PAL_CALL palGetPerformanceCounter(void)
+/** We use a union to avoid GCC and Clang warnings. This is needed since
+ * we treat warnings as errors.
+ */
+typedef union Symbol
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * FREQUENCY + (uint64_t)ts.tv_nsec;
+    void* raw;
+    PalLibrarySymbol symbol;
+} Symbol;
+
+PalLibrary* PAL_CALL palLoadLibrary(const char* path)
+{
+    char buffer[PAL_MAX_PATH];
+    if (strlen(path) + strlen(EXT) >= PAL_MAX_PATH) {
+        return nullptr;
+    }
+
+    snprintf(buffer, PAL_MAX_PATH, "%s%s", path, EXT);
+    return (PalLibrary*)dlopen(buffer, RTLD_LAZY);
 }
 
-uint64_t PAL_CALL palGetPerformanceFrequency(void)
+PalLibrarySymbol PAL_CALL palGetSymbol(
+    PalLibrary* library, 
+    const char* name)
 {
-    return FREQUENCY;
+    Symbol sym;
+    sym.raw = dlsym((void*)library, name);
+    return sym.symbol;
+}
+
+void PAL_CALL palFreeLibrary(PalLibrary* library)
+{
+    dlclose((void*)library);
 }
 
 #endif // PLATFORM_POSIX

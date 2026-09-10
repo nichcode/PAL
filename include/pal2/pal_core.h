@@ -85,6 +85,9 @@
 /** @brief Represents the maximum log buffer size.*/
 #define PAL_LOG_MSG_SIZE 4096
 
+/** @brief Represents the maximum file path.*/
+#define PAL_MAX_PATH 256
+
 #define PAL_TRUE 1
 #define PAL_FALSE 0
 #define PAL_RESULT_SUCCESS 0
@@ -211,6 +214,24 @@ typedef uint16_t PalResultCode;
  * The number of result sources. The literal value must not be used.
  */
 typedef uint16_t PalResultSource;
+
+/**
+ * @typedef PalLibrarySymbol
+ * @brief A generic library symbol for exported functions.
+ * 
+ * @since Added in version 2.2
+ * @sa palGetSymbol
+ */
+typedef void (PAL_CALL *PalLibrarySymbol)(void);
+
+/**
+ * @typedef PalLibrary
+ * @brief Opaque handle to a library.
+ * 
+ * @since Added in version 2.2
+ * @sa palLoadLibrary
+ */
+typedef struct PalLibrary PalLibrary;
 
 /**
  * @brief Function pointer type used for memory allocations.
@@ -504,6 +525,77 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
  * @sa palGetPerformanceCounter
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
+
+/**
+ * @brief Loads the specified shared library module dynamically into 
+ * address space.
+ * 
+ * Filepaths have a limit of `PAL_MAX_PATH` (256), if the `path` parameter is
+ * greater than the limit, the function will fail and return `nullptr`.
+ * 
+ * The specified module will load other modules is there is a dependency
+ * between them. `path` parameter will be searched in the systems default
+ * module directories. The library does not validate and resolves
+ * its function symbols after creation, the symbol is resolved when
+ * `palGetSymbol()` is called.
+ * 
+ * Calling the function with `path` parameter set to `nullptr` is 
+ * implementation-defined. An implementation might return the
+ * handle to the main program.
+ * 
+ * The returned library must be freed with `palFreeLibrary()` when no longer
+ * needed.
+ * 
+ * @param[in] path The path to the library. This can be absolute or relative. 
+ * The path must not have the extension appended to it. PAL handles 
+ * that internally. Must not be `nullptr`.
+ *
+ * @return The loaded library on success or nullptr on failure.
+ *
+ * @Thread-safety The entry function must be thread-safe.
+ *
+ * @since Added in version 2.2
+ * @sa palGetSymbol
+ * @sa palFreeLibrary
+ */
+PAL_API PalLibrary* PAL_CALL palLoadLibrary(const char* path);
+
+/**
+ * @brief Retrieves the address or symbol of an exported function or variable
+ * from the specified library.
+ *
+ * @param[in] library The library. Must not be `nullptr`.
+ * @param[in] name The name of the exported function or variable.
+ * Must not be `nullptr`.
+ * 
+ * @return the symbol or address of the exported funtion or variable on success
+ * or `nullptr` on failure. Exported functions are returned as 
+ * `PalLibrarySymbol`. Therefore they must be casted to the required type.
+ *
+ * @Thread-safety Thread safe.
+ *
+ * @since Added in version 2.2
+ * @sa palLoadLibrary
+ * @sa palFreeLibrary
+ */
+PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
+    PalLibrary* library, 
+    const char* name);
+
+/**
+ * @brief Unloads the specified library from address space.
+ * 
+ * This function invalidates all the symbols loaded from it after this call.
+ * 
+ * @param[in] library The library to free. Must not be `nullptr`.
+ *
+ * @Thread-safety Thread safe.
+ *
+ * @since Added in version 2.2
+ * @sa palLoadLibrary
+ * @sa palGetSymbol
+ */
+PAL_API void PAL_CALL palFreeLibrary(PalLibrary* library);
 
 /**
  * @brief Gets the result code from the result value.

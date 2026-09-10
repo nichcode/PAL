@@ -27,7 +27,7 @@
 
 #include "shared.h"
 #include "core/core_platform.h"
-#if PLATFORM_POSIX_
+#if PLATFORM_POSIX
 
 void corePlatformFormatResult(
     PalResult result,
@@ -41,4 +41,4 @@ void corePlatformFormatResult(
     }
 }
 
-#endif // PLATFORM_POSIX_
+#endif // PLATFORM_POSIX

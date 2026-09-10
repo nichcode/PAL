@@ -28,7 +28,7 @@
 #include "shared.h"
 #include "core/core_platform.h"
 
-#if PLATFORM_POSIX_
+#if PLATFORM_POSIX
 #include <pthread.h>
 
 static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
@@ -64,4 +64,4 @@ void corePlatformSetLogTLSData(LogTLSData* data)
     pthread_setspecific(s_TLSID, data);
 }
 
-#endif // PLATFORM_POSIX_
+#endif // PLATFORM_POSIX

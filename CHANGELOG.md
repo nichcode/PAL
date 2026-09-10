@@ -8,6 +8,11 @@
 // TODO: add API to get native handles
 // TODO: add API for window client/drawable area
 PAL_LOG_MSG_SIZE
+PalLibrary
+palLoadLibrary()
+palGetSymbol()
+palFreeLibrary()
+
 - Added `PAL_DEFAULT_QUEUE_EVENT_COUNT`.
 - Improved API documentation.
 - Fixed Thread safety documentation.
