@@ -19,7 +19,7 @@ int main(void)
         return -1;
     }
 
-    PrintfFn print = (PalLibrarySymbol)palGetSymbol(library, "printf");
+    PrintfFn print = (PrintfFn)palGetSymbol(library, "printf");
     if (!print) {
         palLog(nullptr, "Failed to get function symbol");
         palFreeLibrary(library);

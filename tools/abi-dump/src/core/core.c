@@ -10,7 +10,7 @@ bool coreStructs()
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
         palLog(nullptr, "===========================================");
-        palLog(nullptr, "Core Structs");
+        palLog(nullptr, "Core ABI Dump");
         palLog(nullptr, "===========================================");
         palLog(nullptr, "");
     }
