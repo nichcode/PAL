@@ -30,14 +30,6 @@
 
 #if PLATFORM_POSIX
 #include <dlfcn.h>
-#include <string.h>
-#include <stdio.h>
-
-#if defined(__APPLE__)
-#define EXT ".dylib"
-#else
-#define EXT ".so"
-#endif // EXT
 
 /** We use a union to avoid GCC and Clang warnings. This is needed since
  * we treat warnings as errors.
@@ -50,13 +42,7 @@ typedef union Symbol
 
 PalLibrary* PAL_CALL palLoadLibrary(const char* path)
 {
-    char buffer[PAL_MAX_PATH];
-    if (strlen(path) + strlen(EXT) >= PAL_MAX_PATH) {
-        return nullptr;
-    }
-
-    snprintf(buffer, PAL_MAX_PATH, "%s%s", path, EXT);
-    return (PalLibrary*)dlopen(buffer, RTLD_LAZY);
+    return (PalLibrary*)dlopen(path, RTLD_LAZY);
 }
 
 PalLibrarySymbol PAL_CALL palGetSymbol(

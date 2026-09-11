@@ -85,9 +85,6 @@
 /** @brief Represents the maximum log buffer size.*/
 #define PAL_LOG_MSG_SIZE 4096
 
-/** @brief Represents the maximum file path.*/
-#define PAL_MAX_PATH 256
-
 #define PAL_TRUE 1
 #define PAL_FALSE 0
 #define PAL_RESULT_SUCCESS 0
@@ -530,9 +527,6 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
  * @brief Loads the specified shared library module dynamically into 
  * address space.
  * 
- * Filepaths have a limit of `PAL_MAX_PATH` (256), if the `path` parameter is
- * greater than the limit, the function will fail and return `nullptr`.
- * 
  * The specified module will load other modules is there is a dependency
  * between them. `path` parameter will be searched in the systems default
  * module directories. The library does not validate and resolves
@@ -547,12 +541,14 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
  * needed.
  * 
  * @param[in] path The path to the library. This can be absolute or relative. 
- * The path must not have the extension appended to it. PAL handles 
- * that internally. Must not be `nullptr`.
+ * The path must have the extension appended to it.
  *
  * @return The loaded library on success or nullptr on failure.
  *
  * @Thread-safety The entry function must be thread-safe.
+ * 
+ * @note The filepath limit is per platform. It recommended to use a safe
+ * default for your application.
  *
  * @since Added in version 2.2
  * @sa palGetSymbol
