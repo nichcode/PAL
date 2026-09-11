@@ -38,10 +38,15 @@ PalLibrarySymbol PAL_CALL palGetSymbol(
     PalLibrary* library, 
     const char* name)
 {
+    ASSERT(library != nullptr, "The specified library is null");
+    ASSERT(name != nullptr, "The specified symbol is null");
+
     return platformGetSymbol(library, name);
 }
 
 void PAL_CALL palFreeLibrary(PalLibrary* library)
 {
+    ASSERT(library != nullptr, "The specified library is null");
+    
     platformFreeLibrary(library);
 }
