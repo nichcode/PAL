@@ -29,7 +29,7 @@
 #include "core/core_platform.h"
 #if PLATFORM_POSIX
 
-void corePlatformFormatResult(
+void platformFormatResult(
     PalResult result,
     char* buffer)
 {

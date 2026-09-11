@@ -49,9 +49,17 @@ typedef struct LogTLSData
  * Create a TLS for logging. This function returns nothing because
  * it leaves the actual TLS handle to the implementation.
  */
-void corePlatformCreateLogTLS(void);
-LogTLSData* corePlatformGetLogTLSData(void);
-void corePlatformSetLogTLSData(LogTLSData* data);
-void corePlatformFormatResult(PalResult result, char* buffer);
+void platformCreateLogTLS(void);
+LogTLSData* platformGetLogTLSData(void);
+void platformSetLogTLSData(LogTLSData* data);
+void platformFormatResult(PalResult result, char* buffer);
+
+uint64_t platformGetPerformanceCounter(void);
+uint64_t platformGetPerformanceFrequency(void);
+
+PalLibrary* platformLoadLibrary(const char* path);
+PalLibrarySymbol platformGetSymbol(PalLibrary* library, const char* name);
+void platformFreeLibrary(PalLibrary* library);
+
 
 #endif // CORE_PLATFORM_H

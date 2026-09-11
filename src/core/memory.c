@@ -36,6 +36,7 @@ void* PAL_CALL palAllocate(
 {
     uint64_t align = alignment;
     if (align == 0) {
+        /** The implementation-defined default for the default allocator.*/
         align = 16;
     }
 

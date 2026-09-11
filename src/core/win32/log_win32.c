@@ -44,7 +44,7 @@ static void destroyTLSData(void* data)
     }
 }
 
-void corePlatformCreateLogTLS(void)
+void platformCreateLogTLS(void)
 {
     /** Create the TLS using atomic operations to avoid thread race.*/
     DWORD TLSIndex = FlsAlloc(destroyTLSData);
@@ -58,12 +58,12 @@ void corePlatformCreateLogTLS(void)
     }
 }
 
-LogTLSData* corePlatformGetLogTLSData(void)
+LogTLSData* platformGetLogTLSData(void)
 {
     return FlsGetValue((DWORD)s_TLSID);
 }
 
-void corePlatformSetLogTLSData(LogTLSData* data)
+void platformSetLogTLSData(LogTLSData* data)
 {
     FlsSetValue((DWORD)s_TLSID, data);
 }

@@ -25,36 +25,23 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "core/core_platform.h"
+#include "pal2/pal_core.h"
+#include "shared.h"
+#include "core_platform.h"
 
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif // WIN32_LEAN_AND_MEAN
-
-#include <windows.h>
-
-void platformFormatResult(
-    PalResult result,
-    char* buffer)
+PalLibrary* PAL_CALL palLoadLibrary(const char* path)
 {
-    PalResultSource source = palGetResultSource(result);
-    if (source != PAL_RESULT_SOURCE_WIN32 ||
-        source != PAL_RESULT_SOURCE_D3D12) {
-        return;
-    }
-
-    uint32_t code = palGetResultNativeCode(result);
-    if (code != 0) {
-        FormatMessageA(
-            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            nullptr,
-            code,
-            0,
-            buffer,
-            FORMAT_BUFFER_SIZE,
-            nullptr);
-    }
+    return platformLoadLibrary(path);
 }
 
-#endif // _WIN32
+PalLibrarySymbol PAL_CALL palGetSymbol(
+    PalLibrary* library, 
+    const char* name)
+{
+    return platformGetSymbol(library, name);
+}
+
+void PAL_CALL palFreeLibrary(PalLibrary* library)
+{
+    platformFreeLibrary(library);
+}

@@ -40,12 +40,12 @@ typedef union Symbol
     PalLibrarySymbol symbol;
 } Symbol;
 
-PalLibrary* PAL_CALL palLoadLibrary(const char* path)
+PalLibrary* platformLoadLibrary(const char* path)
 {
     return (PalLibrary*)dlopen(path, RTLD_LAZY);
 }
 
-PalLibrarySymbol PAL_CALL palGetSymbol(
+PalLibrarySymbol platformGetSymbol(
     PalLibrary* library, 
     const char* name)
 {
@@ -54,7 +54,7 @@ PalLibrarySymbol PAL_CALL palGetSymbol(
     return sym.symbol;
 }
 
-void PAL_CALL palFreeLibrary(PalLibrary* library)
+void platformFreeLibrary(PalLibrary* library)
 {
     dlclose((void*)library);
 }

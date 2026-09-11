@@ -49,17 +49,17 @@ static void createTLSID(void)
     }
 }
 
-void corePlatformCreateLogTLS(void)
+void platformCreateLogTLS(void)
 {
     pthread_once(&s_TLSCreation, createTLSID);
 }
 
-LogTLSData* corePlatformGetLogTLSData(void)
+LogTLSData* platformGetLogTLSData(void)
 {
     return pthread_getspecific(s_TLSID);
 }
 
-void corePlatformSetLogTLSData(LogTLSData* data)
+void platformSetLogTLSData(LogTLSData* data)
 {
     pthread_setspecific(s_TLSID, data);
 }

@@ -435,11 +435,17 @@ workspace(workspaceName)
     filter "configurations:debug"
         symbols "on"
         runtime "Debug"
+        defines { "DEBUG" }    
 
     filter "configurations:release"
         symbols "off"
         runtime "Release"
         optimize "full"
+        defines { "NDEBUG" }
+
+        -- We hide the internal symbols so the compiler can inline them
+        buildoptions { "-fvisibility=hidden" }
+        linktimeoptimization "On"
 
     filter {}
 

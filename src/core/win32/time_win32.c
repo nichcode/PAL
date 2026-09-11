@@ -25,7 +25,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "pal2/pal_core.h"
+#include "core/core_platform.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -34,14 +34,14 @@
 
 #include <windows.h>
 
-uint64_t PAL_CALL palGetPerformanceCounter(void)
+uint64_t PAL_CALL platformGetPerformanceCounter(void)
 {
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return (uint64_t)counter.QuadPart;
 }
 
-uint64_t PAL_CALL palGetPerformanceFrequency(void)
+uint64_t PAL_CALL platformGetPerformanceFrequency(void)
 {
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);

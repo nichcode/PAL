@@ -39,6 +39,20 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+void handleAssert(
+    const char* file, 
+    uint32_t line, 
+    const char* expr, 
+    const char* msg);
+
+#ifndef NDEBUG
+#define ASSERT(expr, msg) if (!(expr)) { \
+    handleAssert(__FILE__, __LINE__, #expr, msg); \
+}
+#else
+    #define ASSERT(expr, msg) ((void)0)
+#endif // NDEBUG
+
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 #define ALIGN_UP(value, alignment)                                            \
     (((value) + (alignment) - 1) & ~((alignment) - 1))

@@ -25,36 +25,15 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "core/core_platform.h"
+#include "pal2/pal_core.h"
+#include "core_platform.h"
 
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif // WIN32_LEAN_AND_MEAN
-
-#include <windows.h>
-
-void platformFormatResult(
-    PalResult result,
-    char* buffer)
+uint64_t PAL_CALL palGetPerformanceCounter(void)
 {
-    PalResultSource source = palGetResultSource(result);
-    if (source != PAL_RESULT_SOURCE_WIN32 ||
-        source != PAL_RESULT_SOURCE_D3D12) {
-        return;
-    }
-
-    uint32_t code = palGetResultNativeCode(result);
-    if (code != 0) {
-        FormatMessageA(
-            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            nullptr,
-            code,
-            0,
-            buffer,
-            FORMAT_BUFFER_SIZE,
-            nullptr);
-    }
+    return platformGetPerformanceCounter();
 }
 
-#endif // _WIN32
+uint64_t PAL_CALL palGetPerformanceFrequency(void)
+{
+    return platformGetPerformanceFrequency();
+}

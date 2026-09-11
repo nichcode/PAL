@@ -35,12 +35,12 @@ void PAL_CALL palLog(
     const char* fmt,
     ...)
 {
-    LogTLSData* data = corePlatformGetLogTLSData();
+    LogTLSData* data = platformGetLogTLSData();
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 0);
         memset(data, 0, sizeof(LogTLSData));
-        corePlatformCreateLogTLS();
-        corePlatformSetLogTLSData(data);
+        platformCreateLogTLS();
+        platformSetLogTLSData(data);
     }
 
     va_list argPtr;
@@ -55,7 +55,7 @@ void PAL_CALL palLog(
 
         (void)memcpy(data->buffer, data->tmp, PAL_LOG_MSG_SIZE);
         data->isLogging = PAL_TRUE;
-        corePlatformSetLogTLSData(data);
+        platformSetLogTLSData(data);
         logger->callback(logger->userData, data->buffer);
 
     } else {
@@ -65,5 +65,5 @@ void PAL_CALL palLog(
     }
 
     data->isLogging = PAL_FALSE;
-    corePlatformSetLogTLSData(data);
+    platformSetLogTLSData(data);
 }

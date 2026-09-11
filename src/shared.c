@@ -27,7 +27,26 @@
 
 #include "shared.h"
 #include "pal2/pal_core.h"
+
 #include <stdio.h>
+#include <stdlib.h>
+
+void handleAssert(
+    const char* file, 
+    uint32_t line, 
+    const char* expr, 
+    const char* msg)
+{
+    palLog(
+        nullptr, 
+        "ASSERTION:\n File:    %s\n Line:    %d\n Expr:    %s\n Message: %s",
+        file, 
+        line, 
+        expr, 
+        msg);
+
+    abort();
+}
 
 void formatMsgArgs(
     const char* fmt,

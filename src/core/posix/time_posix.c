@@ -26,21 +26,21 @@
  */
 
 #include "shared.h"
-#include "pal2/pal_core.h"
+#include "core/core_platform.h"
 
 #if PLATFORM_POSIX
 #include <time.h>
 
 #define FREQUENCY 1000000000LL
 
-uint64_t PAL_CALL palGetPerformanceCounter(void)
+uint64_t platformGetPerformanceCounter(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * FREQUENCY + (uint64_t)ts.tv_nsec;
 }
 
-uint64_t PAL_CALL palGetPerformanceFrequency(void)
+uint64_t platformGetPerformanceFrequency(void)
 {
     return FREQUENCY;
 }

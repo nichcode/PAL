@@ -26,7 +26,7 @@
  */
 
 #include "shared.h"
-#include "pal2/pal_core.h"
+#include "core/core_platform.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -36,19 +36,19 @@
 #include <windows.h>
 
 // TODO: implement
-PalLibrary* PAL_CALL palLoadLibrary(const char* path)
+PalLibrary* platformLoadLibrary(const char* path)
 {
 
 }
 
-void* PAL_CALL palGetSymbol(
+void* platformGetSymbol(
     PalLibrary* library, 
     const char* name)
 {
 
 }
 
-void PAL_CALL palFreeLibrary(PalLibrary* library)
+void platformFreeLibrary(PalLibrary* library)
 {
 
 }

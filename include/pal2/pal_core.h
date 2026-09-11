@@ -756,11 +756,11 @@ static inline uint64_t PAL_CALL palPackFloat(
 {
     uint64_t combined = 0;
 #if PAL_BIG_ENDIAN
-    memcpy(&((uint32_t*)&combined)[0], &high, sizeof(float));
-    memcpy(&((uint32_t*)&combined)[1], &low, sizeof(float));
+    memcpy(&combined, &high, sizeof(float));
+    memcpy((char*)&combined + sizeof(float), &low, sizeof(float));
 #else
-    memcpy(&((uint32_t*)&combined)[0], &low, sizeof(float));
-    memcpy(&((uint32_t*)&combined)[1], &high, sizeof(float));
+    memcpy(&combined, &low, sizeof(float));
+    memcpy((char*)&combined + sizeof(float), &high, sizeof(float));
 #endif // PAL_BIG_ENDIAN
 
     return combined;
@@ -853,19 +853,19 @@ static inline void PAL_CALL palUnpackFloat(
 {
 #if PAL_BIG_ENDIAN
     if (low) {
-        memcpy(low, &((uint32_t*)&data)[1], sizeof(float));
+        memcpy(low, (char*)&data + sizeof(float), sizeof(float));
     }
 
     if (high) {
-        memcpy(high, &((uint32_t*)&data)[0], sizeof(float));
+        memcpy(high, &data, sizeof(float));
     }
 #else
     if (low) {
-        memcpy(low, &((uint32_t*)&data)[0], sizeof(float));
+        memcpy(low, &data, sizeof(float));
     }
 
     if (high) {
-        memcpy(high, &((uint32_t*)&data)[1], sizeof(float));
+        memcpy(high, (char*)&data + sizeof(float), sizeof(float));
     }
 
 #endif // PAL_BIG_ENDIAN

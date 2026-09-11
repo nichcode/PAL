@@ -141,7 +141,7 @@ void PAL_CALL palFormatResult(
     char formatted[FORMAT_BUFFER_SIZE * 2];
     memset(formatted, 0, FORMAT_BUFFER_SIZE * 2);
 
-    corePlatformFormatResult(result, tmp);
+    platformFormatResult(result, tmp);
     if (tmp[0] != 0) {
         description = tmp;
     }
