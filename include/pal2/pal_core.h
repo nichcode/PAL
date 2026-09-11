@@ -453,7 +453,7 @@ PAL_API void* PAL_CALL palAllocate(
  *
  * The memory must be valid and not deallocated before this call.
  * This function does not set the `ptr` parameter to `nullptr` after
- * deallocation. It is recommended the caller does that after this call to
+ * deallocation. We recommended the caller does that after this call to
  * prevent any double deallocations.
  *
  * If deallocations will be made from multiple threads, the `allocator`
@@ -547,7 +547,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
  *
  * @Thread-safety The entry function must be thread-safe.
  * 
- * @note The filepath limit is per platform. It recommended to use a safe
+ * @note The filepath limit is per platform. We recommended to use a safe
  * default for your application.
  *
  * @since Added in version 2.2
