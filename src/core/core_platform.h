@@ -52,6 +52,7 @@ typedef struct LogTLSData
 void platformCreateLogTLS(void);
 LogTLSData* platformGetLogTLSData(void);
 void platformSetLogTLSData(LogTLSData* data);
+
 void platformFormatResult(PalResult result, char* buffer);
 
 uint64_t platformGetPerformanceCounter(void);

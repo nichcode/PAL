@@ -26,6 +26,7 @@
  */
 
 #include "pal2/pal_core.h"
+#include "shared.h"
 
 #define VERSION_MAJOR 2
 #define VERSION_MINOR 2

@@ -35,22 +35,32 @@
 
 #include <windows.h>
 
-// TODO: implement
+/** We use a union to avoid GCC and Clang warnings. This is needed since
+ * we treat warnings as errors.
+ */
+typedef union Symbol
+{
+    FARPROC raw;
+    PalLibrarySymbol symbol;
+} Symbol;
+
 PalLibrary* platformLoadLibrary(const char* path)
 {
-
+    return (PalLibrary*)LoadLibraryA(path);
 }
 
-void* platformGetSymbol(
+PalLibrarySymbol platformGetSymbol(
     PalLibrary* library, 
     const char* name)
 {
-
+    Symbol sym;
+    sym.raw = GetProcAddress((HMODULE)library, name);
+    return sym.symbol;
 }
 
 void platformFreeLibrary(PalLibrary* library)
 {
-
+    FreeLibrary((HMODULE)library);
 }
 
 #endif // _WIN32
