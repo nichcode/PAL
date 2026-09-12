@@ -136,9 +136,8 @@ typedef uint32_t PalBool;
  * 
  * @def PAL_RESULT_SUCCESS
  * The operation completed successfully.
- * This is returned by a function if it was successful without any errors.
- *
- * This is the only value that can be checked directly with standard checks.
+ * This is returned by a function if it was successful without any errors. @nl 
+ * This is the only value that can be checked directly with standard checks. @nl
  * (eg. result == `PAL_RESULT_SUCCESS`).
  */
 typedef uint64_t PalResult;
@@ -309,14 +308,14 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @since Added in version 2.0
  * 
  * @var PalVersion::major
- * The major version number of the PAL runtime. This is incremented when
- * breaking changes are made.
+ * The major version number of the PAL runtime. 
+ * This is incremented when breaking changes are made.
  * @var PalVersion::minor
- * The minor version number of the PAL runtime. This is incremented when 
- * backward-compatible features are added.
+ * The minor version number of the PAL runtime. 
+ * This is incremented when backward-compatible features are added.
  * @var PalVersion::build
- * The build version number of the PAL runtime. This is incremented when 
- * bugs are fixed without breaking changes or feature additions.
+ * The build version number of the PAL runtime. 
+ * This is incremented when bugs are fixed without API changes.
  */
 typedef struct PalVersion 
 {

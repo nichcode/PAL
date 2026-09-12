@@ -40,34 +40,7 @@
 #define PAL_DECORATION_MODE_SERVER_SIDE 1
 #define PAL_DECORATION_MODE_COUNT 2
 
-/**
- * PAL_EVENT_TYPE_WINDOW_CLOSE
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
-
-
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0
-
-/**
- * PAL_EVENT_TYPE_WINDOW_SIZE
- *
- * data:
- *  bits 0-31: width
- *  bits 32-63: height
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackUint32(event.data, &width, &height)
- * window = palUnpackPointer(event.data2)
- */
-// TODO: make the hover extension recognise newline
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1
 
 /**
@@ -84,6 +57,7 @@
  * palUnpackInt32(event.data, &x, &y)
  * window = palUnpackPointer(event.data2)
  */
+
 #define PAL_EVENT_TYPE_WINDOW_MOVE 2
 
 /**
@@ -417,11 +391,11 @@ typedef uint32_t PalDecorationMode;
  * @since 2.0
  * 
  * @def PAL_EVENT_TYPE_WINDOW_CLOSE
- * `event.data`: unused. \n
+ * `event.data`: unused.
  * `event.data2`: pointer to the window.
  * 
  * @def PAL_EVENT_TYPE_WINDOW_SIZE
- * `event.data`: (bits 0-31: window width, bits 32-63: window height). \n
+ * `event.data`: (bits 0-31: window width, bits 32-63: window height).
  * `event.data2`: pointer to the window.
  */
 typedef uint32_t PalEventType;

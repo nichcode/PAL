@@ -38,16 +38,26 @@ function findFieldDescription(document, definition, field)
             return undefined;
         }
 
+        let structLineIndex = 0;
         structName = '';
         for (let i = endIndex; i >= 0; i--) {
-            if (lines[i].includes('@struct')) {
+            /**
+             * get @since and start searching from there to reduce overhead.
+             * We dont break after finding the tag because the since can be in
+             * any types def. So we also find the @struct tag in addition.
+             */
+            if (lines[i].includes('@since')) {
                 startIndex = i;
+            }
+
+            if (lines[i].includes('@struct')) {
+                structLineIndex = i;
                 structName = lines[i].replace(/^\s*\*\s*@struct\s+/, '').trim();
                 break;
             }
         }
 
-        if (startIndex === -1) {
+        if (startIndex === -1 && structLineIndex === -1) {
             return undefined;
         }
 
@@ -72,18 +82,14 @@ function findFieldDescription(document, definition, field)
 
         fieldTag = '@def ' + field;
     }
-
+    
+    let brief = false;
     for (let i = startIndex; i < endIndex; i++) {
         const line = lines[i];
         if (!found) {
             const pos = line.indexOf(fieldTag);
             if (pos === -1) {
                 continue;
-            }
-
-            const description = line.substring(pos + fieldTag.length).trim();
-            if (description !== '') {
-                descriptionLines.push(description);
             }
 
             found = true;
@@ -102,7 +108,24 @@ function findFieldDescription(document, definition, field)
 
         const next = line.trim().replace(/^\*+/, '').trim();
         if (next !== '') {
-            descriptionLines.push(next);
+            if (found && brief === false) {
+                brief = true;
+                descriptionLines.push(next);
+                descriptionLines.push('');
+                continue;
+            }
+
+            if (found && brief) {
+                // check if there is @nl in the line.
+                if (next.includes('@nl')) {
+                    const tmp = next.replace('@nl', '');
+                    descriptionLines.push(tmp);
+                    descriptionLines.push('');
+
+                } else {
+                    descriptionLines.push(next);
+                }
+            }
         }
     }
 
@@ -110,7 +133,7 @@ function findFieldDescription(document, definition, field)
         return undefined;
     }
 
-    return descriptionLines.join(' ');
+    return descriptionLines.join('\n');
 }
 
 /**
