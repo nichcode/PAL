@@ -49,6 +49,8 @@
  * Helpers:
  * window = palUnpackPointer(event.data2)
  */
+
+
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0
 
 /**
@@ -65,6 +67,7 @@
  * palUnpackUint32(event.data, &width, &height)
  * window = palUnpackPointer(event.data2)
  */
+// TODO: make the hover extension recognise newline
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1
 
 /**
@@ -368,6 +371,21 @@ typedef struct PalEventDriver PalEventDriver;
 /**
  * @struct PalEvent
  * @brief A single event.
+ * 
+ * The payloads are packed in the `data` and `data2` field of the struct. 
+ * Each event type determines how its information is packed. See 
+ * `PalEventType` for more information.
+ * 
+ * Below are helpers to make the extraction simple and easy:
+ * 
+ * - `palPackInt32()` / `palUnpackInt32()` - Pack and unpack two int32_ts.
+ * 
+ * - `palPackUint32()` / `palUnpackUint32()` - Pack and unpack two uint32_ts.
+ * 
+ * - `palPackFloat()` / `palUnpackFloat()` - Pack and unpack two floats.
+ * This works with big and small endian systems.
+ * 
+ * - `palPackPointer()` / `palUnpackPointer()` - Pack and unpack two int32_t.
  *
  * @since 2.0
  */
@@ -375,23 +393,36 @@ typedef struct PalEvent PalEvent;
 
 /**
  * @typedef PalDecorationMode
- * @brief Decoration types.
- *
- * All decoration types follow the format `PAL_DECORATION_MODE_**` for
- * consistency and API use.
- *
+ * @brief Window decoration modes.
+ * 
+ * All values of this type follow the format `PAL_DECORATION_MODE_*` for API
+ * consistency and ease of use.
  * @since 2.0
+ * 
+ * @def PAL_DECORATION_MODE_CLIENT_SIDE
+ * Window decoration must be handled by the client.
+ * @def PAL_DECORATION_MODE_SERVER_SIDE
+ * Window decoration will be handled by the server.
+ * @def PAL_DECORATION_MODE_COUNT
+ * The number of decoration modes. The literal value must not be used.
  */
 typedef uint32_t PalDecorationMode;
 
 /**
  * @typedef PalEventType
  * @brief Event types.
- *
- * All event types follow the format `PAL_EVENT_TYPE_**` for consistency and
- * API use.
- *
+ * 
+ * All values of this type follow the format `PAL_EVENT_TYPE_*` for API
+ * consistency and ease of use.
  * @since 2.0
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_CLOSE
+ * `event.data`: unused. \n
+ * `event.data2`: pointer to the window.
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_SIZE
+ * `event.data`: (bits 0-31: window width, bits 32-63: window height). \n
+ * `event.data2`: pointer to the window.
  */
 typedef uint32_t PalEventType;
 
@@ -399,10 +430,18 @@ typedef uint32_t PalEventType;
  * @typedef PalDispatchMode
  * @brief Dispatch modes for an event.
  *
- * All dispatch modes follow the format `PAL_DISPATCH_MODE_**` for consistency
- * and API use.
- *
+ * All values of this type follow the format `PAL_DISPATCH_MODE_*` for API
+ * consistency and ease of use.
  * @since 2.0
+ * 
+ * @def PAL_DISPATCH_MODE_NONE
+ * The event will be discarded.
+ * @def PAL_DISPATCH_MODE_CALLBACK
+ * The event will be push to the event callback.
+ * @def PAL_DISPATCH_MODE_POLL
+ * The event will be pushed to the event queue.
+ * @def PAL_DISPATCH_MODE_COUNT
+ * The number of dispatch modes. The literal value must not be used.
  */
 typedef uint32_t PalDispatchMode;
 
@@ -452,7 +491,8 @@ typedef PalBool(PAL_CALL* PalPollFn)(
     void* userData,
     PalEvent* outEvent);
 
-struct PalEvent {
+struct PalEvent 
+{
     uint64_t data;     /**< First data payload.*/
     uint64_t data2;    /**< Second data payload.*/
     uint32_t userId;   /**< User event id.*/
