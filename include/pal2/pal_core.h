@@ -113,10 +113,12 @@
 /**
  * @typedef PalBool
  * @brief A boolean type.
+ * 
  * @since Added in version 2.0
  * 
  * @def PAL_TRUE
  * Represents `true` or `1`.
+ * 
  * @def PAL_FALSE
  * Represents `false` or `0`.
  */
@@ -132,6 +134,7 @@ typedef uint32_t PalBool;
  *
  * All values of this type follow the format `PAL_RESULT_*` for API consistency
  * and ease of use.
+ * 
  * @since Added in version 2.0
  * 
  * @def PAL_RESULT_SUCCESS
@@ -157,24 +160,34 @@ typedef uint64_t PalResult;
  * 
  * @def PAL_RESULT_CODE_NONE
  * The result value contains no result code.
+ * 
  * @def PAL_RESULT_CODE_INVALID_ARGUMENT
  * The supplied argument is invalid.
+ * 
  * @def PAL_RESULT_CODE_OUT_OF_MEMORY
  * Memory allocation failed.
+ * 
  * @def PAL_RESULT_CODE_PLATFORM_FAILURE
  * The operation failed due to a platform specific error.
+ * 
  * @def PAL_RESULT_CODE_TIMEOUT
  * The operation did not complete within the specified time.
+ * 
  * @def PAL_RESULT_CODE_INVALID_HANDLE
  * The supplied handle is invalid.
+ * 
  * @def PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  * The requested feature or feature used is not supported.
+ * 
  * @def PAL_RESULT_CODE_INVALID_OPERATION
  * The operation performed is invalid for the context.
+ * 
  * @def PAL_RESULT_CODE_DEVICE_LOST
  * The device has been lost.
+ * 
  * @def PAL_RESULT_CODE_OUT_OF_DATE
  * The supplied handle is out of date.
+ * 
  * @def PAL_RESULT_CODE_COUNT
  * The number of result codes. The literal value must not be used.
  */
@@ -194,18 +207,25 @@ typedef uint16_t PalResultCode;
  * 
  * @def PAL_RESULT_SOURCE_NONE
  * The result value contains no result native code.
+ * 
  * @def PAL_RESULT_SOURCE_WIN32
  * Result native code is from win32 `GetLastError()`.
+ * 
  * @def PAL_RESULT_SOURCE_POSIX
  * Result native code is from posix `errno`.
+ * 
  * @def PAL_RESULT_SOURCE_EGL
  * Result native code is from egl `eglGetError()`.
+ * 
  * @def PAL_RESULT_SOURCE_VULKAN
  * Result native code is from vulkan `VkResult`.
+ * 
  * @def PAL_RESULT_SOURCE_D3D12
  * Result native code is from D3D12 `HRESULT`.
+ * 
  * @def PAL_RESULT_SOURCE_METAL
  * Result native code is from metal `NSError`.
+ * 
  * @def PAL_RESULT_SOURCE_COUNT
  * The number of result sources. The literal value must not be used.
  */
@@ -310,9 +330,11 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @var PalVersion::major
  * The major version number of the PAL runtime. 
  * This is incremented when breaking changes are made.
+ * 
  * @var PalVersion::minor
  * The minor version number of the PAL runtime. 
  * This is incremented when backward-compatible features are added.
+ * 
  * @var PalVersion::build
  * The build version number of the PAL runtime. 
  * This is incremented when bugs are fixed without API changes.
@@ -337,8 +359,10 @@ typedef struct PalVersion
  * 
  * @var PalAllocator::allocate
  * The allocate function of the allocator. Must not be `nullptr`.
+ * 
  * @var PalAllocator::free
  * The free function of the allocator. Must not be `nullptr`.
+ * 
  * @var PalAllocator::userData
  * User data passed to allocate and free function. Can be `nullptr`.
  */
@@ -363,6 +387,7 @@ typedef struct PalAllocator
  * 
  * @var PalLogger::callback
  * The function to forward log messages to. Must not be `nullptr`.
+ * 
  * @var PalLogger::userData
  * User data passed to allocate and free function. Can be `nullptr`.
  */
@@ -534,7 +559,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
  * 
  * Calling the function with `path` parameter set to `nullptr` is 
  * implementation-defined. An implementation might return the
- * handle to the main program.
+ * handle to the main program. Another implementation might fail.
  * 
  * The returned library must be freed with `palFreeLibrary()` when no longer
  * needed.
@@ -545,9 +570,6 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
  * @return The loaded library on success or nullptr on failure.
  *
  * @Thread-safety The entry function must be thread-safe.
- * 
- * @note The filepath limit is per platform. We recommended to use a safe
- * default for your application.
  *
  * @since Added in version 2.2
  * @sa palGetSymbol
@@ -584,7 +606,7 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  * 
  * @param[in] library The library to free. Must not be `nullptr`.
  *
- * @Thread-safety Thread safe.
+ * @Thread-safety `library` must be externally synchronized.
  *
  * @since Added in version 2.2
  * @sa palLoadLibrary

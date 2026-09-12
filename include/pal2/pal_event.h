@@ -42,291 +42,25 @@
 
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1
-
-/**
- * PAL_EVENT_TYPE_WINDOW_MOVE
- *
- * data:
- *  bits 0-31: x
- *  bits 32-63: y
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackInt32(event.data, &x, &y)
- * window = palUnpackPointer(event.data2)
- */
-
 #define PAL_EVENT_TYPE_WINDOW_MOVE 2
-
-/**
- * PAL_EVENT_TYPE_WINDOW_STATE
- *
- * data:
- *  bits 0-31: state (minimized, maximized, restored).
- *  bits 32-63: unused
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_WINDOW_STATE 3
-
-/**
- * PAL_EVENT_TYPE_WINDOW_FOCUS
- *
- * data:
- *  bits 0-31: focus gained (`PAL_TRUE`/`PAL_FALSE`).
- *  bits 32-63: unused
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_WINDOW_FOCUS 4
-
-/**
- * PAL_EVENT_TYPE_WINDOW_VISIBILITY
- *
- * data:
- *  bits 0-31: visibility (`PAL_TRUE`/`PAL_FALSE`).
- *  bits 32-63: unused
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_WINDOW_VISIBILITY 5
-
-/**
- * PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN 6
-
-/**
- * PAL_EVENT_TYPE_WINDOW_MODAL_END
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_WINDOW_MODAL_END 7
-
-/**
- * PAL_EVENT_TYPE_MONITOR_DPI_CHANGED
- *
- * data:
- *  bits 0-31: dpi
- *  bits 32-63: unused
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_MONITOR_DPI_CHANGED 8
-
-/**
- * PAL_EVENT_TYPE_MONITOR_LIST_CHANGED
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_MONITOR_LIST_CHANGED 9
-
-/**
- * PAL_EVENT_TYPE_KEYDOWN
- *
- * data:
- *  bits 0-31: keycode
- *  bits 32-63: scancode
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackUint32(event.data, &keycode, &scancode)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_KEYDOWN 10
-
-/**
- * PAL_EVENT_TYPE_KEYREPEAT
- *
- * data:
- *  bits 0-31: keycode
- *  bits 32-63: scancode
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackUint32(event.data, &keycode, &scancode)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_KEYREPEAT 11
-
-/**
- * PAL_EVENT_TYPE_KEYUP
- *
- * data:
- *  bits 0-31: keycode
- *  bits 32-63: scancode
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackUint32(event.data, &keycode, &scancode)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_KEYUP 12
-
-/**
- * PAL_EVENT_TYPE_MOUSE_BUTTONDOWN
- *
- * data:
- *  bits 0-31: button
- *  bits 32-63: serial
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackUint32(event.data, &button, &serial)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_MOUSE_BUTTONDOWN 13
-
-/**
- * PAL_EVENT_TYPE_MOUSE_BUTTONUP
- *
- * data:
- *  bits 0-31: button
- *  bits 32-63: serial
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackUint32(event.data, &button, &serial)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_MOUSE_BUTTONUP 14
-
-/**
- * PAL_EVENT_TYPE_MOUSE_MOVE
- *
- * data:
- *  bits 0-31: x
- *  bits 32-63: y
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackInt32(event.data, &x, &y)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_MOUSE_MOVE 15
-
-/**
- * PAL_EVENT_TYPE_MOUSE_DELTA
- *
- * data:
- *  bits 0-31: dx
- *  bits 32-63: dy
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackFloat(event.data, &dx, &dy)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_MOUSE_DELTA 16
-
-/**
- * PAL_EVENT_TYPE_MOUSE_WHEEL
- *
- * data:
- *  bits 0-31: dx
- *  bits 32-63: dy
- *
- * data2:
- *  window
- *
- * Helpers:
- * palUnpackFloat(event.data, &dx, &dy)
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_MOUSE_WHEEL 17
-
-/**
- * PAL_EVENT_TYPE_USER
- *
- * userId:
- *  User event ID or type.
- *
- * Helpers:
- * palPackInt32()
- * palPackUint32()
- * palPackPointer()
- * palUnpackInt32()
- * palUnpackUint32()
- * palUnpackPointer()
- */
 #define PAL_EVENT_TYPE_USER 18
-
-/**
- * PAL_EVENT_TYPE_KEYCHAR
- *
- * data:
- *  bits 0-31: codepoint
- *  bits 32-63: unused
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_KEYCHAR 19
-
-/**
- * PAL_EVENT_TYPE_WINDOW_DECORATION_MODE
- *
- * data:
- *  bits 0-31: decorations mode
- *  bits 32-63: unused
- *
- * data2:
- *  window
- *
- * Helpers:
- * window = palUnpackPointer(event.data2)
- */
 #define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20
-
 #define PAL_EVENT_TYPE_COUNT 21
 
 #define PAL_DISPATCH_MODE_NONE 0
@@ -346,22 +80,23 @@ typedef struct PalEventDriver PalEventDriver;
  * @struct PalEvent
  * @brief A single event.
  * 
- * The payloads are packed in the `data` and `data2` field of the struct. 
+ * The payloads are packed in the `data` and `data2` field of the struct.
+ * 
+ * User events defined how their payloads are packed.
+ * 
  * Each event type determines how its information is packed. See 
- * `PalEventType` for more information.
+ * @ref `PalEventType` for more information.
  * 
- * Below are helpers to make the extraction simple and easy:
- * 
- * - `palPackInt32()` / `palUnpackInt32()` - Pack and unpack two int32_ts.
- * 
- * - `palPackUint32()` / `palUnpackUint32()` - Pack and unpack two uint32_ts.
- * 
- * - `palPackFloat()` / `palUnpackFloat()` - Pack and unpack two floats.
- * This works with big and small endian systems.
- * 
- * - `palPackPointer()` / `palUnpackPointer()` - Pack and unpack two int32_t.
- *
  * @since 2.0
+ * 
+ * @sa palPackInt32 
+ * @sa palPackUint32 
+ * @sa palPackFloat 
+ * @sa palPackPointer 
+ * @sa palUnpackInt32 
+ * @sa palUnpackUint32
+ * @sa palUnpackFloat 
+ * @sa palUnpackPointer
  */
 typedef struct PalEvent PalEvent;
 
@@ -371,12 +106,15 @@ typedef struct PalEvent PalEvent;
  * 
  * All values of this type follow the format `PAL_DECORATION_MODE_*` for API
  * consistency and ease of use.
+ * 
  * @since 2.0
  * 
  * @def PAL_DECORATION_MODE_CLIENT_SIDE
  * Window decoration must be handled by the client.
+ * 
  * @def PAL_DECORATION_MODE_SERVER_SIDE
  * Window decoration will be handled by the server.
+ * 
  * @def PAL_DECORATION_MODE_COUNT
  * The number of decoration modes. The literal value must not be used.
  */
@@ -388,15 +126,111 @@ typedef uint32_t PalDecorationMode;
  * 
  * All values of this type follow the format `PAL_EVENT_TYPE_*` for API
  * consistency and ease of use.
+ * 
  * @since 2.0
  * 
  * @def PAL_EVENT_TYPE_WINDOW_CLOSE
- * `event.data`: unused.
- * `event.data2`: pointer to the window.
+ * Payload:
+ * `event.data`: unused @nl
+ * `event.data2`: window
  * 
  * @def PAL_EVENT_TYPE_WINDOW_SIZE
- * `event.data`: (bits 0-31: window width, bits 32-63: window height).
- * `event.data2`: pointer to the window.
+ * Payload:
+ * `event.data`: bits 0-31 - width, bits 32-63 - height @nl
+ * `event.data2`: window
+ * 
+ *  @def PAL_EVENT_TYPE_WINDOW_MOVE
+ * Payload:
+ * `event.data`: bits 0-31 - x, bits 32-63 - y @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_STATE
+ * Payload:
+ * `event.data`: bits 0-31 - state, bits 32-63 - unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_FOCUS
+ * Payload:
+ * `event.data`: bits 0-31 - focus, bits 32-63 - unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_VISIBILITY
+ * Payload:
+ * `event.data`: bits 0-31 - visibility, bits 32-63 - unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN
+ * Payload:
+ * `event.data`: unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_MODAL_END
+ * Payload:
+ * `event.data`: unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_MONITOR_DPI_CHANGED
+ * Payload:
+ * `event.data`: bits 0-31 - dpi, bits 32-63 - unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_MONITOR_LIST_CHANGED
+ * Payload:
+ * `event.data`: unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_KEYDOWN
+ * Payload:
+ * `event.data`: bits 0-31 - keycode, bits 32-63 - scancode @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_KEYREPEAT
+ * Payload:
+ * `event.data`: bits 0-31 - keycode, bits 32-63 - scancode @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_KEYUP
+ * Payload:
+ * `event.data`: bits 0-31 - keycode, bits 32-63 - scancode @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_MOUSE_BUTTONDOWN
+ * Payload:
+ * `event.data`: bits 0-31 - button, bits 32-63 - serial @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_MOUSE_BUTTONUP
+ * Payload:
+ * `event.data`: bits 0-31 - button, bits 32-63 - serial @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_MOUSE_MOVE
+ * Payload:
+ * `event.data`: bits 0-31 - x, bits 32-63 - y @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_MOUSE_DELTA
+ * Payload:
+ * `event.data`: bits 0-31 - dx, bits 32-63 - dy @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_MOUSE_WHEEL
+ * Payload:
+ * `event.data`: bits 0-31 - dx, bits 32-63 - dy @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_USER
+ * User defines payload.
+ * 
+ * @def PAL_EVENT_TYPE_KEYCHAR
+ * Payload:
+ * `event.data`: bits 0-31 - codepoint, bits 32-63 - unused @nl
+ * `event.data2`: window
+ * 
+ * @def PAL_EVENT_TYPE_WINDOW_DECORATION_MODE
+ * Payload:
+ * `event.data`: bits 0-31 - decoration mode, bits 32-63 - unused @nl
+ * `event.data2`: window
  */
 typedef uint32_t PalEventType;
 
@@ -406,14 +240,18 @@ typedef uint32_t PalEventType;
  *
  * All values of this type follow the format `PAL_DISPATCH_MODE_*` for API
  * consistency and ease of use.
+ * 
  * @since 2.0
  * 
  * @def PAL_DISPATCH_MODE_NONE
  * The event will be discarded.
+ * 
  * @def PAL_DISPATCH_MODE_CALLBACK
  * The event will be push to the event callback.
+ * 
  * @def PAL_DISPATCH_MODE_POLL
  * The event will be pushed to the event queue.
+ * 
  * @def PAL_DISPATCH_MODE_COUNT
  * The number of dispatch modes. The literal value must not be used.
  */
@@ -467,10 +305,10 @@ typedef PalBool(PAL_CALL* PalPollFn)(
 
 struct PalEvent 
 {
-    uint64_t data;     /**< First data payload.*/
-    uint64_t data2;    /**< Second data payload.*/
-    uint32_t userId;   /**< User event id.*/
-    PalEventType type; /**< (eg. `PAL_EVENT_TYPE_WINDOW_MOVE`).*/
+    uint64_t data;
+    uint64_t data2;
+    uint32_t userId;
+    PalEventType type;
 };
 
 /**
