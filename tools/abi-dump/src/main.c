@@ -152,29 +152,29 @@ int main(int argc, char** argv)
     }
 
     if (dumps & ABI_DUMP_SYSTEM) {
-        // status = systemStructs();
-        // if (status) {
-        //     passed |= ABI_DUMP_SYSTEM;
-        // } else {
-        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
-        //         return logDumpStatus(status);
-        //     } else {
-        //         return -1;
-        //     }
-        // }
+        status = systemStructs();
+        if (status) {
+            passed |= ABI_DUMP_SYSTEM;
+        } else {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
+                return logDumpStatus(status);
+            } else {
+                return -1;
+            }
+        }
     }
 
     if (dumps & ABI_DUMP_VIDEO) {
-        // status = videoStructs();
-        // if (status) {
-        //     passed |= ABI_DUMP_VIDEO;
-        // } else {
-        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
-        //         return logDumpStatus(status);
-        //     } else {
-        //         return -1;
-        //     }
-        // }
+        status = videoStructs();
+        if (status) {
+            passed |= ABI_DUMP_VIDEO;
+        } else {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
+                return logDumpStatus(status);
+            } else {
+                return -1;
+            }
+        }
     }
 
     if (dumps & ABI_DUMP_OPENGL) {
