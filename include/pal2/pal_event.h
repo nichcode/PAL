@@ -36,6 +36,9 @@
 
 #include "pal2/pal_core.h"
 
+/** The maximum number of events the default queue that contain.*/
+#define PAL_DEFAULT_QUEUE_EVENT_COUNT 512
+
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0
 #define PAL_DECORATION_MODE_SERVER_SIDE 1
 #define PAL_DECORATION_MODE_COUNT 2
@@ -392,7 +395,9 @@ typedef struct PalEventQueue
  * 
  * @var PalEventDriverCreateInfo::queue
  * The event queue to use for `PAL_DISPATCH_MODE_POLL` event pushes. Set to
- * `nullptr` to use the default. The default event queue is not thread-safe.
+ * `nullptr` to use the default. The default event queue is not thread-safe.@nl
+ * `PAL_DEFAULT_QUEUE_EVENT_COUNT` is the maximum events the default queue can
+ * contain.
  * 
  * @var PalEventDriverCreateInfo::callback
  * The event callback to use for `PAL_DISPATCH_MODE_CALLBACK` event pushes.
