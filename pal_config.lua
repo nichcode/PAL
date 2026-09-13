@@ -15,7 +15,7 @@ PAL_GENERATE_VSCODE = true
 PAL_BUILD_ABI_DUMP = true
 
 -- Build event module
-PAL_BUILD_EVENT_MODULE = flags
+PAL_BUILD_EVENT_MODULE = false
 
 -- Build system module
 PAL_BUILD_SYSTEM_MODULE = false

@@ -15,8 +15,13 @@ local function addTest(file)
         links { "PAL2" }
 end
 
--- Core tests
 local coreFiles = os.matchfiles("src/core/*.c")
 for _, file in ipairs(coreFiles) do
+    addTest(file)
+end
+
+
+local eventFiles = os.matchfiles("src/event/*.c")
+for _, file in ipairs(eventFiles) do
     addTest(file)
 end

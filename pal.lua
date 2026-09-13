@@ -22,4 +22,7 @@ project "PAL2"
         files { "src/core/posix/*.c" }
     
     filter { }
-    
+
+    if (PAL_BUILD_EVENT_MODULE) then
+        files { "src/event/*.c" }
+    end
