@@ -67,7 +67,7 @@ bool dumpStruct(const StructInfo* info);
 */
 bool coreStructs(void);
 bool eventStructs(void);
-// bool threadStructs();
+bool threadStructs(void);
 // bool systemStructs();
 // bool videoStructs();
 // bool openglStructs();
