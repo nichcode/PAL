@@ -252,8 +252,8 @@ typedef struct PalLibrary PalLibrary;
 /**
  * @brief Function pointer type used for memory allocations.
  *
- * The callback must allocate atleast `size` parameter with the requested
- * `alignment` parameter or return `nullptr` if the allocation failed.
+ * The callback must allocate atleast `size` with the requested
+ * `alignment` or return `nullptr` if the allocation failed.
  * If the requested alignment is `0`, the callback must determines the
  * alignment to use for the allocation.
  *
@@ -288,7 +288,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  *
  * The memory must have been allocated by the corresponding allocation
  * callback and must not have been deallocated. The callback will not
- * be called if the `ptr` parameter is `nullptr`.
+ * be called if the `ptr` is `nullptr`.
  *
  * @param[in] userData User data passed from `PalAllocator::userData`.
  * Can be `nullptr`.
@@ -325,6 +325,7 @@ typedef void(PAL_CALL* PalLogCallback)(
 /**
  * @struct PalVersion
  * @brief Contains information about the version of PAL.
+ * 
  * @since Added in version 2.0
  * 
  * @var PalVersion::major
@@ -355,6 +356,7 @@ typedef struct PalVersion
  * safe if those APIs will be used.
  *
  * Uninitialized fields may result in undefined behavior.
+ * 
  * @since Added in version 2.0
  * 
  * @var PalAllocator::allocate
@@ -383,6 +385,7 @@ typedef struct PalAllocator
  * be thread safe or each thread having its own logger.
  *
  * Uninitialized fields may result in undefined behavior.
+ * 
  * @since Added in version 2.0
  * 
  * @var PalLogger::callback
@@ -405,7 +408,7 @@ typedef struct PalLogger
  * @param[out] buffer The buffer to write to. The string will be truncated and
  * null-terminated if `bufferSize` is insufficient.
  *
- * @Thread-safety `buffer` parameter must be per thread.
+ * @Thread-safety `buffer` must be per thread.
  *
  * @since Added in version 2.0
  */
@@ -443,8 +446,8 @@ PAL_API const char* PAL_CALL palGetVersionString(void);
 /**
  * @brief Allocates memory using a custom or default allocator.
  *
- * This function allocate atleast `size` parameter of memory with the requested
- * `alignment` parameter. 
+ * This function allocate atleast `size` of memory with the requested
+ * `alignment`. 
  * If allocations will be made from multiple threads, the `allocator`
  * parameter must be thread safe.
  * 
@@ -476,12 +479,12 @@ PAL_API void* PAL_CALL palAllocate(
  * @brief Deallocates memory allocated by palAllocate.
  *
  * The memory must be valid and not deallocated before this call.
- * This function does not set the `ptr` parameter to `nullptr` after
+ * This function does not set the `ptr` to `nullptr` after
  * deallocation. We recommended the caller does that after this call to
  * prevent any double deallocations.
  *
  * If deallocations will be made from multiple threads, the `allocator`
- * parameter must be thread safe.
+ * must be thread safe.
  *
  * @param[in] allocator The allocator used to allocate the memory. `nullptr` for
  * the default thread-safe allocator.
@@ -552,12 +555,12 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
  * address space.
  * 
  * The specified module will load other modules is there is a dependency
- * between them. `path` parameter will be searched in the systems default
+ * between them. `path` will be searched in the systems default
  * module directories. The library does not validate and resolves
  * its function symbols after creation, the symbol is resolved when
  * `palGetSymbol()` is called.
  * 
- * Calling the function with `path` parameter set to `nullptr` is 
+ * Calling the function with `path` set to `nullptr` is 
  * implementation-defined. An implementation might return the
  * handle to the main program. Another implementation might fail.
  * 
