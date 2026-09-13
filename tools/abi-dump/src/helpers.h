@@ -70,7 +70,7 @@ bool eventStructs(void);
 bool threadStructs(void);
 bool systemStructs(void);
 bool videoStructs(void);
-// bool openglStructs();
+bool openglStructs(void);
 // bool graphicsStructs();
 
 #endif // HELPERS_H

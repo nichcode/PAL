@@ -178,16 +178,16 @@ int main(int argc, char** argv)
     }
 
     if (dumps & ABI_DUMP_OPENGL) {
-        // if (status) {
-        //     status = openglStructs();
-        //     passed |= ABI_DUMP_OPENGL;
-        // } else {
-        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
-        //         return logDumpStatus(status);
-        //     } else {
-        //         return -1;
-        //     }
-        // }
+        if (status) {
+            status = openglStructs();
+            passed |= ABI_DUMP_OPENGL;
+        } else {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
+                return logDumpStatus(status);
+            } else {
+                return -1;
+            }
+        }
     }
 
     if (dumps & ABI_DUMP_GRAPHICS) {
