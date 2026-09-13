@@ -71,6 +71,6 @@ bool threadStructs(void);
 bool systemStructs(void);
 bool videoStructs(void);
 bool openglStructs(void);
-// bool graphicsStructs();
+bool graphicsStructs(void);
 
 #endif // HELPERS_H

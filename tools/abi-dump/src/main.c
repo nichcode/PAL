@@ -51,8 +51,6 @@ static bool checkPALVersion(void)
     return PAL_FALSE;
 }
 
-// TODO: uncomment the other systems
-
 int main(int argc, char** argv)
 {
     PalBool status = PAL_FALSE;
@@ -191,16 +189,16 @@ int main(int argc, char** argv)
     }
 
     if (dumps & ABI_DUMP_GRAPHICS) {
-        // status = graphicsStructs();
-        // if (status) {
-        //     passed |= ABI_DUMP_GRAPHICS;
-        // } else {
-        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
-        //         return logDumpStatus(status);
-        //     } else {
-        //         return -1;
-        //     }
-        // }
+        status = graphicsStructs();
+        if (status) {
+            passed |= ABI_DUMP_GRAPHICS;
+        } else {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
+                return logDumpStatus(status);
+            } else {
+                return -1;
+            }
+        }
     }
 
     if (dumpVersion) {
