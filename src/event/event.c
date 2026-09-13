@@ -25,6 +25,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "shared.h"
 #include "pal2/pal_event.h"
 #include <string.h>
 
@@ -89,6 +90,8 @@ PalResult PAL_CALL palCreateEventDriver(
 
 void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver)
 {
+    ASSERT(eventDriver != nullptr, "The specified event driver is null");
+
     const PalAllocator* allocator = eventDriver->allocator;
     if (eventDriver->freeQueue) {
         destroyDefaultQueue(allocator, eventDriver->queue);
@@ -102,6 +105,8 @@ void PAL_CALL palSetEventDispatchMode(
     PalEventType type,
     PalDispatchMode mode)
 {
+    ASSERT(eventDriver != nullptr, "The specified event driver is null");
+
     eventDriver->modes[type] = mode;
 }
 
@@ -109,6 +114,8 @@ PalDispatchMode PAL_CALL palGetEventDispatchMode(
     PalEventDriver* eventDriver,
     PalEventType type)
 {
+    ASSERT(eventDriver != nullptr, "The specified event driver is null");
+
     return eventDriver->modes[type];
 }
 
@@ -116,6 +123,12 @@ void PAL_CALL palPushEvent(
     PalEventDriver* eventDriver,
     PalEvent* event)
 {
+    ASSERT(eventDriver != nullptr, "The specified event driver is null");
+    ASSERT(event != nullptr, "The specified event is null");
+    ASSERT(
+        eventDriver->modes[event->type] != PAL_DISPATCH_MODE_NONE, 
+        "There is no dispatch mode for the specified event");
+
     PalDispatchMode mode = eventDriver->modes[event->type];
     if (mode == PAL_DISPATCH_MODE_CALLBACK) {
         if (eventDriver->callback) {
@@ -132,7 +145,10 @@ void PAL_CALL palPushEvent(
 
 PalBool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
-    PalEvent* outEvent)
+    PalEvent* event)
 {
-    return eventDriver->queue->poll(eventDriver->queue, outEvent);
+    ASSERT(eventDriver != nullptr, "The specified event driver is null");
+    ASSERT(event != nullptr, "The specified event is null");
+
+    return eventDriver->queue->poll(eventDriver->queue, event);
 }

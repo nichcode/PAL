@@ -45,6 +45,8 @@ def main():
     passed = 0
     failed = 0
 
+    print(f"")
+
     for w in as_completed(workers):
         name, code = w.result()
         if code == 0:

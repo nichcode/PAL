@@ -11,11 +11,13 @@ static void PAL_CALL onEvent(
     void* userData,
     const PalEvent* event)
 {
+    (void)event;
+
     EventContext* context = userData;
     context->counter++;
 }
 
-bool createDefaultQueue(
+static bool createDefaultEventQueue(
     EventContext* context, 
     PalEventDriver** eventDriver)
 {
