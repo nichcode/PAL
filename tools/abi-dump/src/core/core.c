@@ -1,11 +1,11 @@
 
 #include "helpers.h"
 
-bool allocatorStruct();
-bool versionStruct();
-bool loggerStruct();
+bool allocatorStruct(void);
+bool versionStruct(void);
+bool loggerStruct(void);
 
-bool coreStructs()
+bool coreStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");

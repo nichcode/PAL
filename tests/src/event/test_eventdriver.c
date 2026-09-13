@@ -34,7 +34,7 @@ static PalBool PAL_CALL eventPoll(
     return PAL_TRUE;
 }
 
-bool defaultQueue()
+bool defaultQueue(void)
 {
     PalEventDriverCreateInfo createInfo = {0};
     createInfo.allocator = nullptr;
@@ -54,7 +54,7 @@ bool defaultQueue()
     return true;
 }
 
-bool customQueue()
+bool customQueue(void)
 {
     PalEventQueue* queue = nullptr;
     queue = palAllocate(nullptr, sizeof(PalEventQueue), 0);

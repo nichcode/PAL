@@ -1,7 +1,7 @@
 
 #include "helpers.h"
 
-bool versionStruct()
+bool versionStruct(void)
 {
     FieldInfo fields[] = {
         {"major", {0, 4}, FIELD(PalVersion, major)},

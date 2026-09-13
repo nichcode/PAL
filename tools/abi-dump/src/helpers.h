@@ -65,7 +65,7 @@ bool dumpStruct(const StructInfo* info);
  * We add a high level function that calls its system dump functions. This is
  * here to avoid bloating the main.c with dumps (eg. allocator dump, etc)
 */
-bool coreStructs();
+bool coreStructs(void);
 // bool eventStructs();
 // bool threadStructs();
 // bool systemStructs();

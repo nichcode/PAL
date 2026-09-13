@@ -31,7 +31,7 @@ void PAL_CALL freeFunction(void* userData, void* ptr)
     context->deallocations++;
 }
 
-bool defaultAllocator()
+bool defaultAllocator(void)
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     uint64_t* ptr2 = palAllocate(nullptr, sizeof(uint64_t), 8);
@@ -50,7 +50,7 @@ bool defaultAllocator()
     return true;
 }
 
-bool nullFree()
+bool nullFree(void)
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     if (!ptr1) {
@@ -65,7 +65,7 @@ bool nullFree()
     return true;
 }
 
-bool customAllocator()
+bool customAllocator(void)
 {
     AllocatorContext context = {0};
     context.allocations = 0;

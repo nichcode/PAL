@@ -23,7 +23,7 @@ static int logDumpStatus(bool status)
     return ret;
 }
 
-static bool checkPALVersion()
+static bool checkPALVersion(void)
 {
     PalVersion version;
     palGetVersion(&version);

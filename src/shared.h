@@ -39,11 +39,19 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#ifdef __clang__
+#if __has_feature(attribute_analyzer_noreturn)
+#define ATTR_NORETURN __attribute__((analyzer_noreturn))
+#endif // __has_feature
+#else
+#define ATTR_NORETURN
+#endif // __clang__
+
 void handleAssert(
     const char* file, 
     uint32_t line, 
     const char* expr, 
-    const char* msg);
+    const char* msg) ATTR_NORETURN;
 
 #ifndef NDEBUG
 #define ASSERT(expr, msg) if (!(expr)) { \

@@ -2,7 +2,7 @@
 
 #include "helpers.h"
 
-bool loggerStruct()
+bool loggerStruct(void)
 {
     FieldInfo fields[] = {
         {"callback", {0, 8}, FIELD(PalLogger, callback)},

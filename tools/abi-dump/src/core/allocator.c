@@ -1,7 +1,7 @@
 
 #include "helpers.h"
 
-bool allocatorStruct()
+bool allocatorStruct(void)
 {
     FieldInfo fields[] = {
         {"allocate", {0, 8}, FIELD(PalAllocator, allocate)},

@@ -39,7 +39,7 @@ static bool createDefaultEventQueue(
     return true;
 }
 
-bool pushCallback()
+bool pushCallback(void)
 {
     PalEventDriver* eventDriver = nullptr;
     EventContext context = {0};
@@ -71,7 +71,7 @@ bool pushCallback()
     return true;
 }
 
-bool pushPoll()
+bool pushPoll(void)
 {
     PalEventDriver* eventDriver = nullptr;
     EventContext context = {0};
