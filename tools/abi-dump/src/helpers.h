@@ -66,7 +66,7 @@ bool dumpStruct(const StructInfo* info);
  * here to avoid bloating the main.c with dumps (eg. allocator dump, etc)
 */
 bool coreStructs(void);
-// bool eventStructs();
+bool eventStructs(void);
 // bool threadStructs();
 // bool systemStructs();
 // bool videoStructs();

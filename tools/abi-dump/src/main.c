@@ -28,7 +28,7 @@ static bool checkPALVersion(void)
     PalVersion version;
     palGetVersion(&version);
 
-    if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
+    if (g_DumpFlags & ABI_DUMP_VERBOSE) {
         palLog(nullptr, "");
         palLog(nullptr, "===========================================");
         palLog(nullptr, "PAL ABI Dump");
@@ -126,16 +126,16 @@ int main(int argc, char** argv)
     }
 
     if (dumps & ABI_DUMP_EVENT) {
-        // status = eventStructs();
-        // if (status) {
-        //     passed |= ABI_DUMP_EVENT;
-        // } else {
-        //     if (g_DumpFlags & ABI_DUMP_QUICK) {
-        //         return logDumpStatus(status);
-        //     } else {
-        //         return -1;
-        //     }
-        // }
+        status = eventStructs();
+        if (status) {
+            passed |= ABI_DUMP_EVENT;
+        } else {
+            if (g_DumpFlags & ABI_DUMP_QUICK) {
+                return logDumpStatus(status);
+            } else {
+                return -1;
+            }
+        }
     }
 
     if (dumps & ABI_DUMP_THREAD) {
