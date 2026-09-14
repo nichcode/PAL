@@ -335,7 +335,7 @@ typedef void(PAL_CALL* PalPushFn)(
  *
  * @param[in] userData User data passed from `PalEventQueue::userData`.
  * Can be `nullptr`.
- * @param[out] event Pointer to the PalEvent to recieve the event.
+ * @param[out] event The output struct to recieve the event.
  *
  * @since Added in version 2.0
  * @sa PalPushFn
@@ -429,7 +429,8 @@ typedef struct PalEventDriverCreateInfo
  * needed.
  *
  * @param[in] info Information about how to create the event driver.
- * @param[out] eventDriver The created event driver.
+ * @param[out] eventDriver The output handle to recieve the created 
+ * event driver.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
  * failure. Call `palFormatResult()` to get the string representation of
@@ -532,7 +533,7 @@ PAL_API void PAL_CALL palPushEvent(
  * memory is owned by PAL.
  *
  * @param[in] eventDriver The event driver.
- * @param[out] event The polled event.
+ * @param[out] event The output struct to recieve the polled event.
  * 
  * @return `PAL_TRUE` if the event was polled or `PAL_FALSE`.
  *

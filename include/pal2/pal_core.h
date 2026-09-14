@@ -405,8 +405,8 @@ typedef struct PalLogger
  *
  * @param[in] result The result value to format.
  * @param[in] bufferSize The size of the buffer. Must not be `0`.
- * @param[out] buffer The buffer to write to. The string will be truncated and
- * null-terminated if `bufferSize` is insufficient.
+ * @param[out] buffer The output buffer to write to. The string will be
+ * truncated and null-terminated if `bufferSize` is insufficient.
  *
  * @Thread-safety `buffer` must be per thread.
  *
@@ -420,8 +420,8 @@ PAL_API void PAL_CALL palFormatResult(
 /**
  * @brief Retrieves the PAL runtime version number.
  *
- * @param[out] version The struct to recieve the runtime version. Must not be
- * `nullptr`.
+ * @param[out] version The output struct to recieve the runtime version. 
+ * Must not be `nullptr`.
  *
  * @Thread-safety `version` must be per thread.
  *
@@ -794,8 +794,8 @@ static inline uint64_t PAL_CALL palPackFloat(
  * @brief Retrieves two 32-bit unsigned integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
- * @param[out] low Low value of the 64-bit unsigned integer.
- * @param[out] high High value of the 64-bit unsigned integer.
+ * @param[out] low The output low value of the 64-bit unsigned integer.
+ * @param[out] high The output high value of the 64-bit unsigned integer.
  *
  * @Thread-safety `low` and `high` must be per thread.
  *
@@ -820,8 +820,8 @@ static inline void PAL_CALL palUnpackUint32(
  * @brief Retrieves two 32-bit signed integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
- * @param[out] low Low value of the 64-bit unsigned integer.
- * @param[out] high High value of the 64-bit unsigned integer.
+ * @param[out] low The output low value of the 64-bit unsigned integer.
+ * @param[out] high The output high value of the 64-bit unsigned integer.
  *
  * @Thread-safety `low` and `high` must be per thread.
  *
@@ -862,8 +862,8 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
  * @brief Retrieves two floats from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
- * @param[out] low Low value of the 64-bit unsigned integer.
- * @param[out] high High value of the 64-bit unsigned integer.
+ * @param[out] low The output low value of the 64-bit unsigned integer.
+ * @param[out] high The output high value of the 64-bit unsigned integer.
  *
  * @Thread-safety `low` and `high` must be per thread.
  *
