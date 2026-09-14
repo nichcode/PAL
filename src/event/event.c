@@ -47,9 +47,9 @@ void destroyDefaultQueue(
 
 PalResult PAL_CALL palCreateEventDriver(
     const PalEventDriverCreateInfo* info,
-    PalEventDriver** outEventDriver)
+    PalEventDriver** eventDriver)
 {
-    if (!info || !outEventDriver) {
+    if (!info || !eventDriver) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -83,7 +83,7 @@ PalResult PAL_CALL palCreateEventDriver(
     driver->callback = info->callback;
     driver->userData = info->userData;
 
-    *outEventDriver = driver;
+    *eventDriver = driver;
 
     return PAL_RESULT_SUCCESS;
 }

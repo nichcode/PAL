@@ -25,23 +25,34 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef SYSTEM_PLATFORM_H
-#define SYSTEM_PLATFORM_H
+#include "shared.h"
+#include "thread_platform.h"
 
-#include "pal2/pal_system.h"
-#include <stdbool.h>
+PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor)
+{
+    return platformCreateTLS(destructor);
+}
 
-/** This function has the same semantics and rules as 
- * palGetPlatformInfo()
- */
-void platformGetPlatformInfo(PalPlatformInfo* info);
+void PAL_CALL palDestroyTLS(PalTLSId Tls)
+{
+    ASSERT(Tls != 0, "The specified TLS is invalid");
 
+    platformDestroyTLS(Tls);
+}
 
-/** This function has the same semantics and rules as 
- * palGetCPUInfo()
- */
-void platformGetCPUInfo(
-    const PalAllocator* allocator,
-    PalCPUInfo* info);
+void* PAL_CALL palGetTLS(PalTLSId Tls)
+{
+    ASSERT(Tls != 0, "The specified TLS is invalid");
 
-#endif // SYSTEM_PLATFORM_H
+    return platformGetTLS(Tls);
+}
+
+void PAL_CALL palSetTLS(
+    PalTLSId Tls,
+    void* data)
+{
+    ASSERT(Tls != 0, "The specified TLS is invalid");
+    ASSERT(data != nullptr, "The specified data is null");
+
+    platformSetTLS(Tls, data);
+}

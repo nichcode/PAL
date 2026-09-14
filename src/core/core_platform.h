@@ -57,12 +57,14 @@ LogTLSData* platformGetLogTLSData(void);
 /** Sets the Log TLS data.*/
 void platformSetLogTLSData(LogTLSData* data);
 
+
 /**
  * This function gets the native code and the source from the result
  * and gets the platform format string if available.
  * The buffer size is `FORMAT_BUFFER_SIZE`. 
  */
 void platformFormatResult(PalResult result, char* buffer);
+
 
 /** This function has the same semantics and rules as 
  * palGetPerformanceCounter()
@@ -73,6 +75,7 @@ uint64_t platformGetPerformanceCounter(void);
  * palGetPerformanceFrequency()
  */
 uint64_t platformGetPerformanceFrequency(void);
+
 
 /** This function has the same semantics and rules as 
  * palLoadLibrary()

@@ -483,7 +483,7 @@ PAL_API void* PAL_CALL palGetTLS(PalTLSId Tls);
  * @sa palGetTLS
  */
 PAL_API void PAL_CALL palSetTLS(
-    PalTLSId id,
+    PalTLSId Tls,
     void* data);
 
 /**

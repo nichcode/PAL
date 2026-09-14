@@ -110,4 +110,27 @@ PalResult platformSetThreadName(
     PalThread* thread,
     const char* name);
 
+    
+/** This function has the same semantics and rules as 
+ * palCreateTLS()
+ */
+PAL_API PalTLSId platformCreateTLS(PaTlsDestructorFn destructor);
+
+/** This function has the same semantics and rules as 
+ * palDestroyTLS()
+ */
+PAL_API void platformDestroyTLS(PalTLSId Tls);
+
+/** This function has the same semantics and rules as 
+ * palGetTLS()
+ */
+PAL_API void* platformGetTLS(PalTLSId Tls);
+
+/** This function has the same semantics and rules as 
+ * palSetTLS()
+ */
+PAL_API void platformSetTLS(
+    PalTLSId Tls,
+    void* data);
+
 #endif // THREAD_PLATFORM_H
