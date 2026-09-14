@@ -114,23 +114,46 @@ PalResult platformSetThreadName(
 /** This function has the same semantics and rules as 
  * palCreateTLS()
  */
-PAL_API PalTLSId platformCreateTLS(PaTlsDestructorFn destructor);
+PalTLSId platformCreateTLS(PaTlsDestructorFn destructor);
 
 /** This function has the same semantics and rules as 
  * palDestroyTLS()
  */
-PAL_API void platformDestroyTLS(PalTLSId Tls);
+void platformDestroyTLS(PalTLSId Tls);
 
 /** This function has the same semantics and rules as 
  * palGetTLS()
  */
-PAL_API void* platformGetTLS(PalTLSId Tls);
+void* platformGetTLS(PalTLSId Tls);
 
 /** This function has the same semantics and rules as 
  * palSetTLS()
  */
-PAL_API void platformSetTLS(
+void platformSetTLS(
     PalTLSId Tls,
     void* data);
+
+
+/** This function has the same semantics and rules as 
+ * palCreateMutex()
+ */
+PalResult platformCreateMutex(
+    const PalAllocator* allocator,
+    PalMutex** mutex);
+
+/** This function has the same semantics and rules as 
+ * palDestroyMutex()
+ */
+void platformDestroyMutex(PalMutex* mutex);
+
+/** This function has the same semantics and rules as 
+ * palLockMutex()
+ */
+void platformLockMutex(PalMutex* mutex);
+
+/** This function has the same semantics and rules as 
+ * palUnlockMutex()
+ */
+void platformUnlockMutex(PalMutex* mutex);
 
 #endif // THREAD_PLATFORM_H

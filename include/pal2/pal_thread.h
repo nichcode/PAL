@@ -505,7 +505,7 @@ PAL_API void PAL_CALL palSetTLS(
  */
 PAL_API PalResult PAL_CALL palCreateMutex(
     const PalAllocator* allocator,
-    PalMutex** outMutex);
+    PalMutex** mutex);
 
 /**
  * @brief Destroys a mutex.
