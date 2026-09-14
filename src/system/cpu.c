@@ -28,10 +28,12 @@
 #include "shared.h"
 #include "system_platform.h"
 
-void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
+void PAL_CALL palGetCPUInfo(
+    const PalAllocator* allocator,
+    PalCPUInfo* info)
 {
     ASSERT(info != nullptr, "The specified info is null");
 
-    memset(info, 0, sizeof(PalPlatformInfo));
-    platformGetPlatformInfo(info);
+    memset(info, 0, sizeof(PalCPUInfo));
+    platformGetCPUInfo(allocator, info);
 }
