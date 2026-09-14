@@ -50,17 +50,43 @@ typedef struct LogTLSData
  * it leaves the actual TLS handle to the implementation.
  */
 void platformCreateLogTLS(void);
+
+/** Gets the Log TLS data.*/
 LogTLSData* platformGetLogTLSData(void);
+
+/** Sets the Log TLS data.*/
 void platformSetLogTLSData(LogTLSData* data);
 
+/**
+ * This function gets the native code and the source from the result
+ * and gets the platform format string if available.
+ * The buffer size is `FORMAT_BUFFER_SIZE`. 
+ */
 void platformFormatResult(PalResult result, char* buffer);
 
+/** This function has the same semantics and rules as 
+ * palGetPerformanceCounter()
+ */
 uint64_t platformGetPerformanceCounter(void);
+
+/** This function has the same semantics and rules as 
+ * palGetPerformanceFrequency()
+ */
 uint64_t platformGetPerformanceFrequency(void);
 
+/** This function has the same semantics and rules as 
+ * palLoadLibrary()
+ */
 PalLibrary* platformLoadLibrary(const char* path);
-PalLibrarySymbol platformGetSymbol(PalLibrary* library, const char* name);
-void platformFreeLibrary(PalLibrary* library);
 
+/** This function has the same semantics and rules as 
+ * palGetSymbol()
+ */
+PalLibrarySymbol platformGetSymbol(PalLibrary* library, const char* name);
+
+/** This function has the same semantics and rules as 
+ * palFreeLibrary()
+ */
+void platformFreeLibrary(PalLibrary* library);
 
 #endif // CORE_PLATFORM_H
