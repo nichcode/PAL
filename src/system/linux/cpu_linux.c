@@ -53,13 +53,15 @@ static uint32_t parseCache(const char* path)
 
     fclose(file);
 
-    return cacheSize;
+    return (uint32_t)cacheSize;
 }
 
 void platformGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info)
 {
+    (void)allocator;
+
     FILE* file = fopen("/proc/cpuinfo", "r");
     if (!file) {
         return;
@@ -75,7 +77,7 @@ void platformGetCPUInfo(
             sscanf(line, "model name : %63[^\n]", info->model);
 
         } else if (strncmp(line, "cpu cores", 9) == 0) {
-            sscanf(line, "cpu cores : %d", &info->numCores);
+            sscanf(line, "cpu cores : %u", &info->numCores);
 
         } else if (strncmp(line, "flags", 5) == 0) {
             char* flags = strchr(line, ':');

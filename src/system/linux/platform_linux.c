@@ -67,7 +67,7 @@ void platformGetPlatformInfo(PalPlatformInfo* info)
     }
 
     snprintf(info->name, PAL_PLATFORM_NAME_SIZE, "%s %s", name, version);
-    sscanf(version, "%d.%d", &info->version.major, &info->version.minor);
+    sscanf(version, "%u.%u", &info->version.major, &info->version.minor);
 
     fclose(file);
 
