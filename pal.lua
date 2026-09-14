@@ -21,8 +21,20 @@ project "PAL2"
     filter {"system:linux", "configurations:*"}
         files { "src/core/posix/*.c" }
     
-    filter { }
+    filter {}
 
     if (PAL_BUILD_EVENT_MODULE) then
         files { "src/event/*.c" }
+    end
+
+    if (PAL_BUILD_SYSTEM_MODULE) then
+        files { "src/system/*.c" }
+
+        filter {"system:windows", "configurations:*"}
+            files { "src/system/win32/*.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files { "src/system/linux/*.c" }
+
+        filter {}
     end

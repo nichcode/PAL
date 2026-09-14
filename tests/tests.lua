@@ -25,3 +25,9 @@ local eventFiles = os.matchfiles("src/event/*.c")
 for _, file in ipairs(eventFiles) do
     addTest(file)
 end
+
+
+local systemFiles = os.matchfiles("src/system/*.c")
+for _, file in ipairs(systemFiles) do
+    addTest(file)
+end

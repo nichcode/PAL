@@ -18,7 +18,7 @@ PAL_BUILD_ABI_DUMP = true
 PAL_BUILD_EVENT_MODULE = true
 
 -- Build system module
-PAL_BUILD_SYSTEM_MODULE = false
+PAL_BUILD_SYSTEM_MODULE = true
 
 -- Build thread module
 PAL_BUILD_THREAD_MODULE = false
