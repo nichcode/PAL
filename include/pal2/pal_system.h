@@ -244,7 +244,9 @@ typedef uint32_t PalPlatformApiType;
  * The platform API type (eg. `PAL_PLATFORM_API_TYPE_WIN32`).
  * 
  * @var PalPlatformInfo::totalMemory
- * Total Disk space in GB. On Windows, the size is only for the `C` drive.
+ * Total Disk space in GB. 
+ * On `Windows`: the size is from C drive only. @nl
+ * On `Linux`: the size is from root only.
  * 
  * @var PalPlatformInfo::totalRAM
  * Total CPU memory in MB.
