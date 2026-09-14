@@ -49,7 +49,7 @@ PalResult platformCreateThread(
             return palMakeResult(
                 PAL_RESULT_CODE_PLATFORM_FAILURE, 
                 PAL_RESULT_SOURCE_POSIX, 
-                errno);
+                (uint32_t)errno);
         }
 
     } else {
@@ -61,13 +61,13 @@ PalResult platformCreateThread(
             return palMakeResult(
                 PAL_RESULT_CODE_PLATFORM_FAILURE, 
                 PAL_RESULT_SOURCE_POSIX, 
-                errno);
+                (uint32_t)errno);
         }
 
         pthread_attr_destroy(&attr);
     }
 
-    *thread = TO_PAL_HANDLE(PalThread, thread);
+    *thread = TO_PAL_HANDLE(PalThread, pthread);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -89,7 +89,7 @@ PalResult platformJoinThread(
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE, 
             PAL_RESULT_SOURCE_POSIX, 
-            errno);
+            (uint32_t)errno);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -102,7 +102,7 @@ void platformDetachThread(PalThread* thread)
 
 void platformSleep(uint64_t milliseconds)
 {
-    usleep(milliseconds * 1000);
+    usleep((useconds_t)milliseconds * 1000);
 }
 
 void platformYield()
@@ -164,7 +164,7 @@ uint64_t platformGetThreadAffinity(PalThread* thread)
 
     uint64_t mask = 0;
     for (int i = 0; i < 64; ++i) {
-        if (CPU_ISSET(i, &cpuset)) {
+        if (CPU_ISSET((size_t)i, &cpuset)) {
             mask |= (1ULL << 1);
         }
     }
@@ -181,9 +181,15 @@ void platformGetThreadName(
     char* buffer)
 {
 #ifdef __linux__
+    pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
+
     if (buffer && bufferSize > 0) {
-        pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
         pthread_getname_np(pthread, buffer, bufferSize);
+
+    } else {
+        char tmp[16];
+        pthread_getname_np(pthread, tmp, 16);
+        *size = strlen(tmp) + 1;
     }
 #endif // __linux__
 }
@@ -213,7 +219,7 @@ PalResult platformSetThreadPriority(
             return palMakeResult(
                 PAL_RESULT_CODE_INVALID_OPERATION,
                 PAL_RESULT_SOURCE_POSIX,
-                errno);
+                (uint32_t)errno);
         }
     }
     }
@@ -231,7 +237,7 @@ PalResult platformSetThreadAffinity(
 
     for (int i = 0; i < 64; ++i) {
         if (mask & (1ULL << i)) {
-            CPU_SET(i, &cpuset);
+            CPU_SET((size_t)i, &cpuset);
         }
     }
 
@@ -241,7 +247,7 @@ PalResult platformSetThreadAffinity(
         return palMakeResult(
             PAL_RESULT_CODE_INVALID_HANDLE, 
             PAL_RESULT_SOURCE_POSIX, 
-            errno);
+            (uint32_t)errno);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -261,7 +267,7 @@ PalResult platformSetThreadName(
         return palMakeResult(
             PAL_RESULT_CODE_INVALID_HANDLE,
             PAL_RESULT_SOURCE_POSIX, 
-            errno);
+            (uint32_t)errno);
     }
 
     return PAL_RESULT_SUCCESS;

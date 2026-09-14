@@ -68,13 +68,13 @@ PalResult platformWaitCondVar(
         return palMakeResult(
             PAL_RESULT_CODE_TIMEOUT, 
             PAL_RESULT_SOURCE_POSIX, 
-            errno);
+            (uint32_t)errno);
 
     } else {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE, 
             PAL_RESULT_SOURCE_POSIX, 
-            errno);
+            (uint32_t)errno);
     }
 }
 
@@ -85,8 +85,8 @@ PalResult platformWaitCondVarTimeout(
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += milliseconds / 1000;
-    ts.tv_nsec += (milliseconds % 1000) * 1000000;
+    ts.tv_sec += (time_t)milliseconds / 1000;
+    ts.tv_nsec += (long)(milliseconds % 1000) * 1000000;
 
     if (ts.tv_nsec >= 1000000000) {
         ts.tv_sec++;
@@ -97,7 +97,7 @@ PalResult platformWaitCondVarTimeout(
         return palMakeResult(
             PAL_RESULT_CODE_TIMEOUT, 
             PAL_RESULT_SOURCE_POSIX, 
-            errno);
+            (uint32_t)errno);
     }
 
     return PAL_RESULT_SUCCESS;

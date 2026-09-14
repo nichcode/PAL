@@ -77,12 +77,12 @@ void PAL_CALL palSignalCondVar(PalCondVar* condVar)
 {
     ASSERT(condVar != nullptr, "The specified condvar is null");
 
-    return platformSignalCondVar(condVar);
+    platformSignalCondVar(condVar);
 }
 
 void PAL_CALL palBroadcastCondVar(PalCondVar* condVar)
 {
     ASSERT(condVar != nullptr, "The specified condvar is null");
 
-    return platformBroadcastCondVar(condVar);
+    platformBroadcastCondVar(condVar);
 }
