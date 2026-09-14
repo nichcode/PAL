@@ -156,4 +156,42 @@ void platformLockMutex(PalMutex* mutex);
  */
 void platformUnlockMutex(PalMutex* mutex);
 
+
+/** This function has the same semantics and rules as 
+ * palCreateCondVar()
+ */
+PalResult platformCreateCondVar(
+    const PalAllocator* allocator,
+    PalCondVar** condVar);
+
+/** This function has the same semantics and rules as 
+ * palDestroyCondVar()
+ */
+void platformDestroyCondVar(PalCondVar* condVar);
+
+/** This function has the same semantics and rules as 
+ * palWaitCondVar()
+ */
+PalResult platformWaitCondVar(
+    PalCondVar* condVar,
+    PalMutex* mutex);
+
+/** This function has the same semantics and rules as 
+ * palWaitCondVarTimeout()
+ */
+PalResult platformWaitCondVarTimeout(
+    PalCondVar* condVar,
+    PalMutex* mutex,
+    uint64_t milliseconds);
+
+/** This function has the same semantics and rules as 
+ * palSignalCondVar()
+ */
+void platformSignalCondVar(PalCondVar* condVar);
+
+/** This function has the same semantics and rules as 
+ * palBroadcastCondVar()
+ */
+void platformBroadcastCondVar(PalCondVar* condVar);
+
 #endif // THREAD_PLATFORM_H

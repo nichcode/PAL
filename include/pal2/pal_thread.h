@@ -569,7 +569,7 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
  */
 PAL_API PalResult PAL_CALL palCreateCondVar(
     const PalAllocator* allocator,
-    PalCondVar** outCondVar);
+    PalCondVar** condVar);
 
 /**
  * @brief Destroys a condition variable.
