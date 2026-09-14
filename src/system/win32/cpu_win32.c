@@ -71,13 +71,16 @@ void platformGetCPUInfo(
     memcpy(info->vendor + 8, &regs[2], 4);
     info->vendor[12] = '\0';
 
-    cpuid(regs, 0x80000002, 0);
+    int tmp = (int)0x80000002;
+    cpuid(regs, tmp, 0);
     memcpy(info->model, regs, 16);
 
-    cpuid(regs, 0x80000003, 0);
+    tmp = (int)0x80000003;
+    cpuid(regs, tmp, 0);
     memcpy(info->model + 16, regs, 16);
 
-    cpuid(regs, 0x80000004, 0);
+    tmp = (int)0x80000004;
+    cpuid(regs, tmp, 0);
     memcpy(info->model + 32, regs, 16);
     info->model[48] = '\0';
 
