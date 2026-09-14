@@ -32,7 +32,15 @@ PalResult PAL_CALL palCreateCondVar(
     const PalAllocator* allocator,
     PalCondVar** condVar)
 {
-    ASSERT(condVar != nullptr, "The specified condvar is null");
+    if (!condVar) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
+    if (allocator) {
+        if (!allocator->allocate && !allocator->free) {
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        }
+    }
 
     return platformCreateCondVar(allocator, condVar);
 }
