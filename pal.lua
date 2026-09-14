@@ -38,3 +38,15 @@ project "PAL2"
 
         filter {}
     end
+
+    if (PAL_BUILD_THREAD_MODULE) then
+        files { "src/thread/*.c" }
+
+        filter {"system:windows", "configurations:*"}
+            files { "src/thread/win32/*.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files { "src/thread/posix/*.c" }
+
+        filter {}
+    end

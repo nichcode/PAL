@@ -31,3 +31,9 @@ local systemFiles = os.matchfiles("src/system/*.c")
 for _, file in ipairs(systemFiles) do
     addTest(file)
 end
+
+
+local threadFiles = os.matchfiles("src/thread/*.c")
+for _, file in ipairs(threadFiles) do
+    addTest(file)
+end
