@@ -26,42 +26,42 @@
  */
 
 #include "shared.h"
-#include "thread_platform.h"
+#include "thread/thread_platform.h"
 
-PalResult PAL_CALL palCreateMutex(
+#if PLATFORM_POSIX
+#include "thread_posix.h"
+
+PalResult platformCreateMutex(
     const PalAllocator* allocator,
     PalMutex** mutex)
 {
-    if (!mutex) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    PalMutex* pmutex = palAllocate(allocator, sizeof(PalMutex), 0);
+    if (!pmutex) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    if (allocator) {
-        if (!allocator->allocate && !allocator->free) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
-    }
+    pthread_mutex_init(&pmutex->handle, nullptr);
+    pmutex->allocator = allocator;
 
-    return platformCreateMutex(allocator, mutex);
+    *mutex = pmutex;
+
+    return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palDestroyMutex(PalMutex* mutex)
+void platformDestroyMutex(PalMutex* mutex)
 {
-    ASSERT(mutex != nullptr, "The specified mutex is null");
-
-    platformDestroyMutex(mutex);
+    pthread_mutex_destroy(&mutex->handle);
+    palFree(mutex->allocator, mutex);
 }
 
-void PAL_CALL palLockMutex(PalMutex* mutex)
+void platformLockMutex(PalMutex* mutex)
 {
-    ASSERT(mutex != nullptr, "The specified mutex is null");
-
-    platformLockMutex(mutex);
+    pthread_mutex_lock(&mutex->handle);
 }
 
-void PAL_CALL palUnlockMutex(PalMutex* mutex)
+void platformUnlockMutex(PalMutex* mutex)
 {
-    ASSERT(mutex != nullptr, "The specified mutex is null");
-
-    platformUnlockMutex(mutex);
+    pthread_mutex_unlock(&mutex->handle);
 }
+
+#endif // PLATFORM_POSIX

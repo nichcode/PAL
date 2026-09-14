@@ -25,43 +25,26 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef THREAD_POSIX_H
+#define THREAD_POSIX_H
+
 #include "shared.h"
-#include "thread_platform.h"
+#if PLATFORM_POSIX
 
-PalResult PAL_CALL palCreateMutex(
-    const PalAllocator* allocator,
-    PalMutex** mutex)
+#include <pthread.h>
+#include "pal2/pal_thread.h"
+
+struct PalCondVar 
 {
-    if (!mutex) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
+    const PalAllocator* allocator;
+    pthread_cond_t handle;
+};
 
-    if (allocator) {
-        if (!allocator->allocate && !allocator->free) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
-    }
-
-    return platformCreateMutex(allocator, mutex);
-}
-
-void PAL_CALL palDestroyMutex(PalMutex* mutex)
+struct PalMutex 
 {
-    ASSERT(mutex != nullptr, "The specified mutex is null");
+    const PalAllocator* allocator;
+    pthread_mutex_t handle;
+};
 
-    platformDestroyMutex(mutex);
-}
-
-void PAL_CALL palLockMutex(PalMutex* mutex)
-{
-    ASSERT(mutex != nullptr, "The specified mutex is null");
-
-    platformLockMutex(mutex);
-}
-
-void PAL_CALL palUnlockMutex(PalMutex* mutex)
-{
-    ASSERT(mutex != nullptr, "The specified mutex is null");
-
-    platformUnlockMutex(mutex);
-}
+#endif // PLATFORM_POSIX
+#endif // THREAD_POSIX_H

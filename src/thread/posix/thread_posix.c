@@ -43,16 +43,6 @@ PalResult platformCreateThread(
     const PalThreadCreateInfo* info,
     PalThread** thread)
 {
-    if (!info || !thread) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    if (info->allocator) {
-        if (!info->allocator->allocate && !info->allocator->free) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
-    }
-
     pthread_t pthread;
     if (info->stackSize == 0) {
         if (pthread_create(&pthread, nullptr, info->entry, info->arg) != 0) {

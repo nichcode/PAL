@@ -32,8 +32,15 @@ PalResult PAL_CALL palCreateThread(
     const PalThreadCreateInfo* info,
     PalThread** thread)
 {
-    ASSERT(info != nullptr, "The specified info is null");
-    ASSERT(thread != nullptr, "The specified output thread is null");
+    if (!info || !thread) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
+    if (info->allocator) {
+        if (!info->allocator->allocate && !info->allocator->free) {
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        }
+    }
 
     return platformCreateThread(info, thread);
 }
