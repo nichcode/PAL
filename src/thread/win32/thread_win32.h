@@ -35,13 +35,13 @@
 struct PalCondVar 
 {
     const PalAllocator* allocator;
-    CRITICAL_SECTION handle;
+    CONDITION_VARIABLE handle;
 };
 
 struct PalMutex 
 {
     const PalAllocator* allocator;
-    CONDITION_VARIABLE handle;
+    CRITICAL_SECTION handle;
 };
 
 #endif // _WIN32

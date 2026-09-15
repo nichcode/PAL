@@ -245,7 +245,7 @@ void platformGetThreadName(
 
     int len = WideCharToMultiByte(CP_UTF8, 0, tmp, -1, nullptr, 0, 0, 0);
     if (size) {
-        *size = len - 1;
+        *size = (uint64_t)len - 1;
     }
 
     if (buffer && bufferSize > 0) {
@@ -317,28 +317,28 @@ PalResult platformSetThreadName(
             return palMakeResult(
                 PAL_RESULT_CODE_INVALID_HANDLE, 
                 PAL_RESULT_SOURCE_WIN32, 
-                hr);
+                ERROR_INVALID_PARAMETER);
         }
 
         case E_OUTOFMEMORY: {
             return palMakeResult(
                 PAL_RESULT_CODE_OUT_OF_MEMORY, 
                 PAL_RESULT_SOURCE_WIN32, 
-                hr);
+                ERROR_NOT_ENOUGH_MEMORY);
         }
 
         case E_ACCESSDENIED: {
             return palMakeResult(
                 PAL_RESULT_CODE_INVALID_OPERATION, 
                 PAL_RESULT_SOURCE_WIN32, 
-                hr);
+                ERROR_ACCESS_DENIED);
         }
         }
 
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE, 
             PAL_RESULT_SOURCE_WIN32, 
-            hr);
+            GetLastError());
     }
 
     return PAL_RESULT_SUCCESS;

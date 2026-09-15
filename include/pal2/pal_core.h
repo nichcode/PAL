@@ -677,10 +677,6 @@ static inline uint32_t PAL_CALL palGetResultNativeCode(PalResult result)
  * If `nativeCode` is not `0` and the result source is `PAL_RESULT_SOURCE_NONE`,
  * it will be ignored when formatting the result value.
  *
- * Creating the result value with `code`, `source` and `nativeCode` as
- * `PAL_RESULT_CODE_NONE`, `PAL_RESULT_SOURCE_NONE` and `0` respectively is
- * valid, but that will creating a result value same as `PAL_RESULT_SUCCESS`.
- *
  * @param[in] code The result code.
  * @param[in] source The result source.
  * @param[in] nativeCode The result native code.
