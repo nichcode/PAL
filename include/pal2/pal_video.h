@@ -1,21 +1,42 @@
-
 /**
-    PAL - Prime Abstraction Layer
-    Copyright (C) 2025
-    Licensed under the Zlib license. See LICENSE file in root.
+ * @file pal_video.h
+ * @brief This is the header file for PAL Video API.
+ *
+ * It defines all the types and functions of the video system.
+ *
+ * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty.  In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ *
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ *
+ * 3. This notice may not be removed or altered from any source distribution.
  */
 
 /**
  * @defgroup pal_video Video
- * @ingroup pal_video
- * @{
  */
 
-#ifndef _PAL_VIDEO_H
-#define _PAL_VIDEO_H
+/** @{ */
 
-#include "pal_event.h"
+#ifndef PAL_VIDEO_H
+#define PAL_VIDEO_H
 
+#include "pal_core.h"
+
+/** The maximum monitor name size.*/
 #define PAL_MONITOR_NAME_SIZE 32
 
 #define PAL_VIDEO_FEATURE_HIGH_DPI (1ULL << 0)
@@ -79,11 +100,11 @@
 #define PAL_WINDOW_STATE_RESTORED 3
 #define PAL_WINDOW_STATE_COUNT 4
 
-#define PAL_FLASH_FLAG_STOP 0            /**< Stop flashing.*/
-#define PAL_FLASH_FLAG_CAPTION (1U << 0) /**< Flash the titlebar of the window.*/
-#define PAL_FLASH_FLAG_TRAY (1U << 1)    /**< Flash the icon of the window.*/
+#define PAL_FLASH_FLAG_STOP 0
+#define PAL_FLASH_FLAG_CAPTION (1U << 0)
+#define PAL_FLASH_FLAG_TRAY (1U << 1)
 
-#define PAL_FBCONFIG_BACKEND_PAL_OPENGL 0 /**< Use PAL opengl module backend.*/
+#define PAL_FBCONFIG_BACKEND_PAL_OPENGL 0
 #define PAL_FBCONFIG_BACKEND_EGL 1
 #define PAL_FBCONFIG_BACKEND_GLX 2
 #define PAL_FBCONFIG_BACKEND_WGL 3
@@ -321,10 +342,18 @@
 #define PAL_CURSOR_TYPE_COUNT 5
 
 /**
+ * @struct PalEventDriver
+ * @brief Opaque handle to an event driver.
+ *
+ * @since Added in version 2.0
+ */
+typedef struct PalEventDriver PalEventDriver;
+
+/**
  * @struct PalMonitor
  * @brief Opaque handle to a monitor.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalMonitor PalMonitor;
 
@@ -332,7 +361,7 @@ typedef struct PalMonitor PalMonitor;
  * @struct PalWindow
  * @brief Opaque handle to a window.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalWindow PalWindow;
 
@@ -340,7 +369,7 @@ typedef struct PalWindow PalWindow;
  * @struct PalIcon
  * @brief Opaque handle to an icon.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalIcon PalIcon;
 
@@ -348,121 +377,330 @@ typedef struct PalIcon PalIcon;
  * @struct PalCursor
  * @brief Opaque handle to a cursor.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalCursor PalCursor;
 
 /**
  * @typedef PalVideoFeatures
  * @brief Video system features.
+ * 
+ * This is a bitmask of all supported features of the video system.
+ * 
+ * All values of this type follow the format `PAL_VIDEO_FEATURE_*` for API
+ * consistency and ease of use.
  *
- * All video features follow the format `PAL_VIDEO_FEATURE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
+ * 
+ * @def PAL_VIDEO_FEATURE_HIGH_DPI
+ * The video system supports high dpi windows.
+ * 
+ * @def PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION
+ * The video system supports setting monitor orientation.
+ * 
+ * @def PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION
+ * The video system supports getting monitor orientation.
+ * 
+ * @def PAL_VIDEO_FEATURE_BORDERLESS_WINDOW
+ * The video system supports borderless windows.
+ * 
+ * @def PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW
+ * The video system supports transparent windows.
+ * 
+ * @def PAL_VIDEO_FEATURE_TOOL_WINDOW
+ * The video system supports tool windows.
+ * 
+ * @def PAL_VIDEO_FEATURE_MONITOR_SET_MODE
+ * The video system supports setting monitor display mode.
+ * 
+ * @def PAL_VIDEO_FEATURE_MONITOR_GET_MODE
+ * The video system supports getting monitor display mode.
+ * 
+ * @def PAL_VIDEO_FEATURE_MULTI_MONITORS
+ * The video system supports multiple monitors.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_SIZE
+ * The video system supports setting window size dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_SIZE
+ * The video system supports getting window size dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_POS
+ * The video system supports setting window position dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_POS
+ * The video system supports getting window position dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_STATE
+ * The video system supports setting window state dynamically.
+ * (eg. maximize, minimize etc).
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_STATE
+ * The video system supports getting window state dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY
+ * The video system supports setting window visibility dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY
+ * The video system supports getting window visibility dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_TITLE
+ * The video system supports setting window title dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_TITLE
+ * The video system supports getting window title dynamically.
+ * 
+ * @def PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX
+ * The video system supports windows without maximize box.
+ * 
+ * @def PAL_VIDEO_FEATURE_NO_MINIMIZEBOX
+ * The video system supports windows without minimize box.
+ * 
+ * @def PAL_VIDEO_FEATURE_CLIP_CURSOR
+ * The video system supports cursor clipping.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION
+ * The video system supports flash caption (titlebar) flag.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY
+ * The video system supports flash tray (taskbar icon) flag.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL
+ * The video system supports explicit flash intervals.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS
+ * The video system supports setting the input focus window.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS
+ * The video system supports getting the input focus window.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_STYLE
+ * The video system supports setting window style.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_STYLE
+ * The video system supports getting window style.
+ * 
+ * @def PAL_VIDEO_FEATURE_CURSOR_SET_POS
+ * The video system supports setting cursor position.
+ * 
+ * @def PAL_VIDEO_FEATURE_CURSOR_GET_POS
+ * The video system supports getting cursor position.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_ICON
+ * The video system supports setting window icon.
+ * 
+ * @def PAL_VIDEO_FEATURE_TOPMOST_WINDOW
+ * The video system supports topmost windows.
+ * 
+ * @def PAL_VIDEO_FEATURE_DECORATED_WINDOW
+ * The video system supports decorated windows.
+ * 
+ * @def PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY
+ * The video system supports setting cursor visibility
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR
+ * The video system supports getting window monitor.
+ * 
+ * @def PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY
+ * The video system supports getting primary monitor.
+ * 
+ * @def PAL_VIDEO_FEATURE_FOREIGN_WINDOWS
+ * The video system supports foreign windows.
+ * (eg. attaching and detaching foreign windows).
+ * 
+ * @def PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE
+ * The video system supports monitor mode validation.
+ * 
+ * @def PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR
+ * The video system supports setting window cursor.
  */
 typedef uint64_t PalVideoFeatures;
 
 /**
  * @typedef PalOrientation
  * @brief Orientation types for a monitor.
+ * 
+ * All values of this type follow the format `PAL_ORIENTATION_*` for API
+ * consistency and ease of use.
  *
- * All orientation types follow the format `PAL_ORIENTATION_**` for consistency
- * and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
+ * 
+ * @def PAL_ORIENTATION_LANDSCAPE
+ * The monitor orientation is landscape.
+ * 
+ * @def PAL_ORIENTATION_PORTRAIT
+ * The monitor orientation is portrait.
+ * 
+ * @def PAL_ORIENTATION_LANDSCAPE_FLIPPED
+ * The monitor orientation is landscape flipped.
+ * 
+ * @def PAL_ORIENTATION_PORTRAIT_FLIPPED
+ * The monitor orientation is portrait flipped.
+ * 
+ * @def PAL_ORIENTATION_COUNT
+ * The number of orientations. The literal value must not be used.
  */
 typedef uint32_t PalOrientation;
 
 /**
  * @typedef PalWindowStyle
- * @brief Window styles. Multiple styles can be OR'ed together using bitwise
- * OR operator (`|`).
+ * @brief Window styles. 
+ * 
+ * Multiple styles can be OR'ed together using bitwise OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_WINDOW_STYLE_*` for API
+ * consistency and ease of use.
  *
- * All window flags follow the format `PAL_WINDOW_STYLE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
+ * 
+ * @def PAL_WINDOW_STYLE_RESIZABLE
+ * The window is resizable.
+ * 
+ * @def PAL_WINDOW_STYLE_TRANSPARENT
+ * The window is transparent.
+ * `PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW` must be supported.
+ * 
+ * @def PAL_WINDOW_STYLE_TOPMOST
+ * The window is the topmost window.
+ * `PAL_VIDEO_FEATURE_TOPMOST_WINDOW` must be supported.
+ * 
+ * @def PAL_WINDOW_STYLE_NO_MINIMIZEBOX
+ * The window has no minimize box.
+ * `PAL_VIDEO_FEATURE_NO_MINIMIZEBOX` must be supported.
+ * 
+ * @def PAL_WINDOW_STYLE_NO_MAXIMIZEBOX
+ * The window has no maximize box.
+ * `PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX` must be supported.
+ * 
+ * @def PAL_WINDOW_STYLE_TOOL
+ * The window does not have a taskbar icon.
+ * `PAL_VIDEO_FEATURE_TOOL_WINDOW` must be supported.
+ * 
+ * @def PAL_WINDOW_STYLE_BORDERLESS
+ * The window has no decorations.
+ * `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` must be supported.
  */
 typedef uint32_t PalWindowStyle;
 
 /**
  * @typedef PalWindowState
- * @brief Represents the current state of a window.
+ * @brief Window states.
+ * 
+ * All values of this type follow the format `PAL_WINDOW_STATE_*` for API
+ * consistency and ease of use.
  *
- * All window states follow the format `PAL_WINDOW_STATE_**` for consistency and
- * API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
+ * 
+ * @def PAL_WINDOW_STATE_NORMAL
+ * The window is in windowed state. This is different from restored state.
+ * 
+ * @def PAL_WINDOW_STATE_MAXIMIZED
+ * The window is maximized.
+ * 
+ * @def PAL_WINDOW_STATE_MINIMIZED
+ * The window is minimized.
+ * 
+ * @def PAL_WINDOW_STATE_RESTORED
+ * The window is restored from either maximize or minimize state.
+ * 
+ * @def PAL_WINDOW_STATE_COUNT
+ * The number of window states. The literal value must not be used.
  */
 typedef uint32_t PalWindowState;
 
 /**
  * @typedef PalFlashFlags
- * @brief Flash flags. Multiple flash flags can be OR'ed together using bitwise
- * OR operator (`|`).
+ * @brief Flash flags. 
+ * 
+ * Multiple flags can be OR'ed together using bitwise OR operator (`|`).
  *
  * `PAL_FLASH_FLAG_STOP` is not a bit and must not be combined with other bits.
+ * 
+ * All values of this type follow the format `PAL_FLASH_FLAG_*` for API
+ * consistency and ease of use.
  *
- * All flash flags follow the format `PAL_FLASH_FLAG_**` for consistency and
- * API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
+ * 
+ * @def PAL_FLASH_FLAG_STOP
+ * Stop the flash.
+ * 
+ * @def PAL_FLASH_FLAG_CAPTION
+ * Flash the window titlebar.
+ * `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must be supported.
+ * 
+ * @def PAL_FLASH_FLAG_TRAY
+ * Flash the window taskbar icon.
+ * `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` must be supported.
  */
 typedef uint32_t PalFlashFlags;
 
 /**
  * @typedef PalFBConfigBackend
- * @brief Represents the backend of a FBConfig.
+ * @brief The backend of a FBConfig.
+ * 
+ * All values of this type follow the format `PAL_FBCONFIG_BACKEND_*` for API
+ * consistency and ease of use.
  *
- * All FBConfig backends follow the format `PAL_FBCONFIG_BACKEND_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
+ * 
+ * @def PAL_FBCONFIG_BACKEND_PAL_OPENGL
+ * The FBConfig came from PALs opengl system.
+ * 
+ * @def PAL_FBCONFIG_BACKEND_EGL
+ * The FBConfig came from EGL backend.
+ * 
+ * @def PAL_FBCONFIG_BACKEND_GLX
+ * The FBConfig came from GLX backend.
+ * 
+ * @def PAL_FBCONFIG_BACKEND_WGL
+ * The FBConfig came from WGL backend.
+ * 
+ * @def PAL_FBCONFIG_BACKEND_COUNT
+ * The number of fbconfig backends. The literal value must not be used.
  */
 typedef uint32_t PalFBConfigBackend;
 
 /**
  * @typedef PalScancode
  * @brief scancodes (layout independent keys) of a keyboard.
+ * 
+ * All values of this type follow the format `PAL_SCANCODE_*` for API
+ * consistency and ease of use.
  *
- * All scancodes follow the format `PAL_SCANCODE_**` for consistency and
- * API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalScancode;
 
 /**
  * @typedef PalKeycode
  * @brief Keycodes (layout aware keys) of a keyboard.
+ * 
+ * All values of this type follow the format `PAL_KEYCODE_*` for API
+ * consistency and ease of use.
  *
- * All keycodes follow the format `PAL_KEYCODE_**` for consistency and API
- * use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalKeycode;
 
 /**
  * @typedef PalMouseButton
  * @brief Buttons of a mouse.
+ * 
+ * All values of this type follow the format `PAL_MOUSE_BUTTON_*` for API
+ * consistency and ease of use.
  *
- * All mouse buttons follow the format `PAL_MOUSE_BUTTON_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalMouseButton;
 
 /**
  * @typedef PalCursorType
  * @brief System cursor types.
+ * 
+ * All values of this type follow the format `PAL_CURSOR_TYPE_*` for API
+ * consistency and ease of use.
  *
- * All cursor types follow the format `PAL_CURSOR_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalCursorType;
 
@@ -470,7 +708,7 @@ typedef uint32_t PalCursorType;
  * @struct PalMonitorInfo
  * @brief Information about a monitor.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     int32_t x;                        /**< X position in pixels.*/
@@ -488,7 +726,7 @@ typedef struct {
  * @struct PalMonitorMode
  * @brief information about a monitor display mode.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t bpp;         /**< Bits per pixel.*/
@@ -503,7 +741,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalFlashFlags flags; /**< (eg. `PAL_FLASH_FLAG_CAPTION`).*/
@@ -517,7 +755,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
@@ -531,7 +769,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     const uint8_t* pixels; /**< Pixels in `RGBA` format.*/
@@ -545,7 +783,7 @@ typedef struct {
  * @struct PalWindowHandleInfo
  * @brief Information about a window handle.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     void* nativeInstance; /**< The platform (OS) display or instance.*/
@@ -561,7 +799,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     const char* title;                  /**< Title in UTF-8 encoding.*/
@@ -604,7 +842,7 @@ typedef struct {
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palShutdownVideo
  */
 PAL_API PalResult PAL_CALL palInitVideo(
@@ -620,7 +858,7 @@ PAL_API PalResult PAL_CALL palInitVideo(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palInitVideo
  */
 PAL_API void PAL_CALL palShutdownVideo();
@@ -634,7 +872,7 @@ PAL_API void PAL_CALL palShutdownVideo();
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palInitVideo
  */
 PAL_API void PAL_CALL palUpdateVideo();
@@ -646,7 +884,7 @@ PAL_API void PAL_CALL palUpdateVideo();
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palInitVideo
  */
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
@@ -674,7 +912,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetPrimaryMonitor
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitors(
@@ -694,7 +932,7 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palEnumerateMonitors
  */
 PAL_API void PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
@@ -711,7 +949,7 @@ PAL_API void PAL_CALL palGetPrimaryMonitor(PalMonitor** outMonitor);
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetMonitorInfo(
     PalMonitor* monitor,
@@ -733,7 +971,7 @@ PAL_API void PAL_CALL palGetMonitorInfo(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palEnumerateMonitorModes(
     PalMonitor* monitor,
@@ -751,7 +989,7 @@ PAL_API void PAL_CALL palEnumerateMonitorModes(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palSetMonitorMode
  */
 PAL_API void PAL_CALL palGetCurrentMonitorMode(
@@ -779,7 +1017,7 @@ PAL_API void PAL_CALL palGetCurrentMonitorMode(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetCurrentMonitorMode
  */
 PAL_API PalResult PAL_CALL palSetMonitorMode(
@@ -799,7 +1037,7 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palValidateMonitorMode(
     PalMonitor* monitor,
@@ -820,7 +1058,7 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palSetMonitorOrientation(
     PalMonitor* monitor,
@@ -858,7 +1096,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  *
  * - Creating hidden window is not supported. It will be ignored.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palCreateWindow(
     const PalWindowCreateInfo* info,
@@ -873,7 +1111,7 @@ PAL_API PalResult PAL_CALL palCreateWindow(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateWindow
  */
 PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
@@ -888,7 +1126,7 @@ PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palMaximizeWindow
  * @sa palRestoreWindow
  */
@@ -904,7 +1142,7 @@ PAL_API void PAL_CALL palMinimizeWindow(PalWindow* window);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palMinimizeWindow
  * @sa palRestoreWindow
  */
@@ -922,7 +1160,7 @@ PAL_API void PAL_CALL palMaximizeWindow(PalWindow* window);
  *
  * @note Wayland does not support restoring a minimized windows.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palMinimizeWindow
  * @sa palMaximizeWindow
  */
@@ -939,7 +1177,7 @@ PAL_API void PAL_CALL palRestoreWindow(PalWindow* window);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palHideWindow
  */
 PAL_API void PAL_CALL palShowWindow(PalWindow* window);
@@ -954,7 +1192,7 @@ PAL_API void PAL_CALL palShowWindow(PalWindow* window);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palShowWindow
  */
 PAL_API void PAL_CALL palHideWindow(PalWindow* window);
@@ -973,7 +1211,7 @@ PAL_API void PAL_CALL palHideWindow(PalWindow* window);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palFlashWindow(
     PalWindow* window,
@@ -989,7 +1227,7 @@ PAL_API void PAL_CALL palFlashWindow(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palSetWindowStyle
  */
 PAL_API void PAL_CALL palGetWindowStyle(
@@ -1006,7 +1244,7 @@ PAL_API void PAL_CALL palGetWindowStyle(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetWindowMonitor(
     PalWindow* window,
@@ -1029,7 +1267,7 @@ PAL_API void PAL_CALL palGetWindowMonitor(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palSetWindowTitle
  */
 PAL_API void PAL_CALL palGetWindowTitle(
@@ -1049,7 +1287,7 @@ PAL_API void PAL_CALL palGetWindowTitle(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palSetWindowPos
  */
 PAL_API void PAL_CALL palGetWindowPos(
@@ -1068,7 +1306,7 @@ PAL_API void PAL_CALL palGetWindowPos(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palSetWindowSize
  */
 PAL_API void PAL_CALL palGetWindowSize(
@@ -1086,7 +1324,7 @@ PAL_API void PAL_CALL palGetWindowSize(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetWindowState(
     PalWindow* window,
@@ -1104,7 +1342,7 @@ PAL_API void PAL_CALL palGetWindowState(
  *
  * Thread safety: Thread-safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API const PalBool* PAL_CALL palGetKeycodeState();
 
@@ -1120,7 +1358,7 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  *
  * Thread safety: Thread-safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API const PalBool* PAL_CALL palGetScancodeState();
 
@@ -1135,7 +1373,7 @@ PAL_API const PalBool* PAL_CALL palGetScancodeState();
  *
  * @Thread safety: Thread-safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API const PalBool* PAL_CALL palGetMouseState();
 
@@ -1152,7 +1390,7 @@ PAL_API const PalBool* PAL_CALL palGetMouseState();
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetMouseDelta(
     float* dx,
@@ -1169,7 +1407,7 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * Thread safety: Thread-safe if `dx` and `dy` are thread
  * local.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetMouseWheelDelta(
     float* dx,
@@ -1186,7 +1424,7 @@ PAL_API void PAL_CALL palGetMouseWheelDelta(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
 
@@ -1200,7 +1438,7 @@ PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalWindow* PAL_CALL palGetFocusWindow();
 
@@ -1215,7 +1453,7 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow();
  *
  * Thread safety: Thread-safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetWindowHandleInfo(
     PalWindow* window,
@@ -1232,7 +1470,7 @@ PAL_API void PAL_CALL palGetWindowHandleInfo(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palSetWindowOpacity(
     PalWindow* window,
@@ -1248,7 +1486,7 @@ PAL_API void PAL_CALL palSetWindowOpacity(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetWindowStyle
  */
 PAL_API void PAL_CALL palSetWindowStyle(
@@ -1266,7 +1504,7 @@ PAL_API void PAL_CALL palSetWindowStyle(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetWindowTitle
  */
 PAL_API void PAL_CALL palSetWindowTitle(
@@ -1284,7 +1522,7 @@ PAL_API void PAL_CALL palSetWindowTitle(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetWindowPos
  */
 PAL_API void PAL_CALL palSetWindowPos(
@@ -1305,7 +1543,7 @@ PAL_API void PAL_CALL palSetWindowPos(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetWindowSize
  */
 PAL_API void PAL_CALL palSetWindowSize(
@@ -1322,7 +1560,7 @@ PAL_API void PAL_CALL palSetWindowSize(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetFocusWindow
  */
 PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
@@ -1340,7 +1578,7 @@ PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyIcon
  */
 PAL_API PalResult PAL_CALL palCreateIcon(
@@ -1354,7 +1592,7 @@ PAL_API PalResult PAL_CALL palCreateIcon(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateIcon
  */
 PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
@@ -1369,7 +1607,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palSetWindowIcon(
     PalWindow* window,
@@ -1386,7 +1624,7 @@ PAL_API void PAL_CALL palSetWindowIcon(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursor(
@@ -1404,7 +1642,7 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursorFrom(
@@ -1418,7 +1656,7 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateCursor
  */
 PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
@@ -1435,7 +1673,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palShowCursor(PalBool show);
 
@@ -1453,7 +1691,7 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palClipCursor(
     PalWindow* window,
@@ -1473,7 +1711,7 @@ PAL_API void PAL_CALL palClipCursor(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetCursorPos(
     PalWindow* window,
@@ -1492,7 +1730,7 @@ PAL_API void PAL_CALL palGetCursorPos(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palSetCursorPos(
     PalWindow* window,
@@ -1507,7 +1745,7 @@ PAL_API void PAL_CALL palSetCursorPos(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palSetWindowCursor(
     PalWindow* window,
@@ -1529,7 +1767,7 @@ PAL_API void PAL_CALL palSetWindowCursor(
  *
  * @note The returned instance or display must not be freed.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void* PAL_CALL palGetInstance();
 
@@ -1562,7 +1800,7 @@ PAL_API void* PAL_CALL palGetInstance();
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetInstance
  * @sa palDestroyWindow
  * @sa palDetachWindow
@@ -1596,7 +1834,7 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  *
  * Thread safety: Must be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palAttachWindow
  */
 PAL_API PalResult PAL_CALL palDetachWindow(
@@ -1605,4 +1843,4 @@ PAL_API PalResult PAL_CALL palDetachWindow(
 
 /** @} */
 
-#endif // _PAL_VIDEO_H
+#endif // PAL_VIDEO_H
