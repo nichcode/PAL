@@ -2,7 +2,7 @@
  * @file pal_thread.h
  * @brief This is the header file for PAL Thread API.
  *
- * It defines all the types and functions of the thread system.
+ * It defines all the types and functions of the thread module.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,25 +26,38 @@
  */
 
 /**
- * @defgroup pal_thread Thread
+ * @defgroup pal_thread Thread Module
+ * @{
  */
-
-/** @{ */
 
 #ifndef PAL_THREAD_H
 #define PAL_THREAD_H
 
 #include "pal_core.h"
 
+/**
+ * @defgroup thread_features Thread Features
+ * @brief Thread Features.
+ * 
+ * @{
+ */
 #define PAL_THREAD_FEATURE_STACK_SIZE (1U << 0)
 #define PAL_THREAD_FEATURE_PRIORITY (1U << 1)
 #define PAL_THREAD_FEATURE_AFFINITY (1U << 2)
 #define PAL_THREAD_FEATURE_NAME (1U << 3)
+/** @} */
 
+/**
+ * @defgroup thread_priorities Thread Priorities
+ * @brief Thread Priorities.
+ * 
+ * @{
+ */
 #define PAL_THREAD_PRIORITY_LOW 0
 #define PAL_THREAD_PRIORITY_NORMAL 1
 #define PAL_THREAD_PRIORITY_HIGH 2
 #define PAL_THREAD_PRIORITY_COUNT 3
+/** @} */
 
 /**
  * @struct PalThread
@@ -88,18 +101,6 @@ typedef struct PalCondVar PalCondVar;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_THREAD_FEATURE_STACK_SIZE
- * The thread system supports creating threads with explicit stack size.
- * 
- * @def PAL_THREAD_FEATURE_PRIORITY
- * The thread system supports setting and getting thread priority.
- * 
- * @def PAL_THREAD_FEATURE_AFFINITY
- * The thread system supports setting and getting thread affinity.
- * 
- * @def PAL_THREAD_FEATURE_NAME
- * The thread system supports setting and getting thread name.
  */
 typedef uint32_t PalThreadFeatures;
 
@@ -111,24 +112,17 @@ typedef uint32_t PalThreadFeatures;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_THREAD_PRIORITY_LOW
- * The thread has a low priority.
- * 
- * @def PAL_THREAD_PRIORITY_NORMAL
- * The thread has a normal or default priority.
- * 
- * @def PAL_THREAD_PRIORITY_HIGH
- * The thread has a high priority.
- * 
- * @def PAL_THREAD_PRIORITY_COUNT
- * The number of thread priorities. The literal value must not be used.
  */
 typedef uint32_t PalThreadPriority;
 
 /**
  * @typedef PalThreadFn
  * @brief Function pointer type used for thread entry function.
+ * 
+ * The function signature should look like this:
+ * @code
+ * void* PAL_CALL threadEntry(void* arg);
+ * @endcode
  *
  * @param[in] arg User data passed from `PalThreadCreateInfo::arg`.
  * Can be `nullptr`.
@@ -137,11 +131,16 @@ typedef uint32_t PalThreadPriority;
  *
  * @since Added in version 2.0
  */
-typedef void* (*PalThreadFn)(void* arg);
+typedef void* (PAL_CALL* PalThreadFn)(void* arg);
 
 /**
  * @typedef PaTlsDestructorFn
  * @brief Function pointer type used for TLS.
+ * 
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL tlsDestructor(void* userData);
+ * @endcode
  *
  * This is called when the TLS is destroyed and its value is not `nullptr`.
  *
@@ -150,7 +149,7 @@ typedef void* (*PalThreadFn)(void* arg);
  *
  * @since Added in version 2.0
  */
-typedef void (*PaTlsDestructorFn)(void* userData);
+typedef void (PAL_CALL* PaTlsDestructorFn)(void* userData);
 
 /**
  * @struct PalThreadCreateInfo

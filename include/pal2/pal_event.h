@@ -178,7 +178,8 @@ typedef uint32_t PalDispatchMode;
  * The callback must be thread-safe if the event driver that uses it
  * is thread-safe.
  *
- * @param[in] userData User data passed. Can be `nullptr`.
+ * @param[in] userData User data passed from
+ * `PalEventDriverCreateInfo::userData`. Can be `nullptr`.
  * @param[in] event The event.
  *
  * @since Added in version 2.0
