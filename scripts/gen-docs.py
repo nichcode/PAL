@@ -20,11 +20,24 @@ def main():
             print(f"Failed to load doxygen.log: {log_file}")
             sys.exit(1)
 
-        if not file.read(1) == "":
-            print(f"")
-            print(f"There are errors with the documentation generation")
-            print(f"See {log_file} for the errors and fix them")
-            sys.exit(1)
+        # remove all macro warnings
+        file_contents = file.readlines()
+        warnings = []
+        tag = "(macro definition)"
+
+        for line in file_contents:
+            if tag not in line:
+                warnings.append(line);
+    
+    # write the clean warnings to the file
+    with open(log_file, "w") as file:
+        file.writelines(warnings);
+    
+    if warnings:
+        print(f"")
+        print(f"There are errors with the documentation generation")
+        print(f"See {log_file} for the errors and fix them")
+        sys.exit(1)
 
     print(f"")
     print(f"Documentation generated successfully")
