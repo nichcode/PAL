@@ -2,7 +2,7 @@
  * @file pal_system.h
  * @brief This is the header file for PAL System API.
  *
- * It defines all the types and functions of the system API.
+ * It defines all the types and functions of the system module.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,32 +26,39 @@
  */
 
 /**
- * @defgroup pal_system System
+ * @defgroup pal_system System Module
+ * @{
  */
-
-/** @{ */
 
 #ifndef PAL_SYSTEM_H
 #define PAL_SYSTEM_H
 
 #include "pal_core.h"
 
-/** The maximum platform name size.*/
 #define PAL_PLATFORM_NAME_SIZE 32
-
-/** The maximum CPU vendor name size.*/
 #define PAL_CPU_VENDOR_NAME_SIZE 16
-
-/** The maximum CPU model name size.*/
 #define PAL_CPU_MODEL_NAME_SIZE 64
 
+/**
+ * @defgroup cpu_architectures CPU Architectures
+ * @brief CPU Architectures.
+ * 
+ * @{
+ */
 #define PAL_CPU_ARCH_UNKNOWN 0
 #define PAL_CPU_ARCH_X86 1
 #define PAL_CPU_ARCH_X86_64 2
 #define PAL_CPU_ARCH_ARM 3
 #define PAL_CPU_ARCH_ARM64 4
 #define PAL_CPU_ARCH_COUNT 5
+/** @} */
 
+/**
+ * @defgroup cpu_features CPU Features(Instruction Sets)
+ * @brief CPU features (instruction sets).
+ * 
+ * @{
+ */
 #define PAL_CPU_FEATURE_SSE (1ULL << 0)
 #define PAL_CPU_FEATURE_SSE2 (1ULL << 1)
 #define PAL_CPU_FEATURE_SSE3 (1ULL << 2)
@@ -64,14 +71,28 @@
 #define PAL_CPU_FEATURE_FMA3 (1ULL << 9)
 #define PAL_CPU_FEATURE_BMI1 (1ULL << 10)
 #define PAL_CPU_FEATURE_BMI2 (1ULL << 11)
+/** @} */
 
+/**
+ * @defgroup platform_types Platform Types
+ * @brief Platform types.
+ * 
+ * @{
+ */
 #define PAL_PLATFORM_TYPE_WINDOWS 0
 #define PAL_PLATFORM_TYPE_LINUX 1
 #define PAL_PLATFORM_TYPE_MACOS 2
 #define PAL_PLATFORM_TYPE_ANDROID 3
 #define PAL_PLATFORM_TYPE_IOS 4
 #define PAL_PLATFORM_TYPE_COUNT 5
+/** @} */
 
+/**
+ * @defgroup platform_api_types Platform API Types
+ * @brief Platform API types.
+ * 
+ * @{
+ */
 #define PAL_PLATFORM_API_TYPE_WIN32 0
 #define PAL_PLATFORM_API_TYPE_WAYLAND 1
 #define PAL_PLATFORM_API_TYPE_X11 2
@@ -80,6 +101,7 @@
 #define PAL_PLATFORM_API_TYPE_UIKIT 5
 #define PAL_PLATFORM_API_TYPE_HEADLESS 6
 #define PAL_PLATFORM_API_TYPE_COUNT 7
+/** @} */
 
 /**
  * @typedef PalCpuArch
@@ -89,24 +111,6 @@
  * consistency and ease of use. 
  *
  * @since Added in version 2.0
- * 
- * @def PAL_CPU_ARCH_UNKNOWN
- * The CPU achitecture is not known to PAL.
- * 
- * @def PAL_CPU_ARCH_X86
- * The CPU achitecture is x86.
- *
- * @def PAL_CPU_ARCH_X86_64
- * The CPU achitecture is x64.
- *
- * @def PAL_CPU_ARCH_ARM
- * The CPU achitecture is ARM.
- *
- * @def PAL_CPU_ARCH_ARM64
- * The CPU achitecture is ARM64.
- *
- * @def PAL_CPU_ARCH_COUNT
- * The number of CPU architectures. The literal value must not be used.
  */
 typedef uint32_t PalCpuArch;
 
@@ -122,42 +126,6 @@ typedef uint32_t PalCpuArch;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_CPU_FEATURE_SSE
- * The CPU supports SSE instruction set.
- * 
- * @def PAL_CPU_FEATURE_SSE2
- * The CPU supports SSE2 instruction set.
- * 
- * @def PAL_CPU_FEATURE_SSE3
- * The CPU supports SSE3 instruction set.
- * 
- * @def PAL_CPU_FEATURE_SSSE3
- * The CPU supports SSSE3 instruction set.
- * 
- * @def PAL_CPU_FEATURE_SSE41
- * The CPU supports SSE4.1 instruction set.
- * 
- * @def PAL_CPU_FEATURE_SSE42
- * The CPU supports SSE4.2 instruction set.
- * 
- * @def PAL_CPU_FEATURE_AVX
- * The CPU supports AVX instruction set.
- * 
- * @def PAL_CPU_FEATURE_AVX2
- * The CPU supports AVX2 instruction set.
- * 
- * @def PAL_CPU_FEATURE_AVX512F
- * The CPU supports AVX512F instruction set.
- * 
- * @def PAL_CPU_FEATURE_FMA3
- * The CPU supports FMA3 instruction set.
- * 
- * @def PAL_CPU_FEATURE_BMI1
- * The CPU supports BMI1 instruction set.
- * 
- * @def PAL_CPU_FEATURE_BMI2
- * The CPU supports BMI2 instruction set.
  */
 typedef uint64_t PalCpuFeatures;
 
@@ -172,24 +140,6 @@ typedef uint64_t PalCpuFeatures;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_PLATFORM_TYPE_WINDOWS
- * Windows platform.
- * 
- * @def PAL_PLATFORM_TYPE_LINUX
- * Linux platform.
- * 
- * @def PAL_PLATFORM_TYPE_MACOS
- * MacOS platform.
- * 
- * @def PAL_PLATFORM_TYPE_ANDROID
- * Android platform.
- * 
- * @def PAL_PLATFORM_TYPE_IOS
- * IOS platform.
- * 
- * @def PAL_PLATFORM_TYPE_COUNT
- * The number of platform types. The literal value must not be used.
  */
 typedef uint32_t PalPlatformType;
 
@@ -204,30 +154,6 @@ typedef uint32_t PalPlatformType;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_PLATFORM_API_TYPE_WIN32
- * Win32 platform API type.
- * 
- * @def PAL_PLATFORM_API_TYPE_WAYLAND
- * Wayland platform API type.
- * 
- * @def PAL_PLATFORM_API_TYPE_X11
- * Xlib platform API type.
- * 
- * @def PAL_PLATFORM_API_TYPE_COCOA
- * Cocoa platform API type.
- * 
- * @def PAL_PLATFORM_API_TYPE_ANDRIOD
- * Andriod platform API type.
- * 
- * @def PAL_PLATFORM_API_TYPE_UIKIT
- * UIKIT platform API type.
- * 
- * @def PAL_PLATFORM_API_TYPE_HEADLESS
- * Headless platform API type.
- * 
- * @def PAL_PLATFORM_API_TYPE_COUNT
- * The number of platform API types. The literal value must not be used.
  */
 typedef uint32_t PalPlatformApiType;
 
