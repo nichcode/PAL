@@ -1268,7 +1268,7 @@ PAL_API void PAL_CALL palFlashWindow(
  */
 PAL_API void PAL_CALL palGetWindowStyle(
     PalWindow* window,
-    PalWindowStyle* outStyle);
+    PalWindowStyle* style);
 
 /**
  * @brief Gets the monitor the window is currently on.
@@ -1860,7 +1860,7 @@ PAL_API void* PAL_CALL palGetInstance();
  */
 PAL_API PalResult PAL_CALL palAttachWindow(
     void* windowHandle,
-    PalWindow** outWindow);
+    PalWindow** window);
 
 /**
  * @brief Detachs a foreign or native window from PAL video system.

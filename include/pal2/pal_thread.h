@@ -599,6 +599,10 @@ PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condVar);
  *
  * @param[in] condVar The condition variable.
  * @param[in] mutex The mutex.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ * failure. Call `palFormatResult()` to get the string representation of
+ * the result value.
  *
  * @Thread-safety Thread safe.
  *
@@ -620,6 +624,10 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
  * @param[in] condVar The condition variable.
  * @param[in] mutex The mutex.
  * @param[in] milliseconds Timeout in milliseconds.
+ * 
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ * failure. Call `palFormatResult()` to get the string representation of
+ * the result value.
  *
  * @Thread-safety Thread safe.
  *
