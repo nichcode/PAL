@@ -27,10 +27,9 @@
  */
 
 /**
- * @defgroup pal_core Core
+ * @defgroup pal_core Core Module
+ * @{
  */
-
-/** @{ */
 
 #ifndef PAL_CORE_H
 #define PAL_CORE_H
@@ -39,11 +38,9 @@
 #include <string.h>
 
 #ifndef __cplusplus
-/** @brief Represents `NULL`.*/
 #define nullptr ((void*)0)
 #endif // __cplusplus
 
-/** @cond SKIP_DOXYGEN */
 #ifdef __cplusplus
 #define PAL_EXTERN_C extern "C"
 #else
@@ -77,18 +74,27 @@
 #else
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
-/** @endcond */
 
-/** @brief Represents an infinite time period.*/
 #define PAL_INFINITE UINT32_MAX
-
-/** @brief Represents the maximum log buffer size.*/
 #define PAL_LOG_MSG_SIZE 4096
 
 #define PAL_TRUE 1
 #define PAL_FALSE 0
+
 #define PAL_RESULT_SUCCESS 0
 
+/**
+ * @defgroup result_codes Result Codes
+ * @brief These are the codes extracted from result values.
+ * 
+ * Each function defines its possible result codes and what it means.
+ * A function which takes a version struct parameter might set 
+ * `PAL_RESULT_CODE_INVALID_ARGUMENT` or `PAL_RESULT_CODE_INVALID_HANDLE`
+ * as the result code of the result value if the parameter is not valid.
+ * 
+ * @ingroup pal_core
+ * @{
+ */
 #define PAL_RESULT_CODE_NONE 0
 #define PAL_RESULT_CODE_INVALID_ARGUMENT 1
 #define PAL_RESULT_CODE_OUT_OF_MEMORY 2
@@ -100,7 +106,24 @@
 #define PAL_RESULT_CODE_DEVICE_LOST 8
 #define PAL_RESULT_CODE_OUT_OF_DATE 9
 #define PAL_RESULT_CODE_COUNT 10
+/** @} */
 
+/**
+ * @defgroup result_sources Result Sources
+ * @brief These are the native code sources extracted from result values.
+ * 
+ * The result source shows where the native code was retrieved.
+ * 
+ * `PAL_RESULT_SOURCE_NONE` - There is no result source. @nl
+ * `PAL_RESULT_SOURCE_WIN32` - The native code is from `GetLastError()`. @nl
+ * `PAL_RESULT_SOURCE_POSIX` - The native code is from `errno`. @nl
+ * `PAL_RESULT_SOURCE_EGL` - The native code is from `eglGetError()`. @nl
+ * `PAL_RESULT_SOURCE_VULKAN` - The native code is from `VkResult`. @nl
+ * `PAL_RESULT_SOURCE_D3D12` - The native code is from `HRESULT`. @nl
+ * `PAL_RESULT_SOURCE_METAL` - The native code is from `NSError`.
+ * @ingroup pal_core
+ * @{
+ */
 #define PAL_RESULT_SOURCE_NONE 0
 #define PAL_RESULT_SOURCE_WIN32 1
 #define PAL_RESULT_SOURCE_POSIX 2
@@ -114,13 +137,9 @@
  * @typedef PalBool
  * @brief A boolean type.
  * 
+ * Must be set to either `PAL_TRUE`/`1` or `PAL_FALSE`/`0` .
+ * 
  * @since Added in version 2.0
- * 
- * @def PAL_TRUE
- * Represents `true` or `1`.
- * 
- * @def PAL_FALSE
- * Represents `false` or `0`.
  */
 typedef uint32_t PalBool;
 
@@ -131,17 +150,12 @@ typedef uint32_t PalBool;
  * This value constains the PAL result code, the result source and
  * the native code itself. If a function completed successfully, it returns
  * `PAL_RESULT_SUCCESS`.
- *
- * All values of this type follow the format `PAL_RESULT_*` for API consistency
- * and ease of use.
+ * 
+ * This is the only value that can be checked directly with standard checks.
+ * 
+ * (eg. result == `PAL_RESULT_SUCCESS`).
  * 
  * @since Added in version 2.0
- * 
- * @def PAL_RESULT_SUCCESS
- * The operation completed successfully.
- * This is returned by a function if it was successful without any errors. @nl 
- * This is the only value that can be checked directly with standard checks. @nl
- * (eg. result == `PAL_RESULT_SUCCESS`).
  */
 typedef uint64_t PalResult;
 
@@ -157,45 +171,13 @@ typedef uint64_t PalResult;
  *
  * @since Added in version 2.0
  * @sa palGetResultCode
- * 
- * @def PAL_RESULT_CODE_NONE
- * The result value contains no result code.
- * 
- * @def PAL_RESULT_CODE_INVALID_ARGUMENT
- * The supplied argument is invalid.
- * 
- * @def PAL_RESULT_CODE_OUT_OF_MEMORY
- * Memory allocation failed.
- * 
- * @def PAL_RESULT_CODE_PLATFORM_FAILURE
- * The operation failed due to a platform specific error.
- * 
- * @def PAL_RESULT_CODE_TIMEOUT
- * The operation did not complete within the specified time.
- * 
- * @def PAL_RESULT_CODE_INVALID_HANDLE
- * The supplied handle is invalid.
- * 
- * @def PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
- * The requested feature or feature used is not supported.
- * 
- * @def PAL_RESULT_CODE_INVALID_OPERATION
- * The operation performed is invalid for the context.
- * 
- * @def PAL_RESULT_CODE_DEVICE_LOST
- * The device has been lost.
- * 
- * @def PAL_RESULT_CODE_OUT_OF_DATE
- * The supplied handle is out of date.
- * 
- * @def PAL_RESULT_CODE_COUNT
- * The number of result codes. The literal value must not be used.
  */
 typedef uint16_t PalResultCode;
 
 /**
  * @typedef PalResultSource
  * @brief Result sources from a result value.
+ * 
  * The result source of a `PAL_RESULT_SUCCESS` value will always be
  * `PAL_RESULT_SOURCE_NONE`.
 
@@ -204,30 +186,6 @@ typedef uint16_t PalResultCode;
  * 
  * @since Added in version 2.0
  * @sa palGetResultSource
- * 
- * @def PAL_RESULT_SOURCE_NONE
- * The result value contains no result native code.
- * 
- * @def PAL_RESULT_SOURCE_WIN32
- * Result native code is from win32 `GetLastError()`.
- * 
- * @def PAL_RESULT_SOURCE_POSIX
- * Result native code is from posix `errno`.
- * 
- * @def PAL_RESULT_SOURCE_EGL
- * Result native code is from egl `eglGetError()`.
- * 
- * @def PAL_RESULT_SOURCE_VULKAN
- * Result native code is from vulkan `VkResult`.
- * 
- * @def PAL_RESULT_SOURCE_D3D12
- * Result native code is from D3D12 `HRESULT`.
- * 
- * @def PAL_RESULT_SOURCE_METAL
- * Result native code is from metal `NSError`.
- * 
- * @def PAL_RESULT_SOURCE_COUNT
- * The number of result sources. The literal value must not be used.
  */
 typedef uint16_t PalResultSource;
 
@@ -251,6 +209,11 @@ typedef struct PalLibrary PalLibrary;
 
 /**
  * @brief Function pointer type used for memory allocations.
+ * 
+ * The function signature should look like this:
+ * @code
+ * void* PAL_CALL alloc(void* userData, uint64_t size, uint64_t alignment);
+ * @endcode
  *
  * The callback must allocate atleast `size` with the requested
  * `alignment` or return `nullptr` if the allocation failed.
@@ -268,8 +231,7 @@ typedef struct PalLibrary PalLibrary;
  * If a PAL function which uses the callback fails, it will deallocate the
  * memory it allocated using the same alloator's free callback.
  *
- * @param[in] userData User data passed from `PalAllocator::userData`.
- * Can be `nullptr`.
+ * @param[in] userData User data passed from the allocator. Can be `nullptr`.
  * @param[in] size Number of bytes to allocate.
  * @param[in] alignment The alignment.
  *
@@ -285,13 +247,17 @@ typedef void*(PAL_CALL* PalAllocateFn)(
 
 /**
  * @brief Function pointer type used for memory deallocations.
+ * 
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL free(void* userData, void* ptr);
+ * @endcode
  *
  * The memory must have been allocated by the corresponding allocation
  * callback and must not have been deallocated. The callback will not
  * be called if the `ptr` is `nullptr`.
  *
- * @param[in] userData User data passed from `PalAllocator::userData`.
- * Can be `nullptr`.
+ * @param[in] userData User data passed from the allocator. Can be `nullptr`.
  * @param[in] ptr The memory to free.
  *
  * @since Added in version 2.0
@@ -303,6 +269,11 @@ typedef void(PAL_CALL* PalFreeFn)(
 
 /**
  * @brief Function pointer type used for log callbacks.
+ * 
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL logCallback(void* userData, const char* msg);
+ * @endcode
  *
  * The message is only valid for the duration of the callback and must not be
  * modified or freed by the callback, the memory is owned by PAL.
@@ -311,8 +282,7 @@ typedef void(PAL_CALL* PalFreeFn)(
  * must be thread safe if the same callback is used by multiple threads or a
  * seperate callback must be provided for each thread.
  *
- * @param userData User data passed from `PalLogger::userData`. Can be
- * `nullptr`.
+ * @param userData User data passed from the logger. Can be `nullptr`.
  * @param msg Null-terminated UTF-8 log message.
  *
  * @since Added in version 2.0
@@ -392,7 +362,7 @@ typedef struct PalAllocator
  * The function to forward log messages to. Must not be `nullptr`.
  * 
  * @var PalLogger::userData
- * User data passed to allocate and free function. Can be `nullptr`.
+ * User data passed to the callback. Can be `nullptr`.
  */
 typedef struct PalLogger 
 {
