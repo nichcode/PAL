@@ -6,6 +6,7 @@
     <tab type="mainpage" visible="yes" title="Introduction"/>
     <tab type="usergroup" visible="yes" url="@ref guides" title="Guides">
       <tab type="user" visible="yes" url="@ref getting_started" title="Getting Started"/>
+      <tab type="user" visible="yes" url="@ref event_payload" title="Event Payload"/>
       <tab type="user" visible="yes" url="@ref migrating_vulkan" title="Migrating Vulkan"/>
       <tab type="user" visible="yes" url="@ref migrating_d3d12" title="Migrating D3D12"/>
     </tab>

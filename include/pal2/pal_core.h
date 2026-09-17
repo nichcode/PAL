@@ -3,7 +3,7 @@
  * @file pal_core.h
  * @brief This is the header file for PAL Core API.
  *
- * It defines all the types and functions of the core system.
+ * It defines all the types and functions of the core module.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -85,14 +85,13 @@
 
 /**
  * @defgroup result_codes Result Codes
- * @brief These are the codes extracted from result values.
+ * @brief Result codes extracted from result values.
  * 
  * Each function defines its possible result codes and what it means.
  * A function which takes a version struct parameter might set 
  * `PAL_RESULT_CODE_INVALID_ARGUMENT` or `PAL_RESULT_CODE_INVALID_HANDLE`
  * as the result code of the result value if the parameter is not valid.
  * 
- * @ingroup pal_core
  * @{
  */
 #define PAL_RESULT_CODE_NONE 0
@@ -110,7 +109,7 @@
 
 /**
  * @defgroup result_sources Result Sources
- * @brief These are the native code sources extracted from result values.
+ * @brief Result sources extracted from result values.
  * 
  * The result source shows where the native code was retrieved.
  * 
@@ -121,7 +120,7 @@
  * `PAL_RESULT_SOURCE_VULKAN` - The native code is from `VkResult`. @nl
  * `PAL_RESULT_SOURCE_D3D12` - The native code is from `HRESULT`. @nl
  * `PAL_RESULT_SOURCE_METAL` - The native code is from `NSError`.
- * @ingroup pal_core
+ * 
  * @{
  */
 #define PAL_RESULT_SOURCE_NONE 0
@@ -132,6 +131,7 @@
 #define PAL_RESULT_SOURCE_D3D12 5
 #define PAL_RESULT_SOURCE_METAL 6
 #define PAL_RESULT_SOURCE_COUNT 7
+/** @} */
 
 /**
  * @typedef PalBool

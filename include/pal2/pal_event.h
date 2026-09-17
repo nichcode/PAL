@@ -2,7 +2,7 @@
  * @file pal_event.h
  * @brief This is the header file for PAL Event API.
  *
- * It defines all the types and functions of the event system.
+ * It defines all the types and functions of the event module.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,23 +26,37 @@
  */
 
 /**
- * @defgroup pal_event Event
+ * @defgroup pal_event Event Module
+ * @{
  */
-
-/** @{ */
 
 #ifndef PAL_EVENT_H
 #define PAL_EVENT_H
 
 #include "pal2/pal_core.h"
 
-/** The maximum number of events the default queue that contain.*/
 #define PAL_DEFAULT_QUEUE_EVENT_COUNT 512
 
+/**
+ * @defgroup decoration_modes Decoration Modes
+ * @brief Decoration modes for `PAL_EVENT_TYPE_WINDOW_DECORATION_MODE` event.
+ * 
+ * @{
+ */
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0
 #define PAL_DECORATION_MODE_SERVER_SIDE 1
 #define PAL_DECORATION_MODE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup event_types Event Types
+ * @brief Event types.
+ * 
+ * See [Event Payload](@ref event_payload) for how to get the payload for each
+ * event type.
+ * 
+ * @{
+ */
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1
 #define PAL_EVENT_TYPE_WINDOW_MOVE 2
@@ -65,11 +79,23 @@
 #define PAL_EVENT_TYPE_KEYCHAR 19
 #define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20
 #define PAL_EVENT_TYPE_COUNT 21
+/** @} */
 
+/**
+ * @defgroup dispatch_modes Dispatch Modes
+ * @brief Dispatch modes for events.
+ * 
+ * `PAL_DISPATCH_MODE_NONE` Disables the event. @nl
+ * `PAL_DISPATCH_MODE_CALLBACK` Dispatches the event to the callback. @nl
+ * `PAL_DISPATCH_MODE_POLL` Dispatches the event to the queue. @nl
+ * 
+ * @{
+ */
 #define PAL_DISPATCH_MODE_NONE 0
 #define PAL_DISPATCH_MODE_CALLBACK 1
 #define PAL_DISPATCH_MODE_POLL 2
 #define PAL_DISPATCH_MODE_COUNT 3
+/** @} */
 
 /**
  * @struct PalEventDriver
@@ -83,57 +109,35 @@ typedef struct PalEventDriver PalEventDriver;
  * @struct PalEvent
  * @brief A single event.
  * 
- * The payloads are packed in the `data` and `data2` field of the struct.
+ * The payloads are packed in the `::data` and `::data2` field of the struct.
  * 
  * User events defined how their payloads are packed.
  * 
- * Each event type determines how its information is packed. See 
- * @ref PalEventType for more information.
- * 
- * @since Added in version 2.0
- * @sa palPackInt32 
- * @sa palPackUint32 
- * @sa palPackFloat 
- * @sa palPackPointer 
- * @sa palUnpackInt32 
- * @sa palUnpackUint32
- * @sa palUnpackFloat 
- * @sa palUnpackPointer
- * 
  * @var PalEvent::data
- * The first payload. The data is defined by `PalEvent::type`.
+ * The first payload. The data is defined by `::type`.
  * 
  * @var PalEvent::data2
- * The second payload. The data is defined by `PalEvent::type`.
+ * The second payload. The data is defined by `::type`.
  * 
  * @var PalEvent::userId
  * An additional payload for `PAL_EVENT_TYPE_USER` events. 
  * This is not used by the other event types.
  * 
  * @var PalEvent::type
- * The event type. This defines how data is a laid out in `PalEvent::data`
- * and `PalEvent::data2`. User events are excluded since users defined the @nl
+ * The event type. This defines how data is a laid out in `::data`
+ * and `::data2`. User events are excluded since users defined the @nl
  * payload structure.
  */
 typedef struct PalEvent PalEvent;
 
 /**
  * @typedef PalDecorationMode
- * @brief Window decoration modes.
+ * @brief Decoration modes.
  * 
  * All values of this type follow the format `PAL_DECORATION_MODE_*` for API
  * consistency and ease of use.
  * 
  * @since Added in version 2.0
- * 
- * @def PAL_DECORATION_MODE_CLIENT_SIDE
- * Window decoration must be handled by the client.
- * 
- * @def PAL_DECORATION_MODE_SERVER_SIDE
- * Window decoration will be handled by the server.
- * 
- * @def PAL_DECORATION_MODE_COUNT
- * The number of decoration modes. The literal value must not be used.
  */
 typedef uint32_t PalDecorationMode;
 
@@ -145,112 +149,6 @@ typedef uint32_t PalDecorationMode;
  * consistency and ease of use.
  * 
  * @since Added in version 2.0
- * 
- * @def PAL_EVENT_TYPE_WINDOW_CLOSE
- * See below for how to get the payload.
- * `event.data`: unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_WINDOW_SIZE
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - width, bits 32-63 - height @nl
- * `event.data2`: window
- * 
- *  @def PAL_EVENT_TYPE_WINDOW_MOVE
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - x, bits 32-63 - y @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_WINDOW_STATE
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - state, bits 32-63 - unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_WINDOW_FOCUS
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - focus, bits 32-63 - unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_WINDOW_VISIBILITY
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - visibility, bits 32-63 - unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN
- * See below for how to get the payload.
- * `event.data`: unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_WINDOW_MODAL_END
- * See below for how to get the payload.
- * `event.data`: unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_MONITOR_DPI_CHANGED
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - dpi, bits 32-63 - unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_MONITOR_LIST_CHANGED
- * See below for how to get the payload.
- * `event.data`: unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_KEYDOWN
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - keycode, bits 32-63 - scancode @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_KEYREPEAT
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - keycode, bits 32-63 - scancode @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_KEYUP
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - keycode, bits 32-63 - scancode @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_MOUSE_BUTTONDOWN
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - button, bits 32-63 - serial @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_MOUSE_BUTTONUP
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - button, bits 32-63 - serial @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_MOUSE_MOVE
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - x, bits 32-63 - y @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_MOUSE_DELTA
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - dx, bits 32-63 - dy @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_MOUSE_WHEEL
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - dx, bits 32-63 - dy @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_USER
- * User defines payload.
- * 
- * @def PAL_EVENT_TYPE_KEYCHAR
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - codepoint, bits 32-63 - unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_WINDOW_DECORATION_MODE
- * See below for how to get the payload.
- * `event.data`: bits 0-31 - decoration mode, bits 32-63 - unused @nl
- * `event.data2`: window
- * 
- * @def PAL_EVENT_TYPE_COUNT
- * The number of event types. The literal value must not be used.
  */
 typedef uint32_t PalEventType;
 
@@ -262,18 +160,6 @@ typedef uint32_t PalEventType;
  * consistency and ease of use.
  * 
  * @since Added in version 2.0
- * 
- * @def PAL_DISPATCH_MODE_NONE
- * The event will be discarded.
- * 
- * @def PAL_DISPATCH_MODE_CALLBACK
- * The event will be push to the event callback.
- * 
- * @def PAL_DISPATCH_MODE_POLL
- * The event will be pushed to the event queue.
- * 
- * @def PAL_DISPATCH_MODE_COUNT
- * The number of dispatch modes. The literal value must not be used.
  */
 typedef uint32_t PalDispatchMode;
 
@@ -281,14 +167,18 @@ typedef uint32_t PalDispatchMode;
  * @typedef PalEventCallback
  * @brief Function pointer type used for event callbacks.
  * 
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL eventCallback(void* userData, const PalEvent* event);
+ * @endcode
+ * 
  * The event is only valid for the duration of the callback and must not be
  * modified or freed by the callback, the memory is owned by PAL.
  * 
  * The callback must be thread-safe if the event driver that uses it
  * is thread-safe.
  *
- * @param[in] userData User data passed from 
- * `PalEventDriverCreateInfo::userData`. Can be `nullptr`.
+ * @param[in] userData User data passed. Can be `nullptr`.
  * @param[in] event The event.
  *
  * @since Added in version 2.0
@@ -302,6 +192,11 @@ typedef void(PAL_CALL* PalEventCallback)(
  * @typedef PalPushFn
  * @brief Function pointer type used for pushing events.
  * 
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL queuePush(void* userData, PalEvent* event);
+ * @endcode
+ * 
  * This callback must respect the dispatch mode 
  * (eg.`PAL_DISPATCH_MODE_CALLBACK`) of the event and push the event 
  * accordingly. If the dispatch mode of the event is callback and the
@@ -310,8 +205,7 @@ typedef void(PAL_CALL* PalEventCallback)(
  * If the dispatch mode is `PAL_DISPATCH_MODE_NONE`, the event must be 
  * discarded.
  *
- * @param[in] userData User data passed from `PalEventQueue::userData`.
- * Can be `nullptr`.
+ * @param[in] userData User data passed from the queue. Can be `nullptr`.
  * @param[in] event Pointer to the event to push. This will always be valid.
  *
  * @since Added in version 2.0
@@ -325,6 +219,11 @@ typedef void(PAL_CALL* PalPushFn)(
  * @typedef PalPollFn
  * @brief Function pointer type used for polling events from event queues.
  * 
+ * The function signature should look like this:
+ * @code
+ * PalBool PAL_CALL queuePoll(void* userData, PalEvent* event);
+ * @endcode
+ * 
  * The polled event is only valid for the duration of the callback and must
  * not be modified or freed by the callback, the memory is owned by PAL.
  *
@@ -333,8 +232,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * If the event queue is not empty and the event was retrieved, the callback
  * must return `PAL_TRUE`.
  *
- * @param[in] userData User data passed from `PalEventQueue::userData`.
- * Can be `nullptr`.
+ * @param[in] userData User data passed from the queue. Can be `nullptr`.
  * @param[out] event The output struct to recieve the event.
  *
  * @since Added in version 2.0
