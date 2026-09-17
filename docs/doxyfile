@@ -890,6 +890,14 @@ WARN_NO_PARAMDOC       = YES
 
 WARN_IF_UNDOC_ENUM_VAL = NO
 
+# If WARN_LAYOUT_FILE option is set to YES, Doxygen will warn about issues found
+# while parsing the user defined layout file, such as missing or wrong elements.
+# See also LAYOUT_FILE for details. If set to NO, problems with the layout file
+# will be suppressed.
+# The default value is: YES.
+
+WARN_LAYOUT_FILE       = YES
+
 # If the WARN_AS_ERROR tag is set to YES then Doxygen will immediately stop when
 # a warning is encountered. If the WARN_AS_ERROR tag is set to FAIL_ON_WARNINGS
 # then Doxygen will continue running as if WARN_AS_ERROR tag is set to NO, but
@@ -1699,6 +1707,16 @@ GENERATE_TREEVIEW      = YES
 # GENERATE_TREEVIEW is set to NO, this option has no effect.
 # The default value is: NO.
 # This tag requires that the tag GENERATE_HTML is set to YES.
+
+# When GENERATE_TREEVIEW is set to YES, the PAGE_OUTLINE_PANEL option determines
+# if an additional navigation panel is shown at the right hand side of the
+# screen, displaying an outline of the contents of the main page, similar to
+# e.g. https://developer.android.com/reference If GENERATE_TREEVIEW is set to
+# NO, this option has no effect.
+# The default value is: YES.
+# This tag requires that the tag GENERATE_HTML is set to YES.
+
+PAGE_OUTLINE_PANEL     = YES
 
 FULL_SIDEBAR           = NO
 

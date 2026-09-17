@@ -1441,7 +1441,7 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * @param[in] dx The output to recieve the x wheel delta. Can be `nullptr`.
  * @param[in] dy The output to recieve the y wheel delta. Can be `nullptr`.
  *
- * @Thread-safety dx` and `dy` must be per thread.
+ * @Thread-safety `dx` and `dy` must be per thread.
  *
  * @since Added in version 2.0
  */
