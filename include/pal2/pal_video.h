@@ -2,7 +2,7 @@
  * @file pal_video.h
  * @brief This is the header file for PAL Video API.
  *
- * It defines all the types and functions of the video system.
+ * It defines all the types and functions of the video module.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,19 +26,23 @@
  */
 
 /**
- * @defgroup pal_video Video
+ * @defgroup pal_video Video Module
+ * @{
  */
-
-/** @{ */
 
 #ifndef PAL_VIDEO_H
 #define PAL_VIDEO_H
 
 #include "pal_core.h"
 
-/** The maximum monitor name size.*/
 #define PAL_MONITOR_NAME_SIZE 32
 
+/**
+ * @defgroup video_features Video Features
+ * @brief Video features.
+ * 
+ * @{
+ */
 #define PAL_VIDEO_FEATURE_HIGH_DPI (1ULL << 0)
 #define PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION (1ULL << 1)
 #define PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION (1ULL << 2)
@@ -79,13 +83,27 @@
 #define PAL_VIDEO_FEATURE_FOREIGN_WINDOWS (1ULL << 37)
 #define PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE (1ULL << 38)
 #define PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR (1ULL << 39)
+/** @} */
 
+/**
+ * @defgroup orientations Monitor Orientations
+ * @brief Monitor orientations
+ * 
+ * @{
+ */
 #define PAL_ORIENTATION_LANDSCAPE 0
 #define PAL_ORIENTATION_PORTRAIT 1
 #define PAL_ORIENTATION_LANDSCAPE_FLIPPED 2
 #define PAL_ORIENTATION_PORTRAIT_FLIPPED 3
 #define PAL_ORIENTATION_COUNT 4
+/** @} */
 
+/**
+ * @defgroup window_styles Window Styles
+ * @brief Window Styles.
+ * 
+ * @{
+ */
 #define PAL_WINDOW_STYLE_RESIZABLE (1U << 0)
 #define PAL_WINDOW_STYLE_TRANSPARENT (1U << 1)
 #define PAL_WINDOW_STYLE_TOPMOST (1U << 2)
@@ -93,23 +111,51 @@
 #define PAL_WINDOW_STYLE_NO_MAXIMIZEBOX (1U << 4)
 #define PAL_WINDOW_STYLE_TOOL (1U << 5)
 #define PAL_WINDOW_STYLE_BORDERLESS (1U << 6)
+/** @} */
 
+/**
+ * @defgroup window_states Window States
+ * @brief Window States
+ * 
+ * @{
+ */
 #define PAL_WINDOW_STATE_NORMAL 0
 #define PAL_WINDOW_STATE_MAXIMIZED 1
 #define PAL_WINDOW_STATE_MINIMIZED 2
 #define PAL_WINDOW_STATE_RESTORED 3
 #define PAL_WINDOW_STATE_COUNT 4
+/** @} */
 
+/**
+ * @defgroup flash_flags Flash Flags
+ * @brief Flash Flash
+ * 
+ * @{
+ */
 #define PAL_FLASH_FLAG_STOP 0
 #define PAL_FLASH_FLAG_CAPTION (1U << 0)
 #define PAL_FLASH_FLAG_TRAY (1U << 1)
+/** @} */
 
+/**
+ * @defgroup fbconfig_backend FBConfig Backend
+ * @brief FBConfig Backend
+ * 
+ * @{
+ */
 #define PAL_FBCONFIG_BACKEND_PAL_OPENGL 0
 #define PAL_FBCONFIG_BACKEND_EGL 1
 #define PAL_FBCONFIG_BACKEND_GLX 2
 #define PAL_FBCONFIG_BACKEND_WGL 3
 #define PAL_FBCONFIG_BACKEND_COUNT 4
+/** @} */
 
+/**
+ * @defgroup scancodes Keyboard Scancodes
+ * @brief Keyboard scancodes
+ * 
+ * @{
+ */
 #define PAL_SCANCODE_UNKNOWN 0
 #define PAL_SCANCODE_A 1
 #define PAL_SCANCODE_B 2
@@ -217,7 +263,14 @@
 #define PAL_SCANCODE_LSUPER 104
 #define PAL_SCANCODE_RSUPER 105
 #define PAL_SCANCODE_COUNT 106
+/** @} */
 
+/**
+ * @defgroup keycodes Keyboard Keycodes
+ * @brief Keyboard Keycodes
+ * 
+ * @{
+ */
 #define PAL_KEYCODE_UNKNOWN 0
 #define PAL_KEYCODE_A 1
 #define PAL_KEYCODE_B 2
@@ -325,7 +378,14 @@
 #define PAL_KEYCODE_LSUPER 104
 #define PAL_KEYCODE_RSUPER 105
 #define PAL_KEYCODE_COUNT 106
+/** @} */
 
+/**
+ * @defgroup mouse_buttons Mouse Buttons
+ * @brief Mouse Buttons
+ * 
+ * @{
+ */
 #define PAL_MOUSE_BUTTON_UNKNOWN 0
 #define PAL_MOUSE_BUTTON_LEFT 1
 #define PAL_MOUSE_BUTTON_RIGHT 2
@@ -333,13 +393,21 @@
 #define PAL_MOUSE_BUTTON_X1 4
 #define PAL_MOUSE_BUTTON_X2 5
 #define PAL_MOUSE_BUTTON_COUNT 6
+/** @} */
 
+/**
+ * @defgroup cursor_types Cursor Types
+ * @brief Cursor Types
+ * 
+ * @{
+ */
 #define PAL_CURSOR_TYPE_ARROW 0
 #define PAL_CURSOR_TYPE_HAND 1
 #define PAL_CURSOR_TYPE_CROSS 2
 #define PAL_CURSOR_TYPE_IBEAM 3
 #define PAL_CURSOR_TYPE_WAIT 4
 #define PAL_CURSOR_TYPE_COUNT 5
+/** @} */
 
 /**
  * @struct PalEventDriver
@@ -391,128 +459,6 @@ typedef struct PalCursor PalCursor;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_VIDEO_FEATURE_HIGH_DPI
- * The video system supports high dpi windows.
- * 
- * @def PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION
- * The video system supports setting monitor orientation.
- * 
- * @def PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION
- * The video system supports getting monitor orientation.
- * 
- * @def PAL_VIDEO_FEATURE_BORDERLESS_WINDOW
- * The video system supports borderless windows.
- * 
- * @def PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW
- * The video system supports transparent windows.
- * 
- * @def PAL_VIDEO_FEATURE_TOOL_WINDOW
- * The video system supports tool windows.
- * 
- * @def PAL_VIDEO_FEATURE_MONITOR_SET_MODE
- * The video system supports setting monitor display mode.
- * 
- * @def PAL_VIDEO_FEATURE_MONITOR_GET_MODE
- * The video system supports getting monitor display mode.
- * 
- * @def PAL_VIDEO_FEATURE_MULTI_MONITORS
- * The video system supports multiple monitors.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_SIZE
- * The video system supports setting window size dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_SIZE
- * The video system supports getting window size dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_POS
- * The video system supports setting window position dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_POS
- * The video system supports getting window position dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_STATE
- * The video system supports setting window state dynamically.
- * (eg. maximize, minimize etc).
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_STATE
- * The video system supports getting window state dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY
- * The video system supports setting window visibility dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY
- * The video system supports getting window visibility dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_TITLE
- * The video system supports setting window title dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_TITLE
- * The video system supports getting window title dynamically.
- * 
- * @def PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX
- * The video system supports windows without maximize box.
- * 
- * @def PAL_VIDEO_FEATURE_NO_MINIMIZEBOX
- * The video system supports windows without minimize box.
- * 
- * @def PAL_VIDEO_FEATURE_CLIP_CURSOR
- * The video system supports cursor clipping.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION
- * The video system supports flash caption (titlebar) flag.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY
- * The video system supports flash tray (taskbar icon) flag.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL
- * The video system supports explicit flash intervals.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS
- * The video system supports setting the input focus window.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS
- * The video system supports getting the input focus window.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_STYLE
- * The video system supports setting window style.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_STYLE
- * The video system supports getting window style.
- * 
- * @def PAL_VIDEO_FEATURE_CURSOR_SET_POS
- * The video system supports setting cursor position.
- * 
- * @def PAL_VIDEO_FEATURE_CURSOR_GET_POS
- * The video system supports getting cursor position.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_ICON
- * The video system supports setting window icon.
- * 
- * @def PAL_VIDEO_FEATURE_TOPMOST_WINDOW
- * The video system supports topmost windows.
- * 
- * @def PAL_VIDEO_FEATURE_DECORATED_WINDOW
- * The video system supports decorated windows.
- * 
- * @def PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY
- * The video system supports setting cursor visibility
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR
- * The video system supports getting window monitor.
- * 
- * @def PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY
- * The video system supports getting primary monitor.
- * 
- * @def PAL_VIDEO_FEATURE_FOREIGN_WINDOWS
- * The video system supports foreign windows.
- * (eg. attaching and detaching foreign windows).
- * 
- * @def PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE
- * The video system supports monitor mode validation.
- * 
- * @def PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR
- * The video system supports setting window cursor.
  */
 typedef uint64_t PalVideoFeatures;
 
@@ -524,21 +470,6 @@ typedef uint64_t PalVideoFeatures;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_ORIENTATION_LANDSCAPE
- * The monitor orientation is landscape.
- * 
- * @def PAL_ORIENTATION_PORTRAIT
- * The monitor orientation is portrait.
- * 
- * @def PAL_ORIENTATION_LANDSCAPE_FLIPPED
- * The monitor orientation is landscape flipped.
- * 
- * @def PAL_ORIENTATION_PORTRAIT_FLIPPED
- * The monitor orientation is portrait flipped.
- * 
- * @def PAL_ORIENTATION_COUNT
- * The number of orientations. The literal value must not be used.
  */
 typedef uint32_t PalOrientation;
 
@@ -552,33 +483,6 @@ typedef uint32_t PalOrientation;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_WINDOW_STYLE_RESIZABLE
- * The window is resizable.
- * 
- * @def PAL_WINDOW_STYLE_TRANSPARENT
- * The window is transparent.
- * `PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW` must be supported.
- * 
- * @def PAL_WINDOW_STYLE_TOPMOST
- * The window is the topmost window.
- * `PAL_VIDEO_FEATURE_TOPMOST_WINDOW` must be supported.
- * 
- * @def PAL_WINDOW_STYLE_NO_MINIMIZEBOX
- * The window has no minimize box.
- * `PAL_VIDEO_FEATURE_NO_MINIMIZEBOX` must be supported.
- * 
- * @def PAL_WINDOW_STYLE_NO_MAXIMIZEBOX
- * The window has no maximize box.
- * `PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX` must be supported.
- * 
- * @def PAL_WINDOW_STYLE_TOOL
- * The window does not have a taskbar icon.
- * `PAL_VIDEO_FEATURE_TOOL_WINDOW` must be supported.
- * 
- * @def PAL_WINDOW_STYLE_BORDERLESS
- * The window has no decorations.
- * `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` must be supported.
  */
 typedef uint32_t PalWindowStyle;
 
@@ -590,21 +494,6 @@ typedef uint32_t PalWindowStyle;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_WINDOW_STATE_NORMAL
- * The window is in windowed state. This is different from restored state.
- * 
- * @def PAL_WINDOW_STATE_MAXIMIZED
- * The window is maximized.
- * 
- * @def PAL_WINDOW_STATE_MINIMIZED
- * The window is minimized.
- * 
- * @def PAL_WINDOW_STATE_RESTORED
- * The window is restored from either maximize or minimize state.
- * 
- * @def PAL_WINDOW_STATE_COUNT
- * The number of window states. The literal value must not be used.
  */
 typedef uint32_t PalWindowState;
 
@@ -620,17 +509,6 @@ typedef uint32_t PalWindowState;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_FLASH_FLAG_STOP
- * Stop the flash.
- * 
- * @def PAL_FLASH_FLAG_CAPTION
- * Flash the window titlebar.
- * `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must be supported.
- * 
- * @def PAL_FLASH_FLAG_TRAY
- * Flash the window taskbar icon.
- * `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` must be supported.
  */
 typedef uint32_t PalFlashFlags;
 
@@ -642,21 +520,6 @@ typedef uint32_t PalFlashFlags;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * 
- * @def PAL_FBCONFIG_BACKEND_PAL_OPENGL
- * The FBConfig came from PALs opengl system.
- * 
- * @def PAL_FBCONFIG_BACKEND_EGL
- * The FBConfig came from EGL backend.
- * 
- * @def PAL_FBCONFIG_BACKEND_GLX
- * The FBConfig came from GLX backend.
- * 
- * @def PAL_FBCONFIG_BACKEND_WGL
- * The FBConfig came from WGL backend.
- * 
- * @def PAL_FBCONFIG_BACKEND_COUNT
- * The number of fbconfig backends. The literal value must not be used.
  */
 typedef uint32_t PalFBConfigBackend;
 
