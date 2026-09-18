@@ -1118,7 +1118,7 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  *
  * @Thread-safety Must only be called from the main thread.
  *
- * @note On Wayland:
+ * @note On `Wayland`:
  *
  * - Creating non resizable windows is not supported. It will be ignored.
  *
@@ -1869,7 +1869,7 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  *
  * This function unregisters the window from PAL video system.
  * The window must not be owned by PAL otherwise the function fails
- * and return `PAL_RESULT_CODE_INVALID_HANDLE`.
+ * and sets the result code to `PAL_RESULT_CODE_INVALID_HANDLE`.
  *
  * Detaching the window does not destroy the window,
  * therefore destroying the window is the users responsibility.

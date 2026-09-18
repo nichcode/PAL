@@ -348,7 +348,7 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
 /**
  * @brief Destroys an event driver.
  *
- * @param[in] eventDriver The event driver to destroy.
+ * @param[in] eventDriver The event driver.
  *
  * @Thread-safety `eventDriver` must be externally synchronized.
  *
