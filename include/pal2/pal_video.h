@@ -593,7 +593,6 @@ typedef uint32_t PalCursorType;
  * 
  * @var PalMonitorInfo::orientation
  * The orientation of the monitor.
- * (eg. `PAL_ORIENTATION_LANDSCAPE`)
  * 
  * @var PalMonitorInfo::primary
  * `PAL_TRUE` if this is the primary monitor.
@@ -650,20 +649,20 @@ typedef struct PalMonitorMode
  * 
  * @var PalFlashInfo::flags
  * The flash flags. This is a bitmask.
- * `PAL_FLASH_FLAG_STOP` - Stop a flash operation. @nl
- * `PAL_FLASH_FLAG_CAPTION` - Flash the titlebar of a window. 
- * `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must be supported. @nl
- * `PAL_FLASH_FLAG_CAPTION` - Flash the taskbar icon of a window.
- * `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` must be supported.
+ * - `PAL_FLASH_FLAG_STOP:` stop a flash operation. @nl
+ * - `PAL_FLASH_FLAG_CAPTION:` flash the titlebar of a window.
+ *   `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` must be supported. @nl
+ * - `PAL_FLASH_FLAG_TRAY:` flash the taskbar icon of a window.
+ *   `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` must be supported. @nl
  * 
  * @var PalFlashInfo::interval
- * The flash interval in milliseconds. Set to `0` for default.
- * `PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL` must be supported @nl
- * if the interval is greater than `0`.
+ * The flash interval in milliseconds.
+ * If the interval is greater than `0`, @nl
+ * `PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL` must be supported.
  * 
  * @var PalFlashInfo::count
- * The number of times to flash. Set to `0` to flash until 
- * focused or cancelled.
+ * The number of times to flash. 
+ * Set to `0` to flash until focused or cancelled.
  */
 typedef struct PalFlashInfo
 {
@@ -741,15 +740,15 @@ typedef struct PalCursorCreateInfo
  * The platform (OS) handle of the window. Will always be valid.
  * 
  * @var PalWindowHandleInfo::nativeHandle1
- * First extra handle of the window. Can be `nullptr` if not available.
+ * First extra handle of the window. Will be `nullptr` if not available.
  * (eg. `xdgSurface` on Wayland).
  * 
  * @var PalWindowHandleInfo::nativeHandle2
- * Second extra handle of the window. Can be `nullptr` if not available.
+ * Second extra handle of the window. Will be `nullptr` if not available.
  * (eg. `xdgToplevel` on Wayland).
  * 
  * @var PalWindowHandleInfo::nativeHandle3
- * Third extra handle of the window. Can be `nullptr` if not available.
+ * Third extra handle of the window. Will be `nullptr` if not available.
  * (eg. `wl_egl_window` on Wayland).
  */
 typedef struct PalWindowHandleInfo
@@ -777,7 +776,7 @@ typedef struct PalWindowHandleInfo
  * Set to `nullptr` to use the primary or first monitor available.
  * 
  * @var PalWindowCreateInfo::appName
- * The window app name in `UTF-8` encoding. If `nullptr`, PAL will be used.
+ * The window app name in `UTF-8` encoding. If `nullptr`, "PAL" will be used.
  * 
  * @var PalWindowCreateInfo::instanceName
  * The window instance name in `UTF-8` encoding. 
@@ -803,19 +802,19 @@ typedef struct PalWindowHandleInfo
  * 
  * @var PalWindowCreateInfo::style
  * The window style. This is a bitmask.
- * `PAL_WINDOW_STYLE_RESIZABLE` - Create a resizable window. @nl
- * `PAL_WINDOW_STYLE_TOPMOST` - Create a topmost window. 
- * `PAL_VIDEO_FEATURE_TOPMOST_WINDOW` must be supported. @nl
- * `PAL_WINDOW_STYLE_TRANSPARENT` - Create a transparent window. 
- * `PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW` must be supported. @nl
- * `PAL_WINDOW_STYLE_NO_MINIMIZEBOX` - Create a window with no minimize box.
- * `PAL_VIDEO_FEATURE_NO_MINIMIZEBOX` must be supported. @nl
- * `PAL_WINDOW_STYLE_NO_MAXIMIZEBOX` - Create a window with no maximize box.
- * `PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX` must be supported. @nl
- * `PAL_WINDOW_STYLE_TOOL` - Create a tool window. 
- * `PAL_VIDEO_FEATURE_TOOL_WINDOW` must be supported. @nl
- * `PAL_WINDOW_STYLE_BORDERLESS` - Create a borderless window. 
- * `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` must be supported. @nl
+ * - `PAL_WINDOW_STYLE_RESIZABLE:` window is resizable. @nl
+ * - `PAL_WINDOW_STYLE_TOPMOST:` window is the topmost.
+ *   `PAL_VIDEO_FEATURE_TOPMOST_WINDOW` must be supported. @nl
+ * - `PAL_WINDOW_STYLE_TRANSPARENT:` window is transparent.
+ *   `PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW` must be supported. @nl
+ * - `PAL_WINDOW_STYLE_NO_MINIMIZEBOX:` window has no minimize box.
+ *   `PAL_VIDEO_FEATURE_NO_MINIMIZEBOX` must be supported. @nl
+ * - `PAL_WINDOW_STYLE_NO_MAXIMIZEBOX:` window has no maximize box.
+ *   `PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX` must be supported. @nl
+ * - `PAL_WINDOW_STYLE_TOOL:` window has no taskbar icon.
+ *   `PAL_VIDEO_FEATURE_TOOL_WINDOW` must be supported. @nl
+ * - `PAL_WINDOW_STYLE_BORDERLESS:` window has no decorations.
+ *   `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` must be supported. @nl
  * 
  * @var PalWindowCreateInfo::state
  * The initial window state. Set to `PAL_WINDOW_STATE_NORMAL` to create
@@ -860,8 +859,8 @@ typedef struct PalWindowCreateInfo
  * thread-safe default.
  * @param[in] eventDriver The event driver. If `nullptr`, the video system
  * will not process events.
- * @param[in] preferredInstance User provided instance 
- * (eg. HINSTANCE, wl_display, etc). Can be `nullptr`.
+ * @param[in] preferredInstance User instance or display (eg. `HINSTANCE`).
+ * Can be `nullptr`.
  *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
  * failure. Call `palFormatResult()` to get the string representation of

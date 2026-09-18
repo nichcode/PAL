@@ -107,11 +107,13 @@ typedef struct PalEventDriver PalEventDriver;
 
 /**
  * @struct PalEvent
- * @brief A single event.
+ * @brief Contains information about an event.
  * 
  * The payloads are packed in the `::data` and `::data2` field of the struct.
  * 
  * User events defined how their payloads are packed.
+ * 
+ * @since Added in version 2.0
  * 
  * @var PalEvent::data
  * The first payload. The data is defined by `::type`.
@@ -128,7 +130,13 @@ typedef struct PalEventDriver PalEventDriver;
  * and `::data2`. User events are excluded since users defined the @nl
  * payload structure.
  */
-typedef struct PalEvent PalEvent;
+typedef struct PalEvent
+{
+    uint64_t data;
+    uint64_t data2;
+    uint32_t userId;
+    PalEventType type;
+} PalEvent;
 
 /**
  * @typedef PalDecorationMode
@@ -243,14 +251,6 @@ typedef PalBool(PAL_CALL* PalPollFn)(
     void* userData,
     PalEvent* event);
 
-struct PalEvent 
-{
-    uint64_t data;
-    uint64_t data2;
-    uint32_t userId;
-    PalEventType type;
-};
-
 /**
  * @struct PalEventQueue
  * @brief Contains information about an event queue.
@@ -293,8 +293,8 @@ typedef struct PalEventQueue
  * thread-safe default.
  * 
  * @var PalEventDriverCreateInfo::queue
- * The event queue to use for `PAL_DISPATCH_MODE_POLL` event pushes. Set to
- * `nullptr` to use the default. The default event queue is not thread-safe.@nl
+ * The event queue to use for `PAL_DISPATCH_MODE_POLL` event pushes. 
+ * Set to `nullptr` to use the non thread-safe default. @nl
  * `PAL_DEFAULT_QUEUE_EVENT_COUNT` is the maximum events the default queue can
  * contain.
  * 

@@ -1,22 +1,40 @@
-
 /**
-    PAL - Prime Abstraction Layer
-    Copyright (C) 2025
-    Licensed under the Zlib license. See LICENSE file in root.
+ * @file pal_opengl.h
+ * @brief This is the header file for PAL Opengl API.
+ *
+ * It defines all the types and functions of the opengl module.
+ *
+ * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty.  In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ *
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ *
+ * 3. This notice may not be removed or altered from any source distribution.
  */
 
 /**
- * @defgroup pal_opengl Opengl
- * @ingroup pal_opengl
+ * @defgroup pal_opengl Opengl Module
  * @{
  */
 
-#ifndef _PAL_OPENGL_H
-#define _PAL_OPENGL_H
+#ifndef PAL_OPENGL_H
+#define PAL_OPENGL_H
 
 #include "pal_core.h"
 
-// Opengl API entry
 #ifdef _WIN32
 #define PAL_GL_APIENTRY __stdcall
 #else
@@ -27,6 +45,12 @@
 #define PAL_GL_GRAPHICS_CARD_NAME_SIZE 64
 #define PAL_GL_VERSION_NAME_SIZE 64
 
+/**
+ * @defgroup opengl_extensions OpenGl Extensions
+ * @brief OpenGl extensions.
+ * 
+ * @{
+ */
 #define PAL_GL_EXTENSION_CREATE_CONTEXT (1ULL << 0)
 #define PAL_GL_EXTENSION_CONTEXT_PROFILE (1ULL << 1)
 #define PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 (1ULL << 2)
@@ -37,30 +61,66 @@
 #define PAL_GL_EXTENSION_SWAP_CONTROL (1ULL << 7)
 #define PAL_GL_EXTENSION_FLUSH_CONTROL (1ULL << 8)
 #define PAL_GL_EXTENSION_COLORSPACE_SRGB (1ULL << 9)
+/** @} */
 
+/**
+ * @defgroup opengl_profiles OpenGl Profiles
+ * @brief OpenGl profiles
+ * 
+ * @{
+ */
 #define PAL_GL_PROFILE_NONE 0
 #define PAL_GL_PROFILE_CORE 1
 #define PAL_GL_PROFILE_COMPATIBILITY 2
 #define PAL_GL_PROFILE_ES 3
 #define PAL_GL_PROFILE_COUNT 4
+/** @} */
 
+/**
+ * @defgroup opengl_context_reset OpenGl Context Resets
+ * @brief OpenGl context resets
+ * 
+ * @{
+ */
 #define PAL_GL_CONTEXT_RESET_NONE 0
 #define PAL_GL_CONTEXT_RESET_NO_NOTIFICATION 1
 #define PAL_GL_CONTEXT_RESET_LOSE_CONTEXT 2
 #define PAL_GL_CONTEXT_RESET_COUNT 3
+/** @} */
 
+/**
+ * @defgroup opengl_release OpenGl Release Behaviors
+ * @brief OpenGl release behaviors
+ * 
+ * @{
+ */
 #define PAL_GL_RELEASE_BEHAVIOR_NONE 0
 #define PAL_GL_RELEASE_BEHAVIOR_FLUSH 1
 #define PAL_GL_RELEASE_BEHAVIOR_COUNT 2
+/** @} */
 
+/**
+ * @defgroup opengl_backend OpenGl Backends
+ * @brief OpenGl backends
+ * 
+ * @{
+ */
 #define PAL_GL_BACKEND_EGL 0
 #define PAL_GL_BACKEND_GLX 1
 #define PAL_GL_BACKEND_WGL 2
 #define PAL_GL_BACKEND_COUNT 3
+/** @} */
 
+/**
+ * @defgroup opengl_apis OpenGl APIs
+ * @brief OpenGl APIs
+ * 
+ * @{
+ */
 #define PAL_GL_API_OPENGL 0
 #define PAL_GL_API_OPENGL_ES 1
 #define PAL_GL_API_COUNT 2
+/** @} */
 
 /**
  * @struct PalGLContext
@@ -73,9 +133,12 @@ typedef struct PalGLContext PalGLContext;
 /**
  * @typedef PalGLExtensions
  * @brief Opengl system extensions.
- *
- * All opengl extensions follow the format `PAL_GL_EXTENSION_**` for
- * consistency and API use.
+ * 
+ * This is a bitmask of all supported extensions of the opengl system.
+ * The extensions are only for context creation.
+ * 
+ * All values of this type follow the format `PAL_GL_EXTENSION_*` for API
+ * consistency and ease of use.
  *
  * @since 2.0
  */
@@ -83,10 +146,10 @@ typedef uint64_t PalGLExtensions;
 
 /**
  * @typedef PalGLProfile
- * @brief Opengl context creation profiles. This is not a bitmask.
- *
- * All opengl profiles follow the format `PAL_GL_PROFILE_**` for
- * consistency and API use.
+ * @brief Opengl context creation profiles.
+ * 
+ * All values of this type follow the format `PAL_GL_PROFILE_*` for API
+ * consistency and ease of use.
  *
  * @since 2.0
  */
@@ -94,10 +157,10 @@ typedef uint32_t PalGLProfile;
 
 /**
  * @typedef PalGLContextReset
- * @brief Opengl context reset behavior. This is not a bitmask.
- *
- * All context reset behavior follow the format `PAL_GL_CONTEXT_RESET_**`
- * for consistency and API use.
+ * @brief Opengl context reset behavior.
+ * 
+ * All values of this type follow the format `PAL_GL_CONTEXT_RESET_*` for API
+ * consistency and ease of use.
  *
  * @since 2.0
  */
@@ -105,10 +168,10 @@ typedef uint32_t PalGLContextReset;
 
 /**
  * @typedef PalGLReleaseBehavior
- * @brief Opengl context release behavior. This is not a bitmask.
- *
- * All opengl context release behavior follow the format
- * `PAL_GL_RELEASE_BEHAVIOR_**` for consistency and API use.
+ * @brief Opengl context release behavior.
+ * 
+ * All values of this type follow the format `PAL_GL_RELEASE_BEHAVIOR_*` for
+ * API consistency and ease of use.
  *
  * @since 2.0
  */
@@ -116,9 +179,10 @@ typedef uint32_t PalGLReleaseBehavior;
 
 /**
  * @typedef PalGLBackend
- * @brief Opengl backend. This is not a bitmask.
- *
- * All opengl backends follow the format `PAL_GL_BACKEND_**` for consistency and API use.
+ * @brief Opengl backend.
+ * 
+ * All values of this type follow the format `PAL_GL_BACKEND_*` for API
+ * consistency and ease of use.
  *
  * @since 2.0
  */
@@ -126,9 +190,10 @@ typedef uint32_t PalGLBackend;
 
 /**
  * @typedef PalGLAPI
- * @brief Opengl api. This is not a bitmask.
- *
- * All opengl apis follow the format `PAL_GL_API_**` for consistency and API use.
+ * @brief Opengl apis.
+ * 
+ * All values of this type follow the format `PAL_GL_API_*` for API
+ * consistency and ease of use.
  *
  * @since 2.0
  */
@@ -136,101 +201,221 @@ typedef uint32_t PalGLAPI;
 
 /**
  * @struct PalGLInfo
- * @brief Information about the opengl driver.
+ * @brief Contains information about the opengl driver.
  *
  * @since 2.0
+ * 
+ * @var PalGLInfo::extensions
+ * A bitmask of all supported context creation extensions.
+ * 
+ * @var PalGLInfo::major
+ * The major version of the opengl driver.
+ * 
+ * @var PalGLInfo::minor
+ * The minor version of the opengl driver.
+ * 
+ * @var PalGLInfo::backend
+ * The backend of the opengl driver (eg `PAL_GL_BACKEND_WGL`).
+ * 
+ * @var PalGLInfo::api
+ * The API of the opengl driver (eg. `PAL_GL_API_OPENGL_ES`).
+ * 
+ * @var PalGLInfo::vendor
+ * The vendor name of the opengl driver.
+ * 
+ * @var PalGLInfo::graphicsCard
+ * The graphics card name of the opengl driver.
+ * 
+ * @var PalGLInfo::version
+ * The version of `::graphicsCard` in a string format.
  */
-typedef struct {
-    PalGLExtensions extensions;                        /**< Supported extensions.*/
-    uint32_t major;                                    /**< Version major.*/
-    uint32_t minor;                                    /**< Version minor.*/
-    PalGLBackend backend;                              /**< (eg. `PAL_GL_BACKEND_WGL`).*/
-    PalGLAPI api;                                      /**< (eg. `PAL_GL_API_OPENGL_ES`).*/
-    char vendor[PAL_GL_VENDOR_NAME_SIZE];              /**< Graphics card vendor name.*/
-    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE]; /**< Graphics card name.*/
-    char version[PAL_GL_VERSION_NAME_SIZE];            /**< Graphics card version string.*/
+typedef struct PalGLInfo
+{
+    PalGLExtensions extensions;
+    uint32_t major;
+    uint32_t minor;
+    PalGLBackend backend;
+    PalGLAPI api;
+    char vendor[PAL_GL_VENDOR_NAME_SIZE];
+    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE];
+    char version[PAL_GL_VERSION_NAME_SIZE];
 } PalGLInfo;
 
 /**
  * @struct PalGLFBConfig
- * @brief Information about an opengl framebuffer.
+ * @brief Contains information about an opengl framebuffer.
  *
  * @since 2.0
+ * 
+ * @var PalGLFBConfig::doubleBuffer
+ * If `PAL_TRUE`, double buffering is supported.
+ * 
+ * @var PalGLFBConfig::stereo
+ * If `PAL_TRUE`, stereo is supported.
+ * 
+ * @var PalGLFBConfig::sRGB
+ * If `PAL_TRUE`, SRGB colorspace is supported.
+ * 
+ * @var PalGLFBConfig::index
+ * The driver index of the opengl framebuffer config. 
+ * Its driver specific and must not be changed.
+ * 
+ * @var PalGLFBConfig::redBits
+ * The number of bits in the red channel.
+ * 
+ * @var PalGLFBConfig::greenBits
+ * The number of bits in the green channel.
+ *
+ * @var PalGLFBConfig::blueBits
+ * The number of bits in the blue channel.
+ * 
+ * @var PalGLFBConfig::alphaBits
+ * The number of bits in the alpha channel.
+ * 
+ * @var PalGLFBConfig::depthBits
+ * The number of depth buffer bits.
+ * 
+ * @var PalGLFBConfig::stencilBits
+ * The number of stencil buffer bits.
+ * 
+ * @var PalGLFBConfig::samples
+ * The number of `MSAA` samples.
  */
-typedef struct {
-    PalBool doubleBuffer; /**< If `PAL_TRUE` double buffering is supported.*/
-    PalBool stereo;       /**< If `PAL_TRUE` stereo is supported.*/
-    PalBool sRGB;         /**< If `PAL_TRUE` SRGB colorspace is supported.*/
-    uint16_t index;       /**< Driver index or id.*/
-    uint16_t redBits;     /**< Number of bits in the red channel.*/
-    uint16_t greenBits;   /**< Number of bits in the green channel.*/
-    uint16_t blueBits;    /**< Number of bits in the blue channel.*/
-    uint16_t alphaBits;   /**< Number of bits in the alpha channel.*/
-    uint16_t depthBits;   /**< Number of depth buffer bits.*/
-    uint16_t stencilBits; /**< Number of stencil buffer bits.*/
-    uint16_t samples;     /**< Number of samples.*/
+typedef struct PalGLFBConfig
+{
+    PalBool doubleBuffer;
+    PalBool stereo;
+    PalBool sRGB;
+    uint16_t index;
+    uint16_t redBits;
+    uint16_t greenBits;
+    uint16_t blueBits;
+    uint16_t alphaBits;
+    uint16_t depthBits;
+    uint16_t stencilBits;
+    uint16_t samples;
 } PalGLFBConfig;
 
 /**
  * @struct PalGLWindow
- * @brief Information about an opengl window.
+ * @brief Contains information about an opengl window.
  *
- * This can be allocated statically or dynamically since its used for
- * holding native handles. The handles will not be copied.
+ * This can be allocated statically or dynamically.
+ * The handles will not be copied.
  *
  * @since 2.0
+ * 
+ * @var PalGLWindow::instance
+ * The instance or display (eg. `HINSTANCE` or `wl_display`).
+ * 
+ * @var PalGLWindow::window
+ * The window handle (eg. `HWND` or `egl_wl_window`).
  */
-typedef struct {
-    void* instance; /**< (HINSTANCE on Win32 or wl_display on Wayland)*/
-    void* window;   /**< (egl_wl_window on Wayland)*/
+typedef struct PalGLWindow
+{
+    void* instance;
+    void* window;
 } PalGLWindow;
 
 /**
  * @struct PalGLContextCreateInfo
- * @brief Creation parameters for an opengl context.
+ * @brief Contains creation parameters of an opengl context.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since 2.0
+ * 
+ * @var PalGLContextCreateInfo::window
+ * The window to create the context for. Must not be `nullptr`.
+ * 
+ * @var PalGLContextCreateInfo::fbConfig
+ * The opengl framebuffer config to use. Must not be `nullptr`.
+ * 
+ * @var PalGLContextCreateInfo::shareContext
+ * The primary context to share resource ownership with. Can be `nullptr`.
+ * 
+ * @var PalGLContextCreateInfo::profile
+ * The opengl context profile.
+ * - `PAL_GL_PROFILE_NONE:` create a default profile context. @nl
+ * - `PAL_GL_PROFILE_CORE:` create a core profile context.
+ *   `PAL_GL_EXTENSION_CONTEXT_PROFILE` Must be supported. @nl 
+ * - `PAL_GL_PROFILE_COMPATIBILITY:` create a compatibility profile context.
+ *   `PAL_GL_EXTENSION_CONTEXT_PROFILE` Must be supported. @nl
+ * - `PAL_GL_PROFILE_COMPATIBILITY:` create an `ES` profile context.
+ *   `PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2` Must be supported.
+ * 
+ * @var PalGLContextCreateInfo::reset
+ * The context reset behavior.
+ * - `PAL_GL_CONTEXT_RESET_NONE:` default context reset behavior. @nl
+ * - `PAL_GL_CONTEXT_RESET_NO_NOTIFICATION:` context will be reset by driver.
+ *   `PAL_GL_EXTENSION_ROBUSTNESS` must be supported. @nl
+ * - `PAL_GL_CONTEXT_RESET_LOSE_CONTEXT:` invalidate the context on reset.
+ *   `PAL_GL_EXTENSION_ROBUSTNESS` must be supported.
+ * 
+ * @var PalGLContextCreateInfo::release
+ * The context release behavior.
+ * - `PAL_GL_RELEASE_BEHAVIOR_NONE:` default context release behavior. @nl
+ * - `PAL_GL_RELEASE_BEHAVIOR_FLUSH:` flush context before release.
+ *   `PAL_GL_EXTENSION_FLUSH_CONTROL` must be supported.
+ * 
+ * @var PalGLContextCreateInfo::forward
+ * Create a forward compatible context.
+ * `PAL_GL_EXTENSION_CREATE_CONTEXT` Must be supported.
+ * 
+ * @var PalGLContextCreateInfo::noError
+ * Create a context with no error checking or reporting.
+ * Set `::debug` to `PAL_FALSE` for maximum performance.
+ * 
+ * @var PalGLContextCreateInfo::debug
+ * Create a debug context.
+ * 
+ * @var PalGLContextCreateInfo::major
+ * The major version of the context. The driver must support the version.
+ * 
+ * @var PalGLContextCreateInfo::minor
+ * The minor version of the context. The driver must support the version.
  */
-typedef struct {
-    const PalGLWindow* window;     /**< Window to create context for.*/
-    const PalGLFBConfig* fbConfig; /**< The framebuffer config to use.*/
-    PalGLContext* shareContext;    /**< Can be `nullptr`.*/
-    PalGLProfile profile;          /**< (eg. `PAL_GL_PROFILE_CORE`).*/
-    PalGLContextReset reset;       /**< (eg. `PAL_GL_CONTEXT_RESET_LOSE_CONTEXT`).*/
-    PalGLReleaseBehavior release;  /**< (eg. `PAL_GL_RELEASE_BEHAVIOR_FLUSH`).*/
-    PalBool forward;               /**< Create a forward compatible context.*/
-    PalBool noError;               /**< Create a no error context.*/
-    PalBool debug;                 /**< Create a debug context.*/
-    uint32_t major;                /**< Must not be greater than what the driver supports.*/
-    uint32_t minor;                /**< Must not be greater than what the driver supports.*/
+typedef struct PalGLContextCreateInfo
+{
+    const PalGLWindow* window;
+    const PalGLFBConfig* fbConfig;
+    PalGLContext* shareContext;
+    PalGLProfile profile;
+    PalGLContextReset reset;
+    PalGLReleaseBehavior release;
+    PalBool forward;
+    PalBool noError;
+    PalBool debug;
+    uint32_t major;
+    uint32_t minor;
 } PalGLContextCreateInfo;
 
 /**
- * @brief Initialize the opengl system.
+ * @brief Initializes the opengl system.
  *
- * This must be called before any opengl function. Call `palGetSupportedGLAPIs()` to check
- * if `api` is supported on `instance`.
+ * This must be called before any opengl function. 
  *
- * The allocator will not not copied, therefore the pointer must remain valid
- * until the opengl system is shutdown.
+ * `allocator` and `instance` will not not copied or destroyed, therefore the
+ * pointers must remain valid until the opengl system is shutdown.
+ * 
+ * The opengl system must be shutdown with `palShutdownGL()` when no 
+ * longer needed.
  *
- * `instance` must not be `nullptr` and will not be freed by the opengl system. It must be valid
- * until palShutdownGL() is called. `Linux`: This is the Display associated with the connection.
- * `Windows`: This is the HINSTANCE of the process.
+ * @param[in] api The opengl API.
+ * @param[in] instance The instance or display. (eg. `HINSTANCE`). 
+ * Must not be `nullptr`.
+ * @param[in] allocator The allocator. Set to `nullptr` to use the
+ * thread-safe default.
  *
- * @param[in] api The api to use. (eg. `PAL_GL_API_OPENGL`).
- * @param[in] instance The instance the opengl system will be tied to (eg. XDisplay).
- * @param[in] allocator Optional user-provided allocator. Set to `nullptr` to use default.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ * failure. Call `palFormatResult()` to get the string representation of
+ * the result value.
  *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Must only be called from the main thread.
+ * @Thread-safety Must only be called from the main thread.
  *
  * @since 2.0
  * @sa palShutdownGL
+ * @sa palGetSupportedGLAPIs
  */
 PAL_API PalResult PAL_CALL palInitGL(
     PalGLAPI api,
@@ -243,7 +428,7 @@ PAL_API PalResult PAL_CALL palInitGL(
  * If the opengl system has not been initialized, the function returns silently.
  * All created contexts must be destroyed before this call.
  *
- * Thread safety: Must only be called from the main thread.
+ * @Thread-safety Must only be called from the main thread.
  *
  * @since 2.0
  * @sa palInitGL
@@ -258,7 +443,7 @@ PAL_API void PAL_CALL palShutdownGL();
  *
  * @return A pointer to a PalGLInfo on success or `nullptr` on failure.
  *
- * Thread safety: Thread-safe.
+ * @Thread-safety Thread-safe.
  *
  * @since 2.0
  */
@@ -278,10 +463,11 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * @param[in, out] count Capacity of the PalGLFBConfig array.
  * @param[out] configs User allocated array of PalGLFBConfig.
  *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ * failure. Call `palFormatResult()` to get the string representation of
+ * the result value.
  *
- * Thread safety: Must only be called from the main thread.
+ * @Thread-safety Must only be called from the main thread.
  *
  * @since 2.0
  * @sa palInitGL
@@ -303,7 +489,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  *
  * @return The closest PalGLFBConfig on success or `nullptr` on failure.
  *
- * Thread safety: Thread safe.
+ * @Thread-safety Thread safe.
  *
  * @since 2.0
  */
@@ -328,10 +514,11 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * @param[in] info Pointer to a PalGLContextCreateInfo struct that specifies parameters.
  * @param[out] outContext Pointer to a PalGLContext to recieve the created context.
  *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ * failure. Call `palFormatResult()` to get the string representation of
+ * the result value.
  *
- * Thread safety: Must only be called from the main thread.
+ * @Thread-safety Must only be called from the main thread.
  *
  * @since 2.0
  * @sa palDestroyGLContext
@@ -348,7 +535,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * @param[in] context Pointer to the context to destroy.
  *
- * Thread safety: Thread safe if the `context` is per thread.
+ * @Thread-safety Thread safe if the `context` is per thread.
  *
  * @since 2.0
  * @sa palCreateGLContext
@@ -368,10 +555,11 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * @param[in] glWindow Pointer to the opengl window.
  * @param[in] context Pointer to the context to make current.
  *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ * failure. Call `palFormatResult()` to get the string representation of
+ * the result value.
  *
- * Thread safety: Thread safe, but only one thread may have the
+ * @Thread-safety Thread safe, but only one thread may have the
  * current context at a time.
  *
  * @since 2.0
@@ -389,7 +577,7 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  *
  * @return the pointer to the function on success or `nullptr` on failure.
  *
- * Thread safety: Thread safe.
+ * @Thread-safety Thread safe.
  *
  * @since 2.0
  * @sa palInitGL
@@ -405,10 +593,11 @@ PAL_API void* PAL_CALL palGetGLProcAddress(const char* name);
  * @param[in] glWindow Pointer to the opengl window.
  * @param[in] context Pointer to the context.
  *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ * failure. Call `palFormatResult()` to get the string representation of
+ * the result value.
  *
- * Thread safety: Must only be called from a thread that has a
+ * @Thread-safety Must only be called from a thread that has a
  * bound context.
  *
  * @since 2.0
@@ -427,7 +616,7 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  *
  * @param[in] interval The swap interval
  *
- * Thread safety: Must only be called from a thread with a bound
+ * @Thread-safety Must only be called from a thread with a bound
  * context.
  *
  * @since 2.0
@@ -442,7 +631,7 @@ PAL_API void PAL_CALL palSetSwapInterval(int32_t interval);
  *
  * @return An array of bools or `nullptr` on failure.
  *
- * Thread safety: Must only be called from the main thread.
+ * @Thread-safety Must only be called from the main thread.
  *
  * @since 2.0
  */
@@ -450,4 +639,4 @@ PAL_API const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance);
 
 /** @} */
 
-#endif // _PAL_OPENGL_H
+#endif // PAL_OPENGL_H
