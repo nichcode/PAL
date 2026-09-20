@@ -1,6 +1,6 @@
 /**
  * @file pal_opengl.h
- * @brief This is the header file for PAL Opengl API.
+ * @brief This is the header file for PAL OpenGl API.
  *
  * It defines all the types and functions of the opengl module.
  *
@@ -26,7 +26,7 @@
  */
 
 /**
- * @defgroup pal_opengl Opengl Module
+ * @defgroup pal_opengl OpenGl Module
  * @{
  */
 

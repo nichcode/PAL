@@ -1,18 +1,37 @@
-
 /**
-    PAL - Prime Abstraction Layer
-    Copyright (C) 2025
-    Licensed under the Zlib license. See LICENSE file in root.
+ * @file pal_graphics.h
+ * @brief This is the header file for PAL Graphics API.
+ *
+ * It defines all the types and functions of the graphics module.
+ *
+ * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty.  In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ *
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ *
+ * 3. This notice may not be removed or altered from any source distribution.
  */
 
 /**
- * @defgroup pal_graphics Graphics
- * @ingroup pal_graphics
+ * @defgroup pal_graphics Graphics Module
  * @{
  */
 
-#ifndef _PAL_GRAPHICS_H
-#define _PAL_GRAPHICS_H
+#ifndef PAL_GRAPHICS_H
+#define PAL_GRAPHICS_H
 
 #include "pal_core.h"
 
@@ -26,6 +45,12 @@
 #define PAL_SHADER_TARGET_MAJOR(target) ((uint32_t)(target) >> 8);
 #define PAL_SHADER_TARGET_MINOR(target) ((uint32_t)(target) & 0xFF);
 
+/**
+ * @defgroup graphics_features Graphics Features
+ * @brief Graphics features
+ * 
+ * @{
+ */
 #define PAL_ADAPTER_FEATURE_NONE 0
 #define PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY (1ULL << 1)
 #define PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING (1ULL << 2)
@@ -64,14 +89,28 @@
 #define PAL_ADAPTER_FEATURE_DISPATCH_BASE (1ULL << 35)
 #define PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS (1ULL << 36)
 #define PAL_ADAPTER_FEATURE_RAY_QUERY (1ULL << 37)
+/** @} */
 
+/**
+ * @defgroup adapter_types Adapter Types
+ * @brief Adapter types
+ * 
+ * @{
+ */
 #define PAL_ADAPTER_TYPE_UNKNOWN 0
 #define PAL_ADAPTER_TYPE_DISCRETE 1
 #define PAL_ADAPTER_TYPE_INTEGRATED 2
 #define PAL_ADAPTER_TYPE_VIRTUAL 3
 #define PAL_ADAPTER_TYPE_CPU 4
 #define PAL_ADAPTER_TYPE_COUNT 5
+/** @} */
 
+/**
+ * @defgroup adapter_api_types Adapter API Types
+ * @brief Adapter API types
+ * 
+ * @{
+ */
 #define PAL_ADAPTER_API_TYPE_UNKNOWN 0
 #define PAL_ADAPTER_API_TYPE_VULKAN 1
 #define PAL_ADAPTER_API_TYPE_D3D12 2
@@ -82,22 +121,50 @@
 #define PAL_ADAPTER_API_TYPE_OPENGLES 7
 #define PAL_ADAPTER_API_TYPE_WEBGPU 8
 #define PAL_ADAPTER_API_TYPE_COUNT 9
+/** @} */
 
+/**
+ * @defgroup queue_types Queue Types
+ * @brief Queue types
+ * 
+ * @{
+ */
 #define PAL_QUEUE_TYPE_GRAPHICS 0
 #define PAL_QUEUE_TYPE_COMPUTE 1
 #define PAL_QUEUE_TYPE_COPY 2
 #define PAL_QUEUE_TYPE_COUNT 3
+/** @} */
 
-#define PAL_PRESENT_MODE_FIFO 0 /**< V-Sync.*/
+/**
+ * @defgroup present_modes Present Modes
+ * @brief Present modes
+ * 
+ * @{
+ */
+#define PAL_PRESENT_MODE_FIFO 0
 #define PAL_PRESENT_MODE_IMMEDIATE 1
 #define PAL_PRESENT_MODE_MAILBOX 2
 #define PAL_PRESENT_MODE_COUNT 3
+/** @} */
 
+/**
+ * @defgroup composite_alphas Composite Alphas
+ * @brief Composite alphas
+ * 
+ * @{
+ */
 #define PAL_COMPOSITE_ALPHA_OPAQUE 0
 #define PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED 1
 #define PAL_COMPOSITE_ALPHA_POST_MULTIPLIED 2
 #define PAL_COMPOSITE_ALPHA_COUNT 3
+/** @} */
 
+/**
+ * @defgroup formats Format
+ * @brief Format
+ * 
+ * @{
+ */
 #define PAL_FORMAT_UNDEFINED 0
 #define PAL_FORMAT_R8_UNORM 1
 #define PAL_FORMAT_R8_SNORM 2
@@ -180,7 +247,14 @@
 #define PAL_FORMAT_D32_SFLOAT_S8_UINT 79
 #define PAL_FORMAT_D24_UNORM_S8_UINT 80
 #define PAL_FORMAT_COUNT 81
+/** @} */
 
+/**
+ * @defgroup image_usages Image Usages
+ * @brief Image usages
+ * 
+ * @{
+ */
 #define PAL_IMAGE_USAGE_UNDEFINED 0
 #define PAL_IMAGE_USAGE_COLOR_ATTACHEMENT (1U << 0)
 #define PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT (1U << 1)
@@ -188,7 +262,14 @@
 #define PAL_IMAGE_USAGE_TRANSFER_DST (1U << 3)
 #define PAL_IMAGE_USAGE_STORAGE (1U << 4)
 #define PAL_IMAGE_USAGE_SAMPLED (1U << 5)
+/** @} */
 
+/**
+ * @defgroup shader_formats Shader Formats
+ * @brief Shader formats
+ * 
+ * @{
+ */
 #define PAL_SHADER_FORMAT_UNKNOWN 0
 #define PAL_SHADER_FORMAT_SPIRV (1U << 0)
 #define PAL_SHADER_FORMAT_DXIL (1U << 1)
@@ -198,32 +279,74 @@
 #define PAL_SHADER_FORMAT_GLSL (1U << 5)
 #define PAL_SHADER_FORMAT_HLSL (1U << 6)
 #define PAL_SHADER_FORMAT_WGSL (1U << 7)
+/** @} */
 
+/**
+ * @defgroup load_ops Load Operations
+ * @brief Load operations
+ * 
+ * @{
+ */
 #define PAL_LOAD_OP_LOAD 0
 #define PAL_LOAD_OP_CLEAR 1
 #define PAL_LOAD_OP_DONT_CARE 2
 #define PAL_LOAD_OP_COUNT 3
+/** @} */
 
+/**
+ * @defgroup store_operations Store Operations
+ * @brief Store operations
+ * 
+ * @{
+ */
 #define PAL_STORE_OP_STORE 0
 #define PAL_STORE_OP_DONT_CARE 1
 #define PAL_STORE_OP_COUNT 2
+/** @} */
 
+/**
+ * @defgroup memory_types Memory Types
+ * @brief Memory types
+ * 
+ * @{
+ */
 #define PAL_MEMORY_TYPE_GPU_ONLY 0
 #define PAL_MEMORY_TYPE_CPU_UPLOAD 1
 #define PAL_MEMORY_TYPE_CPU_READBACK 2
 #define PAL_MEMORY_TYPE_COUNT 3
+/** @} */
 
+/**
+ * @defgroup image_types Image Types
+ * @brief Image types
+ * 
+ * @{
+ */
 #define PAL_IMAGE_TYPE_1D 0
 #define PAL_IMAGE_TYPE_2D 1
 #define PAL_IMAGE_TYPE_3D 2
 #define PAL_IMAGE_TYPE_COUNT 3
+/** @} */
 
+/**
+ * @defgroup image_aspects Image Aspects
+ * @brief Image aspects
+ * 
+ * @{
+ */
 #define PAL_IMAGE_ASPECT_COLOR 0
 #define PAL_IMAGE_ASPECT_DEPTH 1
 #define PAL_IMAGE_ASPECT_STENCIL 2
 #define PAL_IMAGE_ASPECT_DEPTH_STENCIL 3
 #define PAL_IMAGE_ASPECT_COUNT 4
+/** @} */
 
+/**
+ * @defgroup image_view_types Image View Types
+ * @brief Image view types
+ * 
+ * @{
+ */
 #define PAL_IMAGE_VIEW_TYPE_1D 0
 #define PAL_IMAGE_VIEW_TYPE_1D_ARRAY 1
 #define PAL_IMAGE_VIEW_TYPE_2D 2
@@ -232,21 +355,49 @@
 #define PAL_IMAGE_VIEW_TYPE_CUBE 5
 #define PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY 6
 #define PAL_IMAGE_VIEW_TYPE_COUNT 7
+/** @} */
 
+/**
+ * @defgroup filter_modes Filter Modes
+ * @brief Filter modes
+ * 
+ * @{
+ */
 #define PAL_FILTER_MODE_NEAREST 0
 #define PAL_FILTER_MODE_LINEAR 1
 #define PAL_FILTER_MODE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup sampler_mipmap_modes Sampler Mipmap Modes
+ * @brief Sampler mipmap modes
+ * 
+ * @{
+ */
 #define PAL_SAMPLER_MIPMAP_MODE_NEAREST 0
 #define PAL_SAMPLER_MIPMAP_MODE_LINEAR 1
 #define PAL_SAMPLER_MIPMAP_MODE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup sampler_address_modes Sampler Address Modes
+ * @brief Sampler address modes
+ * 
+ * @{
+ */
 #define PAL_SAMPLER_ADDRESS_MODE_REPEAT 0
 #define PAL_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT 1
 #define PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE 2
 #define PAL_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER 3
 #define PAL_SAMPLER_ADDRESS_MODE_COUNT 4
+/** @} */
 
+/**
+ * @defgroup border_color Border Colors
+ * @brief Border colors
+ * 
+ * @{
+ */
 #define PAL_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK 0
 #define PAL_BORDER_COLOR_INT_TRANSPARENT_BLACK 1
 #define PAL_BORDER_COLOR_FLOAT_OPAQUE_BLACK 2
@@ -254,19 +405,40 @@
 #define PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE 4
 #define PAL_BORDER_COLOR_INT_OPAQUE_WHITE 5
 #define PAL_BORDER_COLOR_COUNT 6
+/** @} */
 
+/**
+ * @defgroup surface_formats Surface Formats
+ * @brief Surface formats
+ * 
+ * @{
+ */
 #define PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR 0
 #define PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR 1
 #define PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR 2
 #define PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10 3
 #define PAL_SURFACE_FORMAT_COUNT 4
+/** @} */
 
+/**
+ * @defgroup window_instance_types Window Instance Types
+ * @brief Window instance types
+ * 
+ * @{
+ */
 #define PAL_WINDOW_INSTANCE_TYPE_WAYLAND 0
 #define PAL_WINDOW_INSTANCE_TYPE_X11 1
 #define PAL_WINDOW_INSTANCE_TYPE_XCB 2
 #define PAL_WINDOW_INSTANCE_TYPE_WIN32 3
 #define PAL_WINDOW_INSTANCE_TYPE_COUNT 4
+/** @} */
 
+/**
+ * @defgroup shader_stages Shader Stages
+ * @brief Shader stages
+ * 
+ * @{
+ */
 #define PAL_SHADER_STAGE_UNDEFINED 0
 #define PAL_SHADER_STAGE_VERTEX 1
 #define PAL_SHADER_STAGE_FRAGMENT 2
@@ -283,7 +455,14 @@
 #define PAL_SHADER_STAGE_INTERSECTION 13
 #define PAL_SHADER_STAGE_CALLABLE 14
 #define PAL_SHADER_STAGE_COUNT 15
+/** @} */
 
+/**
+ * @defgroup sample_counts Sample Counts
+ * @brief Sample counts
+ * 
+ * @{
+ */
 #define PAL_SAMPLE_COUNT_1 0
 #define PAL_SAMPLE_COUNT_2 1
 #define PAL_SAMPLE_COUNT_4 2
@@ -291,8 +470,15 @@
 #define PAL_SAMPLE_COUNT_16 4
 #define PAL_SAMPLE_COUNT_32 5
 #define PAL_SAMPLE_COUNT_64 6
-#define PAL_SAMPLE_COUNT_COUNT 7 /**< Name redundancy is intentionally consistent.*/
+#define PAL_SAMPLE_COUNT_COUNT 7
+/** @} */
 
+/**
+ * @defgroup primitive_topologies Primitive Topologies
+ * @brief Primitive topologies
+ * 
+ * @{
+ */
 #define PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST 0
 #define PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP 1
 #define PAL_PRIMITIVE_TOPOLOGY_LINE_LIST 2
@@ -300,24 +486,60 @@
 #define PAL_PRIMITIVE_TOPOLOGY_POINT_LIST 4
 #define PAL_PRIMITIVE_TOPOLOGY_PATCH 5
 #define PAL_PRIMITIVE_TOPOLOGY_COUNT 6
+/** @} */
 
+/**
+ * @defgroup cull_modes Cull Modes
+ * @brief Cull modes
+ * 
+ * @{
+ */
 #define PAL_CULL_MODE_NONE 0
 #define PAL_CULL_MODE_FRONT 1
 #define PAL_CULL_MODE_BACK 2
 #define PAL_CULL_MODE_COUNT 3
+/** @} */
 
+/**
+ * @defgroup front_faces Front Faces
+ * @brief Front faces
+ * 
+ * @{
+ */
 #define PAL_FRONT_FACE_CLOCKWISE 0
 #define PAL_FRONT_FACE_COUNTER_CLOCKWISE 1
 #define PAL_FRONT_FACE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup polygon_modes Polygon Modes
+ * @brief Polygon modes
+ * 
+ * @{
+ */
 #define PAL_POLYGON_MODE_FILL 0
 #define PAL_POLYGON_MODE_LINE 1
 #define PAL_POLYGON_MODE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup stencil_face_flags Stencil Face Flags
+ * @brief Stencil face flags
+ * 
+ * @{
+ */
 #define PAL_STENCIL_FACE_FLAG_FRONT (1U << 0)
 #define PAL_STENCIL_FACE_FLAG_BACK (1U << 1)
-#define PAL_STENCIL_FACE_FLAG_BOTH (PAL_STENCIL_FACE_FLAG_FRONT | PAL_STENCIL_FACE_FLAG_BACK)
+#define PAL_STENCIL_FACE_FLAG_BOTH (PAL_STENCIL_FACE_FLAG_FRONT | \
+    PAL_STENCIL_FACE_FLAG_BACK)
+/** @} */
 
+/**
+ * @defgroup vertex_types Vertex Types
+ * @brief Vertex types
+ * 
+ * @{
+ */
 #define PAL_VERTEX_TYPE_UNDEFINED 0
 #define PAL_VERTEX_TYPE_INT32 1
 #define PAL_VERTEX_TYPE_INT32_2 2
@@ -350,22 +572,50 @@
 #define PAL_VERTEX_TYPE_HALF_FLOAT16_2 29
 #define PAL_VERTEX_TYPE_HALF_FLOAT16_4 30
 #define PAL_VERTEX_TYPE_COUNT 31
+/** @} */
 
+/**
+ * @defgroup vertex_semantic_types Vertex Semantic IDs
+ * @brief Vertex semantic ids
+ * 
+ * @{
+ */
 #define PAL_VERTEX_SEMANTIC_ID_POSITION 0
 #define PAL_VERTEX_SEMANTIC_ID_COLOR 1
 #define PAL_VERTEX_SEMANTIC_ID_TEXCOORD 2
 #define PAL_VERTEX_SEMANTIC_ID_NORMAL 3
 #define PAL_VERTEX_SEMANTIC_ID_TANGENT 4
 #define PAL_VERTEX_SEMANTIC_ID_COUNT 5
+/** @} */
 
+/**
+ * @defgroup command_buffer_types Command Buffer Types
+ * @brief Command buffer types
+ * 
+ * @{
+ */
 #define PAL_COMMAND_BUFFER_TYPE_PRIMARY 0
 #define PAL_COMMAND_BUFFER_TYPE_SECONDARY 1
 #define PAL_COMMAND_BUFFER_TYPE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup vertex_layout_types Vertex Layout Types
+ * @brief Vertex layout types
+ * 
+ * @{
+ */
 #define PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX 0
 #define PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE 1
 #define PAL_VERTEX_LAYOUT_TYPE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup compare_operations Compare Operations
+ * @brief Compare operations
+ * 
+ * @{
+ */
 #define PAL_COMPARE_OP_NEVER 0
 #define PAL_COMPARE_OP_LESS 1
 #define PAL_COMPARE_OP_EQUAL 2
@@ -375,7 +625,14 @@
 #define PAL_COMPARE_OP_GREATER_OR_EQUAL 6
 #define PAL_COMPARE_OP_ALWAYS 7
 #define PAL_COMPARE_OP_COUNT 8
+/** @} */
 
+/**
+ * @defgroup stencil_operations Stencil Operations
+ * @brief Stencil operations
+ * 
+ * @{
+ */
 #define PAL_STENCIL_OP_KEEP 0
 #define PAL_STENCIL_OP_ZERO 1
 #define PAL_STENCIL_OP_REPLACE 2
@@ -385,14 +642,28 @@
 #define PAL_STENCIL_OP_INCREMENT_AND_WRAP 6
 #define PAL_STENCIL_OP_DECREMENT_AND_WRAP 7
 #define PAL_STENCIL_OP_COUNT 8
+/** @} */
 
+/**
+ * @defgroup blend_operations Blend Operations
+ * @brief Blend operations
+ * 
+ * @{
+ */
 #define PAL_BLEND_OP_ADD 0
 #define PAL_BLEND_OP_SUBTRACT 1
 #define PAL_BLEND_OP_REVERSE_SUBTRACT 2
 #define PAL_BLEND_OP_MIN 3
 #define PAL_BLEND_OP_MAX 4
 #define PAL_BLEND_OP_COUNT 5
+/** @} */
 
+/**
+ * @defgroup blend_factors Blend Factors
+ * @brief Blend factors
+ * 
+ * @{
+ */
 #define PAL_BLEND_FACTOR_ZERO 0
 #define PAL_BLEND_FACTOR_ONE 1
 #define PAL_BLEND_FACTOR_SRC_COLOR 2
@@ -408,20 +679,41 @@
 #define PAL_BLEND_FACTOR_CONSTANT_ALPHA 12
 #define PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA 13
 #define PAL_BLEND_FACTOR_COUNT 14
+/** @} */
 
+/**
+ * @defgroup color_masks Color Masks
+ * @brief Color masks
+ * 
+ * @{
+ */
 #define PAL_COLOR_MASK_NONE 0
 #define PAL_COLOR_MASK_RED (1U << 0)
 #define PAL_COLOR_MASK_GREEN (1U << 1)
 #define PAL_COLOR_MASK_BLUE (1U << 2)
 #define PAL_COLOR_MASK_ALPHA (1U << 3)
+/** @} */
 
+/**
+ * @defgroup resolve_modes Resolve Modes
+ * @brief Resolve modes
+ * 
+ * @{
+ */
 #define PAL_RESOLVE_MODE_NONE 0
 #define PAL_RESOLVE_MODE_SAMPLE_ZERO 1
 #define PAL_RESOLVE_MODE_AVERAGE 2
 #define PAL_RESOLVE_MODE_MIN 3
 #define PAL_RESOLVE_MODE_MAX 4
 #define PAL_RESOLVE_MODE_COUNT 5
+/** @} */
 
+/**
+ * @defgroup fragment_shading_rates Fragment Shading Rates
+ * @brief Fragment shading rates
+ * 
+ * @{
+ */
 #define PAL_FRAGMENT_SHADING_RATE_1X1 0
 #define PAL_FRAGMENT_SHADING_RATE_1X2 1
 #define PAL_FRAGMENT_SHADING_RATE_2X1 2
@@ -430,42 +722,105 @@
 #define PAL_FRAGMENT_SHADING_RATE_4X2 5
 #define PAL_FRAGMENT_SHADING_RATE_4X4 6
 #define PAL_FRAGMENT_SHADING_RATE_COUNT 7
+/** @} */
 
+/**
+ * @defgroup fsr_combiner_operations Fragment Shading Rate Combiner Operations
+ * @brief Fragment shading rate combiner operations
+ * 
+ * @{
+ */
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP 0
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE 1
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN 2
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX 3
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL 4
 #define PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_COUNT 5
+/** @} */
 
+/**
+ * @defgroup acceleration_structure_types Acceleration Structure Types
+ * @brief Acceleration structure types
+ * 
+ * @{
+ */
 #define PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL 0
 #define PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL 1
 #define PAL_ACCELERATION_STRUCTURE_TYPE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup as_build_modes Acceleration Structure Build Modes
+ * @brief Acceleration structure build modes
+ * 
+ * @{
+ */
 #define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD 0
 #define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_UPDATE 1
 #define PAL_ACCELERATION_STRUCTURE_BUILD_MODE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup as_build_hints Acceleration Structure Build Hints
+ * @brief Acceleration structure build hints
+ * 
+ * @{
+ */
 #define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_BUILD (1U << 0)
 #define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE (1U << 1)
 #define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY (1U << 2)
+/** @} */
 
+/**
+ * @defgroup as_instance_flags Acceleration Structure Instance Flags
+ * @brief Acceleration structure instance flags
+ * 
+ * @{
+ */
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_OPAQUE (1U << 0)
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_FORCE_NO_OPAQUE (1U << 1)
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FACING_CULL_DISABLE (1U << 2)
 #define PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE (1U << 3)
+/** @} */
 
+/**
+ * @defgroup geometry_types Geometry Types
+ * @brief Geometry types
+ * 
+ * @{
+ */
 #define PAL_GEOMETRY_TYPE_TRIANGLE 0
 #define PAL_GEOMETRY_TYPE_AABBS 1
 #define PAL_GEOMETRY_TYPE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup geometry_flags Geometry Flags
+ * @brief Geometry flags
+ * 
+ * @{
+ */
 #define PAL_GEOMETRY_FLAG_OPAQUE (1U << 0)
 #define PAL_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT (1U << 1)
+/** @} */
 
+/**
+ * @defgroup index_types Index Types
+ * @brief Index types
+ * 
+ * @{
+ */
 #define PAL_INDEX_TYPE_UINT16 0
 #define PAL_INDEX_TYPE_UINT32 1
 #define PAL_INDEX_TYPE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup buffer_usages Buffer Usages
+ * @brief Buffer usages
+ * 
+ * @{
+ */
 #define PAL_BUFFER_USAGE_VERTEX (1U << 0)
 #define PAL_BUFFER_USAGE_INDEX (1U << 1)
 #define PAL_BUFFER_USAGE_UNIFORM (1U << 2)
@@ -477,17 +832,38 @@
 #define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT (1U << 8)
 #define PAL_BUFFER_USAGE_DEVICE_ADDRESS (1U << 9)
 #define PAL_BUFFER_USAGE_INDIRECT (1U << 10)
+/** @} */
 
+/**
+ * @defgroup debug_message_severities Debug Message Severities
+ * @brief Debug message severities
+ * 
+ * @{
+ */
 #define PAL_DEBUG_MESSAGE_SEVERITY_INFO 0
 #define PAL_DEBUG_MESSAGE_SEVERITY_WARNING 1
 #define PAL_DEBUG_MESSAGE_SEVERITY_ERROR 2
 #define PAL_DEBUG_MESSAGE_SEVERITY_COUNT 3
+/** @} */
 
+/**
+ * @defgroup debug_message_types Debug Message Types
+ * @brief Debug message types
+ * 
+ * @{
+ */
 #define PAL_DEBUG_MESSAGE_TYPE_GENERAL 0
 #define PAL_DEBUG_MESSAGE_TYPE_VALIDATION 1
 #define PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE 2
 #define PAL_DEBUG_MESSAGE_TYPE_COUNT 3
+/** @} */
 
+/**
+ * @defgroup usage_states Usage States
+ * @brief Usage states
+ * 
+ * @{
+ */
 #define PAL_USAGE_STATE_UNDEFINED 0
 #define PAL_USAGE_STATE_PRESENT 1
 #define PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE 2
@@ -511,7 +887,14 @@
 #define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ 20
 #define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE 21
 #define PAL_USAGE_STATE_COUNT 22
+/** @} */
 
+/**
+ * @defgroup descriptor_types Descriptor Types
+ * @brief Descriptor types
+ * 
+ * @{
+ */
 #define PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER 0
 #define PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
 #define PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE 2
@@ -519,34 +902,73 @@
 #define PAL_DESCRIPTOR_TYPE_SAMPLER 4
 #define PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE 5
 #define PAL_DESCRIPTOR_TYPE_COUNT 6
+/** @} */
 
+/**
+ * @defgroup descriptor_indexing_flags Descriptor Indexing Flags
+ * @brief Descriptor indexing flags
+ * 
+ * @{
+ */
 #define PAL_DESCRIPTOR_INDEXING_FLAG_NONE 0
 #define PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND (1U << 0)
 #define PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND (1U << 1)
 #define PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING (1U << 2)
+/** @} */
 
-#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_FAST_TRACE (1U << 1)
-#define PAL_ACCELERATION_STRUCTURE_BUILD_HINT_LOW_MEMORY (1U << 2)
-
+/**
+ * @defgroup ray_tracing_shader_group_types Ray Tracing Shader Group Types
+ * @brief Ray tracing shader group types
+ * 
+ * @{
+ */
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL 0
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT 1
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT 2
 #define PAL_RAY_TRACING_SHADER_GROUP_TYPE_COUNT 3
+/** @} */
 
+/**
+ * @defgroup buffer_memory_usages Buffer Memory Usages
+ * @brief Buffer memory usages
+ * 
+ * @{
+ */
 #define PAL_BUFFER_MEMORY_USAGE_MANUAL 0
 #define PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY 1
 #define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD 2
 #define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK 3
 #define PAL_BUFFER_MEMORY_USAGE_COUNT 4
+/** @} */
 
+/**
+ * @defgroup image_memory_usages Image Memory Usages
+ * @brief Image memory usages
+ * 
+ * @{
+ */
 #define PAL_IMAGE_MEMORY_USAGE_MANUAL 0
 #define PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY 1
 #define PAL_IMAGE_MEMORY_USAGE_COUNT 2
+/** @} */
 
+/**
+ * @defgroup rendering_flags Rendering Flags
+ * @brief Rendering flags
+ * 
+ * @{
+ */
 #define PAL_RENDERING_FLAG_NONE 0
 #define PAL_RENDERING_FLAG_SUSPENDING (1U << 0)
 #define PAL_RENDERING_FLAG_RESUMING (1U << 1)
+/** @} */
 
+/**
+ * @defgroup pipeline_stages Pipeline Stages
+ * @brief Pipeline stages
+ * 
+ * @{
+ */
 #define PAL_PIPELINE_STAGE_NONE 0
 #define PAL_PIPELINE_STAGE_VERTEX_SHADER (1U << 1)
 #define PAL_PIPELINE_STAGE_FRAGMENT_SHADER (1U << 2)
@@ -567,126 +989,39 @@
 #define PAL_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT (1U << 17)
 #define PAL_PIPELINE_STAGE_INDIRECT_INPUT (1U << 18)
 #define PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD (1U << 19)
+/** @} */
 
 /**
- * Required implementations:
- * - enumerateAdapters
- * - getAdapterInfo
- * - getAdapterCapabilities
- * - getAdapterFeatures
- * - getHighestSupportedShaderTarget
- * - createDevice
- * - destroyDevice
- * - getDeviceLostReason
- * - allocateMemory
- * - freeMemory
- * - createQueue
- * - destroyQueue
- * - waitQueue
- * - canQueuePresent
- * - enumerateFormats
- * - isFormatSupported
- * - queryFormatImageUsages
- * - queryFormatSampleCount
- * - createImage
- * - destroyImage
- * - getImageInfo
- * - getImageMemoryRequirements
- * - bindImageMemory
- * - createImageView
- * - destroyImageView
- * - createSampler
- * - destroySampler
- * - createShader
- * - destroyShader
- * - createFence
- * - destroyFence
- * - waitFence
- * - isFenceSignaled
- * - createSemaphore
- * - destroySemaphore
- * - createCommandPool
- * - destroyCommandPool
- * - allocateCommandBuffer
- * - freeCommandBuffer
- * - submitCommandBuffer
- * - resetCommandBuffer
- * - cmdBegin
- * - cmdEnd
- * - cmdExecuteCommandBuffer
- * - cmdBeginRendering
- * - cmdEndRendering
- * - cmdCopyBuffer
- * - cmdCopyBufferToImage
- * - cmdCopyImage
- * - cmdCopyImageToBuffer
- * - cmdBindPipeline
- * - cmdSetViewport
- * - cmdSetScissors
- * - cmdBindVertexBuffers
- * - cmdBindIndexBuffer
- * - cmdDraw
- * - cmdDrawIndexed
- * - cmdImageBarrier
- * - cmdBufferBarrier
- * - cmdDispatch
- * - cmdBindDescriptorSet
- * - cmdPushConstants
- * - createBuffer
- * - destroyBuffer
- * - getBufferMemoryRequirements
- * - computeImageStagingRequirements
- * - writeImageStaging
- * - bindBufferMemory
- * - mapBuffer
- * - unmapBuffer
- * - createDescriptorSetLayout
- * - destroyDescriptorSetLayout
- * - createDescriptorPool
- * - destroyDescriptorPool
- * - resetDescriptorPool
- * - allocateDescriptorSet
- * - updateDescriptorSet
- * - createPipelineLayout
- * - destroyPipelineLayout
- * - createGraphicsPipeline
- * - createComputePipeline
- * - destroyPipeline
+ * @defgroup graphics_backend_vtable Graphics Backend VTables
+ * @brief Graphics backend vtables
+ * 
+ * @{
  */
 #define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0
-
-/**
- * Required implementations:
- * - PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 required functions.
- * - canQueueShareOwnership
- * - canQueueUseUsageState
- * - canQueueUsePipelineStages
- * - cmdImageOwnershipTransfer
- * - cmdBufferOwnershipTransfer
- */
 #define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2 1
+/** @} */
 
 /**
  * @struct PalAdapter
  * @brief Opaque handle to an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalAdapter PalAdapter;
 
 /**
  * @struct PalDevice
- * @brief Opaque handle to a device. Devices are created from an adapter (GPU).
+ * @brief Opaque handle to a device.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalDevice PalDevice;
 
 /**
  * @struct PalMemory
- * @brief Opaque handle to a device memory. This is not CPU memory.
+ * @brief Opaque handle to a GPU device memory.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalMemory PalMemory;
 
@@ -694,7 +1029,7 @@ typedef struct PalMemory PalMemory;
  * @struct PalQueue
  * @brief Opaque handle to a queue.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalQueue PalQueue;
 
@@ -702,7 +1037,7 @@ typedef struct PalQueue PalQueue;
  * @struct PalSurface
  * @brief Opaque handle to a surface.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalSurface PalSurface;
 
@@ -710,7 +1045,7 @@ typedef struct PalSurface PalSurface;
  * @struct PalSwapchain
  * @brief Opaque handle to a swapchain.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalSwapchain PalSwapchain;
 
@@ -718,7 +1053,7 @@ typedef struct PalSwapchain PalSwapchain;
  * @struct PalImage
  * @brief Opaque handle to an image.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalImage PalImage;
 
@@ -726,7 +1061,7 @@ typedef struct PalImage PalImage;
  * @struct PalImageView
  * @brief Opaque handle to an image view.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalImageView PalImageView;
 
@@ -734,7 +1069,7 @@ typedef struct PalImageView PalImageView;
  * @struct PalShader
  * @brief Opaque handle to a shader.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalShader PalShader;
 
@@ -742,7 +1077,7 @@ typedef struct PalShader PalShader;
  * @struct PalBuffer
  * @brief Opaque handle to a buffer.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalBuffer PalBuffer;
 
@@ -750,7 +1085,7 @@ typedef struct PalBuffer PalBuffer;
  * @struct PalFence
  * @brief Opaque handle to a fence.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalFence PalFence;
 
@@ -758,7 +1093,7 @@ typedef struct PalFence PalFence;
  * @struct PalSemaphore
  * @brief Opaque handle to a semaphore.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalSemaphore PalSemaphore;
 
@@ -766,7 +1101,7 @@ typedef struct PalSemaphore PalSemaphore;
  * @struct PalCommandPool
  * @brief Opaque handle to a command pool.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalCommandPool PalCommandPool;
 
@@ -774,7 +1109,7 @@ typedef struct PalCommandPool PalCommandPool;
  * @struct PalCommandBuffer
  * @brief Opaque handle to a command buffer.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalCommandBuffer PalCommandBuffer;
 
@@ -782,13 +1117,7 @@ typedef struct PalCommandBuffer PalCommandBuffer;
  * @struct PalDescriptorSetLayout
  * @brief Opaque handle to a descriptor set layout.
  *
- * This defines the layout, ordering and the number of descriptors a descriptor set uses.
- *
- * The layouts should reflect the exact layout of the shaders. Eg.
- * descriptorBindings[2] = { sampler, sampled image } is different from
- * descriptorBindings[2] = { sampled image, sampler }. The ordering must be correct.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
 
@@ -796,7 +1125,7 @@ typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
  * @struct PalDescriptorPool
  * @brief Opaque handle to a descriptor pool.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalDescriptorPool PalDescriptorPool;
 
@@ -804,7 +1133,7 @@ typedef struct PalDescriptorPool PalDescriptorPool;
  * @struct PalDescriptorSet
  * @brief Opaque handle to a descriptor set.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalDescriptorSet PalDescriptorSet;
 
@@ -812,7 +1141,7 @@ typedef struct PalDescriptorSet PalDescriptorSet;
  * @struct PalSampler
  * @brief Opaque handle to a sampler.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalSampler PalSampler;
 
@@ -820,16 +1149,18 @@ typedef struct PalSampler PalSampler;
  * @struct PalPipelineLayout
  * @brief Opaque handle to a pipeline layout.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalPipelineLayout PalPipelineLayout;
 
 /**
  * @struct PalPipeline
- * @brief Opaque handle to a pipeline. This is the same handle used for all pipeline types
+ * @brief Opaque handle to a pipeline.
+ * 
+ * This is the same handle used for all pipeline types
  * (Graphics, Compute and Ray tracing).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalPipeline PalPipeline;
 
@@ -837,7 +1168,7 @@ typedef struct PalPipeline PalPipeline;
  * @struct PalShaderBindingTable
  * @brief Opaque handle to a shader binding table.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalShaderBindingTable PalShaderBindingTable;
 
@@ -845,719 +1176,716 @@ typedef struct PalShaderBindingTable PalShaderBindingTable;
  * @struct PalAccelerationStructure
  * @brief Opaque handle to an acceleration structure.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct PalAccelerationStructure PalAccelerationStructure;
 
 /**
  * @typedef PalDebugMessageSeverity
  * @brief Debugger messages severity types used to filter incoming messages.
+ * 
+ * All values of this type follow the format `PAL_DEBUG_MESSAGE_SEVERITY_*`
+ * for API consistency and ease of use.
  *
- * All message severities follow the format `PAL_DEBUG_MESSAGE_SEVERITY_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalDebugMessageSeverity;
 
 /**
  * @typedef PalDebugMessageType
  * @brief Debugger messages types used to filter incoming messages.
+ * 
+ * All values of this type follow the format `PAL_DEBUG_MESSAGE_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All message types follow the format `PAL_DEBUG_MESSAGE_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalDebugMessageType;
 
 /**
  * @typedef PalDeviceAddress
- * @brief Adapter address. Used to get adapter (GPU) address of mostly buffers.
+ * @brief The device address of a buffer.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint64_t PalDeviceAddress;
 
 /**
  * @typedef PalAdapterFeatures
- * @brief Adapter features. This is a bitmask.
+ * @brief Adapter features.
+ * 
+ * This is a bitmask of all supported features of an adapter (GPU).
+ * 
+ * All values of this type follow the format `PAL_ADAPTER_FEATURE_*`
+ * for API consistency and ease of use.
  *
- * All adapter features follow the format `PAL_ADAPTER_FEATURE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint64_t PalAdapterFeatures;
 
 /**
  * @typedef PalAdapterType
- * @brief Adapter (GPU) types.
+ * @brief Adapter types.
+ * 
+ * All values of this type follow the format `PAL_ADAPTER_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All adapter types follow the format `PAL_ADAPTER_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalAdapterType;
 
 /**
  * @typedef PalAdapterApiType
  * @brief Adapter API types.
+ * 
+ * All values of this type follow the format `PAL_ADAPTER_API_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All adapter api types follow the format `PAL_ADAPTER_API_TYPE_**` for
- * consistency and API use.
- *
- * Customs backends that dont fit the already declared api types should use
- * `PAL_ADAPTER_API_TYPE_CUSTOM`.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalAdapterApiType;
 
 /**
  * @typedef PalQueueType
  * @brief Queue types.
+ * 
+ * All values of this type follow the format `PAL_QUEUE_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All queue types follow the format `PAL_QUEUE_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalQueueType;
 
 /**
  * @typedef PalPresentMode
  * @brief Present modes
+ * 
+ * All values of this type follow the format `PAL_PRESENT_MODE_*`
+ * for API consistency and ease of use.
  *
- * All present modes follow the format `PAL_PRESENT_MODE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalPresentMode;
 
 /**
  * @typedef PalCompositeAplha
  * @brief Composite alphas
+ * 
+ * All values of this type follow the format `PAL_COMPOSITE_ALPHA_*`
+ * for API consistency and ease of use.
  *
- * All composite alphas follow the format `PAL_COMPOSITE_ALPHA_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalCompositeAplha;
 
 /**
  * @typedef PalFormat
  * @brief Format types.
+ * 
+ * All values of this type follow the format `PAL_FORMAT_*`
+ * for API consistency and ease of use.
  *
- * All format types follow the format `PAL_FORMAT_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalFormat;
 
 /**
  * @typedef PalImageUsages
- * @brief Image usages. Multiple image usages can be OR'ed together using bitwise
- * OR operator (`|`).
+ * @brief Image usages. 
+ * 
+ * Multiple image usages can be OR'ed together using bitwise OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_IMAGE_USAGE_*`
+ * for API consistency and ease of use.
  *
- * All image usages follow the format `PAL_IMAGE_USAGE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalImageUsages;
 
 /**
  * @typedef PalShaderFormats
- * @brief Shader formats. This is a bitmask.
+ * @brief Shader formats.
+ * 
+ * All values of this type follow the format `PAL_SHADER_FORMAT_*`
+ * for API consistency and ease of use.
  *
- * All shader formats follow the format `PAL_SHADER_FORMAT_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalShaderFormats;
 
 /**
  * @typedef PalLoadOp
- * @brief Load operation type.
+ * @brief Load operations.
+ * 
+ * All values of this type follow the format `PAL_LOAD_OP_*`
+ * for API consistency and ease of use.
  *
- * All load operation type follow the format `PAL_LOAD_OP_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalLoadOp;
 
 /**
  * @typedef PalStoreOp
- * @brief Store operation type.
+ * @brief Store operations.
+ * 
+ * All values of this type follow the format `PAL_STORE_OP_*`
+ * for API consistency and ease of use.
  *
- * All store operation type follow the format `PAL_STORE_OP_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalStoreOp;
 
 /**
  * @typedef PalMemoryType
  * @brief Memory types.
+ * 
+ * All values of this type follow the format `PAL_MEMORY_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All memory types follow the format `PAL_MEMORY_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalMemoryType;
 
 /**
  * @typedef PalImageType
  * @brief Image types.
+ * 
+ * All values of this type follow the format `PAL_IMAGE_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All image types follow the format `PAL_IMAGE_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalImageType;
 
 /**
  * @typedef PalImageAspect
  * @brief Image aspects.
+ * 
+ * All values of this type follow the format `PAL_IMAGE_ASPECT_*`
+ * for API consistency and ease of use.
  *
- * All image aspect follow the format `PAL_IMAGE_ASPECT_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalImageAspect;
 
 /**
  * @typedef PalImageViewType
  * @brief Image view types.
+ * 
+ * All values of this type follow the format `PAL_IMAGE_VIEW_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All image view types follow the format `PAL_IMAGE_VIEW_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalImageViewType;
 
 /**
  * @typedef PalFilterMode
  * @brief Filter modes.
+ * 
+ * All values of this type follow the format `PAL_FILTER_MODE_*`
+ * for API consistency and ease of use.
  *
- * All filter modes follow the format `PAL_FILTER_MODE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalFilterMode;
 
 /**
  * @typedef PalSamplerMipmapMode
  * @brief Sampler mipmap modes.
+ * 
+ * All values of this type follow the format `PAL_SAMPLER_MIPMAP_MODE_*`
+ * for API consistency and ease of use.
  *
- * All sampler mipmap modes follow the format `PAL_SAMPLER_MIPMAP_MODE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalSamplerMipmapMode;
 
 /**
  * @typedef PalSamplerAddressMode
  * @brief Sampler address modes.
+ * 
+ * All values of this type follow the format `PAL_SAMPLER_ADDRESS_MODE_*`
+ * for API consistency and ease of use.
  *
- * All sampler address modes follow the format `PAL_SAMPLER_ADDRESS_MODE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalSamplerAddressMode;
 
 /**
  * @typedef PalBorderColor
- * @brief Border color.
+ * @brief Border colors.
+ * 
+ * All values of this type follow the format `PAL_BORDER_COLOR_*`
+ * for API consistency and ease of use.
  *
- * All border colors follow the format `PAL_BORDER_COLOR_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalBorderColor;
 
 /**
  * @typedef PalSurfaceFormat
  * @brief Surface format types.
+ * 
+ * All values of this type follow the format `PAL_SURFACE_FORMAT_*`
+ * for API consistency and ease of use.
  *
- * All surface format types follow the format `PAL_SURFACE_FORMAT_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalSurfaceFormat;
 
 /**
  * @typedef WindowInstanceType
- * @brief Display types for a window.
+ * @brief Instance types of a window instance.
+ * 
+ * All values of this type follow the format `PAL_WINDOW_INSTANCE_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All window display types follow the format `PAL_WINDOW_INSTANCE_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalWindowInstanceType;
 
 /**
  * @typedef PalShaderStage
  * @brief shader stage types.
+ * 
+ * All values of this type follow the format `PAL_SHADER_STAGE_*`
+ * for API consistency and ease of use.
  *
- * All shader stage types follow the format `PAL_SHADER_STAGE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalShaderStage;
 
 /**
  * @typedef PalSampleCount
  * @brief sample count.
+ * 
+ * All values of this type follow the format `PAL_SAMPLE_COUNT_*`
+ * for API consistency and ease of use.
  *
- * All sample count follow the format `PAL_SAMPLE_COUNT_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalSampleCount;
 
 /**
  * @typedef PalPrimitiveTopology
  * @brief Primitve topology types.
+ * 
+ * All values of this type follow the format `PAL_PRIMITIVE_TOPOLOGY_*`
+ * for API consistency and ease of use.
  *
- * All primitve topology types follow the format `PAL_PRIMITIVE_TOPOLOGY_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalPrimitiveTopology;
 
 /**
  * @typedef PalCullMode
  * @brief Cull modes.
+ * 
+ * All values of this type follow the format `PAL_CULL_MODE_*`
+ * for API consistency and ease of use.
  *
- * All cull modes follow the format `PAL_CULL_MODE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalCullMode;
 
 /**
  * @typedef PalFrontFace
  * @brief Front face modes.
+ * 
+ * All values of this type follow the format `PAL_FRONT_FACE_*`
+ * for API consistency and ease of use.
  *
- * All front face modes follow the format `PAL_FRONT_FACE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalFrontFace;
 
 /**
  * @typedef PalPolygonMode
  * @brief Polygon modes.
+ * 
+ * All values of this type follow the format `PAL_POLYGON_MODE_*`
+ * for API consistency and ease of use.
  *
- * All polygon modes follow the format `PAL_POLYGON_MODE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalPolygonMode;
 
 /**
  * @typedef PalStencilFaceFlags
- * @brief Stencil face flags. Multiple stencil face flags can be OR'ed together using bitwise
+ * @brief Stencil face flags. 
+ * 
+ * Multiple stencil face flags can be OR'ed together using bitwise 
  * OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_STENCIL_FACE_FLAG_*`
+ * for API consistency and ease of use.
  *
- * All tencil face flags follow the format `PAL_STENCIL_FACE_FLAG_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalStencilFaceFlags;
 
 /**
  * @typedef PalVertexType
  * @brief Vertex attribute types.
+ * 
+ * All values of this type follow the format `PAL_VERTEX_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All vertex attribute types follow the format `PAL_VERTEX_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalVertexType;
 
 /**
  * @typedef PalVertexSemanticID
  * @brief Vertex semantic id types.
+ * 
+ * All values of this type follow the format `PAL_VERTEX_SEMANTIC_ID_*`
+ * for API consistency and ease of use.
  *
- * All vertex semantic id types follow the format `PAL_VERTEX_SEMANTIC_ID_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalVertexSemanticID;
 
 /**
  * @typedef PalCommandBufferType
  * @brief Command buffer types.
+ * 
+ * All values of this type follow the format `PAL_COMMAND_BUFFER_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All command buffer types follow the format `PAL_COMMAND_BUFFER_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalCommandBufferType;
 
 /**
  * @typedef PalVertexLayoutType
  * @brief Vertex layout types.
+ * 
+ * All values of this type follow the format `PAL_VERTEX_LAYOUT_TYPE_*`
+ * for API consistency and ease of use.
  *
- * All vertex layout types follow the format `PAL_VERTEX_LAYOUT_TYPE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalVertexLayoutType;
 
 /**
  * @typedef PalCompareOp
  * @brief Compare operation modes.
+ * 
+ * All values of this type follow the format `PAL_COMPARE_OP_*`
+ * for API consistency and ease of use.
  *
- * All compare operation modes follow the format `PAL_COMPARE_OP_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalCompareOp;
 
 /**
  * @typedef PalStencilOp
  * @brief Stencil operation modes.
+ * 
+ * All values of this type follow the format `PAL_STENCIL_OP_*`
+ * for API consistency and ease of use.
  *
- * All stencil operation modes follow the format `PAL_STENCIL_OP_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalStencilOp;
 
 /**
  * @typedef PalBlendOp
  * @brief Blend operation modes.
+ * 
+ * All values of this type follow the format `PAL_BLEND_OP_*`
+ * for API consistency and ease of use.
  *
- * All blend operation modes follow the format `PAL_BLEND_OP_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalBlendOp;
 
 /**
  * @typedef PalBlendFactor
  * @brief Blend factor modes.
+ * 
+ * All values of this type follow the format `PAL_BLEND_FACTOR_*`
+ * for API consistency and ease of use.
  *
- * All blend factor modes follow the format `PAL_BLEND_FACTOR_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalBlendFactor;
 
 /**
  * @typedef PalColorMask
- * @brief Color mask flags. Multiple color mask flags can be OR'ed together using bitwise
+ * @brief Color mask flags. 
+ * 
+ * Multiple color mask flags can be OR'ed together using bitwise
  * OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_COLOR_MASK_*`
+ * for API consistency and ease of use.
  *
- * `PAL_COLOR_MASK_NONE` is not a bit and must not be combined with other bits.
- *
- * All color mask flags follow the format `PAL_COLOR_MASK_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalColorMask;
 
 /**
  * @typedef PalResolveMode
  * @brief Resolve modes.
+ * 
+ * All values of this type follow the format `PAL_RESOLVE_MODE_*`
+ * for API consistency and ease of use.
  *
- * All resolve modes follow the format `PAL_RESOLVE_MODE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalResolveMode;
 
 /**
  * @typedef PalFragmentShadingRate
  * @brief Fragment shading rates.
+ * 
+ * All values of this type follow the format `PAL_FRAGMENT_SHADING_RATE_*`
+ * for API consistency and ease of use.
  *
- * All fragment shading rates follow the format `PAL_FRAGMENT_SHADING_RATE_**` for
- * consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalFragmentShadingRate;
 
 /**
  * @typedef PalFragmentShadingRateCombinerOp
  * @brief Fragment shading rate combiner operaton modes.
+ * 
+ * All values of this type follow the format 
+ * `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_*` for API consistency and 
+ * ease of use.
  *
- * All fragment shading rate combiner operation modes follow the format
- * `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalFragmentShadingRateCombinerOp;
 
 /**
  * @typedef PalAccelerationStructureType
  * @brief Acceleration structure types.
+ * 
+ * All values of this type follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_TYPE_*` for API consistency and ease of use.
  *
- * All acceleration structure types follow the format `PAL_ACCELERATION_STRUCTURE_TYPE_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalAccelerationStructureType;
 
 /**
  * @typedef PalAccelerationStructureBuildMode
  * @brief Acceleration structure build modes.
+ * 
+ * All values of this type follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_*` for API consistency and 
+ * ease of use.
  *
- * All acceleration structure build modes follow the format
- * `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalAccelerationStructureBuildMode;
 
 /**
  * @typedef PalAccelerationStructureBuildHints
- * @brief Acceleration structure build hints. Multiple hints can be OR'ed together using
- * bitwise OR operator (`|`). Hints can be ignored by the driver.
+ * @brief Acceleration structure build hints. 
+ * 
+ * Multiple hints can be OR'ed together using bitwise
+ * OR operator (`|`). Hints can be ignored by the driver.
+ * 
+ * All values of this type follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_BUILD_HINT_*` for API consistency and 
+ * ease of use.
  *
- * All acceleration structure build hints follow the format
- * `PAL_ACCELERATION_STRUCTURE_BUILD_HINT_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalAccelerationStructureBuildHints;
 
 /**
  * @typedef PalAccelerationStructureInstanceFlags
- * @brief Acceleration structure instance flags. Multiple flags can be OR'ed together using
- * bitwise OR operator (`|`).
+ * @brief Acceleration structure instance flags. 
+ * 
+ * Multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ * 
+ * All values of this type follow the format 
+ * `PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_*` for API consistency and 
+ * ease of use.
  *
- * All acceleration structure instance flags follow the format
- * `PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalAccelerationStructureInstanceFlags;
 
 /**
  * @typedef PalGeometryType
  * @brief Geometry types.
+ * 
+ * All values of this type follow the format `PAL_GEOMETRY_TYPE_*` for API
+ * consistency and ease of use.
  *
- * All geometry types follow the format `PAL_GEOMETRY_TYPE_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalGeometryType;
 
 /**
  * @typedef PalGeometryFlags
- * @brief Geometry flags. Multiple flags can be OR'ed together using
- * bitwise OR operator (`|`). Not all combinations are valid.
+ * @brief Geometry flags. 
+ * 
+ * Multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_GEOMETRY_FLAG_*` for API
+ * consistency and ease of use.
  *
- * All geometry flags follow the format `PAL_GEOMETRY_FLAG_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalGeometryFlags;
 
 /**
  * @typedef PalIndexType
  * @brief Index types.
+ * 
+ * All values of this type follow the format `PAL_INDEX_TYPE_*` for API
+ * consistency and ease of use.
  *
- * All index types follow the format `PAL_INDEX_TYPE_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalIndexType;
 
 /**
  * @typedef PalBufferUsages
- * @brief Buffer usages. Multiple buffer usages can be OR'ed together using bitwise
+ * @brief Buffer usages. 
+ * 
+ * Multiple buffer usages can be OR'ed together using bitwise
  * OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_BUFFER_USAGE_*` for API
+ * consistency and ease of use.
  *
- * All buffer usages follow the format `PAL_BUFFER_USAGE_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalBufferUsages;
 
 /**
  * @typedef PalUsageState
  * @brief Usage states.
+ * 
+ * All values of this type follow the format `PAL_USAGE_STATE_*` for API
+ * consistency and ease of use.
  *
- * All usage states follow the format `PAL_USAGE_STATE_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalUsageState;
 
 /**
  * @typedef PalDescriptorType
  * @brief Descriptor types.
+ * 
+ * All values of this type follow the format `PAL_DESCRIPTOR_TYPE_*` for API
+ * consistency and ease of use.
  *
- * All descriptor types follow the format `PAL_DESCRIPTOR_TYPE_**` for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalDescriptorType;
 
 /**
  * @typedef PalRayTracingShaderGroupType
  * @brief Ray tracing shader group types.
+ * 
+ * All values of this type follow the format 
+ * `PAL_RAY_TRACING_SHADER_GROUP_TYPE_*` for API consistency and ease of use.
  *
- * All ray tracing shader group types follow the format `PAL_RAY_TRACING_SHADER_GROUP_TYPE_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalRayTracingShaderGroupType;
 
 /**
  * @typedef PalDescriptorIndexingFlags
  * @brief Descriptor indexing subfeature flags.
+ * 
+ * These flags show the capabilities of the descriptor indexing feature.
+ * Each flag determines the operations that are allowed.
+ * 
+ * All values of this type follow the format 
+ * `PAL_DESCRIPTOR_INDEXING_FLAG_*` for API consistency and ease of use.
  *
- * These flags show the capabilities of the descriptor indexing feature. Each flag determines
- * the operations that are allowed.
- *
- * `PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND`: Descriptors in a descriptor set can be updated
- * after the descriptor set been bound in a command buffer.
- *
- * `PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND`: Unused descriptors can be left uninitialized if
- * a shader never accesses them.
- *
- * `PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING`: Different threads can access different
- * descriptors.
- *
- * All descriptor indexing flags follow the format `PAL_DESCRIPTOR_INDEXING_FLAG_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalDescriptorIndexingFlags;
 
 /**
  * @typedef PalBufferMemoryUsage
  * @brief Buffer memory usages.
+ * 
+ * All values of this type follow the format `PAL_BUFFER_MEMORY_USAGE_*` 
+ * for API consistency and ease of use.
  *
- * `PAL_BUFFER_MEMORY_USAGE_MANUAL`: PAL does not allocate memory for the buffer. Users are required
- * to get the required size and allocate memory for the buffer after the buffer has been created.
- * The lifetime of the memory is the responsibility of the user.
- *
- * `PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY`: PAL allocates gpu only memory and manages the memory
- * for the user. This is ideal if a custom allocator will not be used by the user.
- *
- * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD`: PAL allocates cpu upload memory and manages the
- * memory for the user. This is ideal if a custom allocator will not be used by the user.
- *
- * `PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK`: PAL allocates cpu readback memory and manages the
- * memory for the user. This is ideal if a custom allocator will not be used by the user.
- *
- * All buffer memory usages follow the format `PAL_BUFFER_MEMORY_USAGE_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalBufferMemoryUsage;
 
 /**
  * @typedef PalImageMemoryUsage
  * @brief Image memory usages.
+ * 
+ * All values of this type follow the format `PAL_IMAGE_MEMORY_USAGE_*` 
+ * for API consistency and ease of use.
  *
- * `PAL_IMAGE_MEMORY_USAGE_MANUAL`: PAL does not allocate memory for the image. Users are required
- * to get the required size and allocate memory for the image after the image has been created.
- * The lifetime of the memory is the responsibility of the user.
- *
- * `PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY`: PAL allocates gpu only memory and manages the memory
- * for the user. This is ideal if a custom allocator will not be used by the user.
- *
- * All image memory usages follow the format `PAL_IMAGE_MEMORY_USAGE_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalImageMemoryUsage;
 
 /**
  * @typedef PalRenderingFlags
  * @brief Rendering flags.
+ * 
+ * All values of this type follow the format `PAL_RENDERING_FLAG_*` 
+ * for API consistency and ease of use.
  *
- * All rendering flags follow the format `PAL_RENDERING_FLAG_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalRenderingFlags;
 
 /**
  * @typedef PalPipelineStages
- * @brief Pipeline stages. Multiple pipeline usages can be OR'ed together using bitwise
+ * @brief Pipeline stages. 
+ * 
+ * Multiple pipeline usages can be OR'ed together using bitwise
  * OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_PIPELINE_STAGE_*` 
+ * for API consistency and ease of use.
  *
- * All pipeline stages follow the format `PAL_PIPELINE_STAGE_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalPipelineStages;
 
 /**
  * @typedef PalGraphicsBackendVtableVersion
  * @brief Graphics backend vtable versions.
+ * 
+ * All values of this type follow the format 
+ * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_*` for API consistency and ease of use.
  *
- * All graphics backend vtable versions follow the format `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_**`
- * for consistency and API use.
- *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef uint32_t PalGraphicsBackendVtableVersion;
 
 /**
  * @typedef PalDebugCallback
  * @brief Function pointer type used for debug callbacks.
+ * 
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL debugCallback(
+ *     void* userData, 
+ *     PalDebugMessageSeverity severity, 
+ *     PalDebugMessageType type, 
+ *     const char* msg);
+ * @endcode
  *
- * @param userData Optional pointer to user data passed from ::PalGraphicsDebugger. Can be
- * `nullptr`.
- * @param severity Severity of the message. (`PAL_DEBUG_MESSAGE_SEVERITY_INFO`,
- * `PAL_DEBUG_MESSAGE_SEVERITY_WARNING` and `PAL_DEBUG_MESSAGE_SEVERITY_ERROR`).
- * @param type Type of the message. (`PAL_DEBUG_MESSAGE_TYPE_GENERAL`,
- * `PAL_DEBUG_MESSAGE_TYPE_VALIDATION` and `PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE`).
- * @param msg Null-terminated UTF-8 debug message.
+ * @param userData User data passed from the debugger. Can be `nullptr`.
+ * @param severity Severity of the message.
+ * @param type Type of the message.
+ * @param msg Null-terminated `UTF-8` debug message.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palInitGraphics
  */
 typedef void(PAL_CALL* PalDebugCallback)(
@@ -1570,7 +1898,7 @@ typedef void(PAL_CALL* PalDebugCallback)(
  * @struct PalAdapterInfo
  * @brief Information about an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t vram;                                   /**< Total video memory in bytes*/
@@ -1590,7 +1918,7 @@ typedef struct {
  * @struct PalImageCapabilities
  * @brief Image capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxWidth;       /**< Max width in pixels.*/
@@ -1604,7 +1932,7 @@ typedef struct {
  * @struct PalResourceCapabilities
  * @brief Resource capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxPerStageSampledImages;         /**< Max sampled images per shader stage .*/
@@ -1626,7 +1954,7 @@ typedef struct {
  * @struct PalComputeCapabilities
  * @brief Compute capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxWorkGroupInvocations; /**< Max invocations across all workgroups.*/
@@ -1638,7 +1966,7 @@ typedef struct {
  * @struct PalViewportCapabilities
  * @brief Viewport capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxWidth;    /**< Max width in pixels.*/
@@ -1651,7 +1979,7 @@ typedef struct {
  * @struct PalAdapterCapabilities
  * @brief Capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxComputeQueues;            /**< Max compute queues that can be created.*/
@@ -1674,7 +2002,7 @@ typedef struct {
  * @struct PalSamplerAnisotropyCapabilities
  * @brief Sampler anisotropy capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxAnisotropy; /**< Max texture filtering level.*/
@@ -1684,7 +2012,7 @@ typedef struct {
  * @struct PalMultiViewCapabilities
  * @brief Multi view capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxViewCount; /**< Max number views of an image.*/
@@ -1694,7 +2022,7 @@ typedef struct {
  * @struct PalMultiViewportCapabilities
  * @brief Multi viewport capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxCount; /**< Max number of simultaneous viewports.*/
@@ -1704,7 +2032,7 @@ typedef struct {
  * @struct PalDepthStencilCapabilities
  * @brief Depth stencil capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t supportedDepthResolveModes;   /**< Masks of supported depth resolve modes.*/
@@ -1721,7 +2049,7 @@ typedef struct {
  * @struct PalFragmentShadingRateCapabilities
  * @brief Fragment shading rate capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t supportedShadingRates; /**< Masks of supported shading rates.*/
@@ -1736,7 +2064,7 @@ typedef struct {
  * @struct PalMeshShaderCapabilities
  * @brief Mesh shader capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxOutputPrimitives;         /**< Max number of primitives per mesh workgroup.*/
@@ -1751,7 +2079,7 @@ typedef struct {
  * @struct PalRayTracingCapabilities
  * @brief Ray tracing capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t maxRecursionDepth;      /**< Max number of ray recursion.*/
@@ -1767,7 +2095,7 @@ typedef struct {
  * @struct PalDescriptorIndexingCapabilities
  * @brief Descriptor indexing capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalDescriptorIndexingFlags flags;   /**< Capabilities flags. see `PalDescriptorIndexingFlags`*/
@@ -1789,7 +2117,7 @@ typedef struct {
  * @struct PalSurfaceCapabilities
  * @brief surface capabilities of an adapter (GPU).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t supportedPresentModes;    /**< Masks of supported present modes.*/
@@ -1809,7 +2137,7 @@ typedef struct {
  * @brief Information about a format. This includes the supported image usages and maximum sample
  * count from the provided format.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalImageUsages usages;      /**< (eg. `PAL_IMAGE_USAGE_COLOR`).*/
@@ -1821,7 +2149,7 @@ typedef struct {
  * @struct PalImageInfo
  * @brief Information about an image.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalImageUsages usages;      /**< (eg. `PAL_IMAGE_USAGE_COLOR`).*/
@@ -1843,7 +2171,7 @@ typedef struct {
  * If used with a color attachment, the color values will be used and depth and stencil
  * will be used with depth stencil attachments.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     float color[4];   /**< Color clear value.*/
@@ -1857,7 +2185,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalImageView* imageView;           /**< Image view.*/
@@ -1875,7 +2203,7 @@ typedef struct {
  * @struct PalViewport
  * @brief A viewport in pixels (float).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     float x;        /**< X position in pixels.*/
@@ -1890,7 +2218,7 @@ typedef struct {
  * @struct PalRect2D
  * @brief A 2D rectangle in pixels.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     int32_t x;       /**< X position in pixels.*/
@@ -1903,7 +2231,7 @@ typedef struct {
  * @struct PalMemoryRequirements
  * @brief Memory requirements for a resource (image, buffer etc).
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t size;                 /**< Required size in bytes.*/
@@ -1919,7 +2247,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t waitValue;             /**< Timeline semaphore value to wait on.*/
@@ -1938,7 +2266,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t timeout;              /**< Timeout in milliseconds.*/
@@ -1952,7 +2280,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalAttachmentDesc* colorAttachments;        /**< Color attachments.*/
@@ -1974,7 +2302,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalFormat* colorAttachmentsFormat;             /**< Color attachments formats.*/
@@ -1993,7 +2321,7 @@ typedef struct {
  * Uninitialized fields may result in undefined behavior. `workCount` can be specified in pixels,
  * vertices etc.Eg. an image of 800 x 600 will be [0] = 800, [1] = 600 and [2] = 1.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t workCount[3];      /**< Workload per dimension. (eg. Image (200, 200, 1)).*/
@@ -2005,7 +2333,7 @@ typedef struct {
  * @struct PalWorkGroupInfo
  * @brief Information about compute or mesh(or task) dispatch data or a dispatch tile.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t workGroupBase[3];  /**< Offset per dimension of a dispatch tile.*/
@@ -2018,7 +2346,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t bufferSize;        /**< Required buffer size.*/
@@ -2032,7 +2360,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t vertexCount;   /**< Vertex count.*/
@@ -2047,7 +2375,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t indexCount;    /**< Index count.*/
@@ -2063,7 +2391,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t groupCountXOrWidth;  /**< Number of groups on the x dimension or dispatch width.*/
@@ -2077,7 +2405,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalVertexSemanticID semanticID; /**< (eg. `PAL_VERTEX_SEMANTIC_ID_POSITION`).*/
@@ -2096,7 +2424,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalVertexAttribute* attributes; /**< Vertex attributes.*/
@@ -2112,7 +2440,7 @@ typedef struct {
  *
  * The debugger will not be initialized if PalGraphicsDebugger::callback is set and valid.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     void* userData;              /**< Optional user provided data. Can be `nullptr`.*/
@@ -2133,7 +2461,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalBool enableDepthClamp;   /**< `PAL_TRUE` to enable depth clamp.*/
@@ -2152,7 +2480,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t sampleMask;           /**< Set to 0 to use default.*/
@@ -2168,7 +2496,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalStencilOp failOp;      /**< Stencil fail operation.*/
@@ -2183,7 +2511,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalBool enableDepthTest;               /**< `PAL_TRUE` to enable depth test.*/
@@ -2203,7 +2531,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalBool enableBlend;                /**< `PAL_TRUE` to enable blending.*/
@@ -2222,7 +2550,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalFragmentShadingRate rate;                     /**< (eg. `PAL_FRAGMENT_SHADING_RATE_2X2`).*/
@@ -2235,7 +2563,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalAccelerationStructure* blas;              /**< Bottom level acceleration structure.*/
@@ -2250,7 +2578,7 @@ typedef struct {
  * @struct PalAccelerationStructureBuildSize
  * @brief Acceleration structure build size.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t accelerationStructureSize; /**< Required acceleration structure size in bytes.*/
@@ -2264,7 +2592,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalDeviceAddress vertexBufferAddress;    /**< Address of the vertex buffer.*/
@@ -2282,7 +2610,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalDeviceAddress bufferAddress; /**< Address of the AABBS buffer.*/
@@ -2295,7 +2623,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     const void* data;        /**< This will be casted based on `type`.*/
@@ -2310,7 +2638,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalAccelerationStructure* dst;          /**< Destination aceleration structure.*/
@@ -2330,7 +2658,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t descriptorCount;         /**< Number of descriptors of `descriptorType`.*/
@@ -2344,7 +2672,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t bindingCount;            /**< Number of bindings of `descriptorType`.*/
@@ -2357,7 +2685,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalBuffer* buffer; /**< Buffer associated with the descriptor.*/
@@ -2372,7 +2700,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalImageView* imageView; /**< Image view associated with the descriptor.*/
@@ -2384,7 +2712,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalSampler* sampler; /**< Sampler associated with the descriptor.*/
@@ -2396,7 +2724,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalAccelerationStructure* tlas; /**< TLAS associated with the descriptor.*/
@@ -2408,7 +2736,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalDescriptorSet* descriptorSet;            /**< Descriptor set to write into.*/
@@ -2428,7 +2756,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalUsageState oldState;      /**< (eg. `PAL_USAGE_STATE_COLOR_ATTACHMENT`).*/
@@ -2443,7 +2771,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint32_t offset; /**< Offset in bytes.*/
@@ -2456,7 +2784,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalImageAspect aspect;    /**< (eg. `PAL_IMAGE_ASPECT_COLOR`).*/
@@ -2472,7 +2800,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t size;      /**< Size in bytes to copy from source buffer.*/
@@ -2486,7 +2814,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t bufferOffset;         /**< Offset in bytes into the buffer.*/
@@ -2510,7 +2838,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalImageAspect aspect;       /**< (eg. `PAL_IMAGE_ASPECT_COLOR`).*/
@@ -2538,7 +2866,7 @@ typedef struct {
  *
  * The records array must be in this order [raygen][miss][hitgroup][callable].
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     void* localData;        /**< Must not be `nullptr` if `localDataSize` is not 0.*/
@@ -2552,7 +2880,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     const char* entryName;       /**< Shader stage entry name.*/
@@ -2566,7 +2894,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalImageUsages usages;    /**< (eg. `PAL_IMAGE_USAGE_COLOR` | `PAL_IMAGE_USAGE_TRANSFER_DST`).*/
@@ -2587,7 +2915,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalFormat format;                          /**< (eg. `PAL_FORMAT_B8G8R8A8_UNORM`).*/
@@ -2601,7 +2929,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalBool enableCompare;              /**< `PAL_TRUE` to enable compare operations.*/
@@ -2626,7 +2954,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalBool clipped;                  /**< `PAL_TRUE` to discard pixels that are not visible.*/
@@ -2645,7 +2973,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     void* code;                  /**< Pointer to the shader code.*/
@@ -2660,7 +2988,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     uint64_t size;                    /**< Size in bytes.*/
@@ -2674,7 +3002,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalBuffer* buffer;                 /**< Acceleration structure buffer.*/
@@ -2690,7 +3018,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalDescriptorSetLayoutBinding* bindings; /**< Bindings.*/
@@ -2704,7 +3032,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalDescriptorPoolBindingSize* bindingSizes; /**< Binding sizes.*/
@@ -2720,7 +3048,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalDescriptorSetLayout** descriptorSetLayouts; /**< Descriptor set layouts.*/
@@ -2735,7 +3063,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalPipelineLayout* pipelineLayout;                     /**< Pipeline layout.*/
@@ -2761,7 +3089,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalPipelineLayout* pipelineLayout; /**< Pipeline layout.*/
@@ -2776,7 +3104,7 @@ typedef struct {
  *
  * The shader group array must be in this order [raygen][miss][hitgroup][callable].
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalRayTracingShaderGroupType type;     /**< (eg. `PAL_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL`).*/
@@ -2797,7 +3125,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalPipelineLayout* pipelineLayout;                /**< Pipeline layout.*/
@@ -2817,7 +3145,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     PalShaderBindingTableRecordInfo* records; /**< Shader binding table records.*/
@@ -2839,7 +3167,7 @@ typedef struct {
  * that must be present implemented. This will be validated at initialization. See version constant
  * for the required functions. Optional functions have their own requirements.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     const void* vtable;                      /**< Pointer to the backend vtable.*/
@@ -2853,7 +3181,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 typedef struct {
     /**
@@ -4117,7 +4445,7 @@ typedef struct {
  *
  * Uninitialized fields may result in undefined behavior.
  *
- * @since 2.1
+ * @since Added in version 2.1
  */
 typedef struct {
     const PalGraphicsBackendVtable1* vtable1; /**< PalGraphicsBackendVtable1.*/
@@ -4200,7 +4528,7 @@ typedef struct {
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palShutdownGraphics
  */
 PAL_API PalResult PAL_CALL palInitGraphics(
@@ -4217,7 +4545,7 @@ PAL_API PalResult PAL_CALL palInitGraphics(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palInitGraphics
  */
 PAL_API void PAL_CALL palShutdownGraphics();
@@ -4248,7 +4576,7 @@ PAL_API void PAL_CALL palShutdownGraphics();
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palEnumerateAdapters(
     uint32_t* count,
@@ -4262,7 +4590,7 @@ PAL_API PalResult PAL_CALL palEnumerateAdapters(
  *
  * Thread safety: Thread safe if `info` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palEnumerateAdapters
  */
 PAL_API void PAL_CALL palGetAdapterInfo(
@@ -4277,7 +4605,7 @@ PAL_API void PAL_CALL palGetAdapterInfo(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palEnumerateAdapters
  */
 PAL_API void PAL_CALL palGetAdapterCapabilities(
@@ -4293,7 +4621,7 @@ PAL_API void PAL_CALL palGetAdapterCapabilities(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palEnumerateAdapters
  */
 PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
@@ -4309,7 +4637,7 @@ PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palEnumerateAdapters
  */
 PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
@@ -4335,7 +4663,7 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  *
  * Thread safety: Thread safe if `adapter` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyDevice
  */
 PAL_API PalResult PAL_CALL palCreateDevice(
@@ -4353,7 +4681,7 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  * Thread safety: Thread safe if the adapter used to create the device is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateDevice
  */
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
@@ -4369,7 +4697,7 @@ PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device);
 
@@ -4393,7 +4721,7 @@ PAL_API uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device);
  * Thread safety: Thread safe if `device` is externally synchronized and
  * `outMemory` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palFreeMemory
  */
 PAL_API PalResult PAL_CALL palAllocateMemory(
@@ -4413,7 +4741,7 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  * Thread safety: Thread safe if `device` is externally synchronized and
  * `outMemory` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palAllocateMemory
  */
 PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
@@ -4429,7 +4757,7 @@ PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQuerySamplerAnisotropyCapabilities(
     PalDevice* device,
@@ -4446,7 +4774,7 @@ PAL_API void PAL_CALL palQuerySamplerAnisotropyCapabilities(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQueryMultiViewCapabilities(
     PalDevice* device,
@@ -4463,7 +4791,7 @@ PAL_API void PAL_CALL palQueryMultiViewCapabilities(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQueryMultiViewportCapabilities(
     PalDevice* device,
@@ -4480,7 +4808,7 @@ PAL_API void PAL_CALL palQueryMultiViewportCapabilities(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQueryDepthStencilCapabilities(
     PalDevice* device,
@@ -4497,7 +4825,7 @@ PAL_API void PAL_CALL palQueryDepthStencilCapabilities(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQueryFragmentShadingRateCapabilities(
     PalDevice* device,
@@ -4514,7 +4842,7 @@ PAL_API void PAL_CALL palQueryFragmentShadingRateCapabilities(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQueryMeshShaderCapabilities(
     PalDevice* device,
@@ -4531,7 +4859,7 @@ PAL_API void PAL_CALL palQueryMeshShaderCapabilities(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQueryRayTracingCapabilities(
     PalDevice* device,
@@ -4548,7 +4876,7 @@ PAL_API void PAL_CALL palQueryRayTracingCapabilities(
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
     PalDevice* device,
@@ -4577,7 +4905,7 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyQueue
  */
 PAL_API PalResult PAL_CALL palCreateQueue(
@@ -4593,7 +4921,7 @@ PAL_API PalResult PAL_CALL palCreateQueue(
  * Thread safety: Thread safe if the device used to create the queue is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateQueue
  */
 PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
@@ -4608,7 +4936,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateQueue
  */
 PAL_API PalBool PAL_CALL palCanQueuePresent(
@@ -4628,7 +4956,7 @@ PAL_API PalBool PAL_CALL palCanQueuePresent(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.1
+ * @since Added in version 2.1
  */
 PAL_API PalBool PAL_CALL palCanQueueShareOwnership(
     PalQueue* a,
@@ -4648,7 +4976,7 @@ PAL_API PalBool PAL_CALL palCanQueueShareOwnership(
  * Thread safety: Thread safe.
  *
  * @sa palCanQueueUsePipelineStages
- * @since 2.1
+ * @since Added in version 2.1
  */
 PAL_API PalBool PAL_CALL palCanQueueUseUsageState(
     PalQueue* queue,
@@ -4668,7 +4996,7 @@ PAL_API PalBool PAL_CALL palCanQueueUseUsageState(
  * Thread safety: Thread safe.
  *
  * @sa palCanQueueUseUsageState
- * @since 2.1
+ * @since Added in version 2.1
  */
 PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
     PalQueue* queue,
@@ -4687,7 +5015,7 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
  *
  * Thread safety: Thread safe if `queue` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 
@@ -4708,7 +5036,7 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  *
  * Thread safety: Thread safe if `outFormats` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palIsFormatSupported
  */
 PAL_API void PAL_CALL palEnumerateFormats(
@@ -4730,7 +5058,7 @@ PAL_API void PAL_CALL palEnumerateFormats(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palQueryFormatImageUsages
  * @sa palQueryFormatImageViewUsages
  */
@@ -4748,7 +5076,7 @@ PAL_API PalBool PAL_CALL palIsFormatSupported(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
     PalAdapter* adapter,
@@ -4764,7 +5092,7 @@ PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
     PalAdapter* adapter,
@@ -4788,7 +5116,7 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyImage
  */
 PAL_API PalResult PAL_CALL palCreateImage(
@@ -4804,7 +5132,7 @@ PAL_API PalResult PAL_CALL palCreateImage(
  * Thread safety: Thread safe if the device used to create the image is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateImage
  */
 PAL_API void PAL_CALL palDestroyImage(PalImage* image);
@@ -4819,7 +5147,7 @@ PAL_API void PAL_CALL palDestroyImage(PalImage* image);
  *
  * Thread safety: Thread safe if `info` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateImage
  */
 PAL_API void PAL_CALL palGetImageInfo(
@@ -4834,7 +5162,7 @@ PAL_API void PAL_CALL palGetImageInfo(
  *
  * Thread safety: Thread safe if `requirements` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetImageMemoryRequirements(
     PalImage* image,
@@ -4855,7 +5183,7 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
  *
  * Thread safety: Thread safe if `requirements` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetImageMemoryRequirements
  */
 PAL_API PalResult PAL_CALL palBindImageMemory(
@@ -4886,7 +5214,7 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyImageView
  */
 PAL_API PalResult PAL_CALL palCreateImageView(
@@ -4903,7 +5231,7 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  * Thread safety: Thread safe if the device used to create the image view is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateImageView
  */
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
@@ -4922,7 +5250,7 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroySampler
  */
 PAL_API PalResult PAL_CALL palCreateSampler(
@@ -4938,7 +5266,7 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  * Thread safety: Thread safe if the device used to create the sampler is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateSampler
  */
 PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
@@ -4962,7 +5290,7 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroySurface
  */
 PAL_API PalResult PAL_CALL palCreateSurface(
@@ -4980,7 +5308,7 @@ PAL_API PalResult PAL_CALL palCreateSurface(
  * Thread safety: Thread safe if the device used to create the surface is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateSurface
  */
 PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
@@ -4997,7 +5325,7 @@ PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
  *
  * Thread safety: Thread safe if `caps` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetSurfaceCapabilities(
     PalDevice* device,
@@ -5023,7 +5351,7 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroySwapchain
  */
 PAL_API PalResult PAL_CALL palCreateSwapchain(
@@ -5041,7 +5369,7 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
  * Thread safety: Thread safe if the device used to create the swapchain is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateSwapchain
  */
 PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
@@ -5056,7 +5384,7 @@ PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetNextSwapchainImage
  */
 PAL_API PalImage* PAL_CALL palGetSwapchainImage(
@@ -5075,7 +5403,7 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  *
  * Thread safety: Thread safe if `swapchain` externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetSwapchainImage
  */
 PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
@@ -5095,7 +5423,7 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSwapchain* swapchain,
@@ -5117,7 +5445,7 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
  *
  * Thread safety: Thread safe if `swapchain` externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palResizeSwapchain(
     PalSwapchain* swapchain,
@@ -5155,7 +5483,7 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  *
  * @note The shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyShader
  */
 PAL_API PalResult PAL_CALL palCreateShader(
@@ -5171,7 +5499,7 @@ PAL_API PalResult PAL_CALL palCreateShader(
  * Thread safety: Thread safe if the device used to create the shader is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateShader
  */
 PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
@@ -5191,7 +5519,7 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyFence
  */
 PAL_API PalResult PAL_CALL palCreateFence(
@@ -5207,7 +5535,7 @@ PAL_API PalResult PAL_CALL palCreateFence(
  * Thread safety: Thread safe if the device used to create the fence is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateFence
  */
 PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
@@ -5226,7 +5554,7 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
  *
  * Thread safety: Thread safe if `fence` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palIsFenceSignaled
  */
 PAL_API PalResult PAL_CALL palWaitFence(
@@ -5246,7 +5574,7 @@ PAL_API PalResult PAL_CALL palWaitFence(
  *
  * Thread safety: Thread safe if `fence` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palIsFenceSignaled
  */
 PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
@@ -5260,7 +5588,7 @@ PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palResetFence
  * @sa palWaitFence
  */
@@ -5281,7 +5609,7 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroySemaphore
  */
 PAL_API PalResult PAL_CALL palCreateSemaphore(
@@ -5297,7 +5625,7 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
  * Thread safety: Thread safe if the device used to create the semaphore is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateSemaphore
  */
 PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
@@ -5316,7 +5644,7 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
  *
  * Thread safety: Thread safe if `semaphore` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palSignalSemaphore
  * @sa palGetSemaphoreValue
  */
@@ -5339,7 +5667,7 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  *
  * Thread safety: Thread safe if `queue` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palWaitSemaphore
  * @sa palGetSemaphoreValue
  */
@@ -5361,7 +5689,7 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  *
  * Thread safety: Thread safe if `semaphore` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palWaitSemaphore
  * @sa palSignalSemaphore
  */
@@ -5383,7 +5711,7 @@ PAL_API PalResult PAL_CALL palGetSemaphoreValue(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyCommandPool
  */
 PAL_API PalResult PAL_CALL palCreateCommandPool(
@@ -5402,7 +5730,7 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  * Thread safety: Thread safe if the device used to create the command pool is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateCommandPool
  */
 PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
@@ -5417,7 +5745,7 @@ PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
  *
  * Thread safety: Thread safe if `pool` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
 
@@ -5434,7 +5762,7 @@ PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
  *
  * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palFreeCommandBuffer
  */
 PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
@@ -5451,7 +5779,7 @@ PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
  * Thread safety: Thread safe if the command pool used to create the command buffer is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palAllocateCommandBuffer
  */
 PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
@@ -5466,7 +5794,7 @@ PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
 
@@ -5483,7 +5811,7 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  *
  * Thread safety: Thread safe if `queue` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
@@ -5501,7 +5829,7 @@ PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdEnd
  */
 PAL_API PalResult PAL_CALL palCmdBegin(
@@ -5518,7 +5846,7 @@ PAL_API PalResult PAL_CALL palCmdBegin(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdBegin
  */
 PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
@@ -5533,7 +5861,7 @@ PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
  *
  * Thread safety: Thread safe if `primaryCmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdExecuteCommandBuffer(
     PalCommandBuffer* primaryCmdBuffer,
@@ -5550,7 +5878,7 @@ PAL_API void PAL_CALL palCmdExecuteCommandBuffer(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetFragmentShadingRate(
     PalCommandBuffer* cmdBuffer,
@@ -5571,7 +5899,7 @@ PAL_API void PAL_CALL palCmdSetFragmentShadingRate(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palBuildWorkGroupInfo
  */
 PAL_API void PAL_CALL palCmdDrawMeshTasks(
@@ -5595,7 +5923,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasks(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palBuildWorkGroupInfo
  */
 PAL_API void PAL_CALL palCmdDrawMeshTasksIndirect(
@@ -5619,7 +5947,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirect(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palBuildWorkGroupInfo
  */
 PAL_API void PAL_CALL palCmdDrawMeshTasksIndirectCount(
@@ -5639,7 +5967,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirectCount(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdBuildAccelerationStructure(
     PalCommandBuffer* cmdBuffer,
@@ -5653,7 +5981,7 @@ PAL_API void PAL_CALL palCmdBuildAccelerationStructure(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdBeginRendering(
     PalCommandBuffer* cmdBuffer,
@@ -5666,7 +5994,7 @@ PAL_API void PAL_CALL palCmdBeginRendering(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
 
@@ -5680,7 +6008,7 @@ PAL_API void PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdCopyBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -5698,7 +6026,7 @@ PAL_API void PAL_CALL palCmdCopyBuffer(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdCopyBufferToImage(
     PalCommandBuffer* cmdBuffer,
@@ -5716,7 +6044,7 @@ PAL_API void PAL_CALL palCmdCopyBufferToImage(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdCopyImage(
     PalCommandBuffer* cmdBuffer,
@@ -5734,7 +6062,7 @@ PAL_API void PAL_CALL palCmdCopyImage(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdCopyImageToBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -5753,7 +6081,7 @@ PAL_API void PAL_CALL palCmdCopyImageToBuffer(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdBindPipeline(
     PalCommandBuffer* cmdBuffer,
@@ -5771,7 +6099,7 @@ PAL_API void PAL_CALL palCmdBindPipeline(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetViewport(
     PalCommandBuffer* cmdBuffer,
@@ -5790,7 +6118,7 @@ PAL_API void PAL_CALL palCmdSetViewport(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetScissors(
     PalCommandBuffer* cmdBuffer,
@@ -5810,7 +6138,7 @@ PAL_API void PAL_CALL palCmdSetScissors(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdBindVertexBuffers(
     PalCommandBuffer* cmdBuffer,
@@ -5831,7 +6159,7 @@ PAL_API void PAL_CALL palCmdBindVertexBuffers(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdBindIndexBuffer(
     PalCommandBuffer* cmdBuffer,
@@ -5852,7 +6180,7 @@ PAL_API void PAL_CALL palCmdBindIndexBuffer(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDrawIndexed
  */
 PAL_API void PAL_CALL palCmdDraw(
@@ -5878,7 +6206,7 @@ PAL_API void PAL_CALL palCmdDraw(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDrawIndexedIndirect
  */
 PAL_API void PAL_CALL palCmdDrawIndirect(
@@ -5902,7 +6230,7 @@ PAL_API void PAL_CALL palCmdDrawIndirect(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdDrawIndexedIndirectCount
  */
 PAL_API void PAL_CALL palCmdDrawIndirectCount(
@@ -5925,7 +6253,7 @@ PAL_API void PAL_CALL palCmdDrawIndirectCount(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdDraw
  */
 PAL_API void PAL_CALL palCmdDrawIndexed(
@@ -5951,7 +6279,7 @@ PAL_API void PAL_CALL palCmdDrawIndexed(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdDrawIndirect
  */
 PAL_API void PAL_CALL palCmdDrawIndexedIndirect(
@@ -5975,7 +6303,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirect(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdDrawIndirectCount
  */
 PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
@@ -6018,7 +6346,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdImageBarrier
  * @sa palCmdBufferBarrier
  * @sa palCanQueueUseUsageState
@@ -6058,7 +6386,7 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdBufferBarrier
  * @sa palCanQueueUseUsageState
@@ -6096,7 +6424,7 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  *
  * Thread safety: Thread safe if `srcCmdBuffer` and `dstCmdBuffer` are externally synchronized.
  *
- * @since 2.1
+ * @since Added in version 2.1
  * @sa palCmdBufferOwnershipTransfer
  * @sa palCanQueueUseUsageState
  * @sa palCanQueueUsePipelineStages
@@ -6137,7 +6465,7 @@ PAL_API void PAL_CALL palCmdImageOwnershipTransfer(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdAccelerationStructureBarrier
  * @sa palCmdImageBarrier
  * @sa palCanQueueUseUsageState
@@ -6173,7 +6501,7 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
  *
  * Thread safety: Thread safe if `srcCmdBuffer` and `dstCmdBuffer` are externally synchronized.
  *
- * @since 2.1
+ * @since Added in version 2.1
  * @sa palCmdImageOwnershipTransfer
  * @sa palCanQueueUseUsageState
  * @sa palCanQueueUsePipelineStages
@@ -6197,7 +6525,7 @@ PAL_API void PAL_CALL palCmdBufferOwnershipTransfer(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palBuildWorkGroupInfo
  */
 PAL_API void PAL_CALL palCmdDispatch(
@@ -6224,7 +6552,7 @@ PAL_API void PAL_CALL palCmdDispatch(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palBuildWorkGroupInfo
  */
 PAL_API void PAL_CALL palCmdDispatchBase(
@@ -6250,7 +6578,7 @@ PAL_API void PAL_CALL palCmdDispatchBase(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palBuildWorkGroupInfo
  */
 PAL_API void PAL_CALL palCmdDispatchIndirect(
@@ -6274,7 +6602,7 @@ PAL_API void PAL_CALL palCmdDispatchIndirect(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdTraceRays(
     PalCommandBuffer* cmdBuffer,
@@ -6303,7 +6631,7 @@ PAL_API void PAL_CALL palCmdTraceRays(
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdTraceRaysIndirect(
     PalCommandBuffer* cmdBuffer,
@@ -6322,7 +6650,7 @@ PAL_API void PAL_CALL palCmdTraceRaysIndirect(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdBindDescriptorSet(
     PalCommandBuffer* cmdBuffer,
@@ -6341,7 +6669,7 @@ PAL_API void PAL_CALL palCmdBindDescriptorSet(
  *
  * @note A pipeline must be bound before this call.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdPushConstants(
     PalCommandBuffer* cmdBuffer,
@@ -6360,7 +6688,7 @@ PAL_API void PAL_CALL palCmdPushConstants(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetCullMode(
     PalCommandBuffer* cmdBuffer,
@@ -6377,7 +6705,7 @@ PAL_API void PAL_CALL palCmdSetCullMode(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetFrontFace(
     PalCommandBuffer* cmdBuffer,
@@ -6394,7 +6722,7 @@ PAL_API void PAL_CALL palCmdSetFrontFace(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetPrimitiveTopology(
     PalCommandBuffer* cmdBuffer,
@@ -6411,7 +6739,7 @@ PAL_API void PAL_CALL palCmdSetPrimitiveTopology(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetDepthTestEnable(
     PalCommandBuffer* cmdBuffer,
@@ -6428,7 +6756,7 @@ PAL_API void PAL_CALL palCmdSetDepthTestEnable(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetDepthWriteEnable(
     PalCommandBuffer* cmdBuffer,
@@ -6448,7 +6776,7 @@ PAL_API void PAL_CALL palCmdSetDepthWriteEnable(
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palCmdSetStencilOp(
     PalCommandBuffer* cmdBuffer,
@@ -6476,7 +6804,7 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyAccelerationStructure
  */
 PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
@@ -6492,7 +6820,7 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
  * Thread safety: Thread safe if the device used to create the acceleration structure is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateAccelerationstructure
  */
 PAL_API void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* as);
@@ -6512,7 +6840,7 @@ PAL_API void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* 
  *
  * Thread safety: Thread safe if `cmdBuffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
     PalDevice* device,
@@ -6543,7 +6871,7 @@ PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyBuffer
  */
 PAL_API PalResult PAL_CALL palCreateBuffer(
@@ -6559,7 +6887,7 @@ PAL_API PalResult PAL_CALL palCreateBuffer(
  * Thread safety: Thread safe if the device used to create the buffer is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateBuffer
  */
 PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
@@ -6572,7 +6900,7 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
  *
  * Thread safety: Thread safe if `requirements` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palGetBufferMemoryRequirements(
     PalBuffer* buffer,
@@ -6593,7 +6921,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palWriteInstanceStaging
  */
 PAL_API void PAL_CALL palComputeInstanceStagingSize(
@@ -6619,7 +6947,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palWriteImageStaging
  */
 PAL_API void PAL_CALL palComputeImageStagingRequirements(
@@ -6641,7 +6969,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palComputeInstanceStagingSize
  */
 PAL_API void PAL_CALL palWriteInstanceStaging(
@@ -6661,7 +6989,7 @@ PAL_API void PAL_CALL palWriteInstanceStaging(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palComputeImageStagingRequirements
  */
 PAL_API void PAL_CALL palWriteImageStaging(
@@ -6686,7 +7014,7 @@ PAL_API void PAL_CALL palWriteImageStaging(
  *
  * Thread safety: Thread safe if `requirements` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palGetBufferMemoryRequirements
  */
 PAL_API PalResult PAL_CALL palBindBufferMemory(
@@ -6716,7 +7044,7 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
  * Mapping with different offsets into the same buffer is thread safe as long as `buffer`
  * is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palUnmapBuffer
  */
 PAL_API PalResult PAL_CALL palMapBuffer(
@@ -6735,7 +7063,7 @@ PAL_API PalResult PAL_CALL palMapBuffer(
  *
  * Thread safety: Thread safe if `buffer` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palMapBuffer
  */
 PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
@@ -6751,7 +7079,7 @@ PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
  *
  * Thread safety: Thread safe if `buffer` is per thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
 
@@ -6775,7 +7103,7 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyDescriptorSetLayout
  */
 PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
@@ -6791,7 +7119,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
  * Thread safety: Thread safe if the device used to create the descriptor set layout is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateDescriptorSetLayout
  */
 PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layout);
@@ -6810,7 +7138,7 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyDescriptorPool
  */
 PAL_API PalResult PAL_CALL palCreateDescriptorPool(
@@ -6826,7 +7154,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
  * Thread safety: Thread safe if the device used to create the descriptor pool is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateDescriptorPool
  */
 PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
@@ -6841,7 +7169,7 @@ PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
  *
  * Thread safety: Thread safe if `pool` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
 
@@ -6864,7 +7192,7 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  *
  * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
     PalDevice* device,
@@ -6887,7 +7215,7 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
     PalDevice* device,
@@ -6909,7 +7237,7 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyPipelineLayout
  */
 PAL_API PalResult PAL_CALL palCreatePipelineLayout(
@@ -6925,7 +7253,7 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
  * Thread safety: Thread safe if the device used to create the pipeline layout is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreatePipelineLayout
  */
 PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
@@ -6944,7 +7272,7 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
  *
  * Thread safety: Thread safe if `device` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyPipeline
  */
 PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
@@ -6968,7 +7296,7 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  *
  * @note The first entry of the compute shader will be used.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyPipeline
  */
 PAL_API PalResult PAL_CALL palCreateComputePipeline(
@@ -6995,7 +7323,7 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  *
  * @note The shader group array must be in this order [raygen][miss][hitgroup][callable].
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyPipeline
  */
 PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
@@ -7011,7 +7339,7 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  * Thread safety: Thread safe if the device used to create the pipeline is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateGraphicsPipeline
  * @sa palCreateComputePipeline
  * @sa palCreateRayTracingPipeline
@@ -7041,7 +7369,7 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  *
  * @note The records array must be in this order [raygen][miss][hitgroup][callable].
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palDestroyShaderBindingTable
  */
 PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
@@ -7057,7 +7385,7 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
  * Thread safety: Thread safe if the device used to create the shader binding table is
  * externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCreateShaderBindingTable
  */
 PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
@@ -7075,7 +7403,7 @@ PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
  *
  * Thread safety: Thread safe if `sbt` is externally synchronized.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 PAL_API void PAL_CALL palUpdateShaderBindingTable(
     PalShaderBindingTable* sbt,
@@ -7103,7 +7431,7 @@ PAL_API void PAL_CALL palUpdateShaderBindingTable(
  *
  * Thread safety: Must only be called from the main thread.
  *
- * @since 2.0
+ * @since Added in version 2.0
  * @sa palCmdDrawMeshTasks
  * @sa palCmdDrawMeshTasksIndirect
  * @sa palCmdDrawMeshTasksIndirectCount
@@ -7134,7 +7462,7 @@ PAL_API void PAL_CALL palBuildWorkGroupInfo(
  *
  * Thread safety: Thread safe.
  *
- * @since 2.0
+ * @since Added in version 2.0
  */
 static inline PalBool PAL_CALL palIsSupported(
     uint32_t mask,
@@ -7145,4 +7473,4 @@ static inline PalBool PAL_CALL palIsSupported(
 
 /** @} */
 
-#endif // _PAL_GRAPHICS_H
+#endif // PAL_GRAPHICS_H
