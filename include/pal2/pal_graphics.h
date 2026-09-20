@@ -1306,6 +1306,8 @@ typedef uint32_t PalImageUsages;
  * @typedef PalShaderFormats
  * @brief Shader formats.
  * 
+ * This is a bitmask of all supported shader formats of an adapter.
+ * 
  * All values of this type follow the format `PAL_SHADER_FORMAT_*`
  * for API consistency and ease of use.
  *
@@ -1896,183 +1898,413 @@ typedef void(PAL_CALL* PalDebugCallback)(
 
 /**
  * @struct PalAdapterInfo
- * @brief Information about an adapter (GPU).
+ * @brief Contains information about an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalAdapterInfo::vram
+ * The total video memory in bytes of the adapter.
+ * 
+ * @var PalAdapterInfo::sharedMemory
+ * The total shared memory in bytes of the adapter.
+ * 
+ * @var PalAdapterInfo::driverVersion
+ * The driver version of the adapter. This format is driver specific.
+ * 
+ * @var PalAdapterInfo::vendorId
+ * The vendor id of the adapter.
+ * 
+ * @var PalAdapterInfo::deviceId
+ * The device id of the adapter.
+ * 
+ * @var PalAdapterInfo::shaderFormats
+ * A bitmask of the supported shader formats of the adapter.
+ * 
+ * @var PalAdapterInfo::type
+ * The type of the adapter (eg. `PAL_ADAPTER_TYPE_DISCRETE`).
+ * 
+ * @var PalAdapterInfo::apiType
+ * The API type of the adapter (eg. `PAL_ADAPTER_API_TYPE_VULKAN`).
+ * 
+ * @var PalAdapterInfo::name
+ * The name of the adapter.
+ * 
+ * @var PalAdapterInfo::backendName
+ * The backend name of the adapter. This is the name of the backend that
+ * the adapter belongs to.
+ * 
+ * @var PalAdapterInfo::vtableVersion
+ * The backend version of the adapter. This is different from ::driverVersion.
+ * This determines the available vtable implementations of the adapter.
  */
-typedef struct {
-    uint64_t vram;                                   /**< Total video memory in bytes*/
-    uint64_t sharedMemory;                           /**< Total shared memory in bytes*/
-    uint64_t driverVersion;                          /**< Adapter version.*/
-    uint32_t vendorId;                               /**< Adapter vendor id.*/
-    uint32_t deviceId;                               /**< Adapter device id.*/
-    PalShaderFormats shaderFormats;                  /**< (eg. `PAL_SHADER_FORMAT_SPIRV`)*/
-    PalAdapterType type;                             /**< (eg. `PAL_ADAPTER_TYPE_DISCRETE`).*/
-    PalAdapterApiType apiType;                       /**< (eg. `PAL_ADAPTER_API_TYPE_VULKAN`).*/
-    char name[PAL_ADAPTER_NAME_SIZE];                /**< Adapter name.*/
-    char backendName[PAL_ADAPTER_BACKEND_NAME_SIZE]; /**< Adapter backend name.*/
-    PalGraphicsBackendVtableVersion vtableVersion;   /**< Backend version of the adapter.*/
+typedef struct PalAdapterInfo
+{
+    uint64_t vram;
+    uint64_t sharedMemory;
+    uint64_t driverVersion;
+    uint32_t vendorId;
+    uint32_t deviceId;
+    PalShaderFormats shaderFormats;
+    PalAdapterType type;
+    PalAdapterApiType apiType;
+    char name[PAL_ADAPTER_NAME_SIZE];
+    char backendName[PAL_ADAPTER_BACKEND_NAME_SIZE];
+    PalGraphicsBackendVtableVersion vtableVersion;
 } PalAdapterInfo;
 
 /**
  * @struct PalImageCapabilities
- * @brief Image capabilities of an adapter (GPU).
+ * @brief Contains image capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalImageCapabilities::maxWidth
+ * The maximum image width of the adapter in pixels.
+ * 
+ * @var PalImageCapabilities::maxHeight
+ * The maximum image height of the adapter in pixels.
+ * 
+ * @var PalImageCapabilities::maxDepth
+ * The maximum image depth of the adapter in pixels.
+ * 
+ * @var PalImageCapabilities::maxArrayLayers
+ * The maximum image array layers of the adapter.
+ * 
+ * @var PalImageCapabilities::maxMipLevels
+ * The maximum image mip levels of the adapter.
  */
-typedef struct {
-    uint32_t maxWidth;       /**< Max width in pixels.*/
-    uint32_t maxHeight;      /**< Max height in pixels.*/
-    uint32_t maxDepth;       /**< Max depth in pixels.*/
-    uint32_t maxArrayLayers; /**< Max array layers.*/
-    uint32_t maxMipLevels;   /**< Max mipmap levels.*/
+typedef struct PalImageCapabilities
+{
+    uint32_t maxWidth;
+    uint32_t maxHeight;
+    uint32_t maxDepth;
+    uint32_t maxArrayLayers;
+    uint32_t maxMipLevels;
 } PalImageCapabilities;
 
 /**
  * @struct PalResourceCapabilities
- * @brief Resource capabilities of an adapter (GPU).
+ * @brief Contains resource capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalResourceCapabilities::maxPerStageSampledImages
+ * The maximum sampled images per shader stage of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerSetSampledImages
+ * The maximum sampled images per descriptor set of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerStageStorageImages
+ * The maximum storage images per shader stage of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerSetStorageImages
+ * The maximum storage images per descriptor set of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerStageSamplers
+ * The maximum samplers per shader stage of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerSetSamplers
+ * The maximum samplers per descriptor set of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerStageStorageBuffers
+ * The maximum storage buffers per shader stage of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerSetStorageBuffers
+ * The maximum storage buffers per descriptor set of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerStageUniformBuffers
+ * The maximum uniform buffers per shader stage of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerSetUniformBuffers
+ * The maximum uniform buffers per descriptor set of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerStageAccelerationStructure
+ * The maximum acceleration structures per shader stage of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxPerSetAccelerationStructure
+ * The maximum acceleration structures per descriptor set of the adapter.
+ * 
+ * @var PalResourceCapabilities::maxBoundSets
+ * The maximum number of descriptor sets of the adapter that can be bound
+ * simultaneously.
  */
-typedef struct {
-    uint32_t maxPerStageSampledImages;         /**< Max sampled images per shader stage .*/
-    uint32_t maxPerSetSampledImages;           /**< Max sampled images per descriptor set.*/
-    uint32_t maxPerStageStorageImages;         /**< Max storage images per shader stage.*/
-    uint32_t maxPerSetStorageImages;           /**< Max storage images per descriptor set.*/
-    uint32_t maxPerStageSamplers;              /**< Max samplers per shader stage.*/
-    uint32_t maxPerSetSamplers;                /**< Max samplers per descriptor set.*/
-    uint32_t maxPerStageStorageBuffers;        /**< Max storage buffers per shader stage.*/
-    uint32_t maxPerSetStorageBuffers;          /**< Max storage buffers per descriptor set.*/
-    uint32_t maxPerStageUniformBuffers;        /**< Max uniform buffers per shader stage.*/
-    uint32_t maxPerSetUniformBuffers;          /**< Max uniform buffers per descriptor set.*/
-    uint32_t maxPerStageAccelerationStructure; /**< Max acceleration structures per shader stage.*/
-    uint32_t maxPerSetAccelerationStructure; /**< Max acceleration structures per descriptor set.*/
-    uint32_t maxBoundSets;                   /**< Max bound descriptor sets.*/
+typedef struct PalResourceCapabilities
+{
+    uint32_t maxPerStageSampledImages;
+    uint32_t maxPerSetSampledImages;
+    uint32_t maxPerStageStorageImages;
+    uint32_t maxPerSetStorageImages;
+    uint32_t maxPerStageSamplers;
+    uint32_t maxPerSetSamplers;
+    uint32_t maxPerStageStorageBuffers;
+    uint32_t maxPerSetStorageBuffers;
+    uint32_t maxPerStageUniformBuffers;
+    uint32_t maxPerSetUniformBuffers;
+    uint32_t maxPerStageAccelerationStructure;
+    uint32_t maxPerSetAccelerationStructure;
+    uint32_t maxBoundSets;
 } PalResourceCapabilities;
 
 /**
  * @struct PalComputeCapabilities
- * @brief Compute capabilities of an adapter (GPU).
+ * @brief Contains compute capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalComputeCapabilities::maxWorkGroupInvocations
+ * The maximum number of shader invocations inside a single workgroup
+ * of the adapter.
+ * 
+ * @var PalComputeCapabilities::maxWorkGroupCount
+ * The maximum number of workgroups per dimension of the adapter.
+ * 
+ * @var PalComputeCapabilities::maxWorkGroupSize
+ * The maximum workgroup size per dimension of the adapter.
  */
-typedef struct {
-    uint32_t maxWorkGroupInvocations; /**< Max invocations across all workgroups.*/
-    uint32_t maxWorkGroupCount[3];    /**< Max workgroups per dimension.*/
-    uint32_t maxWorkGroupSize[3];     /**< Max workgroup size per dimension.*/
+typedef struct PalComputeCapabilities
+{
+    uint32_t maxWorkGroupInvocations;
+    uint32_t maxWorkGroupCount[3];
+    uint32_t maxWorkGroupSize[3];
 } PalComputeCapabilities;
 
 /**
  * @struct PalViewportCapabilities
- * @brief Viewport capabilities of an adapter (GPU).
+ * @brief Contains viewport capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalViewportCapabilities::maxWidth
+ * The maximum viewport width of the adapter in pixels.
+ * 
+ * @var PalViewportCapabilities::maxHeight
+ * The maximum viewport height of the adapter in pixels.
+ * 
+ * @var PalViewportCapabilities::minBoundsRange
+ * The minimum viewport bounds range of the adapter.
+ * 
+ * @var PalViewportCapabilities::maxBoundsRange
+ * The maximum viewport bounds range of the adapter.
  */
-typedef struct {
-    uint32_t maxWidth;    /**< Max width in pixels.*/
-    uint32_t maxHeight;   /**< Max height in pixels.*/
-    float minBoundsRange; /**< Min coordinate range.*/
-    float maxBoundsRange; /**< Max coordinate range.*/
+typedef struct PalViewportCapabilities
+{
+    uint32_t maxWidth;
+    uint32_t maxHeight;
+    float minBoundsRange;
+    float maxBoundsRange;
 } PalViewportCapabilities;
 
 /**
  * @struct PalAdapterCapabilities
- * @brief Capabilities of an adapter (GPU).
+ * @brief Contains capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalAdapterCapabilities::maxComputeQueues
+ * The maximum number of compute queues of the adapter.
+ * 
+ * @var PalAdapterCapabilities::maxGraphicsQueues
+ * The maximum number of graphics queues of the adapter.
+ * 
+ * @var PalAdapterCapabilities::maxCopyQueues
+ * The maximum number of copy queues of the adapter.
+ * 
+ * @var PalAdapterCapabilities::maxColorAttachments
+ * The maximum number of simultaneous color attachments (render targets)
+ * of the adapter.
+ * 
+ * @var PalAdapterCapabilities::maxUniformBufferSize
+ * The maximum uniform buffer size of the adapter in bytes.
+ * 
+ * @var PalAdapterCapabilities::maxStorageBufferSize
+ * The maximum storage buffer size of the adapter in bytes.
+ * 
+ * @var PalAdapterCapabilities::maxPushConstantSize
+ * The maximum push constants size of the adapter in bytes.
+ * 
+ * @var PalAdapterCapabilities::maxVertexLayouts
+ * The maximum vertex layouts of the adapter.
+ * 
+ * @var PalAdapterCapabilities::maxVertexAttributes
+ * The maximum vertex attributes across all vertex layouts of the adapter.
+ * 
+ * @var PalAdapterCapabilities::maxTessellationPatchPoint
+ * The maximum tessellation patch point of the adapter.
+ * 
+ * @var PalAdapterCapabilities::viewportCaps
+ * The viewport capabilities of the adapter.
+ * 
+ * @var PalAdapterCapabilities::imageCaps
+ * The image capabilities of the adapter.
+ * 
+ * @var PalAdapterCapabilities::resourceCaps
+ * The resource (descriptors) capabilities of the adapter.
+ * 
+ * @var PalAdapterCapabilities::computeCaps
+ * The compute capabilities of the adapter.
  */
-typedef struct {
-    uint32_t maxComputeQueues;            /**< Max compute queues that can be created.*/
-    uint32_t maxGraphicsQueues;           /**< Max graphics queues that can be created.*/
-    uint32_t maxCopyQueues;               /**< Max copy queues that can be created.*/
-    uint32_t maxColorAttachments;         /**< Max number of simultaneous color attachments.*/
-    uint32_t maxUniformBufferSize;        /**< Max uniform buffer size in bytes.*/
-    uint32_t maxStorageBufferSize;        /**< Max storage buffer size in bytes.*/
-    uint32_t maxPushConstantSize;         /**< Max push constants size in bytes.*/
-    uint32_t maxVertexLayouts;            /**< Max vertex layouts.*/
-    uint32_t maxVertexAttributes;         /**< Max vertex attributes across all vertex layouts.*/
-    uint32_t maxTessellationPatchPoint;   /**< Max tessellation patch point.*/
-    PalViewportCapabilities viewportCaps; /**< Viewport capabilities.*/
-    PalImageCapabilities imageCaps;       /**< Image capabilities.*/
-    PalResourceCapabilities resourceCaps; /**< resource (descriptors) capabilities.*/
-    PalComputeCapabilities computeCaps;   /**< Compute capabilities.*/
+typedef struct PalAdapterCapabilities
+{
+    uint32_t maxComputeQueues;
+    uint32_t maxGraphicsQueues;
+    uint32_t maxCopyQueues;
+    uint32_t maxColorAttachments;
+    uint32_t maxUniformBufferSize;
+    uint32_t maxStorageBufferSize;
+    uint32_t maxPushConstantSize;
+    uint32_t maxVertexLayouts;
+    uint32_t maxVertexAttributes;
+    uint32_t maxTessellationPatchPoint;
+    PalViewportCapabilities viewportCaps;
+    PalImageCapabilities imageCaps;
+    PalResourceCapabilities resourceCaps;
+    PalComputeCapabilities computeCaps;
 } PalAdapterCapabilities;
 
 /**
  * @struct PalSamplerAnisotropyCapabilities
- * @brief Sampler anisotropy capabilities of an adapter (GPU).
+ * @brief Contains sampler anisotropy capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalSamplerAnisotropyCapabilities::maxAnisotropy
+ * The maximum texture filtering level of the device.
  */
-typedef struct {
-    uint32_t maxAnisotropy; /**< Max texture filtering level.*/
+typedef struct PalSamplerAnisotropyCapabilities
+{
+    uint32_t maxAnisotropy;
 } PalSamplerAnisotropyCapabilities;
 
 /**
  * @struct PalMultiViewCapabilities
- * @brief Multi view capabilities of an adapter (GPU).
+ * @brief Contains multi view capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalMultiViewCapabilities::maxViewCount
+ * The maximum number of views of the device.
  */
-typedef struct {
-    uint32_t maxViewCount; /**< Max number views of an image.*/
+typedef struct PalMultiViewCapabilities
+{
+    uint32_t maxViewCount;
 } PalMultiViewCapabilities;
 
 /**
  * @struct PalMultiViewportCapabilities
- * @brief Multi viewport capabilities of an adapter (GPU).
+ * @brief Contains multi viewport capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalMultiViewportCapabilities::maxCount
+ * The maximum number of simultaneous viewports of the device.
  */
-typedef struct {
-    uint32_t maxCount; /**< Max number of simultaneous viewports.*/
+typedef struct PalMultiViewportCapabilities
+{
+    uint32_t maxCount;
 } PalMultiViewportCapabilities;
 
 /**
  * @struct PalDepthStencilCapabilities
- * @brief Depth stencil capabilities of an adapter (GPU).
+ * @brief Contains depth stencil capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDepthStencilCapabilities::supportedDepthResolveModes
+ * A bitmask of supported depth resolve modes. A specific resolve mode
+ * should be check like this: @nl
+ * palIsSupported(::supportedDepthResolveModes, `PAL_RESOLVE_MODE_AVERAGE`).
+ * 
+ * @var PalDepthStencilCapabilities::supportedStencilResolveModes
+ * A bitmask of supported stencil resolve modes. A specific resolve mode
+ * should be check like this: @nl
+ * palIsSupported(::supportedStencilResolveModes, `PAL_RESOLVE_MODE_MIN`).
+ * 
+ * @var PalDepthStencilCapabilities::supportsIndependentResolve
+ * If `PAL_TRUE`, depth and stencil can have seperate resolve modes.
+ * 
+ * @var PalDepthStencilCapabilities::supportsIndependentResolveNone
+ * If `PAL_TRUE`, depth or stencil can be `PAL_RESOLVE_MODE_NONE` 
+ * while the other is resolved.
  */
-typedef struct {
-    uint32_t supportedDepthResolveModes;   /**< Masks of supported depth resolve modes.*/
-    uint32_t supportedStencilResolveModes; /**< Masks of supported stencil resolve modes.*/
-
-    /** If `PAL_TRUE`, depth and stencil can have seperate resolve modes.*/
+typedef struct PalDepthStencilCapabilities
+{
+    uint32_t supportedDepthResolveModes;
+    uint32_t supportedStencilResolveModes;
     PalBool supportsIndependentResolve;
-
-    /**If `PAL_TRUE`, depth/stencil can be `PAL_RESOLVE_MODE_NONE` while the other is resolved.*/
     PalBool supportsIndependentResolveNone;
 } PalDepthStencilCapabilities;
 
 /**
  * @struct PalFragmentShadingRateCapabilities
- * @brief Fragment shading rate capabilities of an adapter (GPU).
+ * @brief Contains fragment shading rate capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalFragmentShadingRateCapabilities::supportedShadingRates
+ * A bitmask of supported fragment shading rates. A specific shading rate
+ * should be check like this: @nl
+ * palIsSupported(::supportedShadingRates, `PAL_FRAGMENT_SHADING_RATE_2X2`).
+ * 
+ * @var PalFragmentShadingRateCapabilities::supportedCombinerOps
+ * A bitmask of supported fragment shading rate combiner operations.
+ * A specific combiner operation should be check like this: @nl
+ * palIsSupported(::supportedCombinerOps,
+ * `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP`).
+ * 
+ * @var PalFragmentShadingRateCapabilities::minTexelWidth
+ * The minimum fragment texel width of the device.
+ * 
+ * @var PalFragmentShadingRateCapabilities::minTexelHeight
+ * The minimum fragment texel height of the device.
+ * 
+ * @var PalFragmentShadingRateCapabilities::maxTexelWidth
+ * The maximum fragment texel width of the device.
+ * 
+ * @var PalFragmentShadingRateCapabilities::maxTexelHeight
+ * The maximum fragment texel height of the device.
  */
-typedef struct {
-    uint32_t supportedShadingRates; /**< Masks of supported shading rates.*/
-    uint32_t supportedCombinerOps;  /**< Masks of supported combiner operations.*/
-    uint32_t minTexelWidth;         /**< Min texel width in pixels*/
-    uint32_t minTexelHeight;        /**< Min texel height in pixels*/
-    uint32_t maxTexelWidth;         /**< Max texel width in pixels*/
-    uint32_t maxTexelHeight;        /**< Max texel height in pixels*/
+typedef struct PalFragmentShadingRateCapabilities
+{
+    uint32_t supportedShadingRates;
+    uint32_t supportedCombinerOps;
+    uint32_t minTexelWidth;
+    uint32_t minTexelHeight;
+    uint32_t maxTexelWidth;
+    uint32_t maxTexelHeight;
 } PalFragmentShadingRateCapabilities;
 
 /**
  * @struct PalMeshShaderCapabilities
- * @brief Mesh shader capabilities of an adapter (GPU).
+ * @brief Contains mesh shader capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalMeshShaderCapabilities::maxOutputPrimitives
+ * The maximum number of primitives per mesh workgroup.
+ * 
+ * @var PalMeshShaderCapabilities::maxOutputVertices
+ * The maximum number of vertices per mesh workgroup.
+ * 
+ * @var PalMeshShaderCapabilities::maxWorkGroupInvocations
+ * The maximum number of shader invocations inside a single mesh workgroup
+ * 
+ * @var PalMeshShaderCapabilities::maxTaskWorkGroupInvocations
+ * The maximum number of shader invocations inside a single task workgroup
+ * 
+ * @var PalMeshShaderCapabilities::maxWorkGroupCount
+ * The maximum number of mesh workgroups per dimension.
+ * 
+ * @var PalMeshShaderCapabilities::maxTaskWorkGroupCount
+ * The maximum number of task workgroups per dimension.
  */
-typedef struct {
-    uint32_t maxOutputPrimitives;         /**< Max number of primitives per mesh workgroup.*/
-    uint32_t maxOutputVertices;           /**< Max number of vertices per mesh workgroup.*/
-    uint32_t maxWorkGroupInvocations;     /**< Max mesh invocations across all workgroups.*/
-    uint32_t maxTaskWorkGroupInvocations; /**< Max task invocations across all workgroups.*/
-    uint32_t maxWorkGroupCount[3];        /**< Max mesh workgroups per dimension.*/
-    uint32_t maxTaskWorkGroupCount[3];    /**< Max task workgroups per dimension.*/
+typedef struct PalMeshShaderCapabilities
+{
+    uint32_t maxOutputPrimitives;
+    uint32_t maxOutputVertices;
+    uint32_t maxWorkGroupInvocations;
+    uint32_t maxTaskWorkGroupInvocations;
+    uint32_t maxWorkGroupCount[3];
+    uint32_t maxTaskWorkGroupCount[3];
 } PalMeshShaderCapabilities;
 
 /**
