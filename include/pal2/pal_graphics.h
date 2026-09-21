@@ -2168,7 +2168,7 @@ typedef struct PalAdapterCapabilities
  * @since Added in version 2.0
  * 
  * @var PalSamplerAnisotropyCapabilities::maxAnisotropy
- * The maximum texture filtering level of the device.
+ * The maximum texture filtering level.
  */
 typedef struct PalSamplerAnisotropyCapabilities
 {
@@ -2182,7 +2182,7 @@ typedef struct PalSamplerAnisotropyCapabilities
  * @since Added in version 2.0
  * 
  * @var PalMultiViewCapabilities::maxViewCount
- * The maximum number of views of the device.
+ * The maximum number of views.
  */
 typedef struct PalMultiViewCapabilities
 {
@@ -2196,7 +2196,7 @@ typedef struct PalMultiViewCapabilities
  * @since Added in version 2.0
  * 
  * @var PalMultiViewportCapabilities::maxCount
- * The maximum number of simultaneous viewports of the device.
+ * The maximum number of simultaneous viewports.
  */
 typedef struct PalMultiViewportCapabilities
 {
@@ -2252,16 +2252,16 @@ typedef struct PalDepthStencilCapabilities
  * `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP`).
  * 
  * @var PalFragmentShadingRateCapabilities::minTexelWidth
- * The minimum fragment texel width of the device.
+ * The minimum fragment texel width.
  * 
  * @var PalFragmentShadingRateCapabilities::minTexelHeight
- * The minimum fragment texel height of the device.
+ * The minimum fragment texel height.
  * 
  * @var PalFragmentShadingRateCapabilities::maxTexelWidth
- * The maximum fragment texel width of the device.
+ * The maximum fragment texel width.
  * 
  * @var PalFragmentShadingRateCapabilities::maxTexelHeight
- * The maximum fragment texel height of the device.
+ * The maximum fragment texel height.
  */
 typedef struct PalFragmentShadingRateCapabilities
 {
@@ -2309,217 +2309,512 @@ typedef struct PalMeshShaderCapabilities
 
 /**
  * @struct PalRayTracingCapabilities
- * @brief Ray tracing capabilities of an adapter (GPU).
+ * @brief Contains ray tracing capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalRayTracingCapabilities::maxRecursionDepth
+ * The maximum ray recursion depth.
+ * 
+ * @var PalRayTracingCapabilities::maxHitAttributeSize
+ * The maximum ray attribute size in bytes.
+ * 
+ * @var PalRayTracingCapabilities::maxInstanceCount
+ * The maximum number of ray instances.
+ * 
+ * @var PalRayTracingCapabilities::maxPrimitiveCount
+ * The maximum number of ray primitives.
+ * 
+ * @var PalRayTracingCapabilities::maxGeometryCount
+ * The maximum number of ray geometries.
+ * 
+ * @var PalRayTracingCapabilities::maxPayloadSize
+ * The maximum ray payload size in bytes.
+ * 
+ * @var PalRayTracingCapabilities::maxDispatchInvocations
+ * The maximum number of ray dispatch threads.
  */
-typedef struct {
-    uint32_t maxRecursionDepth;      /**< Max number of ray recursion.*/
-    uint32_t maxHitAttributeSize;    /**< Max attributes size in bytes.*/
-    uint32_t maxInstanceCount;       /**< Max number of instances.*/
-    uint32_t maxPrimitiveCount;      /**< Max number of primitives.*/
-    uint32_t maxGeometryCount;       /**< Max number of geometries.*/
-    uint32_t maxPayloadSize;         /**< Max payload size in bytes.*/
-    uint32_t maxDispatchInvocations; /**< Max number of dispatch threads.*/
+typedef struct PalRayTracingCapabilities
+{
+    uint32_t maxRecursionDepth;
+    uint32_t maxHitAttributeSize;
+    uint32_t maxInstanceCount;
+    uint32_t maxPrimitiveCount;
+    uint32_t maxGeometryCount;
+    uint32_t maxPayloadSize;
+    uint32_t maxDispatchInvocations;
 } PalRayTracingCapabilities;
 
 /**
  * @struct PalDescriptorIndexingCapabilities
- * @brief Descriptor indexing capabilities of an adapter (GPU).
+ * @brief Contains descriptor indexing capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorIndexingCapabilities::flags
+ * A bitmask of supported descriptor indexing flags.
+ * (eg. `PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND`)
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerStageSampledImages
+ * The maximum sampled images per shader stage.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerSetSampledImages
+ * The maximum sampled images per descriptor set.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerStageStorageImages
+ * The maximum storage images per shader stage.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerSetStorageImages
+ * The maximum storage images per descriptor set.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerStageSamplers
+ * The maximum samplers per shader stage.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerSetSamplers
+ * The maximum samplers per descriptor set.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerStageStorageBuffers
+ * The maximum storage buffers per shader stage.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerSetStorageBuffers
+ * The maximum storage buffers per descriptor set.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerStageUniformBuffers
+ * The maximum uniform buffers per shader stage.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerSetUniformBuffers
+ * The maximum uniform buffers per descriptor set.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerStageAccelerationStructure
+ * The maximum acceleration structures per shader stage.
+ * 
+ * @var PalDescriptorIndexingCapabilities::maxPerSetAccelerationStructure
+ * The maximum acceleration structures per descriptor set.
  */
-typedef struct {
-    PalDescriptorIndexingFlags flags;   /**< Capabilities flags. see `PalDescriptorIndexingFlags`*/
-    uint32_t maxPerStageSampledImages;  /**< Max sampled images per shader stage .*/
-    uint32_t maxPerSetSampledImages;    /**< Max sampled images per descriptor set.*/
-    uint32_t maxPerStageStorageImages;  /**< Max storage images per shader stage.*/
-    uint32_t maxPerSetStorageImages;    /**< Max storage images per descriptor set.*/
-    uint32_t maxPerStageSamplers;       /**< Max samplers per shader stage.*/
-    uint32_t maxPerSetSamplers;         /**< Max samplers per descriptor set.*/
-    uint32_t maxPerStageStorageBuffers; /**< Max storage buffers per shader stage.*/
-    uint32_t maxPerSetStorageBuffers;   /**< Max storage buffers per descriptor set.*/
-    uint32_t maxPerStageUniformBuffers; /**< Max uniform buffers per shader stage.*/
-    uint32_t maxPerSetUniformBuffers;   /**< Max uniform buffers per descriptor set.*/
-    uint32_t maxPerStageAccelerationStructure; /**< Max acceleration structures per shader stage.*/
-    uint32_t maxPerSetAccelerationStructure; /**< Max acceleration structures per descriptor set.*/
+typedef struct PalDescriptorIndexingCapabilities
+{
+    PalDescriptorIndexingFlags flags;
+    uint32_t maxPerStageSampledImages;
+    uint32_t maxPerSetSampledImages;
+    uint32_t maxPerStageStorageImages; 
+    uint32_t maxPerSetStorageImages;   
+    uint32_t maxPerStageSamplers;      
+    uint32_t maxPerSetSamplers;        
+    uint32_t maxPerStageStorageBuffers;
+    uint32_t maxPerSetStorageBuffers;  
+    uint32_t maxPerStageUniformBuffers;
+    uint32_t maxPerSetUniformBuffers;  
+    uint32_t maxPerStageAccelerationStructure;
+    uint32_t maxPerSetAccelerationStructure;
 } PalDescriptorIndexingCapabilities;
 
 /**
  * @struct PalSurfaceCapabilities
- * @brief surface capabilities of an adapter (GPU).
+ * @brief Contains surface capabilities of an adapter (GPU).
  *
  * @since Added in version 2.0
+ * 
+ * @var PalSurfaceCapabilities::supportedPresentModes
+ * A bitmask of supported present modes. A specific present mode
+ * should be check like this: @nl
+ * palIsSupported(::supportedPresentModes, `PAL_PRESENT_MODE_FIFO`).
+ * 
+ * @var PalSurfaceCapabilities::supportedCompositeAlphas
+ * A bitmask of supported composite alphas. A specific composite alpha
+ * should be check like this: @nl
+ * palIsSupported(::supportedCompositeAlphas, `PAL_COMPOSITE_ALPHA_OPAQUE`).
+ * 
+ * @var PalSurfaceCapabilities::supportedFormats
+ * A bitmask of supported surface formats. A specific surface format
+ * should be check like this: @nl
+ * palIsSupported(::supportedFormats, `PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10`).
+ * 
+ * @var PalSurfaceCapabilities::minImageCount
+ * The minimum number of image or back buffer count.
+ * 
+ * @var PalSurfaceCapabilities::maxImageCount
+ * The maximum number of image or back buffer count.
+ * 
+ * @var PalSurfaceCapabilities::minImageWidth
+ * The minimum width of the image.
+ * 
+ * @var PalSurfaceCapabilities::minImageHeight
+ * The minimum height of the image.
+ * 
+ * @var PalSurfaceCapabilities::maxImageWidth
+ * The maximum width of the image.
+ * 
+ * @var PalSurfaceCapabilities::maxImageHeight
+ * The maximum height of the image.
+ * 
+ * @var PalSurfaceCapabilities::maxImageArrayLayers
+ * The maximum array layers of the image.
  */
-typedef struct {
-    uint32_t supportedPresentModes;    /**< Masks of supported present modes.*/
-    uint32_t supportedCompositeAlphas; /**< Masks of supported composite alphas.*/
-    uint32_t supportedFormats;         /**< Masks of supported surface formats.*/
-    uint32_t minImageCount;            /**< Min image or back buffer count.*/
-    uint32_t maxImageCount;            /**< Max image or back buffer count.*/
-    uint32_t minImageWidth;            /**< Min image width in pixels.*/
-    uint32_t minImageHeight;           /**< Min image height in pixels.*/
-    uint32_t maxImageWidth;            /**< Max image width in pixels.*/
-    uint32_t maxImageHeight;           /**< Max image height in pixels.*/
-    uint32_t maxImageArrayLayers;      /**< Max number of image layers.*/
+typedef struct PalSurfaceCapabilities
+{
+    uint32_t supportedPresentModes;
+    uint32_t supportedCompositeAlphas;
+    uint32_t supportedFormats;
+    uint32_t minImageCount;
+    uint32_t maxImageCount;
+    uint32_t minImageWidth;
+    uint32_t minImageHeight;
+    uint32_t maxImageWidth;
+    uint32_t maxImageHeight;
+    uint32_t maxImageArrayLayers;
 } PalSurfaceCapabilities;
 
 /**
  * @struct PalFormatInfo
- * @brief Information about a format. This includes the supported image usages and maximum sample
- * count from the provided format.
+ * @brief Contains information about a format. 
  *
  * @since Added in version 2.0
+ * 
+ * @var PalFormatInfo::usages
+ * A bitmask of supported image usages of ::format.
+ * 
+ * @var PalFormatInfo::format
+ * The format.
+ * 
+ * @var PalFormatInfo::sampleCount
+ * The `MSAA` samples of ::format.
  */
-typedef struct {
-    PalImageUsages usages;      /**< (eg. `PAL_IMAGE_USAGE_COLOR`).*/
-    PalFormat format;           /**< (eg. `PAL_FORMAT_R8G8B8A8_UNORM`).*/
-    PalSampleCount sampleCount; /**< (eg. `PAL_SAMPLE_COUNT_8`).*/
+typedef struct PalFormatInfo
+{
+    PalImageUsages usages;
+    PalFormat format;
+    PalSampleCount sampleCount;
 } PalFormatInfo;
 
 /**
  * @struct PalImageInfo
- * @brief Information about an image.
+ * @brief Contains information about an image.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalImageInfo::usages
+ * A bitmask of image usages.
+ * 
+ * @var PalImageInfo::width
+ * The width of the image in pixels.
+ * 
+ * @var PalImageInfo::height
+ * The height of the image in pixels.
+ * 
+ * @var PalImageInfo::depth
+ * The depth of the image in pixels.
+ * 
+ * @var PalImageInfo::arrayLayerCount
+ * The number of array layers of the image.
+ * 
+ * @var PalImageInfo::mipLevelCount
+ * The number of mipmap levels of the image.
+ * 
+ * @var PalImageInfo::sampleCount
+ * The `MSAA` samples of the image.
+ * 
+ * @var PalImageInfo::type
+ * The type of the image (eg. `PAL_IMAGE_TYPE_2D`).
+ * 
+ * @var PalImageInfo::format
+ * The format of the image (eg. `PAL_FORMAT_R8G8B8A8_UNORM`).
+ * 
+ * @var PalImageInfo::belongsToSwapchain
+ * If `PAL_TRUE`, the image belongs to a swapchain.
  */
-typedef struct {
-    PalImageUsages usages;      /**< (eg. `PAL_IMAGE_USAGE_COLOR`).*/
-    uint32_t width;             /**< Width of the image in pixels.*/
-    uint32_t height;            /**< Height of the image in pixels.*/
-    uint32_t depth;             /**< Depth of the image in pixels.*/
-    uint32_t arrayLayerCount;   /**< Number of array layers.*/
-    uint32_t mipLevelCount;     /**< Number of mipmap levels.*/
-    PalSampleCount sampleCount; /**< (eg. `PAL_SAMPLE_COUNT_8`).*/
-    PalImageType type;          /**< (eg. `PAL_IMAGE_TYPE_2D`).*/
-    PalFormat format;           /**< (eg. `PAL_FORMAT_R8G8B8A8_UNORM`).*/
-    PalBool belongsToSwapchain; /**< If `PAL_TRUE`, the image belongs to a swapchain.*/
+typedef struct PalImageInfo
+{
+    PalImageUsages usages;
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+    uint32_t arrayLayerCount;
+    uint32_t mipLevelCount; 
+    PalSampleCount sampleCount;
+    PalImageType type;
+    PalFormat format; 
+    PalBool belongsToSwapchain;
 } PalImageInfo;
 
 /**
  * @struct PalClearValue
- * @brief Clear values used with rendering.
+ * @brief Contains information about clear values used with rendering.
  *
- * If used with a color attachment, the color values will be used and depth and stencil
- * will be used with depth stencil attachments.
+ * If used with a color attachment, ::color values will be used and 
+ * ::depth and ::stencil will be used with depth stencil attachments.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalClearValue::color
+ * The color clear value.
+ * 
+ * @var PalClearValue::depth
+ * The depth clear value.
+ * 
+ * @var PalClearValue::stencil
+ * The stencil clear value.
  */
-typedef struct {
-    float color[4];   /**< Color clear value.*/
-    float depth;      /**< Depth clear value.*/
-    uint32_t stencil; /**< Stencil clear value.*/
+typedef struct PalClearValue
+{
+    float color[4];
+    float depth;
+    uint32_t stencil;
 } PalClearValue;
 
 /**
  * @struct PalAttachmentDesc
- * @brief An attachment description.
+ * @brief Contains description of an attachment.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalAttachmentDesc::imageView
+ * The image view the attachment description is tied to.
+ * 
+ * @var PalAttachmentDesc::resolveImageView
+ * The resolve image view. Can be `nullptr` if ::imageView does not
+ * need to be resolved.
+ * 
+ * @var PalAttachmentDesc::loadOp
+ * The load operation for color or depth attachments.
+ * 
+ * @var PalAttachmentDesc::storeOp
+ * The store operation for color or depth attachments.
+ * 
+ * @var PalAttachmentDesc::stencilLoadOp
+ * The load operation for stencil attachments.
+ * 
+ * @var PalAttachmentDesc::stencilStoreOp
+ * The store operation for stencil attachments.
+ * 
+ * @var PalAttachmentDesc::resolveMode
+ * The color or depth resolve mode. 
+ * Will be ignored if ::resolveImageView is `nullptr`.
+ * 
+ * @var PalAttachmentDesc::stencilResolveMode
+ * The stencil resolve mode. 
+ * Will be ignored if ::resolveImageView is `nullptr`.
+ * 
+ * @var PalAttachmentDesc::clearValue
+ * The clear value for the attachment. The values will be used based
+ * on the type of the attachment.
  */
-typedef struct {
-    PalImageView* imageView;           /**< Image view.*/
-    PalImageView* resolveImageView;    /**< Resolve image view. Can be `nullptr`.*/
-    PalLoadOp loadOp;                  /**< (eg. `PAL_LOAD_OP_CLEAR`).*/
-    PalStoreOp storeOp;                /**< (eg. `PAL_STORE_OP_STORE`).*/
-    PalLoadOp stencilLoadOp;           /**< (eg. `PAL_LOAD_OP_DONT_CARE`).*/
-    PalStoreOp stencilStoreOp;         /**< (eg. `PAL_STORE_OP_DONT_CARE`).*/
-    PalResolveMode resolveMode;        /**< Used if resolveImageView is set.*/
-    PalResolveMode stencilResolveMode; /**< Used if resolveImageView is set.*/
-    PalClearValue clearValue;          /**< Clear value for color and depth/stencil attachments.*/
+typedef struct PalAttachmentDesc
+{
+    PalImageView* imageView;
+    PalImageView* resolveImageView;
+    PalLoadOp loadOp;
+    PalStoreOp storeOp;
+    PalLoadOp stencilLoadOp;
+    PalStoreOp stencilStoreOp;
+    PalResolveMode resolveMode;
+    PalResolveMode stencilResolveMode;
+    PalClearValue clearValue;
 } PalAttachmentDesc;
 
 /**
  * @struct PalViewport
- * @brief A viewport in pixels (float).
+ * @brief Contains information about a viewport.
+ * 
+ * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalViewport::x
+ * The x position of the viewport.
+ * 
+ * @var PalViewport::y
+ * The y position of the viewport.
+ * 
+ * @var PalViewport::width
+ * The width of the viewport in pixels.
+ * 
+ * @var PalViewport::height
+ * The height of the viewport in pixels.
+ * 
+ * @var PalViewport::minDepth
+ * The minimum depth of the viewport.
+ * 
+ * @var PalViewport::maxDepth
+ * The maximum depth of the viewport.
  */
-typedef struct {
-    float x;        /**< X position in pixels.*/
-    float y;        /**< Y position in pixels.*/
-    float width;    /**< Width in pixels.*/
-    float height;   /**< Height in pixels.*/
-    float minDepth; /**< Min depth value.*/
-    float maxDepth; /**< Max depth value.*/
+typedef struct PalViewport
+{
+    float x;
+    float y;
+    float width;
+    float height;
+    float minDepth;
+    float maxDepth;
 } PalViewport;
 
 /**
  * @struct PalRect2D
- * @brief A 2D rectangle in pixels.
+ * @brief Contains information of a 2D rectangle.
+ * 
+ * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalRect2D::x
+ * The x position of the rect.
+ * 
+ * @var PalRect2D::y
+ * The y position of the rect.
+ * 
+ * @var PalRect2D::width
+ * The width of the rect in pixels.
+ * 
+ * @var PalRect2D::height
+ * The height of the rect in pixels.
  */
-typedef struct {
-    int32_t x;       /**< X position in pixels.*/
-    int32_t y;       /**< Y position in pixels.*/
-    uint32_t width;  /**< Width in pixels.*/
-    uint32_t height; /**< Height in pixels.*/
+typedef struct PalRect2D
+{
+    int32_t x;
+    int32_t y;
+    uint32_t width;
+    uint32_t height;
 } PalRect2D;
 
 /**
  * @struct PalMemoryRequirements
  * @brief Memory requirements for a resource (image, buffer etc).
+ * 
+ * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalMemoryRequirements::size
+ * The required size in bytes of the resource.
+ * 
+ * @var PalMemoryRequirements::alignment
+ * The required alignment in bytes of the resource.
+ * This is used for sub allocations.
+ * 
+ * @var PalMemoryRequirements::memoryMask
+ * The memory mask for the driver for the allocation. Must not be changed.
+ * 
+ * @var PalMemoryRequirements::supportedMemoryTypes
+ * A bitmask of supported memory types. A specific memory type
+ * should be check like this: @nl
+ * palIsSupported(::supportedMemoryTypes, `PAL_MEMORY_TYPE_GPU_ONLY`).
+ * 
+ * @var PalMemoryRequirements::reserved
+ * Not used. Set to `0`.
  */
-typedef struct {
-    uint64_t size;                 /**< Required size in bytes.*/
-    uint64_t alignment;            /**< Required alignment in bytes.*/
-    uint64_t memoryMask;           /**< Memory masks used in allocations. Must not be changed.*/
-    uint32_t supportedMemoryTypes; /**< Masks of supported memory types.*/
-    uint32_t reserved;             /**< Must be set to 0.*/
+typedef struct PalMemoryRequirements
+{
+    uint64_t size;
+    uint64_t alignment;
+    uint64_t memoryMask;
+    uint32_t supportedMemoryTypes;
+    uint32_t reserved;
 } PalMemoryRequirements;
 
 /**
  * @struct PalCommandBufferSubmitInfo
- * @brief Submit information of a command buffer.
+ * @brief Contains information about submitting a command buffer.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalCommandBufferSubmitInfo::waitValue
+ * The wait value for timeline ::waitSemaphore.
+ * 
+ * @var PalCommandBufferSubmitInfo::signalValue
+ * The signal value for timeline ::signalSemaphore.
+ * 
+ * @var PalCommandBufferSubmitInfo::cmdBuffer
+ * The command buffer to submit.
+ * 
+ * @var PalCommandBufferSubmitInfo::waitSemaphore
+ * The wait semaphore. If timeline, ::waitValue will be used.
+ * 
+ * @var PalCommandBufferSubmitInfo::signalSemaphore
+ * The signal semaphore. If timeline, ::signalValue will be used.
+ * 
+ * @var PalCommandBufferSubmitInfo::fence
+ * The fence to signal.
+ * 
+ * @var PalCommandBufferSubmitInfo::waitStages
+ * The wait stages for the ::waitSemaphore.
+ * 
+ * @var PalCommandBufferSubmitInfo::signalStages
+ * The signal stages for the ::signalSemaphore.
  */
-typedef struct {
-    uint64_t waitValue;             /**< Timeline semaphore value to wait on.*/
-    uint64_t signalValue;           /**< Timeline semaphore value to signal.*/
-    PalCommandBuffer* cmdBuffer;    /**< Command buffer to submit.*/
-    PalSemaphore* waitSemaphore;    /**< Wait semaphore.*/
-    PalSemaphore* signalSemaphore;  /**< Signal semaphore.*/
-    PalFence* fence;                /**< Fence to signal.*/
-    PalPipelineStages waitStages;   /**< (eg. `PAL_PIPELINE_STAGE_COLOR_ATTACHMENT`).*/
-    PalPipelineStages signalStages; /**< (eg. `PAL_PIPELINE_STAGE_NONE`).*/
+typedef struct PalCommandBufferSubmitInfo
+{
+    uint64_t waitValue; 
+    uint64_t signalValue; 
+    PalCommandBuffer* cmdBuffer;
+    PalSemaphore* waitSemaphore;
+    PalSemaphore* signalSemaphore;
+    PalFence* fence;
+    PalPipelineStages waitStages;
+    PalPipelineStages signalStages;
 } PalCommandBufferSubmitInfo;
 
 /**
  * @struct PalSwapchainNextImageInfo
- * @brief Next image information of a swapchain.
+ * @brief Contains information about getting the next swapchain image.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalSwapchainNextImageInfo::timeout
+ * The timeout in milliseconds to wait.
+ * 
+ * @var PalSwapchainNextImageInfo::signalSemaphore
+ * The semaphore to signal when the image is acquired.
+ * 
+ * @var PalSwapchainNextImageInfo::fence
+ * The fence to signal when the image is acquired.
  */
-typedef struct {
-    uint64_t timeout;              /**< Timeout in milliseconds.*/
-    PalSemaphore* signalSemaphore; /**< Timeline semaphore value to signal.*/
-    PalFence* fence;               /**< Fence to signal.*/
+typedef struct PalSwapchainNextImageInfo
+{
+    uint64_t timeout;
+    PalSemaphore* signalSemaphore;
+    PalFence* fence;
 } PalSwapchainNextImageInfo;
 
 /**
  * @struct PalRenderingInfo
- * @brief Information about how rendering should be done in graphics pipeline.
+ * @brief Contains information about how rendering should be done.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalRenderingInfo::colorAttachments
+ * The color attachments.
+ * 
+ * @var PalRenderingInfo::depthStencilAttachment
+ * The depth stencil attachment.
+ * 
+ * @var PalRenderingInfo::fragmentShadingRateImageView
+ * The fragment shading rate image view.
+ * 
+ * @var PalRenderingInfo::renderArea
+ * The rendering area. All attachments image views size must be less or 
+ * equal to the area.
+ * 
+ * @var PalRenderingInfo::flags
+ * The rendering flags (eg. `PAL_RENDERING_FLAG_NONE`).
+ * 
+ * @var PalRenderingInfo::fragmentShadingRateTexelWidth
+ * The rendering flags (eg. `PAL_RENDERING_FLAG_NONE`).
  */
-typedef struct {
-    PalAttachmentDesc* colorAttachments;        /**< Color attachments.*/
-    PalAttachmentDesc* depthStencilAttachment;  /**< Depth/Stencil attachment.*/
-    PalImageView* fragmentShadingRateImageView; /**< Fragment shading rate image view.*/
-    PalRect2D renderArea;                       /**< Rendering area of the attachments.*/
-    PalRenderingFlags flags;                    /**< (eg. `PAL_RENDERING_FLAG_NONE`).*/
+// TODO: 
+typedef struct PalRenderingInfo
+{
+    PalAttachmentDesc* colorAttachments;
+    PalAttachmentDesc* depthStencilAttachment;
+    PalImageView* fragmentShadingRateImageView;
+    PalRect2D renderArea;
+    PalRenderingFlags flags;
     uint32_t fragmentShadingRateTexelWidth;     /**< Texel width for fragment shading rate.*/
     uint32_t fragmentShadingRateTexelHeight;    /**< Texel height for fragment shading rate.*/
     uint32_t viewCount;                         /**< View count. Set to 1 for default.*/
