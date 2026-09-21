@@ -2805,9 +2805,22 @@ typedef struct PalSwapchainNextImageInfo
  * The rendering flags (eg. `PAL_RENDERING_FLAG_NONE`).
  * 
  * @var PalRenderingInfo::fragmentShadingRateTexelWidth
- * The rendering flags (eg. `PAL_RENDERING_FLAG_NONE`).
+ * The fragment shading rate texel width. Will be ignored if 
+ * ::fragmentShadingRateImageView is `nullptr`.
+ * 
+ * @var PalRenderingInfo::fragmentShadingRateTexelHeight
+ * The fragment shading rate texel height. Will be ignored if 
+ * ::fragmentShadingRateImageView is `nullptr`.
+ * 
+ * @var PalRenderingInfo::viewCount
+ * The number of views. The default is `1`.
+ * 
+ * @var PalRenderingInfo::arrayLayerCount
+ * The number of array layers.
+ * 
+ * @var PalRenderingInfo::colorAttachentCount
+ * The number of color attachments.
  */
-// TODO: 
 typedef struct PalRenderingInfo
 {
     PalAttachmentDesc* colorAttachments;
@@ -2815,273 +2828,512 @@ typedef struct PalRenderingInfo
     PalImageView* fragmentShadingRateImageView;
     PalRect2D renderArea;
     PalRenderingFlags flags;
-    uint32_t fragmentShadingRateTexelWidth;     /**< Texel width for fragment shading rate.*/
-    uint32_t fragmentShadingRateTexelHeight;    /**< Texel height for fragment shading rate.*/
-    uint32_t viewCount;                         /**< View count. Set to 1 for default.*/
-    uint32_t arrayLayerCount;                   /**< Number of array layers for rendering.*/
-    uint32_t colorAttachentCount;               /**< Number of color attachments.*/
+    uint32_t fragmentShadingRateTexelWidth;
+    uint32_t fragmentShadingRateTexelHeight;
+    uint32_t viewCount;
+    uint32_t arrayLayerCount;
+    uint32_t colorAttachentCount;
 } PalRenderingInfo;
 
 /**
  * @struct PalRenderingLayoutInfo
- * @brief Information about a pre-existing PalRenderingInfo.
- * This is used to reference an already existing PalRenderingInfo.
+ * @brief Contains information about a pre-existing PalRenderingInfo.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalRenderingLayoutInfo::colorAttachmentsFormat
+ * The color attachmenets formats.
+ * 
+ * @var PalRenderingLayoutInfo::colorAttachmentsFormat
+ * The number of color attachments formats.
+ * 
+ * @var PalRenderingLayoutInfo::viewCount
+ * The number of views. The default is `1`.
+ * 
+ * @var PalRenderingLayoutInfo::sampleCount
+ * The `MSAA` samples.
+ * 
+ * @var PalRenderingLayoutInfo::flags
+ * The rendering flags (eg. `PAL_RENDERING_FLAG_NONE`).
+ * 
+ * @var PalRenderingLayoutInfo::depthStencilAttachmentFormat
+ * The depth stencil attachment format.
+ * 
+ * @var PalRenderingLayoutInfo::fragmentShadingRateAttachmentFormat
+ * The fragment shading rate attachment format.
  */
-typedef struct {
-    PalFormat* colorAttachmentsFormat;             /**< Color attachments formats.*/
-    uint32_t colorAttachentCount;                  /**< Number of color attachment formats.*/
-    uint32_t viewCount;                            /**< View count. Set to 1 for default.*/
-    PalSampleCount sampleCount;                    /**< (eg. `PAL_SAMPLE_COUNT_4`).*/
-    PalRenderingFlags flags;                       /**< (eg. `PAL_RENDERING_FLAG_NONE`).*/
-    PalFormat depthStencilAttachmentFormat;        /**< Depth/Stencil attachment format.*/
-    PalFormat fragmentShadingRateAttachmentFormat; /**< Fragment shading rate attachment format.*/
+typedef struct PalRenderingLayoutInfo
+{
+    PalFormat* colorAttachmentsFormat;
+    uint32_t colorAttachentCount;
+    uint32_t viewCount;
+    PalSampleCount sampleCount;
+    PalRenderingFlags flags;
+    PalFormat depthStencilAttachmentFormat;
+    PalFormat fragmentShadingRateAttachmentFormat;
 } PalRenderingLayoutInfo;
 
 /**
  * @struct PalWorkGroupBuildData
- * @brief Compute or Mesh(or Task) workgroup input data build helper.
+ * @brief Contains build information about a workgroup.
  *
- * Uninitialized fields may result in undefined behavior. `workCount` can be specified in pixels,
- * vertices etc.Eg. an image of 800 x 600 will be [0] = 800, [1] = 600 and [2] = 1.
+ * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalWorkGroupBuildData::workCount
+ * The workload per dimension.
+ * 
+ * @var PalWorkGroupBuildData::workGroupSize
+ * The maximum workgroup size per dimension of the adapter.
+ * 
+ * @var PalWorkGroupBuildData::workGroupCount
+ * The maximum number of workgroups per dimension of the adapter.
  */
-typedef struct {
-    uint32_t workCount[3];      /**< Workload per dimension. (eg. Image (200, 200, 1)).*/
-    uint32_t workGroupSize[3];  /**< Threads per workgroup per axis of the adapter (GPU).*/
-    uint32_t workGroupCount[3]; /**< Workgroups per axis of the adapter (GPU).*/
+typedef struct PalWorkGroupBuildData
+{
+    uint32_t workCount[3];
+    uint32_t workGroupSize[3];
+    uint32_t workGroupCount[3];
 } PalWorkGroupBuildData;
 
 /**
  * @struct PalWorkGroupInfo
- * @brief Information about compute or mesh(or task) dispatch data or a dispatch tile.
- *
+ * @brief Contains information about a dispatch tile.
+ * 
  * @since Added in version 2.0
+ * 
+ * @var PalWorkGroupInfo::workGroupBase
+ * The offsets per dimension of the dispatch tile.
+ * 
+ * @var PalWorkGroupInfo::workGroupBase
+ * The number of workgroups per dimension of the dispatch tile.
  */
-typedef struct {
-    uint32_t workGroupBase[3];  /**< Offset per dimension of a dispatch tile.*/
-    uint32_t workGroupCount[3]; /**< Workgroup count per dimension of a dispatch tile.*/
+typedef struct PalWorkGroupInfo
+{
+    uint32_t workGroupBase[3];
+    uint32_t workGroupCount[3];
 } PalWorkGroupInfo;
 
 /**
  * @struct PalImageStagingRequirements
- * @brief Requirements for an image staging buffer.
+ * @brief Contains requirements for an image staging buffer.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalImageStagingRequirements::bufferSize
+ * The required buffer size.
+ * 
+ * @var PalImageStagingRequirements::bufferRowLength
+ * The required buffer row length.
+ * 
+ * @var PalImageStagingRequirements::bufferImageHeight
+ * The required buffer image height.
  */
-typedef struct {
-    uint64_t bufferSize;        /**< Required buffer size.*/
-    uint32_t bufferRowLength;   /**< Required buffer row length.*/
-    uint32_t bufferImageHeight; /**< Required buffer image height.*/
+typedef struct PalImageStagingRequirements
+{
+    uint64_t bufferSize; 
+    uint32_t bufferRowLength;
+    uint32_t bufferImageHeight;
 } PalImageStagingRequirements;
 
 /**
  * @struct PalDrawIndirectData
- * @brief Draw indirect data of a single draw call.
+ * @brief Contains indirect data of a draw call.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDrawIndirectData::vertexCount
+ * The number of vertices.
+ * 
+ * @var PalDrawIndirectData::instanceCount
+ * The number of instances.
+ * 
+ * @var PalDrawIndirectData::firstVertex
+ * The first vertex.
+ * 
+ * @var PalDrawIndirectData::firstInstance
+ * The first instance.
  */
-typedef struct {
-    uint32_t vertexCount;   /**< Vertex count.*/
-    uint32_t instanceCount; /**< Instance count.*/
-    uint32_t firstVertex;   /**< First vertex.*/
-    uint32_t firstInstance; /**< First instance.*/
+typedef struct PalDrawIndirectData
+{
+    uint32_t vertexCount;
+    uint32_t instanceCount;
+    uint32_t firstVertex;
+    uint32_t firstInstance;
 } PalDrawIndirectData;
 
 /**
  * @struct PalDrawIndexedIndirectData
- * @brief Draw indexed indirect data of a single draw call.
+ * @brief Contains indirect data of a draw indexed call.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDrawIndexedIndirectData::indexCount
+ * The number of indices.
+ * 
+ * @var PalDrawIndexedIndirectData::instanceCount
+ * The number of instances.
+ * 
+ * @var PalDrawIndexedIndirectData::firstIndex
+ * The first index.
+ * 
+ * @var PalDrawIndexedIndirectData::vertexOffset
+ * The vertex offset.
+ * 
+ * @var PalDrawIndexedIndirectData::firstInstance
+ * The first instance.
  */
-typedef struct {
-    uint32_t indexCount;    /**< Index count.*/
-    uint32_t instanceCount; /**< Instance count.*/
-    uint32_t firstIndex;    /**< First index.*/
-    int32_t vertexOffset;   /**< Vertex offset.*/
-    uint32_t firstInstance; /**< First instance.*/
+typedef struct PalDrawIndexedIndirectData
+{
+    uint32_t indexCount; 
+    uint32_t instanceCount;
+    uint32_t firstIndex; 
+    int32_t vertexOffset;
+    uint32_t firstInstance;
 } PalDrawIndexedIndirectData;
 
 /**
  * @struct PalDispatchIndirectData
- * @brief Draw or dispatch indirect data of a single dispatch call.
+ * @brief Contains indirect data of a dispatch call.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDispatchIndirectData::groupCountXOrWidth
+ * The number of groups on the x dimension or the dispatch width.
+ * 
+ * @var PalDispatchIndirectData::groupCountXOrHeight
+ * The number of groups on the y dimension or the dispatch height.
+ * 
+ * @var PalDispatchIndirectData::groupCountXOrDepth
+ * The number of groups on the z dimension or the dispatch depth.
  */
-typedef struct {
-    uint32_t groupCountXOrWidth;  /**< Number of groups on the x dimension or dispatch width.*/
-    uint32_t groupCountXOrHeight; /**< Number of groups on the y dimension or dispatch height.*/
-    uint32_t groupCountXOrDepth;  /**< Number of groups on the z dimension or dispatch depth.*/
+typedef struct PalDispatchIndirectData
+{
+    uint32_t groupCountXOrWidth; 
+    uint32_t groupCountXOrHeight;
+    uint32_t groupCountXOrDepth; 
 } PalDispatchIndirectData;
 
 /**
  * @struct PalVertexAttribute
- * @brief Vertex attribute.
+ * @brief Contains information about a vertex attribute.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalVertexAttribute::semanticID
+ * The semantic id of the vertex (eg. `PAL_VERTEX_SEMANTIC_ID_POSITION`).
+ * 
+ * @var PalVertexAttribute::type
+ * The type of the vertex (eg. `PAL_VERTEX_TYPE_FLOAT3`).
  */
-typedef struct {
-    PalVertexSemanticID semanticID; /**< (eg. `PAL_VERTEX_SEMANTIC_ID_POSITION`).*/
-    PalVertexType type;             /**< (eg. `PAL_VERTEX_TYPE_FLOAT3`).*/
+typedef struct PalVertexAttribute
+{
+    PalVertexSemanticID semanticID;
+    PalVertexType type;
 } PalVertexAttribute;
 
 /**
  * @struct PalVertexLayout
- * @brief Vertex layout.
- *
- * This defines the layout, ordering and the number of vertex attributes the layout uses.
- *
- * The layouts should reflect the exact layout of the shaders. Eg.
- * attributes[2] = { position, color } is different from
- * attributes[2] = { color, position }. The ordering must be correct.
+ * @brief Contains information about a vertex layout.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalVertexLayout::attributes
+ * The vertex attributes of the vertex layout.
+ * 
+ * @var PalVertexLayout::attributeCount
+ * The number of vertex attributes.
+ * 
+ * @var PalVertexLayout::type
+ * The type of the vertex layout (eg. `PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX`).
+ * 
+ * @var PalVertexLayout::binding
+ * The vertex binding slot to associate the vertex layout to.
+ * 
+ * @var PalVertexLayout::reserved
+ * Not used. Set to `0`.
  */
-typedef struct {
-    PalVertexAttribute* attributes; /**< Vertex attributes.*/
-    uint32_t attributeCount;        /**< Number of vertex attributes.*/
-    PalVertexLayoutType type;       /**< (eg. `PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX`).*/
-    uint32_t binding;               /**< Vertex buffer binding slot.*/
-    uint32_t reserved;              /**< Must be set to 0.*/
+typedef struct PalVertexLayout
+{
+    PalVertexAttribute* attributes;
+    uint32_t attributeCount;
+    PalVertexLayoutType type;
+    uint32_t binding;
+    uint32_t reserved;
 } PalVertexLayout;
 
 /**
  * @struct PalGraphicsDebugger
- * @brief Graphics debugger.
+ * @brief Contains information about a graphics debugger.
  *
- * The debugger will not be initialized if PalGraphicsDebugger::callback is set and valid.
+ * The debugger will not be initialized if 
+ * PalGraphicsDebugger::callback is not valid.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalGraphicsDebugger::userData
+ * User data passed to ::callback. Can be `nullptr`.
+ * 
+ * @var PalGraphicsDebugger::callback
+ * The function to forward debug messages to. Must not be `nullptr`.
+ * 
+ * @var PalGraphicsDebugger::enableGPUValidation
+ * `PAL_TRUE` to enable GPU-Based Validation.
+ * 
+ * @var PalGraphicsDebugger::denyGeneral
+ * If `PAL_TRUE`, general type debug messages wil be filtered out.
+ * 
+ * @var PalGraphicsDebugger::denyValidation
+ * If `PAL_TRUE`, validation type debug messages wil be filtered out.
+ * 
+ * @var PalGraphicsDebugger::denyPerformance
+ * If `PAL_TRUE`, performance type debug messages wil be filtered out.
+ * 
+ * @var PalGraphicsDebugger::denyInfoSeverity
+ * If `PAL_TRUE`, information severity debug messages wil be filtered out.
+ * 
+ * @var PalGraphicsDebugger::denyWarningSeverity
+ * If `PAL_TRUE`, warning severity debug messages wil be filtered out.
+ * 
+ * @var PalGraphicsDebugger::denyErrorSeverity
+ * If `PAL_TRUE`, error severity debug messages wil be filtered out.
+ * 
+ * @var PalGraphicsDebugger::reserved
+ * Not used. Set to `0`.
  */
-typedef struct {
-    void* userData;              /**< Optional user provided data. Can be `nullptr`.*/
-    PalDebugCallback callback;   /**< Debug callback function.*/
-    PalBool enableGPUValidation; /**< Enable GPU-Based validation.*/
-    PalBool denyGeneral;         /**< Do not recieve general messages.*/
-    PalBool denyValidation;      /**< Do not recieve validation messages.*/
-    PalBool denyPerformance;     /**< Do not recieve performance messages.*/
-    PalBool denyInfoSeverity;    /**< Do not recieve info severity messages.*/
-    PalBool denyWarningSeverity; /**< Do not recieve warning severity messages.*/
-    PalBool denyErrorSeverity;   /**< Do not recieve error severity messages.*/
-    uint32_t reserved;           /**< 0 for now.*/
+typedef struct PalGraphicsDebugger
+{
+    void* userData;
+    PalDebugCallback callback;
+    PalBool enableGPUValidation;
+    PalBool denyGeneral;
+    PalBool denyValidation;
+    PalBool denyPerformance;
+    PalBool denyInfoSeverity;
+    PalBool denyWarningSeverity;
+    PalBool denyErrorSeverity;
+    uint32_t reserved;
 } PalGraphicsDebugger;
 
 /**
  * @struct PalRasterizerState
- * @brief Rasterizer state. This is used with a graphics pipeline.
+ * @brief Contains information about the rasterizer state.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalRasterizerState::enableDepthClamp
+ * `PAL_TRUE` to enable depth clamp.
+ * 
+ * @var PalRasterizerState::enableDepthBias
+ * `PAL_TRUE` to enable depth bias.
+ * 
+ * @var PalRasterizerState::depthBiasConstant
+ * The depth bias constant. Will be ignored if ::enableDepthBias 
+ * is `PAL_FALSE`.
+ * 
+ * @var PalRasterizerState::depthBiasSlope
+ * The depth bias slope. Will be ignored if ::enableDepthBias is `PAL_FALSE`.
+ * 
+ * @var PalRasterizerState::depthBiasClamp
+ * The depth bias clamp. Will be ignored if ::enableDepthBias is `PAL_FALSE`.
+ * 
+ * @var PalRasterizerState::polygonMode
+ * The polygon mode (eg. `PAL_POLYGON_MODE_FILL`).
+ * 
+ * @var PalRasterizerState::cullMode
+ * The cull mode (eg. `PAL_CULL_MODE_NONE`)
+ * 
+ * @var PalRasterizerState::frontFace
+ * The front face (eg. `PAL_FRONT_FACE_CLOCKWISE`).
  */
-typedef struct {
-    PalBool enableDepthClamp;   /**< `PAL_TRUE` to enable depth clamp.*/
-    PalBool enableDepthBias;    /**< `PAL_TRUE` to enable depth bias.*/
-    float depthBiasConstant;    /**< Depth bias constant.*/
-    float depthBiasSlope;       /**< Depth bias slope.*/
-    float depthBiasClamp;       /**< Depth bias clamp.*/
-    PalPolygonMode polygonMode; /**< (eg. `PAL_POLYGON_MODE_FILL`).*/
-    PalCullMode cullMode;       /**< (eg. `PAL_CULL_MODE_NONE`).*/
-    PalFrontFace frontFace;     /**< (eg. `PAL_FRONT_FACE_CLOCKWISE`).*/
+typedef struct PalRasterizerState
+{
+    PalBool enableDepthClamp;
+    PalBool enableDepthBias;
+    float depthBiasConstant;
+    float depthBiasSlope;
+    float depthBiasClamp;
+    PalPolygonMode polygonMode;
+    PalCullMode cullMode;
+    PalFrontFace frontFace;
 } PalRasterizerState;
 
 /**
  * @struct PalMultisampleState
- * @brief Multisample state. This is used with a graphics pipeline.
+ * @brief Contains information about the multisample state.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalMultisampleState::sampleMask
+ * The sample mask. Set to `0` for all samples.
+ * 
+ * @var PalMultisampleState::enableSampleShading
+ * `PAL_TRUE` to enable sample shading.
+ * 
+ * @var PalMultisampleState::enableAlphaToCoverage
+ * `PAL_TRUE` to enable enable alpha to coverage.
+ * 
+ * @var PalMultisampleState::sampleCount
+ * The `MSAA` samples. (eg. `PAL_SAMPLE_COUNT_4`).
+ * 
+ * @var PalMultisampleState::sampleCount
+ * The minimum sample shading.
  */
-typedef struct {
-    uint64_t sampleMask;           /**< Set to 0 to use default.*/
-    PalBool enableSampleShading;   /**< `PAL_TRUE` to enable sample shading.*/
-    PalBool enableAlphaToCoverage; /**< `PAL_TRUE` to enable alpha to coverage.*/
-    PalSampleCount sampleCount;    /**< (eg. `PAL_SAMPLE_COUNT_4`).*/
-    float minSampleShading;        /**< Minimum sample shading.*/
+typedef struct PalMultisampleState
+{
+    uint64_t sampleMask;
+    PalBool enableSampleShading;
+    PalBool enableAlphaToCoverage;
+    PalSampleCount sampleCount;
+    float minSampleShading;
 } PalMultisampleState;
 
 /**
  * @struct PalStencilOpState
- * @brief Stencil operation state. This is used with a graphics pipeline.
+ * @brief Contains information about stencil operation state.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalStencilOpState::failOp
+ * The stencil fail operation.
+ * 
+ * @var PalStencilOpState::passOp
+ * The pass operation.
+ * 
+ * @var PalStencilOpState::depthFailOp
+ * The depth fail operation.
+ * 
+ * @var PalStencilOpState::compareOp
+ * The compare operation.
  */
-typedef struct {
-    PalStencilOp failOp;      /**< Stencil fail operation.*/
-    PalStencilOp passOp;      /**< Pass operation.*/
-    PalStencilOp depthFailOp; /**< Depth fail operation.*/
-    PalCompareOp compareOp;   /**< Compare operation.*/
+typedef struct PalStencilOpState
+{
+    PalStencilOp failOp;
+    PalStencilOp passOp;
+    PalStencilOp depthFailOp;
+    PalCompareOp compareOp;
 } PalStencilOpState;
 
 /**
  * @struct PalDepthStencilState
- * @brief Depth stencil state. This is used with a graphics pipeline.
+ * @brief Contains information about the depth stencil state.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDepthStencilState::enableDepthTest
+ * `PAL_TRUE` to enable depth test.
+ * 
+ * @var PalDepthStencilState::enableDepthWrite
+ * `PAL_TRUE` to enable depth write.
+ * 
+ * @var PalDepthStencilState::enableStencilTest
+ * `PAL_TRUE` to enable stencil test.
+ * 
+ * @var PalDepthStencilState::compareOp
+ * The compare operation.
+ * 
+ * @var PalDepthStencilState::frontStencilOpState
+ * The front stencil operation state.
+ * 
+ * @var PalDepthStencilState::backStencilOpState
+ * The back stencil operation state.
  */
-typedef struct {
-    PalBool enableDepthTest;               /**< `PAL_TRUE` to enable depth test.*/
-    PalBool enableDepthWrite;              /**< `PAL_TRUE` to enable depth write.*/
-    PalBool enableStencilTest;             /**< `PAL_TRUE` to enable stencil test.*/
-    PalCompareOp compareOp;                /**< Compare operation.*/
-    PalStencilOpState frontStencilOpState; /**< Front stencil operation state.*/
-    PalStencilOpState backStencilOpState;  /**< Back stencil operation state.*/
+typedef struct PalDepthStencilState
+{
+    PalBool enableDepthTest;              
+    PalBool enableDepthWrite;             
+    PalBool enableStencilTest;            
+    PalCompareOp compareOp;               
+    PalStencilOpState frontStencilOpState;
+    PalStencilOpState backStencilOpState; 
 } PalDepthStencilState;
 
 /**
  * @struct PalColorBlendAttachment
- * @brief Color blend attachmeent. This is used with a graphics pipeline.
- *
- * Every rendering attachment (color, etc) must have a color blend attachment to
- * describe how blending is applied to the attachment.
+ * @brief Contains information about a color blend attachment.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalColorBlendAttachment::enableBlend
+ * `PAL_TRUE` to enable blending.
+ * 
+ * @var PalColorBlendAttachment::colorWriteMask
+ * A bitmask of blend color masks 
+ * (eg. `PAL_COLOR_MASK_RED` | `PAL_COLOR_MASK_BLUE`).
+ * 
+ * @var PalColorBlendAttachment::dstColorBlendFactor
+ * The destination color blend factor. 
+ * 
+ * @var PalColorBlendAttachment::srcColorBlendFactor
+ * The source color blend factor. 
+ * 
+ * @var PalColorBlendAttachment::colorBlendOp
+ * The color blend operation.
+ * 
+ * @var PalColorBlendAttachment::dstAlphaBlendFactor
+ * The destination alpha blend factor.
+ * 
+ * @var PalColorBlendAttachment::srcAlphaBlendFactor
+ * The source alpha blend factor.
+ * 
+ * @var PalColorBlendAttachment::alphaBlendOp
+ * The alpha blend operation.
  */
-typedef struct {
-    PalBool enableBlend;                /**< `PAL_TRUE` to enable blending.*/
-    PalColorMask colorWriteMask;        /**< (eg. `PAL_COLOR_MASK_RED` | `PAL_COLOR_MASK_RED`).*/
-    PalBlendFactor dstColorBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA`).*/
-    PalBlendFactor srcColorBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_SRC_ALPHA`).*/
-    PalBlendOp colorBlendOp;            /**< (eg. `PAL_BLEND_OP_ADD`).*/
-    PalBlendFactor dstAlphaBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_ONE_MINUS_DST_COLOR`).*/
-    PalBlendFactor srcAlphaBlendFactor; /**< (eg. `PAL_BLEND_FACTOR_SRC_COLOR`).*/
-    PalBlendOp alphaBlendOp;            /**< (eg. `PAL_BLEND_OP_SUBTRACT`).*/
+typedef struct PalColorBlendAttachment
+{
+    PalBool enableBlend;
+    PalColorMask colorWriteMask;
+    PalBlendFactor dstColorBlendFactor;
+    PalBlendFactor srcColorBlendFactor;
+    PalBlendOp colorBlendOp;           
+    PalBlendFactor dstAlphaBlendFactor;
+    PalBlendFactor srcAlphaBlendFactor;
+    PalBlendOp alphaBlendOp;           
 } PalColorBlendAttachment;
 
 /**
  * @struct PalFragmentShadingRateState
- * @brief Fragment shading rate state. This is used with a graphics pipeline.
+ * @brief Contains information about the fragment shading rate state.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalFragmentShadingRateState::rate
+ * The shading rate (eg. `PAL_FRAGMENT_SHADING_RATE_2X2`).
+ * 
+ * @var PalFragmentShadingRateState::combinerOps
+ * The fragment shading rate combiner operations.
  */
-typedef struct {
-    PalFragmentShadingRate rate;                     /**< (eg. `PAL_FRAGMENT_SHADING_RATE_2X2`).*/
-    PalFragmentShadingRateCombinerOp combinerOps[2]; /**< Combiner operations.*/
+typedef struct PalFragmentShadingRateState
+{
+    PalFragmentShadingRate rate;
+    PalFragmentShadingRateCombinerOp combinerOps[2];
 } PalFragmentShadingRateState;
 
 /**
