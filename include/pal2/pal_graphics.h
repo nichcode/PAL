@@ -3338,195 +3338,375 @@ typedef struct PalFragmentShadingRateState
 
 /**
  * @struct PalAccelerationStructureInstance
- * @brief Acceleration structure instance base data.
+ * @brief Contains acceleration structure instance base data.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalAccelerationStructureInstance::blas
+ * The bottom level acceleration structure.
+ * 
+ * @var PalAccelerationStructureInstance::flags
+ * The instance flags.
+ * 
+ * @var PalAccelerationStructureInstance::mask
+ * The mask. Only the lower `8-bits` are used (0x00 - 0xFF).
+ * 
+ * @var PalAccelerationStructureInstance::instanceId
+ * The id used to identify the instance.
+ * 
+ * @var PalAccelerationStructureInstance::hitGroupOffset
+ * The hitgroup offset.
+ * 
+ * @var PalAccelerationStructureInstance::transform
+ * The instance trasnform. Must be row major.
  */
-typedef struct {
-    PalAccelerationStructure* blas;              /**< Bottom level acceleration structure.*/
-    PalAccelerationStructureInstanceFlags flags; /**< Instance flags.*/
-    uint32_t mask;           /**< Only the lower 8-bits are used (0x00 - 0xFF).*/
-    uint32_t instanceId;     /**< User defined identifier.*/
-    uint32_t hitGroupOffset; /**< Offset added to hitgroup index in the Shader Binding Table.*/
-    float transform[12];     /**< Transform (row major 3x4).*/
+typedef struct PalAccelerationStructureInstance
+{
+    PalAccelerationStructure* blas; 
+    PalAccelerationStructureInstanceFlags flags; 
+    uint32_t mask;
+    uint32_t instanceId;
+    uint32_t hitGroupOffset;
+    float transform[12];
 } PalAccelerationStructureInstance;
 
 /**
  * @struct PalAccelerationStructureBuildSize
- * @brief Acceleration structure build size.
+ * @brief Contains acceleration structure build size.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalAccelerationStructureBuildSize::accelerationStructureSize
+ * The required acceleration structure size in bytes.
+ * 
+ * @var PalAccelerationStructureBuildSize::scratchBufferSize
+ * The required scratch buffer size in bytes.
+ * 
+ * @var PalAccelerationStructureBuildSize::updateScratchBufferSize
+ * The required scratch buffer update size in bytes.
  */
-typedef struct {
-    uint64_t accelerationStructureSize; /**< Required acceleration structure size in bytes.*/
-    uint64_t scratchBufferSize;         /**< Required scratch buffer size in bytes.*/
-    uint64_t updateScratchBufferSize;   /**< Required scratch buffer update size in bytes.*/
+typedef struct PalAccelerationStructureBuildSize
+{
+    uint64_t accelerationStructureSize;
+    uint64_t scratchBufferSize;        
+    uint64_t updateScratchBufferSize;  
 } PalAccelerationStructureBuildSize;
 
 /**
  * @struct PalGeometryDataTriangle
- * @brief Acceleration structure triangle geometry data.
+ * @brief Contains acceleration structure triangle geometry data.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalGeometryDataTriangle::vertexBufferAddress
+ * The address of the vertex buffer.
+ * 
+ * @var PalGeometryDataTriangle::indexBufferAddress
+ * The address of the index buffer.
+ * 
+ * @var PalGeometryDataTriangle::transformBufferAddress
+ * The address of the transform buffer.
+ * 
+ * @var PalGeometryDataTriangle::vertexType
+ * The vertex type of ::vertexBufferAddress.
+ * 
+ * @var PalGeometryDataTriangle::indexType
+ * The index type of ::indexBufferAddress.
+ * 
+ * @var PalGeometryDataTriangle::vertexCount
+ * The number of vertices in ::vertexBufferAddress.
+ * 
+ * @var PalGeometryDataTriangle::vertexStride
+ * The size of each vertex in bytes in ::vertexBufferAddress.
  */
-typedef struct {
-    PalDeviceAddress vertexBufferAddress;    /**< Address of the vertex buffer.*/
-    PalDeviceAddress indexBufferAddress;     /**< Address of the index buffer.*/
-    PalDeviceAddress transformBufferAddress; /**< Address of the transform buffer.*/
-    PalVertexType vertexType;                /**< (eg. `PAL_VERTEX_TYPE_FLOAT3`)*/
-    PalIndexType indexType;                  /**< (eg. `PAL_INDEX_TYPE_UINT32`).*/
-    uint32_t vertexCount;                    /**< Number of vertices.*/
-    uint32_t vertexStride;                   /**< Size of each vertex in bytes.*/
+typedef struct PalGeometryDataTriangle
+{
+    PalDeviceAddress vertexBufferAddress;
+    PalDeviceAddress indexBufferAddress;
+    PalDeviceAddress transformBufferAddress;
+    PalVertexType vertexType;
+    PalIndexType indexType;
+    uint32_t vertexCount;
+    uint32_t vertexStride;
 } PalGeometryDataTriangle;
 
 /**
  * @struct PalGeometryDataAABBS
- * @brief Acceleration structure AABBS geometry data.
+ * @brief Contains acceleration structure AABBS geometry data.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalGeometryDataAABBS::bufferAddress
+ * The address of the `AABBS` buffer.
+ * 
+ * @var PalGeometryDataAABBS::stride
+ * The size of each `AABBS` in bytes in ::bufferAddress.
  */
-typedef struct {
-    PalDeviceAddress bufferAddress; /**< Address of the AABBS buffer.*/
-    uint64_t stride;                /**< Size of each AABBS in bytes.*/
+typedef struct PalGeometryDataAABBS
+{
+    PalDeviceAddress bufferAddress;
+    uint64_t stride;               
 } PalGeometryDataAABBS;
 
 /**
  * @struct PalGeometry
- * @brief Acceleration structure geometry.
+ * @brief Contains acceleration structure geometry.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalGeometry::data
+ * The geometry data. This is based on ::type.
+ * 
+ * @var PalGeometry::primitiveCount
+ * The number of primitives in ::data.
+ * 
+ * @var PalGeometry::flags
+ * The geometry flags.
+ * 
+ * @var PalGeometry::type
+ * The geometry type (eg. `PAL_GEOMETRY_TYPE_TRIANGLE`).
  */
-typedef struct {
-    const void* data;        /**< This will be casted based on `type`.*/
-    uint64_t primitiveCount; /**< Number of primitives in `data`.*/
-    PalGeometryFlags flags;  /**< (eg. `PAL_GEOMETRY_FLAG_OPAQUE`).*/
-    PalGeometryType type;    /**< (eg. `PAL_GEOMETRY_TYPE_TRIANGLE`).*/
+typedef struct PalGeometry
+{
+    const void* data;
+    uint64_t primitiveCount;
+    PalGeometryFlags flags;
+    PalGeometryType type;  
 } PalGeometry;
 
 /**
  * @struct PalAccelerationStructureBuildInfo
- * @brief Build information of an acceleration structure.
+ * @brief Contains build information of an acceleration structure.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalAccelerationStructureBuildInfo::dst
+ * The destination acceleration structure.
+ * 
+ * @var PalAccelerationStructureBuildInfo::src
+ * The Source acceleration structure. This is used update builds.
+ * 
+ * @var PalAccelerationStructureBuildInfo::geometries
+ * The Bottom level acceleration structure geometries.
+ * Set to `nullptr` if ::type is `PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL`.
+ * 
+ * @var PalAccelerationStructureBuildInfo::scratchBufferAddress
+ * The address of the scratch buffer.
+ * 
+ * @var PalAccelerationStructureBuildInfo::instanceBufferAddress
+ * The address of the instance buffer.
+ * Set to `nullptr` if ::type is `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`
+ * 
+ * @var PalAccelerationStructureBuildInfo::buildHints
+ * Driver build hints. These are hints and might be ignored.
+ * 
+ * @var PalAccelerationStructureBuildInfo::type
+ * The type of the acceleration structure.
+ * 
+ * @var PalAccelerationStructureBuildInfo::buildMode
+ * The build mode of the acceleration structure.
+ * (eg. `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_BUILD`).
+ * 
+ * @var PalAccelerationStructureBuildInfo::count
+ * If ::type is `PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL`, this is
+ * the number of instances in ::instanceBufferAddress. @nl
+ * If ::type is `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`, this is @nl
+ * the number of geometries in ::geometries.
  */
-typedef struct {
-    PalAccelerationStructure* dst;          /**< Destination aceleration structure.*/
-    PalAccelerationStructure* src;          /**< Source aceleration structure. Used for updates.*/
-    PalGeometry* geometries;                /**< BLAS geometries. `nullptr` for TLAS*/
-    PalDeviceAddress scratchBufferAddress;  /**< Address of scratch buffer.*/
-    PalDeviceAddress instanceBufferAddress; /**< Address of instance buffer. `nullptr` for BLAS.*/
-    PalAccelerationStructureBuildHints buildHints; /**< Might be ignored by driver.*/
-    PalAccelerationStructureType type; /**< (eg. `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`).*/
-    PalAccelerationStructureBuildMode buildMode; /**< Build or update.*/
-    uint32_t count; /**< Number of elements in `geometries` or `instanceBufferAddress`.*/
+typedef struct PalAccelerationStructureBuildInfo
+{
+    PalAccelerationStructure* dst;
+    PalAccelerationStructure* src;
+    PalGeometry* geometries;
+    PalDeviceAddress scratchBufferAddress;
+    PalDeviceAddress instanceBufferAddress;
+    PalAccelerationStructureBuildHints buildHints;
+    PalAccelerationStructureType type;
+    PalAccelerationStructureBuildMode buildMode;
+    uint32_t count;
 } PalAccelerationStructureBuildInfo;
 
 /**
  * @struct PalDescriptorSetLayoutBinding
- * @brief Single descriptor set layout binding.
+ * @brief Contains information about a descriptor set layout binding.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorSetLayoutBinding::descriptorCount
+ * The number of descriptors of ::descriptorType.
+ * 
+ * @var PalDescriptorSetLayoutBinding::descriptorType
+ * The type of the descriptor. (eg. `PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE`).
  */
-typedef struct {
-    uint32_t descriptorCount;         /**< Number of descriptors of `descriptorType`.*/
-    PalDescriptorType descriptorType; /**< (eg. `PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE`).*/
+typedef struct PalDescriptorSetLayoutBinding
+{
+    uint32_t descriptorCount;
+    PalDescriptorType descriptorType;
 } PalDescriptorSetLayoutBinding;
 
 /**
  * @struct PalDescriptorPoolBindingSize
- * @brief Descriptor pool binding size.
- * Describes the sizes of each descriptor type in the descriptor pool.
+ * @brief Contains information about descriptor pool binding size.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorPoolBindingSize::bindingCount
+ * The number of bindings of ::descriptorType.
+ * 
+ * @var PalDescriptorPoolBindingSize::descriptorType
+ * The type of the descriptor.
  */
-typedef struct {
-    uint32_t bindingCount;            /**< Number of bindings of `descriptorType`.*/
-    PalDescriptorType descriptorType; /**< (eg. `PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE`).*/
+typedef struct PalDescriptorPoolBindingSize
+{
+    uint32_t bindingCount;
+    PalDescriptorType descriptorType;
 } PalDescriptorPoolBindingSize;
 
 /**
  * @struct PalDescriptorBufferInfo
- * @brief Information about a buffer descriptor.
+ * @brief Contains information about a buffer descriptor.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorBufferInfo::buffer
+ * The buffer associated with the descriptor.
+ * 
+ * @var PalDescriptorBufferInfo::offset
+ * The offset of ::buffer in bytes. This will be divided by ::stride 
+ * if the buffer is marked as structured.
+ * 
+ * @var PalDescriptorBufferInfo::size
+ * The size of ::buffer in bytes.
+ * 
+ * @var PalDescriptorBufferInfo::stride
+ * This will be ignored if ::buffer is not marked as structured.
  */
-typedef struct {
-    PalBuffer* buffer; /**< Buffer associated with the descriptor.*/
-    uint64_t offset;   /**< Offset in bytes. If structured, this will be divided by `stride`.*/
-    uint64_t size;     /**< Size of the buffer in bytes.*/
-    uint64_t stride;   /**< For structured buffers. This will be ignored if not supported.*/
+typedef struct PalDescriptorBufferInfo
+{
+    PalBuffer* buffer;
+    uint64_t offset;
+    uint64_t size;  
+    uint64_t stride;
 } PalDescriptorBufferInfo;
 
 /**
  * @struct PalDescriptorImageViewInfo
- * @brief Information about an image view descriptor.
+ * @brief Contains information about an image view descriptor.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorBufferInfo::imageView
+ * The image view associated with the descriptor.
  */
-typedef struct {
-    PalImageView* imageView; /**< Image view associated with the descriptor.*/
+typedef struct PalDescriptorImageViewInfo
+{
+    PalImageView* imageView;
 } PalDescriptorImageViewInfo;
 
 /**
  * @struct PalDescriptorSamplerInfo
- * @brief Information about a sampler descriptor.
+ * @brief Contains information about a sampler descriptor.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorSamplerInfo::sampler
+ * The sampler associated with the descriptor.
  */
-typedef struct {
-    PalSampler* sampler; /**< Sampler associated with the descriptor.*/
+typedef struct PalDescriptorSamplerInfo
+{
+    PalSampler* sampler;
 } PalDescriptorSamplerInfo;
 
 /**
  * @struct PalDescriptorTLASInfo
- * @brief Information about a TLAS descriptor.
+ * @brief Contains information about a TLAS descriptor.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorTLASInfo::tlas
+ * The top level acceleration structure associated with the descriptor.
  */
-typedef struct {
-    PalAccelerationStructure* tlas; /**< TLAS associated with the descriptor.*/
+typedef struct PalDescriptorTLASInfo
+{
+    PalAccelerationStructure* tlas;
 } PalDescriptorTLASInfo;
 
 /**
  * @struct PalDescriptorSetWriteInfo
- * @brief Write information of a descriptor set.
+ * @brief Contains write information of a descriptor set.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * 
+ * @var PalDescriptorSetWriteInfo::descriptorSet
+ * The descriptor set to update. Must not be `nullptr`.
+ * 
+ * @var PalDescriptorSetWriteInfo::bufferInfos
+ * The buffer infos. This will be used if ::descriptorType is
+ * `PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER`  or 
+ * `PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER`
+ * 
+ * @var PalDescriptorSetWriteInfo::imageViewInfos
+ * The image view infos. This will be used if ::descriptorType is
+ * `PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE`  or 
+ * `PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE`
+ * 
+ * @var PalDescriptorSetWriteInfo::samplerInfos
+ * The sampler infos. This will be used if ::descriptorType is
+ * `PAL_DESCRIPTOR_TYPE_SAMPLER`.
+ * 
+ * @var PalDescriptorSetWriteInfo::tlasInfos
+ * The top level acceleration structure infos. This will be used if
+ * ::descriptorType is `PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE`.
+ * 
+ * @var PalDescriptorSetWriteInfo::descriptorType
+ * The type of the descriptor.
+ * 
+ * @var PalDescriptorSetWriteInfo::layoutBindingIndex
+ * The index into the descriptor set layout (bindings) that was used
+ * to create ::descriptorSet.
+ * 
+ * @var PalDescriptorSetWriteInfo::arrayElement
+ * The first index in the descriptor set layout (bindings) that was used
+ * to create ::descriptorSet.
+ * 
+ * @var PalDescriptorSetWriteInfo::descriptorCount
+ * The number of descriptors to write.
  */
-typedef struct {
-    PalDescriptorSet* descriptorSet;            /**< Descriptor set to write into.*/
-    PalDescriptorBufferInfo* bufferInfos;       /**< Used with buffer descriptors.*/
-    PalDescriptorImageViewInfo* imageViewInfos; /**< Used with image descriptors.*/
-    PalDescriptorSamplerInfo* samplerInfos;     /**< Used with sampler descriptors.*/
-    PalDescriptorTLASInfo* tlasInfos;           /**< Used with TLAS descriptors.*/
-    PalDescriptorType descriptorType;           /**< (eg. `PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE`).*/
-    uint32_t layoutBindingIndex; /**< Index into the descriptor set layout bindings.*/
-    uint32_t arrayElement;       /**< First index within the descriptor set layout bindings.*/
-    uint32_t descriptorCount;    /**< Number of descriptors to write.*/
+typedef struct PalDescriptorSetWriteInfo
+{
+    PalDescriptorSet* descriptorSet;
+    PalDescriptorBufferInfo* bufferInfos;
+    PalDescriptorImageViewInfo* imageViewInfos;
+    PalDescriptorSamplerInfo* samplerInfos;
+    PalDescriptorTLASInfo* tlasInfos;
+    PalDescriptorType descriptorType;
+    uint32_t layoutBindingIndex;
+    uint32_t arrayElement;
+    uint32_t descriptorCount;
 } PalDescriptorSetWriteInfo;
 
 /**
