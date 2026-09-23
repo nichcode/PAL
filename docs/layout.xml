@@ -64,7 +64,7 @@
       <constructors visible="yes" title=""/>
       <functions visible="yes" title=""/>
       <related visible="yes" title=""/>
-      <variables visible="yes" title="Fields Detailed Documentation"/>
+      <variables visible="yes" title="Fields Documentation"/>
       <properties visible="yes" title=""/>
       <events visible="yes" title=""/>
     </memberdef>
@@ -161,7 +161,7 @@
     <briefdescription visible="yes"/>
     <groupgraph visible="yes"/>
     <memberdecl>
-      <nestedgroups visible="yes" title="nnn"/>
+      <nestedgroups visible="yes" title="Sub Groups"/>
       <modules visible="yes" title=""/>
       <dirs visible="yes" title=""/>
       <files visible="yes" title=""/>
@@ -175,7 +175,7 @@
       <enums visible="yes" title=""/>
       <enumvalues visible="yes" title=""/>
       <functions visible="yes" title="Functions"/>
-      <variables visible="yes" title="Structs Variable"/>
+      <variables visible="no" title=""/>
       <signals visible="yes" title=""/>
       <publicslots visible="yes" title=""/>
       <protectedslots visible="yes" title=""/>
@@ -195,8 +195,8 @@
       <dictionaries visible="yes" title=""/>
       <enums visible="yes" title=""/>
       <enumvalues visible="yes" title=""/>
-      <functions visible="yes" title="Structs Documentation"/>
-      <variables visible="yes" title="Structs Variable Documentation"/>
+      <functions visible="yes" title="Functions Documentation"/>
+      <variables visible="no" title=""/>
       <signals visible="yes" title=""/>
       <publicslots visible="yes" title=""/>
       <protectedslots visible="yes" title=""/>

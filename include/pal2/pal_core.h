@@ -82,10 +82,12 @@
 #define PAL_FALSE 0
 
 #define PAL_RESULT_SUCCESS 0
+/** @} */
 
 /**
  * @defgroup result_codes Result Codes
  * @brief Result codes extracted from result values.
+ * @ingroup pal_core
  * 
  * Each function defines its possible result codes and what it means.
  * A function which takes a version struct parameter might set 
@@ -110,6 +112,7 @@
 /**
  * @defgroup result_sources Result Sources
  * @brief Result sources extracted from result values.
+ * @ingroup pal_core
  * 
  * The result source shows where the native code was retrieved.
  * 
@@ -140,6 +143,7 @@
  * Must be set to either `PAL_TRUE`/`1` or `PAL_FALSE`/`0` .
  * 
  * @since Added in version 2.0
+ * @ingroup pal_core
  */
 typedef uint32_t PalBool;
 
@@ -156,6 +160,7 @@ typedef uint32_t PalBool;
  * (eg. result == `PAL_RESULT_SUCCESS`).
  * 
  * @since Added in version 2.0
+ * @ingroup pal_core
  */
 typedef uint64_t PalResult;
 
@@ -170,6 +175,7 @@ typedef uint64_t PalResult;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetResultCode
  */
 typedef uint16_t PalResultCode;
@@ -185,6 +191,7 @@ typedef uint16_t PalResultCode;
  * consistency and ease of use.
  * 
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetResultSource
  */
 typedef uint16_t PalResultSource;
@@ -194,6 +201,7 @@ typedef uint16_t PalResultSource;
  * @brief A generic library symbol for exported functions.
  * 
  * @since Added in version 2.2
+ * @ingroup pal_core
  * @sa palGetSymbol
  */
 typedef void (PAL_CALL *PalLibrarySymbol)(void);
@@ -203,6 +211,7 @@ typedef void (PAL_CALL *PalLibrarySymbol)(void);
  * @brief Opaque handle to a library.
  * 
  * @since Added in version 2.2
+ * @ingroup pal_core
  * @sa palLoadLibrary
  */
 typedef struct PalLibrary PalLibrary;
@@ -238,6 +247,7 @@ typedef struct PalLibrary PalLibrary;
  * @return The allocated memory on success or `nullptr` on failure.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa PalFreeFn
  */
 typedef void*(PAL_CALL* PalAllocateFn)(
@@ -261,6 +271,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @param[in] ptr The memory to free.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa PalAllocateFn
  */
 typedef void(PAL_CALL* PalFreeFn)(
@@ -286,6 +297,7 @@ typedef void(PAL_CALL* PalFreeFn)(
  * @param msg Null-terminated UTF-8 log message.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palLog
  */
 typedef void(PAL_CALL* PalLogCallback)(
@@ -297,6 +309,7 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @brief Contains information about the version of PAL.
  * 
  * @since Added in version 2.0
+ * @ingroup pal_core
  * 
  * @var PalVersion::major
  * The major version number of the PAL runtime. 
@@ -328,6 +341,7 @@ typedef struct PalVersion
  * Uninitialized fields may result in undefined behavior.
  * 
  * @since Added in version 2.0
+ * @ingroup pal_core
  * 
  * @var PalAllocator::allocate
  * The allocate function of the allocator. Must not be `nullptr`.
@@ -357,6 +371,7 @@ typedef struct PalAllocator
  * Uninitialized fields may result in undefined behavior.
  * 
  * @since Added in version 2.0
+ * @ingroup pal_core
  * 
  * @var PalLogger::callback
  * The function to forward log messages to. Must not be `nullptr`.
@@ -381,6 +396,7 @@ typedef struct PalLogger
  * @Thread-safety `buffer` must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  */
 PAL_API void PAL_CALL palFormatResult(
     PalResult result,
@@ -396,6 +412,7 @@ PAL_API void PAL_CALL palFormatResult(
  * @Thread-safety `version` must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetVersionString
  */
 PAL_API void PAL_CALL palGetVersion(PalVersion* version);
@@ -409,6 +426,7 @@ PAL_API void PAL_CALL palGetVersion(PalVersion* version);
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetVersion
  */
 PAL_API const char* PAL_CALL palGetVersionString(void);
@@ -438,6 +456,7 @@ PAL_API const char* PAL_CALL palGetVersionString(void);
  * @Thread-safety `allocator` implementation must be thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palFree
  */
 PAL_API void* PAL_CALL palAllocate(
@@ -463,6 +482,7 @@ PAL_API void* PAL_CALL palAllocate(
  * @Thread-safety `allocator` implementation must be thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palAllocate
  */
 PAL_API void PAL_CALL palFree(
@@ -489,6 +509,7 @@ PAL_API void PAL_CALL palFree(
  * implementation is thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palFormatResult
  */
 PAL_API void PAL_CALL palLog(
@@ -504,6 +525,7 @@ PAL_API void PAL_CALL palLog(
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetPerformanceFrequency
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
@@ -516,6 +538,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetPerformanceCounter
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
@@ -545,6 +568,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
  * @Thread-safety The entry function must be thread-safe.
  *
  * @since Added in version 2.2
+ * @ingroup pal_core
  * @sa palGetSymbol
  * @sa palFreeLibrary
  */
@@ -565,6 +589,7 @@ PAL_API PalLibrary* PAL_CALL palLoadLibrary(const char* path);
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.2
+ * @ingroup pal_core
  * @sa palLoadLibrary
  * @sa palFreeLibrary
  */
@@ -582,6 +607,7 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  * @Thread-safety `library` must be externally synchronized.
  *
  * @since Added in version 2.2
+ * @ingroup pal_core
  * @sa palLoadLibrary
  * @sa palGetSymbol
  */
@@ -597,6 +623,7 @@ PAL_API void PAL_CALL palFreeLibrary(PalLibrary* library);
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetResultSource
  * @sa palGetResultNativeCode
  */
@@ -615,6 +642,7 @@ static inline PalResultCode PAL_CALL palGetResultCode(PalResult result)
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetResultCode
  * @sa palGetResultNativeCode
  */
@@ -633,6 +661,7 @@ static inline PalResultSource PAL_CALL palGetResultSource(PalResult result)
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetResultCode
  * @sa palGetResultSource
  */
@@ -656,6 +685,7 @@ static inline uint32_t PAL_CALL palGetResultNativeCode(PalResult result)
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palGetResultCode
  * @sa palGetResultSource
  * @sa palGetResultNativeCode
@@ -681,6 +711,7 @@ static inline PalResult PAL_CALL palMakeResult(
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palUnpackUint32
  */
 static inline uint64_t PAL_CALL palPackUint32(
@@ -701,6 +732,7 @@ static inline uint64_t PAL_CALL palPackUint32(
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palUnpackInt32
  */
 static inline uint64_t PAL_CALL palPackInt32(
@@ -720,6 +752,7 @@ static inline uint64_t PAL_CALL palPackInt32(
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palUnpackPointer
  */
 static inline uint64_t PAL_CALL palPackPointer(void* ptr)
@@ -738,6 +771,7 @@ static inline uint64_t PAL_CALL palPackPointer(void* ptr)
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palUnpackFloat
  */
 static inline uint64_t PAL_CALL palPackFloat(
@@ -766,6 +800,7 @@ static inline uint64_t PAL_CALL palPackFloat(
  * @Thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palPackUint32
  */
 static inline void PAL_CALL palUnpackUint32(
@@ -792,6 +827,7 @@ static inline void PAL_CALL palUnpackUint32(
  * @Thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palPackInt32
  */
 static inline void PAL_CALL palUnpackInt32(
@@ -817,6 +853,7 @@ static inline void PAL_CALL palUnpackInt32(
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palPackPointer
  */
 static inline void* PAL_CALL palUnpackPointer(uint64_t data)
@@ -834,6 +871,7 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
  * @Thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_core
  * @sa palPackFloat
  */
 static inline void PAL_CALL palUnpackFloat(
@@ -860,7 +898,5 @@ static inline void PAL_CALL palUnpackFloat(
 
 #endif // PAL_BIG_ENDIAN
 }
-
-/** @} */
 
 #endif // PAL_CORE_H
