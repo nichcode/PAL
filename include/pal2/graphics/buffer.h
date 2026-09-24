@@ -26,6 +26,38 @@
 #include "device.h"
 
 /**
+ * @defgroup buffer_usages Buffer Usages
+ * @brief Buffer usages
+ * 
+ * @{
+ */
+#define PAL_BUFFER_USAGE_VERTEX (1U << 0)
+#define PAL_BUFFER_USAGE_INDEX (1U << 1)
+#define PAL_BUFFER_USAGE_UNIFORM (1U << 2)
+#define PAL_BUFFER_USAGE_STORAGE (1U << 3)
+#define PAL_BUFFER_USAGE_TRANSFER_SRC (1U << 4)
+#define PAL_BUFFER_USAGE_TRANSFER_DST (1U << 5)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE (1U << 6)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_SCRATCH (1U << 7)
+#define PAL_BUFFER_USAGE_ACCELERATION_STRUCTURE_READ_ONLY_INPUT (1U << 8)
+#define PAL_BUFFER_USAGE_DEVICE_ADDRESS (1U << 9)
+#define PAL_BUFFER_USAGE_INDIRECT (1U << 10)
+/** @} */
+
+/**
+ * @defgroup buffer_memory_usages Buffer Memory Usages
+ * @brief Buffer memory usages
+ * 
+ * @{
+ */
+#define PAL_BUFFER_MEMORY_USAGE_MANUAL 0
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY 1
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD 2
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK 3
+#define PAL_BUFFER_MEMORY_USAGE_COUNT 4
+/** @} */
+
+/**
  * @typedef PalBufferMemoryUsage
  * @brief Buffer memory usages.
  * 
@@ -51,12 +83,44 @@ typedef uint32_t PalBufferMemoryUsage;
 typedef uint32_t PalBufferUsages;
 
 /**
+ * @typedef PalDeviceAddress
+ * @brief The device address of a buffer.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint64_t PalDeviceAddress;
+
+/**
  * @struct PalBuffer
  * @brief Opaque handle to a buffer.
  *
  * @since Added in version 2.0
  */
 typedef struct PalBuffer PalBuffer;
+
+/**
+ * @struct PalBufferCopyInfo
+ * @brief Contains information for buffer to buffer copies.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * 
+ * @var PalBufferCopyInfo::size
+ * The size in bytes to copy from the source buffer.
+ * 
+ * @var PalBufferCopyInfo::dstOffset
+ * The offset in bytes of the destination buffer.
+ * 
+ * @var PalBufferCopyInfo::srcOffset
+ * The offset in bytes of the source buffer.
+ */
+typedef struct PalBufferCopyInfo
+{
+    uint64_t size;
+    uint64_t dstOffset;
+    uint64_t srcOffset;
+} PalBufferCopyInfo;
 
 /**
  * @struct PalBufferCreateInfo
@@ -224,98 +288,5 @@ PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
  * @since Added in version 2.0
  */
 PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
-
-/**
- * @brief Compute size for an acceleration structure instance buffer.
- *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
- * Otherwise behavior is undefined.
- *
- * This does not allocate memory for the buffer. This function must is required for all
- * acceleration structure instance buffers.
- *
- * @param[in] device The device to use.
- * @param[in] instanceCount Number of instances the instance buffer will hold.
- * @param[out] outSize Pointer to a uint64_t to recieve the required size.
- *
- * Thread safety: Thread safe.
- *
- * @since Added in version 2.0
- * @sa palWriteInstanceStaging
- */
-PAL_API void PAL_CALL palComputeInstanceStagingSize(
-    PalDevice* device,
-    uint32_t instanceCount,
-    uint64_t* outSize);
-
-/**
- * @brief Compute requirements for an image staging buffer.
- *
- * This does not allocate memory for the buffer. This function is required for all
- * image copy staging buffers.
- *
- * `PalBufferImageCopyInfo::bufferRowLength` and `PalBufferImageCopyInfo::bufferImageHeight`
- * are hints. The driver might used it defaults if the requested is not supported. After this call,
- * set those values to the required ones from `requirements`.
- * If the driver supports the proivded, the values will be the same.
- *
- * @param[in] device The device to use.
- * @param[in] imageFormat Destination image format.
- * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * @param[out] requirements Pointer to a PalImageStagingRequirements to recieve the requirements
- *
- * Thread safety: Thread safe.
- *
- * @since Added in version 2.0
- * @sa palWriteImageStaging
- */
-PAL_API void PAL_CALL palComputeImageStagingRequirements(
-    PalDevice* device,
-    PalFormat imageFormat,
-    const PalBufferImageCopyInfo* copyInfo,
-    PalImageStagingRequirements* requirements);
-
-/**
- * @brief Write data to an instance staging buffer.
- *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
- * Otherwise behavior is undefined.
- *
- * @param[in] device The device to use.
- * @param[in] instanceCount Number of instances.
- * @param[in] instances Array of PalAccelerationStructureInstance struct to write.
- * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
- *
- * Thread safety: Thread safe.
- *
- * @since Added in version 2.0
- * @sa palComputeInstanceStagingSize
- */
-PAL_API void PAL_CALL palWriteInstanceStaging(
-    PalDevice* device,
-    uint32_t instanceCount,
-    PalAccelerationStructureInstance* instances,
-    void* ptr);
-
-/**
- * @brief Write data to an image staging buffer.
- *
- * @param[in] device The device to use.
- * @param[in] imageFormat Destination image format.
- * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * @param[out] srcData Pointer to the CPU visible memory with the data.
- * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
- *
- * Thread safety: Thread safe.
- *
- * @since Added in version 2.0
- * @sa palComputeImageStagingRequirements
- */
-PAL_API void PAL_CALL palWriteImageStaging(
-    PalDevice* device,
-    PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo,
-    void* srcData,
-    void* ptr);
 
 #endif // PAL_GRAPHICS_BUFFER_H

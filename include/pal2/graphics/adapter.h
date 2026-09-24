@@ -25,6 +25,7 @@
 
 #include "pal2/core/defines.h"
 #include "pal2/core/result.h"
+#include "image.h"
 
 #define PAL_ADAPTER_NAME_SIZE 128
 #define PAL_ADAPTER_BACKEND_NAME_SIZE 32
@@ -135,6 +136,96 @@
 /** @} */
 
 /**
+ * @defgroup formats Format
+ * @brief Format
+ * 
+ * @{
+ */
+#define PAL_FORMAT_UNDEFINED 0
+#define PAL_FORMAT_R8_UNORM 1
+#define PAL_FORMAT_R8_SNORM 2
+#define PAL_FORMAT_R8_UINT 3
+#define PAL_FORMAT_R8_SINT 4
+#define PAL_FORMAT_R8_SRGB 5
+#define PAL_FORMAT_R16_UNORM 6
+#define PAL_FORMAT_R16_SNORM 7
+#define PAL_FORMAT_R16_UINT 8
+#define PAL_FORMAT_R16_SINT 9
+#define PAL_FORMAT_R16_SFLOAT 10
+#define PAL_FORMAT_R32_UINT 11
+#define PAL_FORMAT_R32_SINT 12
+#define PAL_FORMAT_R32_SFLOAT 13
+#define PAL_FORMAT_R64_UINT 14
+#define PAL_FORMAT_R64_SINT 15
+#define PAL_FORMAT_R64_SFLOAT 16
+#define PAL_FORMAT_R8G8_UNORM 17
+#define PAL_FORMAT_R8G8_SNORM 18
+#define PAL_FORMAT_R8G8_UINT 19
+#define PAL_FORMAT_R8G8_SINT 20
+#define PAL_FORMAT_R8G8_SRGB 21
+#define PAL_FORMAT_R16G16_UNORM 22
+#define PAL_FORMAT_R16G16_SNORM 23
+#define PAL_FORMAT_R16G16_UINT 24
+#define PAL_FORMAT_R16G16_SINT 25
+#define PAL_FORMAT_R16G16_SFLOAT 26
+#define PAL_FORMAT_R32G32_UINT 27
+#define PAL_FORMAT_R32G32_SINT 28
+#define PAL_FORMAT_R32G32_SFLOAT 29
+#define PAL_FORMAT_R64G64_UINT 30
+#define PAL_FORMAT_R64G64_SINT 31
+#define PAL_FORMAT_R64G64_SFLOAT 32
+#define PAL_FORMAT_R8G8B8_UNORM 33
+#define PAL_FORMAT_R8G8B8_SNORM 34
+#define PAL_FORMAT_R8G8B8_UINT 35
+#define PAL_FORMAT_R8G8B8_SINT 36
+#define PAL_FORMAT_R8G8B8_SRGB 37
+#define PAL_FORMAT_R16G16B16_UNORM 38
+#define PAL_FORMAT_R16G16B16_SNORM 39
+#define PAL_FORMAT_R16G16B16_UINT 40
+#define PAL_FORMAT_R16G16B16_SINT 41
+#define PAL_FORMAT_R16G16B16_SFLOAT 42
+#define PAL_FORMAT_R32G32B32_UINT 43
+#define PAL_FORMAT_R32G32B32_SINT 44
+#define PAL_FORMAT_R32G32B32_SFLOAT 45
+#define PAL_FORMAT_R64G64B64_UINT 46
+#define PAL_FORMAT_R64G64B64_SINT 47
+#define PAL_FORMAT_R64G64B64_SFLOAT 48
+#define PAL_FORMAT_B8G8R8_UNORM 49
+#define PAL_FORMAT_B8G8R8_SNORM 50
+#define PAL_FORMAT_B8G8R8_UINT 51
+#define PAL_FORMAT_B8G8R8_SINT 52
+#define PAL_FORMAT_B8G8R8_SRGB 53
+#define PAL_FORMAT_R8G8B8A8_UNORM 54
+#define PAL_FORMAT_R8G8B8A8_SNORM 55
+#define PAL_FORMAT_R8G8B8A8_UINT 56
+#define PAL_FORMAT_R8G8B8A8_SINT 57
+#define PAL_FORMAT_R8G8B8A8_SRGB 58
+#define PAL_FORMAT_R16G16B16A16_UNORM 59
+#define PAL_FORMAT_R16G16B16A16_SNORM 60
+#define PAL_FORMAT_R16G16B16A16_UINT 61
+#define PAL_FORMAT_R16G16B16A16_SINT 62
+#define PAL_FORMAT_R16G16B16A16_SFLOAT 63
+#define PAL_FORMAT_R32G32B32A32_UINT 64
+#define PAL_FORMAT_R32G32B32A32_SINT 65
+#define PAL_FORMAT_R32G32B32A32_SFLOAT 66
+#define PAL_FORMAT_R64G64B64A64_UINT 67
+#define PAL_FORMAT_R64G64B64A64_SINT 68
+#define PAL_FORMAT_R64G64B64A64_SFLOAT 69
+#define PAL_FORMAT_B8G8R8A8_UNORM 70
+#define PAL_FORMAT_B8G8R8A8_SNORM 71
+#define PAL_FORMAT_B8G8R8A8_UINT 72
+#define PAL_FORMAT_B8G8R8A8_SINT 73
+#define PAL_FORMAT_B8G8R8A8_SRGB 74
+#define PAL_FORMAT_S8_UINT 75
+#define PAL_FORMAT_D16_UNORM 76
+#define PAL_FORMAT_D32_SFLOAT 77
+#define PAL_FORMAT_D16_UNORM_S8_UINT 78
+#define PAL_FORMAT_D32_SFLOAT_S8_UINT 79
+#define PAL_FORMAT_D24_UNORM_S8_UINT 80
+#define PAL_FORMAT_COUNT 81
+/** @} */
+
+/**
  * @typedef PalAdapterFeatures
  * @brief Adapter features.
  * 
@@ -192,6 +283,17 @@ typedef uint32_t PalShaderFormats;
  * @since Added in version 2.0
  */
 typedef uint32_t PalGraphicsBackendVtableVersion;
+
+/**
+ * @typedef PalFormat
+ * @brief Format types.
+ * 
+ * All values of this type follow the format `PAL_FORMAT_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalFormat;
 
 /**
  * @struct PalAdapter
@@ -464,5 +566,200 @@ typedef struct PalAdapterCapabilities
     PalResourceCapabilities resourceCaps;
     PalComputeCapabilities computeCaps;
 } PalAdapterCapabilities;
+
+/**
+ * @struct PalFormatInfo
+ * @brief Contains information about a format. 
+ *
+ * @since Added in version 2.0
+ * 
+ * @var PalFormatInfo::usages
+ * A bitmask of supported image usages of ::format.
+ * 
+ * @var PalFormatInfo::format
+ * The format.
+ * 
+ * @var PalFormatInfo::sampleCount
+ * The `MSAA` samples of ::format.
+ */
+typedef struct PalFormatInfo
+{
+    PalImageUsages usages;
+    PalFormat format;
+    PalSampleCount sampleCount;
+} PalFormatInfo;
+
+/**
+ * @brief Returns a list of all adapters (GPU) from custom and internal backends.
+ *
+ * The graphics system must be initialized before this call.
+ *
+ * If a custom backend which implements an adapter with its API type of Vulkan, and there is an
+ * adapter from the internal backends with the same specifications, this function will return both
+ * of them in the list. Use PalAdapterInfo::backendName to differentiate between custom and
+ * internal backend. the backend name for internal backend is `PAL`.
+ *
+ * Call this function first with PalAdapter array set to `nullptr` to get the number of adapters.
+ * Allocate memory for the PalAdapter array and passed in the count and the allocated array. If
+ * the count of the array is less than the number of adapters, PAL will write upto that limit.
+ *
+ * The adapter handles must not be freed by the user, they are managed by the
+ * graphics system. Users are required to cache this, and call this function again
+ * if adapters are added or removed which is rare except for virtual ones.
+ *
+ * @param[in, out] count Capacity of the PalAdapter array.
+ * @param[out] outAdapters User allocated array of PalAdapter.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ */
+PAL_API PalResult PAL_CALL palEnumerateAdapters(
+    uint32_t* count,
+    PalAdapter** outAdapters);
+
+/**
+ * @brief Get information about an adapter (GPU).
+ *
+ * @param[in] adapter Adapter to query information on.
+ * @param[out] info Pointer to a PalAdapterInfo to fill.
+ *
+ * Thread safety: Thread safe if `info` is per thread.
+ *
+ * @since Added in version 2.0
+ * @sa palEnumerateAdapters
+ */
+PAL_API void PAL_CALL palGetAdapterInfo(
+    PalAdapter* adapter,
+    PalAdapterInfo* info);
+
+/**
+ * @brief Get capabilites or limits about an adapter (GPU).
+ *
+ * @param[in] adapter Adapter to query capabilities on.
+ * @param[out] caps Pointer to a PalAdapterCapabilities to fill.
+ *
+ * Thread safety: Thread safe if `caps` is per thread.
+ *
+ * @since Added in version 2.0
+ * @sa palEnumerateAdapters
+ */
+PAL_API void PAL_CALL palGetAdapterCapabilities(
+    PalAdapter* adapter,
+    PalAdapterCapabilities* caps);
+
+/**
+ * @brief Get the supported features of an adapter (GPU).
+ *
+ * @param[in] adapter Adapter to query features on.
+ *
+ * @return adapter features on success or `0` on failure.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since Added in version 2.0
+ * @sa palEnumerateAdapters
+ */
+PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
+
+/**
+ * @brief Get the highest supported shader target of an adapter (GPU).
+ *
+ * @param[in] adapter Adapter to query.
+ * @param[in] shaderFormat The shader format. Must have only a single bit set.
+ *
+ * @return The highest supported shader target encoded with `PAL_MAKE_SHADER_TARGET` macro
+ * on success otherwise `0` on failure.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since Added in version 2.0
+ * @sa palEnumerateAdapters
+ */
+PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
+    PalAdapter* adapter,
+    PalShaderFormats shaderFormat);
+
+/**
+ * @brief Returns a list of all supported formats of an adapter (GPU).
+ *
+ * This function returns the supported format with the supported image usages
+ * associated with the format. This is a handy way of selecting a format based on the image
+ * usages. Use palIsFormatSupported() to check for a specific format.
+ *
+ * Call this function first with PalFormatInfo array set to `nullptr` to get the number of formats.
+ * Allocate memory for the PalFormatInfo array and passed in the count and the allocated array. If
+ * the count of the array is less than the number of formats, PAL will write upto that limit.
+ *
+ * @param[in] adapter Adapter to query formats on.
+ * @param[in, out] count Capacity of the PalFormatInfo array.
+ * @param[out] outFormats User allocated array of PalFormatInfo.
+ *
+ * Thread safety: Thread safe if `outFormats` is per thread.
+ *
+ * @since Added in version 2.0
+ * @sa palIsFormatSupported
+ */
+PAL_API void PAL_CALL palEnumerateFormats(
+    PalAdapter* adapter,
+    uint32_t* count,
+    PalFormatInfo* outFormats);
+
+/**
+ * @brief Check support for a format on an adapter (GPU).
+ *
+ * This is much faster than enumerating all the formats to pick one. You directly check support
+ * for the format you want to use. Call palQueryFormatImageUsages() to check for supported image
+ * usages if format is supported.
+ *
+ * @param[in] adapter Adapter to query format on.
+ * @param[in] format Format to query support for.
+ *
+ * @return True if format is supported otherwise `PAL_FALSE` if not supported.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since Added in version 2.0
+ * @sa palQueryFormatImageUsages
+ * @sa palQueryFormatImageViewUsages
+ */
+PAL_API PalBool PAL_CALL palIsFormatSupported(
+    PalAdapter* adapter,
+    PalFormat format);
+
+/**
+ * @brief Checks supported image usages associated with a format.
+ *
+ * @param[in] adapter Adapter to query format on.
+ * @param[in] format Format to query image usages for.
+ *
+ * @return Supported image usages on success otherwise `0` on failure.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since Added in version 2.0
+ */
+PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
+    PalAdapter* adapter,
+    PalFormat format);
+
+/**
+ * @brief Checks supported sample count associated with a format.
+ *
+ * @param[in] adapter Adapter to query format on.
+ * @param[in] format Format to query sample count for.
+ *
+ * @return Supported sample count on success otherwise 0 on failure.
+ *
+ * Thread safety: Thread safe.
+ *
+ * @since Added in version 2.0
+ */
+PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
+    PalAdapter* adapter,
+    PalFormat format);
 
 #endif // PAL_GRAPHICS_ADAPTER_H
