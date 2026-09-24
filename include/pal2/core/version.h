@@ -1,6 +1,6 @@
 
 /**
- * @file pal_version.h
+ * @file version.h
  * @brief This is the header file for PAL Version API.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
@@ -24,10 +24,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_VERSION_H
-#define PAL_VERSION_H
+#ifndef VERSION_H
+#define VERSION_H
 
-#include "pal_types.h"
+#include "defines.h"
 
 /**
  * @struct PalVersion
@@ -82,4 +82,4 @@ PAL_API void PAL_CALL palGetVersion(PalVersion* version);
  */
 PAL_API const char* PAL_CALL palGetVersionString(void);
 
-#endif // PAL_VERSION_H
+#endif // VERSION_H

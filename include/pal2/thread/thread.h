@@ -26,9 +26,9 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#include "pal2/core/pal_types.h"
-#include "pal2/core/pal_memory.h"
-#include "pal2/core/pal_result.h"
+#include "pal2/core/defines.h"
+#include "pal2/core/memory.h"
+#include "pal2/core/result.h"
 
 /**
  * @defgroup thread_features Thread Features

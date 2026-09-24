@@ -1,6 +1,6 @@
 
 /**
- * @file pal_types.h
+ * @file defines.h
  * @brief This is the header file for PAL Types and Definitions.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
@@ -24,8 +24,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_TYPES_H
-#define PAL_TYPES_H
+#ifndef DEFINES_H
+#define DEFINES_H
 
 #include <stdint.h>
 
@@ -80,4 +80,4 @@
  */
 typedef uint32_t PalBool;
 
-#endif // PAL_TYPES_H
+#endif // DEFINES_H

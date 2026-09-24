@@ -33,12 +33,13 @@
 #ifndef PAL_CORE_H
 #define PAL_CORE_H
 
-#include "core/pal_library.h"
-#include "core/pal_log.h"
-#include "core/pal_memory.h"
-#include "core/pal_pack.h"
-#include "core/pal_result.h"
-#include "core/pal_time.h"
-#include "core/pal_version.h"
+#include "core/defines.h"
+#include "core/library.h"
+#include "core/log.h"
+#include "core/memory.h"
+#include "core/pack.h"
+#include "core/result.h"
+#include "core/timer.h"
+#include "core/version.h"
 
 #endif // PAL_CORE_H

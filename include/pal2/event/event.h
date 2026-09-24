@@ -1,6 +1,6 @@
 /**
- * @file pal_eventtypes.h
- * @brief This is the header file for PAL Event Types API.
+ * @file event.h
+ * @brief This is the header file for PAL Event API.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -23,10 +23,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_EVENTTYPES_H
-#define PAL_EVENTTYPES_H
+#ifndef EVENT_H
+#define EVENT_H
 
-#include "pal2/core/pal_types.h"
+#include "pal2/core/defines.h"
 
 /**
  * @defgroup decoration_modes Decoration Modes
@@ -153,4 +153,4 @@ typedef void(PAL_CALL* PalEventCallback)(
     void* userData,
     const PalEvent* event);
 
-#endif // PAL_EVENTTYPES_H
+#endif // EVENT_H

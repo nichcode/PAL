@@ -32,7 +32,7 @@
 #ifndef PAL_SYSTEM_H
 #define PAL_SYSTEM_H
 
-#include "system/pal_cpu.h"
-#include "system/pal_platform.h"
+#include "system/CPU.h"
+#include "system/platform.h"
 
 #endif // PAL_SYSTEM_H

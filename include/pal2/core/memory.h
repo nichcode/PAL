@@ -1,6 +1,6 @@
 
 /**
- * @file pal_memory.h
+ * @file memory.h
  * @brief This is the header file for PAL Memory API.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
@@ -24,10 +24,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_MEMORY_H
-#define PAL_MEMORY_H
+#ifndef MEMORY_H
+#define MEMORY_H
 
-#include "pal_types.h"
+#include "defines.h"
 
 /**
  * @brief Function pointer type used for memory allocations.
@@ -177,4 +177,4 @@ PAL_API void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr);
 
-#endif // PAL_MEMORY_H
+#endif // MEMORY_H

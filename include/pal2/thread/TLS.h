@@ -26,7 +26,7 @@
 #ifndef TLS_H
 #define TLS_H
 
-#include "pal2/core/pal_types.h"
+#include "pal2/core/defines.h"
 
 /**
  * @typedef PalTLSId

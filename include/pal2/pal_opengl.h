@@ -32,8 +32,8 @@
 #ifndef PAL_OPENGL_H
 #define PAL_OPENGL_H
 
-#include "opengl/pal_fbconfig.h"
-#include "opengl/pal_context.h"
+#include "opengl/fbconfig.h"
+#include "opengl/context.h"
 
 #ifdef _WIN32
 #define PAL_GL_APIENTRY __stdcall
@@ -224,52 +224,6 @@ PAL_API void PAL_CALL palShutdownGL();
  * @since Added in version 2.0
  */
 PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
-
-/**
- * @brief Returns a list of all supported framebuffer configs by 
- * the opengl driver.
- *
- * The opengl system must be initialized before this call.
- * 
- * Set `configs` to `nullptr` to get the total number of supported framebuffer
- * configs. If the configs array passed is less than the number of
- * supported framebuffer configs, PAL will fill the array upto that limit
- * sequentially.
- *
- * @param[in, out] count The capacity of the configs array.
- * @param[out] configs The configs array.
- *
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
- *
- * @Thread-safety Must only be called from the main thread.
- *
- * @since Added in version 2.0
- * @sa palInitGL
- */
-PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
-    uint32_t* count,
-    PalGLFBConfig* configs);
-
-/**
- * @brief Gets the closest match framebuffer config with a desired config.
- *
- * @param[in] configs The framebuffer configs array.
- * @param[in] count The capacity of the framebuffer configs array.
- * @param[in] desired The desired framebuffer config.
- *
- * @return The closest match framebuffer config on success or `nullptr`
- * on failure.
- *
- * @Thread-safety Thread safe.
- *
- * @since Added in version 2.0
- */
-PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
-    PalGLFBConfig* configs,
-    uint32_t count,
-    const PalGLFBConfig* desired);
 
 /**
  * @brief Gets the pointer to a named opengl function.

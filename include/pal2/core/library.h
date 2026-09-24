@@ -1,6 +1,6 @@
 
 /**
- * @file pal_library.h
+ * @file library.h
  * @brief This is the header file for PAL Library API.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
@@ -24,10 +24,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_ALLOCATOR_H
-#define PAL_ALLOCATOR_H
+#ifndef LIBRARY_H
+#define LIBRARY_H
 
-#include "pal_types.h"
+#include "defines.h"
 
 /**
  * @brief Opaque handle to a library.
@@ -120,4 +120,4 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  */
 PAL_API void PAL_CALL palFreeLibrary(PalLibrary* library);
 
-#endif // PAL_ALLOCATOR_H
+#endif // LIBRARY_H

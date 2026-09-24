@@ -1,5 +1,5 @@
 /**
- * @file pal_platform.h
+ * @file platform.h
  * @brief This is the header file for PAL Platform API.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
@@ -23,11 +23,11 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_PLATFORM_H
-#define PAL_PLATFORM_H
+#ifndef PLATFORM_H
+#define PLATFORM_H
 
-#include "pal2/core/pal_types.h"
-#include "pal2/core/pal_version.h"
+#include "pal2/core/defines.h"
+#include "pal2/core/version.h"
 
 #define PAL_PLATFORM_NAME_SIZE 32
 
@@ -137,4 +137,4 @@ typedef struct PalPlatformInfo
  */
 PAL_API void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
 
-#endif // PAL_PLATFORM_H
+#endif // PLATFORM_H

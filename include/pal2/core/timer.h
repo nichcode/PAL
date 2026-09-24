@@ -1,6 +1,6 @@
 /**
- * @file pal_time.h
- * @brief This is the header file for PAL Time API.
+ * @file timer.h
+ * @brief This is the header file for PAL Timer API.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -23,10 +23,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_TIME_H
-#define PAL_TIME_H
+#ifndef TIMER_H
+#define TIMER_H
 
-#include "pal_types.h"
+#include "defines.h"
 
 /**
  * @brief Retrieves the current high-resolution performance counter value.
@@ -54,4 +54,4 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
 
-#endif // PAL_TIME_H
+#endif // TIMER_H

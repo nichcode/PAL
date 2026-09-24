@@ -27,9 +27,9 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-#include "pal2/core/pal_types.h"
-#include "pal2/core/pal_memory.h"
-#include "pal2/core/pal_result.h"
+#include "pal2/core/defines.h"
+#include "pal2/core/memory.h"
+#include "pal2/core/result.h"
 
 /**
  * @struct PalMutex

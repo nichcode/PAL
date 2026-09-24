@@ -32,7 +32,7 @@
 #ifndef PAL_EVENT_H
 #define PAL_EVENT_H
 
-#include "event/pal_eventtypes.h"
-#include "event/pal_eventdriver.h"
+#include "event/event.h"
+#include "event/eventdriver.h"
 
 #endif // PAL_EVENT_H
