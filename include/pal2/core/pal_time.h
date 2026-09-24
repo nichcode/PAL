@@ -1,9 +1,6 @@
-
 /**
- * @file pal_core.h
- * @brief This is the header file for PAL Core API.
- *
- * It defines all the types and functions of the core module.
+ * @file pal_time.h
+ * @brief This is the header file for PAL Time API.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,19 +23,35 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef PAL_TIME_H
+#define PAL_TIME_H
+
+#include "pal_types.h"
+
 /**
- * @defgroup pal_core Core Module
+ * @brief Retrieves the current high-resolution performance counter value.
+ *
+ * @return Current monotonically increasing performance counter value.
+ *
+ * @Thread-safety Thread safe.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_core
+ * @sa palGetPerformanceFrequency
  */
+PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
 
-#ifndef PAL_CORE_H
-#define PAL_CORE_H
+/**
+ * @brief Retrieves the frequency of the high-resolution performance counter.
+ *
+ * @return Performance counter frequency, in counts per second.
+ *
+ * @Thread-safety Thread safe.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_core
+ * @sa palGetPerformanceCounter
+ */
+PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
 
-#include "core/pal_library.h"
-#include "core/pal_log.h"
-#include "core/pal_memory.h"
-#include "core/pal_pack.h"
-#include "core/pal_result.h"
-#include "core/pal_time.h"
-#include "core/pal_version.h"
-
-#endif // PAL_CORE_H
+#endif // PAL_TIME_H
