@@ -1,7 +1,4 @@
 /**
- * @file thread.h
- * @brief This is the header file for PAL Thread API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef THREAD_H
-#define THREAD_H
+#ifndef PAL_THREAD_THREAD_H
+#define PAL_THREAD_THREAD_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/memory.h"
@@ -380,4 +377,4 @@ PAL_API PalResult PAL_CALL palSetThreadName(
     PalThread* thread,
     const char* name);
 
-#endif // THREAD_H
+#endif // PAL_THREAD_THREAD_H

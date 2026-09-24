@@ -1,8 +1,5 @@
 
 /**
- * @file memory.h
- * @brief This is the header file for PAL Memory API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -24,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef PAL_CORE_MEMORY_H
+#define PAL_CORE_MEMORY_H
 
 #include "defines.h"
 
@@ -177,4 +174,4 @@ PAL_API void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr);
 
-#endif // MEMORY_H
+#endif // PAL_CORE_MEMORY_H

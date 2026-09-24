@@ -1,7 +1,4 @@
 /**
- * @file window.h
- * @brief This is the header file for PAL Window API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef WINDOW_H
-#define WINDOW_H
+#ifndef PAL_VIDEO_WINDOW_H
+#define PAL_VIDEO_WINDOW_H
 
 #include "monitor.h"
 
@@ -788,4 +785,4 @@ PAL_API void PAL_CALL palSetWindowSize(
  */
 PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
 
-#endif // WINDOW_H
+#endif // PAL_VIDEO_WINDOW_H

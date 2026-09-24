@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef GRAPHICS_ADAPTER_H
-#define GRAPHICS_ADAPTER_H
+#ifndef PAL_GRAPHICS_ADAPTER_H
+#define PAL_GRAPHICS_ADAPTER_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/result.h"
@@ -465,4 +465,4 @@ typedef struct PalAdapterCapabilities
     PalComputeCapabilities computeCaps;
 } PalAdapterCapabilities;
 
-#endif // GRAPHICS_ADAPTER_H
+#endif // PAL_GRAPHICS_ADAPTER_H

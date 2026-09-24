@@ -1,8 +1,5 @@
 
 /**
- * @file mutex.h
- * @brief This is the header file for PAL Mutex API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -24,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef MUTEX_H
-#define MUTEX_H
+#ifndef PAL_THREAD_MUTEX_H
+#define PAL_THREAD_MUTEX_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/memory.h"
@@ -102,4 +99,4 @@ PAL_API void PAL_CALL palLockMutex(PalMutex* mutex);
  */
 PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
 
-#endif // MUTEX_H
+#endif // PAL_THREAD_MUTEX_H

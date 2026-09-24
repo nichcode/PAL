@@ -1,7 +1,4 @@
 /**
- * @file event.h
- * @brief This is the header file for PAL Event API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef EVENT_H
-#define EVENT_H
+#ifndef PAL_EVENT_EVENT_H
+#define PAL_EVENT_EVENT_H
 
 #include "pal2/core/defines.h"
 
@@ -153,4 +150,4 @@ typedef void(PAL_CALL* PalEventCallback)(
     void* userData,
     const PalEvent* event);
 
-#endif // EVENT_H
+#endif // PAL_EVENT_EVENT_H

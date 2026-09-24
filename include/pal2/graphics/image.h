@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef GRAPHICS_IMAGE_H
-#define GRAPHICS_IMAGE_H
+#ifndef PAL_GRAPHICS_IMAGE_H
+#define PAL_GRAPHICS_IMAGE_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/result.h"
@@ -37,4 +37,4 @@
  */
 typedef uint32_t PalImageMemoryUsage;
 
-#endif // GRAPHICS_IMAGE_H
+#endif // PAL_GRAPHICS_IMAGE_H

@@ -1,7 +1,4 @@
 /**
- * @file TLS.h
- * @brief This is the header file for PAL TLS API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef TLS_H
-#define TLS_H
+#ifndef PAL_THREAD_TLS_H
+#define PAL_THREAD_TLS_H
 
 #include "pal2/core/defines.h"
 
@@ -113,4 +110,4 @@ PAL_API void PAL_CALL palSetTLS(
     PalTLSId Tls,
     void* data);
 
-#endif // TLS_H
+#endif // PAL_THREAD_TLS_H

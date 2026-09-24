@@ -1,8 +1,5 @@
 
 /**
- * @file result.h
- * @brief This is the header file for PAL Result API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -24,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef RESULT_H
-#define RESULT_H
+#ifndef PAL_CORE_RESULT_H
+#define PAL_CORE_RESULT_H
 
 #include "defines.h"
 
@@ -236,4 +233,4 @@ PAL_API void PAL_CALL palFormatResult(
     uint64_t bufferSize,
     char* buffer);
 
-#endif // RESULT_H
+#endif // PAL_CORE_RESULT_H

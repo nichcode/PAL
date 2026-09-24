@@ -1,7 +1,4 @@
 /**
- * @file fbconfig.h
- * @brief This is the header file for PAL OpenGL framebuffer configurations API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef FBCONFIG_H
-#define FBCONFIG_H
+#ifndef PAL_OPENGL_FBCONFIG_H
+#define PAL_OPENGL_FBCONFIG_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/result.h"
@@ -130,4 +127,4 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     uint32_t count,
     const PalGLFBConfig* desired);
 
-#endif // FBCONFIG_H
+#endif // PAL_OPENGL_FBCONFIG_H

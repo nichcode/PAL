@@ -1,7 +1,4 @@
 /**
- * @file icon.h
- * @brief This is the header file for PAL Icon API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef ICON_H
-#define ICON_H
+#ifndef PAL_VIDEO_ICON_H
+#define PAL_VIDEO_ICON_H
 
 #include "window.h"
 
@@ -111,4 +108,4 @@ PAL_API void PAL_CALL palSetWindowIcon(
     PalWindow* window,
     PalIcon* icon);
 
-#endif // ICON_H
+#endif // PAL_VIDEO_ICON_H

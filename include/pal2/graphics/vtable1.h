@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef GRAPHICS_VTABLE_1_H
-#define GRAPHICS_VTABLE_1_H
+#ifndef PAL_GRAPHICS_VTABLE_1_H
+#define PAL_GRAPHICS_VTABLE_1_H
 
 /**
  * @struct PalGraphicsBackendVtable1
@@ -1287,4 +1287,4 @@ typedef struct PalGraphicsBackendVtable1 {
         PalShaderBindingTableRecordInfo* infos);
 } PalGraphicsBackendVtable1;
 
-#endif // GRAPHICS_VTABLE_1_H
+#endif // PAL_GRAPHICS_VTABLE_1_H

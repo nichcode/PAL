@@ -1,7 +1,4 @@
 /**
- * @file keyboard.h
- * @brief This is the header file for PAL Keyboard API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef KEYBOARD_H
-#define KEYBOARD_H
+#ifndef PAL_VIDEO_KEYBOARD_H
+#define PAL_VIDEO_KEYBOARD_H
 
 #include "pal2/core/defines.h"
 
@@ -312,4 +309,4 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  */
 PAL_API const PalBool* PAL_CALL palGetScancodeState();
 
-#endif // KEYBOARD_H
+#endif // PAL_VIDEO_KEYBOARD_H

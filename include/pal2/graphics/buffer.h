@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef GRAPHICS_BUFFER_H
-#define GRAPHICS_BUFFER_H
+#ifndef PAL_GRAPHICS_BUFFER_H
+#define PAL_GRAPHICS_BUFFER_H
 
 #include "device.h"
 
@@ -318,4 +318,4 @@ PAL_API void PAL_CALL palWriteImageStaging(
     void* srcData,
     void* ptr);
 
-#endif // GRAPHICS_BUFFER_H
+#endif // PAL_GRAPHICS_BUFFER_H

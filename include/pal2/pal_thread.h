@@ -1,5 +1,4 @@
 /**
- * @file pal_thread.h
  * @brief This is the header file for PAL Thread Module API.
  *
  * It defines all the types and functions of the thread module.

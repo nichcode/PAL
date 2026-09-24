@@ -20,10 +20,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef GRAPHICS_MEMORY_H
-#define GRAPHICS_MEMORY_H
+#ifndef PAL_GRAPHICS_MEMORY_H
+#define PAL_GRAPHICS_MEMORY_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/result.h"
 
-#endif // GRAPHICS_MEMORY_H
+#endif // PAL_GRAPHICS_MEMORY_H

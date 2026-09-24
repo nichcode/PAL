@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef GRAPHICS_VTABLE_2_H
-#define GRAPHICS_VTABLE_2_H
+#ifndef PAL_GRAPHICS_VTABLE_2_H
+#define PAL_GRAPHICS_VTABLE_2_H
 
 #include "vtable1.h"
 
@@ -89,4 +89,4 @@ typedef struct {
         PalPipelineStages srcPipelineStages);
 } PalGraphicsBackendVtable2;
 
-#endif // GRAPHICS_VTABLE_2_H
+#endif // PAL_GRAPHICS_VTABLE_2_H

@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef GRAPHICS_DEVICE_H
-#define GRAPHICS_DEVICE_H
+#ifndef PAL_GRAPHICS_DEVICE_H
+#define PAL_GRAPHICS_DEVICE_H
 
 #include "adapter.h"
 
@@ -350,4 +350,4 @@ typedef struct PalSurfaceCapabilities
     uint32_t maxImageArrayLayers;
 } PalSurfaceCapabilities;
 
-#endif // GRAPHICS_DEVICE_H
+#endif // PAL_GRAPHICS_DEVICE_H

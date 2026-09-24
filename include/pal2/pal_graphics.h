@@ -1,5 +1,4 @@
 /**
- * @file pal_graphics.h
  * @brief This is the header file for PAL Graphics API.
  *
  * It defines all the types and functions of the graphics module.

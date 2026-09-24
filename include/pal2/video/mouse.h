@@ -1,7 +1,4 @@
 /**
- * @file mouse.h
- * @brief This is the header file for PAL Mouse API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef MOUSE_H
-#define MOUSE_H
+#ifndef PAL_VIDEO_MOUSE_H
+#define PAL_VIDEO_MOUSE_H
 
 #include "pal2/core/defines.h"
 
@@ -101,4 +98,4 @@ PAL_API void PAL_CALL palGetMouseWheelDelta(
     float* dx,
     float* dy);
 
-#endif // MOUSE_H
+#endif // PAL_VIDEO_MOUSE_H

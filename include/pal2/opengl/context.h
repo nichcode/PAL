@@ -1,7 +1,4 @@
 /**
- * @file context.h
- * @brief This is the header file for PAL OpenGL context API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef CONTEXT_H
-#define CONTEXT_H
+#ifndef PAL_OPENGL_CONTEXT_H
+#define PAL_OPENGL_CONTEXT_H
 
 #include "fbconfig.h"
 
@@ -302,4 +299,4 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  */
 PAL_API void PAL_CALL palSetSwapInterval(int32_t interval);
 
-#endif // CONTEXT_H
+#endif // PAL_OPENGL_CONTEXT_H

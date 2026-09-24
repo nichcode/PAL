@@ -1,8 +1,5 @@
 
 /**
- * @file library.h
- * @brief This is the header file for PAL Library API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -24,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef LIBRARY_H
-#define LIBRARY_H
+#ifndef PAL_CORE_LIBRARY_H
+#define PAL_CORE_LIBRARY_H
 
 #include "defines.h"
 
@@ -120,4 +117,4 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  */
 PAL_API void PAL_CALL palFreeLibrary(PalLibrary* library);
 
-#endif // LIBRARY_H
+#endif // PAL_CORE_LIBRARY_H

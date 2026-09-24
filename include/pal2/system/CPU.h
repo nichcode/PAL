@@ -1,7 +1,4 @@
 /**
- * @file CPU.h
- * @brief This is the header file for PAL CPU API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef CPU_H
-#define CPU_H
+#ifndef PAL_SYSTEM_CPU_H
+#define PAL_SYSTEM_CPU_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/memory.h"
@@ -154,4 +151,4 @@ PAL_API void PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,
     PalCPUInfo* info);
 
-#endif // CPU_H
+#endif // PAL_SYSTEM_CPU_H

@@ -1,8 +1,5 @@
 
 /**
- * @file defines.h
- * @brief This is the header file for PAL Types and Definitions.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -24,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef DEFINES_H
-#define DEFINES_H
+#ifndef PAL_CORE_DEFINES_H
+#define PAL_CORE_DEFINES_H
 
 #include <stdint.h>
 
@@ -80,4 +77,4 @@
  */
 typedef uint32_t PalBool;
 
-#endif // DEFINES_H
+#endif // PAL_CORE_DEFINES_H

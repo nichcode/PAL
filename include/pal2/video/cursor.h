@@ -1,7 +1,4 @@
 /**
- * @file cursor.h
- * @brief This is the header file for PAL Cursor API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef CURSOR_H
-#define CURSOR_H
+#ifndef PAL_VIDEO_CURSOR_H
+#define PAL_VIDEO_CURSOR_H
 
 #include "window.h"
 
@@ -235,4 +232,4 @@ PAL_API void PAL_CALL palSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor);
 
-#endif // CURSOR_H
+#endif // PAL_VIDEO_CURSOR_H

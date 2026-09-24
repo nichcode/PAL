@@ -1,8 +1,5 @@
 
 /**
- * @file condvar.h
- * @brief This is the header file for PAL Condition Variable API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -24,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef CONDVAR_H
-#define CONDVAR_H
+#ifndef PAL_THREAD_CONDVAR_H
+#define PAL_THREAD_CONDVAR_H
 
 #include "mutex.h"
 
@@ -152,4 +149,4 @@ PAL_API void PAL_CALL palSignalCondVar(PalCondVar* condVar);
  */
 PAL_API void PAL_CALL palBroadcastCondVar(PalCondVar* condVar);
 
-#endif // CONDVAR_H
+#endif // PAL_THREAD_CONDVAR_H

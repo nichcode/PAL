@@ -1,7 +1,4 @@
 /**
- * @file pack.h
- * @brief This is the header file for PAL Packing and Unpacking API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PACK_H
-#define PACK_H
+#ifndef PAL_CORE_PACK_H
+#define PAL_CORE_PACK_H
 
 #include "defines.h"
 #include <string.h>
@@ -229,4 +226,4 @@ static inline void PAL_CALL palUnpackFloat(
 #endif // PAL_BIG_ENDIAN
 }
 
-#endif // PACK_H
+#endif // PAL_CORE_PACK_H

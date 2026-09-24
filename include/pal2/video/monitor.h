@@ -1,7 +1,4 @@
 /**
- * @file monitor.h
- * @brief This is the header file for PAL Monitor API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef MONITOR_H
-#define MONITOR_H
+#ifndef PAL_VIDEO_MONITOR_H
+#define PAL_VIDEO_MONITOR_H
 
 #include "pal2/core/defines.h"
 #include "pal2/core/memory.h"
@@ -316,4 +313,4 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
     PalMonitor* monitor,
     PalOrientation orientation);
 
-#endif // MONITOR_H
+#endif // PAL_VIDEO_MONITOR_H

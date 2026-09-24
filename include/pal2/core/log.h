@@ -1,8 +1,5 @@
 
 /**
- * @file log.h
- * @brief This is the header file for PAL Log API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -24,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef LOG_H
-#define LOG_H
+#ifndef PAL_CORE_LOG_H
+#define PAL_CORE_LOG_H
 
 #include "defines.h"
 
@@ -111,4 +108,4 @@ PAL_API void PAL_CALL palLog(
     const char* fmt,
     ...);
 
-#endif // LOG_H
+#endif // PAL_CORE_LOG_H

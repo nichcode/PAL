@@ -1,5 +1,4 @@
 /**
- * @file pal_event.h
  * @brief This is the header file for PAL Event API.
  *
  * It defines all the types and functions of the event module.

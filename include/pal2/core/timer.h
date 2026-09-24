@@ -1,7 +1,4 @@
 /**
- * @file timer.h
- * @brief This is the header file for PAL Timer API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef PAL_CORE_TIMER_H
+#define PAL_CORE_TIMER_H
 
 #include "defines.h"
 
@@ -54,4 +51,4 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);
 
-#endif // TIMER_H
+#endif // PAL_CORE_TIMER_H

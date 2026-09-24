@@ -1,7 +1,4 @@
 /**
- * @file eventdriver.h
- * @brief This is the header file for PAL Event Driver API.
- *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -23,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef EVENTDRIVER_H
-#define EVENTDRIVER_H
+#ifndef PAL_EVENT_EVENTDRIVER_H
+#define PAL_EVENT_EVENTDRIVER_H
 
 #include "pal2/core/result.h"
 #include "pal2/core/memory.h"
@@ -315,4 +312,4 @@ PAL_API PalBool PAL_CALL palPollEvent(
     PalEventDriver* eventDriver,
     PalEvent* event);
 
-#endif // EVENTDRIVER_H
+#endif // PAL_EVENT_EVENTDRIVER_H
