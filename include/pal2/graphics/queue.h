@@ -23,7 +23,7 @@
 #ifndef PAL_GRAPHICS_QUEUE_H
 #define PAL_GRAPHICS_QUEUE_H
 
-#include "device.h"
+#include "surface.h"
 
 /**
  * @defgroup queue_types Queue Types
@@ -38,6 +38,65 @@
 /** @} */
 
 /**
+ * @defgroup usage_states Usage States
+ * @brief Usage states
+ * 
+ * @{
+ */
+#define PAL_USAGE_STATE_UNDEFINED 0
+#define PAL_USAGE_STATE_PRESENT 1
+#define PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE 2
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ 3
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE 4
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ 5
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE 6
+#define PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ 7
+#define PAL_USAGE_STATE_TRANSFER_READ 8
+#define PAL_USAGE_STATE_TRANSFER_WRITE 9
+#define PAL_USAGE_STATE_VERTEX_READ 10
+#define PAL_USAGE_STATE_INDEX_READ 11
+#define PAL_USAGE_STATE_INDIRECT_READ 12
+#define PAL_USAGE_STATE_UNIFORM_READ 13
+#define PAL_USAGE_STATE_SHADER_READ 14
+#define PAL_USAGE_STATE_SHADER_WRITE 15
+#define PAL_USAGE_STATE_STORAGE_READ 16
+#define PAL_USAGE_STATE_STORAGE_WRITE 17
+#define PAL_USAGE_STATE_HOST_READ 18
+#define PAL_USAGE_STATE_HOST_WRITE 19
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ 20
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE 21
+#define PAL_USAGE_STATE_COUNT 22
+/** @} */
+
+/**
+ * @defgroup pipeline_stages Pipeline Stages
+ * @brief Pipeline stages
+ * 
+ * @{
+ */
+#define PAL_PIPELINE_STAGE_NONE 0
+#define PAL_PIPELINE_STAGE_VERTEX_SHADER (1U << 1)
+#define PAL_PIPELINE_STAGE_FRAGMENT_SHADER (1U << 2)
+#define PAL_PIPELINE_STAGE_COMPUTE_SHADER (1U << 3)
+#define PAL_PIPELINE_STAGE_GEOMETRY_SHADER (1U << 4)
+#define PAL_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER (1U << 5)
+#define PAL_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER (1U << 6)
+#define PAL_PIPELINE_STAGE_RAY_TRACING_SHADER (1U << 7)
+#define PAL_PIPELINE_STAGE_TASK_SHADER (1U << 8)
+#define PAL_PIPELINE_STAGE_MESH_SHADER (1U << 9)
+#define PAL_PIPELINE_STAGE_VERTEX_INPUT (1U << 10)
+#define PAL_PIPELINE_STAGE_INDEX_INPUT (1U << 11)
+#define PAL_PIPELINE_STAGE_EARLY_DEPTH_STENCIL (1U << 12)
+#define PAL_PIPELINE_STAGE_LATE_DEPTH_STENCIL (1U << 13)
+#define PAL_PIPELINE_STAGE_TRANSFER (1U << 14)
+#define PAL_PIPELINE_STAGE_HOST (1U << 15)
+#define PAL_PIPELINE_STAGE_COLOR_ATTACHMENT (1U << 16)
+#define PAL_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT (1U << 17)
+#define PAL_PIPELINE_STAGE_INDIRECT_INPUT (1U << 18)
+#define PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD (1U << 19)
+/** @} */
+
+/**
  * @typedef PalQueueType
  * @brief Queue types.
  * 
@@ -47,6 +106,31 @@
  * @since Added in version 2.0
  */
 typedef uint32_t PalQueueType;
+
+/**
+ * @typedef PalUsageState
+ * @brief Usage states.
+ * 
+ * All values of this type follow the format `PAL_USAGE_STATE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalUsageState;
+
+/**
+ * @typedef PalPipelineStages
+ * @brief Pipeline stages. 
+ * 
+ * Multiple pipeline usages can be OR'ed together using bitwise
+ * OR operator (`|`).
+ * 
+ * All values of this type follow the format `PAL_PIPELINE_STAGE_*` 
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalPipelineStages;
 
 /**
  * @struct PalQueue

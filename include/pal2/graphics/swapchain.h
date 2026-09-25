@@ -23,8 +23,10 @@
 #ifndef PAL_GRAPHICS_SWAPCHAIN_H
 #define PAL_GRAPHICS_SWAPCHAIN_H
 
-#include "device.h"
-#include "sync.h"
+#include "surface.h"
+#include "fence.h"
+#include "semaphore.h"
+#include "queue.h"
 
 /**
  * @struct PalSwapchain

@@ -23,7 +23,9 @@
 #ifndef PAL_GRAPHICS_PIPELINE_H
 #define PAL_GRAPHICS_PIPELINE_H
 
-#include "device.h"
+#include "pipeline_layout.h"
+#include "shader.h"
+#include "sampler.h"
 
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
@@ -171,22 +173,6 @@
 /** @} */
 
 /**
- * @defgroup sample_counts Sample Counts
- * @brief Sample counts
- * 
- * @{
- */
-#define PAL_SAMPLE_COUNT_1 0
-#define PAL_SAMPLE_COUNT_2 1
-#define PAL_SAMPLE_COUNT_4 2
-#define PAL_SAMPLE_COUNT_8 3
-#define PAL_SAMPLE_COUNT_16 4
-#define PAL_SAMPLE_COUNT_32 5
-#define PAL_SAMPLE_COUNT_64 6
-#define PAL_SAMPLE_COUNT_COUNT 7
-/** @} */
-
-/**
  * @defgroup primitive_topologies Primitive Topologies
  * @brief Primitive topologies
  * 
@@ -233,23 +219,6 @@
 #define PAL_POLYGON_MODE_FILL 0
 #define PAL_POLYGON_MODE_LINE 1
 #define PAL_POLYGON_MODE_COUNT 2
-/** @} */
-
-/**
- * @defgroup compare_operations Compare Operations
- * @brief Compare operations
- * 
- * @{
- */
-#define PAL_COMPARE_OP_NEVER 0
-#define PAL_COMPARE_OP_LESS 1
-#define PAL_COMPARE_OP_EQUAL 2
-#define PAL_COMPARE_OP_LESS_OR_EQUAL 3
-#define PAL_COMPARE_OP_GREATER 4
-#define PAL_COMPARE_OP_NOT_EQUAL 5
-#define PAL_COMPARE_OP_GREATER_OR_EQUAL 6
-#define PAL_COMPARE_OP_ALWAYS 7
-#define PAL_COMPARE_OP_COUNT 8
 /** @} */
 
 /**
@@ -410,17 +379,6 @@ typedef uint32_t PalVertexType;
 typedef uint32_t PalIndexType;
 
 /**
- * @typedef PalSampleCount
- * @brief sample count.
- * 
- * All values of this type follow the format `PAL_SAMPLE_COUNT_*`
- * for API consistency and ease of use.
- *
- * @since Added in version 2.0
- */
-typedef uint32_t PalSampleCount;
-
-/**
  * @typedef PalPrimitiveTopology
  * @brief Primitve topology types.
  * 
@@ -463,17 +421,6 @@ typedef uint32_t PalFrontFace;
  * @since Added in version 2.0
  */
 typedef uint32_t PalPolygonMode;
-
-/**
- * @typedef PalCompareOp
- * @brief Compare operation modes.
- * 
- * All values of this type follow the format `PAL_COMPARE_OP_*`
- * for API consistency and ease of use.
- *
- * @since Added in version 2.0
- */
-typedef uint32_t PalCompareOp;
 
 /**
  * @typedef PalBlendOp

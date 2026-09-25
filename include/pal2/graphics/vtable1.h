@@ -23,6 +23,15 @@
 #ifndef PAL_GRAPHICS_VTABLE_1_H
 #define PAL_GRAPHICS_VTABLE_1_H
 
+#include "device.h"
+#include "cmdbuffer.h"
+#include "shader.h"
+#include "acceleration_structure.h"
+#include "pipeline.h"
+#include "swapchain.h"
+#include "sampler.h"
+#include "cmdbuffer_cmd.h"
+
 /**
  * @struct PalGraphicsBackendVtable1
  * @brief Version 1 dispatch table for PAL graphics system backends.

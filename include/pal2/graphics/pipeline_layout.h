@@ -20,11 +20,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_PIPELINE_H
-#define PAL_GRAPHICS_PIPELINE_H
+#ifndef PAL_GRAPHICS_PIPELINE_LAYOUT_H
+#define PAL_GRAPHICS_PIPELINE_LAYOUT_H
 
-#include "device.h"
-#include "descriptor.h"
+#include "descriptor_set_layout.h"
 
 /**
  * @struct PalPipelineLayout
@@ -118,4 +117,4 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
  */
 PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
 
-#endif // PAL_GRAPHICS_PIPELINE_H
+#endif // PAL_GRAPHICS_PIPELINE_LAYOUT_H

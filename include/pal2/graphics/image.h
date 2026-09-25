@@ -23,8 +23,7 @@
 #ifndef PAL_GRAPHICS_IMAGE_H
 #define PAL_GRAPHICS_IMAGE_H
 
-#include "device.h"
-#include "types.h"
+#include "memory.h"
 
 /**
  * @defgroup image_types Image Types
@@ -78,6 +77,22 @@
 /** @} */
 
 /**
+ * @defgroup sample_counts Sample Counts
+ * @brief Sample counts
+ * 
+ * @{
+ */
+#define PAL_SAMPLE_COUNT_1 0
+#define PAL_SAMPLE_COUNT_2 1
+#define PAL_SAMPLE_COUNT_4 2
+#define PAL_SAMPLE_COUNT_8 3
+#define PAL_SAMPLE_COUNT_16 4
+#define PAL_SAMPLE_COUNT_32 5
+#define PAL_SAMPLE_COUNT_64 6
+#define PAL_SAMPLE_COUNT_COUNT 7
+/** @} */
+
+/**
  * @typedef PalImageUsages
  * @brief Image usages. 
  * 
@@ -122,6 +137,17 @@ typedef uint32_t PalImageAspect;
  * @since Added in version 2.0
  */
 typedef uint32_t PalImageMemoryUsage;
+
+/**
+ * @typedef PalSampleCount
+ * @brief sample count.
+ * 
+ * All values of this type follow the format `PAL_SAMPLE_COUNT_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalSampleCount;
 
 /**
  * @struct PalImage

@@ -76,6 +76,23 @@
 /** @} */
 
 /**
+ * @defgroup compare_operations Compare Operations
+ * @brief Compare operations
+ * 
+ * @{
+ */
+#define PAL_COMPARE_OP_NEVER 0
+#define PAL_COMPARE_OP_LESS 1
+#define PAL_COMPARE_OP_EQUAL 2
+#define PAL_COMPARE_OP_LESS_OR_EQUAL 3
+#define PAL_COMPARE_OP_GREATER 4
+#define PAL_COMPARE_OP_NOT_EQUAL 5
+#define PAL_COMPARE_OP_GREATER_OR_EQUAL 6
+#define PAL_COMPARE_OP_ALWAYS 7
+#define PAL_COMPARE_OP_COUNT 8
+/** @} */
+
+/**
  * @typedef PalSamplerMipmapMode
  * @brief Sampler mipmap modes.
  * 
@@ -118,6 +135,17 @@ typedef uint32_t PalFilterMode;
  * @since Added in version 2.0
  */
 typedef uint32_t PalBorderColor;
+
+/**
+ * @typedef PalCompareOp
+ * @brief Compare operation modes.
+ * 
+ * All values of this type follow the format `PAL_COMPARE_OP_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalCompareOp;
 
 /**
  * @struct PalSampler

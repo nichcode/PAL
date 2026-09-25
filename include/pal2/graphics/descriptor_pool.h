@@ -23,7 +23,7 @@
 #ifndef PAL_GRAPHICS_DESCRIPTOR_POOL_H
 #define PAL_GRAPHICS_DESCRIPTOR_POOL_H
 
-#include "device.h"
+#include "descriptor_set_layout.h"
 
 /**
  * @struct PalDescriptorPool

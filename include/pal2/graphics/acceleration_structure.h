@@ -24,7 +24,6 @@
 #define PAL_GRAPHICS_ACCELERATION_STRUCTURE_H
 
 #include "buffer.h"
-#include "types.h"
 
 /**
  * @defgroup acceleration_structure_types Acceleration Structure Types

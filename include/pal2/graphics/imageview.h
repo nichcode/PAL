@@ -23,7 +23,7 @@
 #ifndef PAL_GRAPHICS_IMAGEVIEW_H
 #define PAL_GRAPHICS_IMAGEVIEW_H
 
-#include "device.h"
+#include "image.h"
 
 /**
  * @defgroup image_view_types Image View Types

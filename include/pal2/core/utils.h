@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_CORE_PACK_H
-#define PAL_CORE_PACK_H
+#ifndef PAL_CORE_UTILS_H
+#define PAL_CORE_UTILS_H
 
 #include "defines.h"
 #include <string.h>
@@ -226,4 +226,4 @@ static inline void PAL_CALL palUnpackFloat(
 #endif // PAL_BIG_ENDIAN
 }
 
-#endif // PAL_CORE_PACK_H
+#endif // PAL_CORE_UTILS_H

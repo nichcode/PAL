@@ -23,7 +23,7 @@
 #ifndef PAL_GRAPHICS_CMDPOOL_H
 #define PAL_GRAPHICS_CMDPOOL_H
 
-#include "device.h"
+#include "queue.h"
 
 /**
  * @struct PalCommandPool

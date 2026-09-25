@@ -23,7 +23,7 @@
 #ifndef PAL_GRAPHICS_SEMAPHORE_H
 #define PAL_GRAPHICS_SEMAPHORE_H
 
-#include "device.h"
+#include "queue.h"
 
 /**
  * @struct PalSemaphore

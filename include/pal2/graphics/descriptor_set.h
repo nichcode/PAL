@@ -23,7 +23,11 @@
 #ifndef PAL_GRAPHICS_DESCRIPTOR_SET_H
 #define PAL_GRAPHICS_DESCRIPTOR_SET_H
 
-#include "device.h"
+#include "descriptor_pool.h"
+#include "buffer.h"
+#include "imageview.h"
+#include "sampler.h"
+#include "acceleration_structure.h"
 
 /**
  * @struct PalDescriptorSet
