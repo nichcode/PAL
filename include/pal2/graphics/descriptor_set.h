@@ -20,54 +20,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_DESCRIPTOR_H
-#define PAL_GRAPHICS_DESCRIPTOR_H
+#ifndef PAL_GRAPHICS_DESCRIPTOR_SET_H
+#define PAL_GRAPHICS_DESCRIPTOR_SET_H
 
-#include "buffer.h"
-#include "image.h"
-#include "acceleration_structure.h"
-
-/**
- * @defgroup descriptor_types Descriptor Types
- * @brief Descriptor types
- * 
- * @{
- */
-#define PAL_DESCRIPTOR_TYPE_STORAGE_BUFFER 0
-#define PAL_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-#define PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE 2
-#define PAL_DESCRIPTOR_TYPE_STORAGE_IMAGE 3
-#define PAL_DESCRIPTOR_TYPE_SAMPLER 4
-#define PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE 5
-#define PAL_DESCRIPTOR_TYPE_COUNT 6
-/** @} */
-
-/**
- * @typedef PalDescriptorType
- * @brief Descriptor types.
- * 
- * All values of this type follow the format `PAL_DESCRIPTOR_TYPE_*` for API
- * consistency and ease of use.
- *
- * @since Added in version 2.0
- */
-typedef uint32_t PalDescriptorType;
-
-/**
- * @struct PalDescriptorPool
- * @brief Opaque handle to a descriptor pool.
- *
- * @since Added in version 2.0
- */
-typedef struct PalDescriptorPool PalDescriptorPool;
-
-/**
- * @struct PalDescriptorSetLayout
- * @brief Opaque handle to a descriptor set layout.
- *
- * @since Added in version 2.0
- */
-typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
+#include "device.h"
 
 /**
  * @struct PalDescriptorSet
@@ -76,46 +32,6 @@ typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
  * @since Added in version 2.0
  */
 typedef struct PalDescriptorSet PalDescriptorSet;
-
-/**
- * @struct PalDescriptorSetLayoutBinding
- * @brief Contains information about a descriptor set layout binding.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * 
- * @var PalDescriptorSetLayoutBinding::descriptorCount
- * The number of descriptors of ::descriptorType.
- * 
- * @var PalDescriptorSetLayoutBinding::descriptorType
- * The type of the descriptor. (eg. `PAL_DESCRIPTOR_TYPE_SAMPLED_IMAGE`).
- */
-typedef struct PalDescriptorSetLayoutBinding
-{
-    uint32_t descriptorCount;
-    PalDescriptorType descriptorType;
-} PalDescriptorSetLayoutBinding;
-
-/**
- * @struct PalDescriptorPoolBindingSize
- * @brief Contains information about descriptor pool binding size.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * 
- * @var PalDescriptorPoolBindingSize::bindingCount
- * The number of bindings of ::descriptorType.
- * 
- * @var PalDescriptorPoolBindingSize::descriptorType
- * The type of the descriptor.
- */
-typedef struct PalDescriptorPoolBindingSize
-{
-    uint32_t bindingCount;
-    PalDescriptorType descriptorType;
-} PalDescriptorPoolBindingSize;
 
 /**
  * @struct PalDescriptorBufferInfo
@@ -251,61 +167,52 @@ typedef struct PalDescriptorSetWriteInfo
 } PalDescriptorSetWriteInfo;
 
 /**
- * @struct PalDescriptorSetLayoutCreateInfo
- * @brief Contains creation parameters of a descriptor set layout.
+ * @brief Allocate a descriptor set from the provided descriptor pool.
  *
- * Uninitialized fields may result in undefined behavior.
+ * The descriptor set will be allocated uninitialized therefore update it before
+ * use except the case where descriptor indexing is enabled.
+ *
+ * `pool` and `layout` must either be created with descriptor indexing enabled or not. Any other
+ * pair will fail and return `PAL_RESULT_INVALID_OPERATION`.
+ *
+ * @param[in] device Device to allocate descriptor set on.
+ * @param[in] pool Descriptor pool to allocate descriptor set from.
+ * @param[in] layout Descriptor set layout that defines the bindings.
+ * @param[out] outSet Pointer to a PalDescriptorSet to recieve the created descriptor set.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `device` and `pool` are externally synchronized.
  *
  * @since Added in version 2.0
- * 
- * @var PalDescriptorSetLayoutCreateInfo::bindings
- * The layout bindings.
- * 
- * @var PalDescriptorSetLayoutCreateInfo::flags
- * A bitmask of the descriptor indexing flags to create the 
- * descriptor set layout with.
- * 
- * @var PalDescriptorSetLayoutCreateInfo::bindingCount
- * The number of layout bindings.
  */
-typedef struct PalDescriptorSetLayoutCreateInfo
-{
-    PalDescriptorSetLayoutBinding* bindings;
-    PalDescriptorIndexingFlags flags;
-    uint32_t bindingCount;
-} PalDescriptorSetLayoutCreateInfo;
+PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
+    PalDevice* device,
+    PalDescriptorPool* pool,
+    PalDescriptorSetLayout* layout,
+    PalDescriptorSet** outSet);
 
 /**
- * @struct PalDescriptorPoolCreateInfo
- * @brief Contains creation parameters of a descriptor pool.
+ * @brief Update a descriptor set with descriptors (resources).
  *
- * Uninitialized fields may result in undefined behavior.
+ * If the write info has no valid resource handle, then `PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS`
+ * must be supported and enabled when creating the device. Otherwise behavior is undefined.
+ *
+ * @param[in] device The Device. Must match the one used to allocate descriptor set.
+ * @param[in] count Capacity of the PalDescriptorSetWriteInfo array.
+ * @param[in] infos Array of PalDescriptorSetWriteInfo to write.
+ *
+ * @return `PAL_RESULT_SUCCESS` on success or a result code on
+ * failure. Call palFormatResult() for more information.
+ *
+ * Thread safety: Thread safe if `device` is externally synchronized.
  *
  * @since Added in version 2.0
- * 
- * @var PalDescriptorPoolCreateInfo::bindingSizes
- * The binding sizes.
- * 
- * @var PalDescriptorPoolCreateInfo::bindingSizeCount
- * The number of binding sizes.
- * 
- * @var PalDescriptorPoolCreateInfo::maxDescriptorSets
- * The maximum number of descriptor sets that can be allocated.
- * 
- * @var PalDescriptorPoolCreateInfo::flags
- * A bitmask of the descriptor indexing flags to create the 
- * descriptor pool with.
- * 
- * @var PalDescriptorPoolCreateInfo::reserved
- * Not used. Set to `0`.
  */
-typedef struct PalDescriptorPoolCreateInfo
-{
-    PalDescriptorPoolBindingSize* bindingSizes;
-    uint32_t bindingSizeCount;
-    uint32_t maxDescriptorSets;
-    PalDescriptorIndexingFlags flags; 
-    uint32_t reserved;
-} PalDescriptorPoolCreateInfo;
+PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
+    PalDevice* device,
+    uint32_t count,
+    PalDescriptorSetWriteInfo* infos);
 
-#endif // PAL_GRAPHICS_DESCRIPTOR_H
+#endif // PAL_GRAPHICS_DESCRIPTOR_SET_H

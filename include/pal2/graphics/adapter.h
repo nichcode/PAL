@@ -30,6 +30,10 @@
 #define PAL_ADAPTER_NAME_SIZE 128
 #define PAL_ADAPTER_BACKEND_NAME_SIZE 32
 
+#define PAL_MAKE_SHADER_TARGET(major, minor) ((uint32_t)((major) << 8) | (minor))
+#define PAL_SHADER_TARGET_MAJOR(target) ((uint32_t)(target) >> 8);
+#define PAL_SHADER_TARGET_MINOR(target) ((uint32_t)(target) & 0xFF);
+
 /**
  * @defgroup graphics_features Graphics Features
  * @brief Graphics features

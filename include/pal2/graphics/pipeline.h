@@ -24,7 +24,8 @@
 #define PAL_GRAPHICS_PIPELINE_H
 
 #include "device.h"
-#include "descriptor.h"
+
+#define PAL_UNUSED_SHADER_INDEX UINT32_MAX
 
 /**
  * @defgroup vertex_semantic_types Vertex Semantic IDs
@@ -117,6 +118,194 @@
 #define PAL_RENDERING_FLAG_RESUMING (1U << 1)
 /** @} */
 
+
+/**
+ * @defgroup vertex_types Vertex Types
+ * @brief Vertex types
+ * 
+ * @{
+ */
+#define PAL_VERTEX_TYPE_UNDEFINED 0
+#define PAL_VERTEX_TYPE_INT32 1
+#define PAL_VERTEX_TYPE_INT32_2 2
+#define PAL_VERTEX_TYPE_INT32_3 3
+#define PAL_VERTEX_TYPE_INT32_4 4
+#define PAL_VERTEX_TYPE_UINT32 5
+#define PAL_VERTEX_TYPE_UINT32_2 6
+#define PAL_VERTEX_TYPE_UINT32_3 7
+#define PAL_VERTEX_TYPE_UINT32_4 8
+#define PAL_VERTEX_TYPE_INT8_2 9
+#define PAL_VERTEX_TYPE_INT8_4 10
+#define PAL_VERTEX_TYPE_UINT8_2 11
+#define PAL_VERTEX_TYPE_UINT8_4 12
+#define PAL_VERTEX_TYPE_INT8_2NORM 13
+#define PAL_VERTEX_TYPE_INT8_4NORM 14
+#define PAL_VERTEX_TYPE_UINT8_2NORM 15
+#define PAL_VERTEX_TYPE_UINT8_4NORM 16
+#define PAL_VERTEX_TYPE_INT16_2 17
+#define PAL_VERTEX_TYPE_INT16_4 18
+#define PAL_VERTEX_TYPE_UINT16_2 19
+#define PAL_VERTEX_TYPE_UINT16_4 20
+#define PAL_VERTEX_TYPE_INT16_2NORM 21
+#define PAL_VERTEX_TYPE_INT16_4NORM 22
+#define PAL_VERTEX_TYPE_UINT16_2NORM 23
+#define PAL_VERTEX_TYPE_UINT16_4NORM 24
+#define PAL_VERTEX_TYPE_FLOAT 25
+#define PAL_VERTEX_TYPE_FLOAT2 26
+#define PAL_VERTEX_TYPE_FLOAT3 27
+#define PAL_VERTEX_TYPE_FLOAT4 28
+#define PAL_VERTEX_TYPE_HALF_FLOAT16_2 29
+#define PAL_VERTEX_TYPE_HALF_FLOAT16_4 30
+#define PAL_VERTEX_TYPE_COUNT 31
+/** @} */
+
+/**
+ * @defgroup index_types Index Types
+ * @brief Index types
+ * 
+ * @{
+ */
+#define PAL_INDEX_TYPE_UINT16 0
+#define PAL_INDEX_TYPE_UINT32 1
+#define PAL_INDEX_TYPE_COUNT 2
+/** @} */
+
+/**
+ * @defgroup sample_counts Sample Counts
+ * @brief Sample counts
+ * 
+ * @{
+ */
+#define PAL_SAMPLE_COUNT_1 0
+#define PAL_SAMPLE_COUNT_2 1
+#define PAL_SAMPLE_COUNT_4 2
+#define PAL_SAMPLE_COUNT_8 3
+#define PAL_SAMPLE_COUNT_16 4
+#define PAL_SAMPLE_COUNT_32 5
+#define PAL_SAMPLE_COUNT_64 6
+#define PAL_SAMPLE_COUNT_COUNT 7
+/** @} */
+
+/**
+ * @defgroup primitive_topologies Primitive Topologies
+ * @brief Primitive topologies
+ * 
+ * @{
+ */
+#define PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST 0
+#define PAL_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP 1
+#define PAL_PRIMITIVE_TOPOLOGY_LINE_LIST 2
+#define PAL_PRIMITIVE_TOPOLOGY_LINE_STRIP 3
+#define PAL_PRIMITIVE_TOPOLOGY_POINT_LIST 4
+#define PAL_PRIMITIVE_TOPOLOGY_PATCH 5
+#define PAL_PRIMITIVE_TOPOLOGY_COUNT 6
+/** @} */
+
+/**
+ * @defgroup cull_modes Cull Modes
+ * @brief Cull modes
+ * 
+ * @{
+ */
+#define PAL_CULL_MODE_NONE 0
+#define PAL_CULL_MODE_FRONT 1
+#define PAL_CULL_MODE_BACK 2
+#define PAL_CULL_MODE_COUNT 3
+/** @} */
+
+/**
+ * @defgroup front_faces Front Faces
+ * @brief Front faces
+ * 
+ * @{
+ */
+#define PAL_FRONT_FACE_CLOCKWISE 0
+#define PAL_FRONT_FACE_COUNTER_CLOCKWISE 1
+#define PAL_FRONT_FACE_COUNT 2
+/** @} */
+
+/**
+ * @defgroup polygon_modes Polygon Modes
+ * @brief Polygon modes
+ * 
+ * @{
+ */
+#define PAL_POLYGON_MODE_FILL 0
+#define PAL_POLYGON_MODE_LINE 1
+#define PAL_POLYGON_MODE_COUNT 2
+/** @} */
+
+/**
+ * @defgroup compare_operations Compare Operations
+ * @brief Compare operations
+ * 
+ * @{
+ */
+#define PAL_COMPARE_OP_NEVER 0
+#define PAL_COMPARE_OP_LESS 1
+#define PAL_COMPARE_OP_EQUAL 2
+#define PAL_COMPARE_OP_LESS_OR_EQUAL 3
+#define PAL_COMPARE_OP_GREATER 4
+#define PAL_COMPARE_OP_NOT_EQUAL 5
+#define PAL_COMPARE_OP_GREATER_OR_EQUAL 6
+#define PAL_COMPARE_OP_ALWAYS 7
+#define PAL_COMPARE_OP_COUNT 8
+/** @} */
+
+/**
+ * @defgroup blend_operations Blend Operations
+ * @brief Blend operations
+ * 
+ * @{
+ */
+#define PAL_BLEND_OP_ADD 0
+#define PAL_BLEND_OP_SUBTRACT 1
+#define PAL_BLEND_OP_REVERSE_SUBTRACT 2
+#define PAL_BLEND_OP_MIN 3
+#define PAL_BLEND_OP_MAX 4
+#define PAL_BLEND_OP_COUNT 5
+/** @} */
+
+/**
+ * @defgroup blend_factors Blend Factors
+ * @brief Blend factors
+ * 
+ * @{
+ */
+#define PAL_BLEND_FACTOR_ZERO 0
+#define PAL_BLEND_FACTOR_ONE 1
+#define PAL_BLEND_FACTOR_SRC_COLOR 2
+#define PAL_BLEND_FACTOR_ONE_MINUS_SRC_COLOR 3
+#define PAL_BLEND_FACTOR_DST_COLOR 4
+#define PAL_BLEND_FACTOR_ONE_MINUS_DST_COLOR 5
+#define PAL_BLEND_FACTOR_SRC_ALPHA 6
+#define PAL_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA 7
+#define PAL_BLEND_FACTOR_DST_ALPHA 8
+#define PAL_BLEND_FACTOR_ONE_MINUS_DST_ALPHA 9
+#define PAL_BLEND_FACTOR_CONSTANT_COLOR 10
+#define PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR 11
+#define PAL_BLEND_FACTOR_CONSTANT_ALPHA 12
+#define PAL_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA 13
+#define PAL_BLEND_FACTOR_COUNT 14
+/** @} */
+
+/**
+ * @defgroup stencil_operations Stencil Operations
+ * @brief Stencil operations
+ * 
+ * @{
+ */
+#define PAL_STENCIL_OP_KEEP 0
+#define PAL_STENCIL_OP_ZERO 1
+#define PAL_STENCIL_OP_REPLACE 2
+#define PAL_STENCIL_OP_INCREMENT_AND_CLAMP 3
+#define PAL_STENCIL_OP_DECREMENT_AND_CLAMP 4
+#define PAL_STENCIL_OP_INVERT 5
+#define PAL_STENCIL_OP_INCREMENT_AND_WRAP 6
+#define PAL_STENCIL_OP_DECREMENT_AND_WRAP 7
+#define PAL_STENCIL_OP_COUNT 8
+/** @} */
+
 /**
  * @typedef PalColorMask
  * @brief Color mask flags. 
@@ -199,12 +388,125 @@ typedef uint32_t PalVertexLayoutType;
 typedef uint32_t PalRenderingFlags;
 
 /**
- * @struct PalPipelineLayout
- * @brief Opaque handle to a pipeline layout.
+ * @typedef PalVertexType
+ * @brief Vertex attribute types.
+ * 
+ * All values of this type follow the format `PAL_VERTEX_TYPE_*`
+ * for API consistency and ease of use.
  *
  * @since Added in version 2.0
  */
-typedef struct PalPipelineLayout PalPipelineLayout;
+typedef uint32_t PalVertexType;
+
+/**
+ * @typedef PalIndexType
+ * @brief Index types.
+ * 
+ * All values of this type follow the format `PAL_INDEX_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalIndexType;
+
+/**
+ * @typedef PalSampleCount
+ * @brief sample count.
+ * 
+ * All values of this type follow the format `PAL_SAMPLE_COUNT_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalSampleCount;
+
+/**
+ * @typedef PalPrimitiveTopology
+ * @brief Primitve topology types.
+ * 
+ * All values of this type follow the format `PAL_PRIMITIVE_TOPOLOGY_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalPrimitiveTopology;
+
+/**
+ * @typedef PalCullMode
+ * @brief Cull modes.
+ * 
+ * All values of this type follow the format `PAL_CULL_MODE_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalCullMode;
+
+/**
+ * @typedef PalFrontFace
+ * @brief Front face modes.
+ * 
+ * All values of this type follow the format `PAL_FRONT_FACE_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalFrontFace;
+
+/**
+ * @typedef PalPolygonMode
+ * @brief Polygon modes.
+ * 
+ * All values of this type follow the format `PAL_POLYGON_MODE_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalPolygonMode;
+
+/**
+ * @typedef PalCompareOp
+ * @brief Compare operation modes.
+ * 
+ * All values of this type follow the format `PAL_COMPARE_OP_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalCompareOp;
+
+/**
+ * @typedef PalBlendOp
+ * @brief Blend operation modes.
+ * 
+ * All values of this type follow the format `PAL_BLEND_OP_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalBlendOp;
+
+/**
+ * @typedef PalBlendFactor
+ * @brief Blend factor modes.
+ * 
+ * All values of this type follow the format `PAL_BLEND_FACTOR_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalBlendFactor;
+
+/**
+ * @typedef PalStencilOp
+ * @brief Stencil operation modes.
+ * 
+ * All values of this type follow the format `PAL_STENCIL_OP_*`
+ * for API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalStencilOp;
 
 /**
  * @struct PalPipeline
@@ -216,26 +518,6 @@ typedef struct PalPipelineLayout PalPipelineLayout;
  * @since Added in version 2.0
  */
 typedef struct PalPipeline PalPipeline;
-
-/**
- * @struct PalPushConstantInfo
- * @brief Conatains information about a push constant.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * 
- * @var PalPushConstantInfo::offset
- * The offset in bytes of the push constant.
- * 
- * @var PalPushConstantInfo::size
- * The size in bytes of the push constant.
- */
-typedef struct PalPushConstantInfo
-{
-    uint32_t offset;
-    uint32_t size;
-} PalPushConstantInfo;
 
 /**
  * @struct PalRasterizerState
@@ -536,34 +818,6 @@ typedef struct PalRenderingLayoutInfo
 } PalRenderingLayoutInfo;
 
 /**
- * @struct PalPipelineLayoutCreateInfo
- * @brief Contains creation parameters of a pipeline layout.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * 
- * @var PalPipelineLayoutCreateInfo::descriptorSetLayouts
- * The descriptor set layouts.
- * 
- * @var PalPipelineLayoutCreateInfo::pushConstantInfo
- * The push constant info of the pipeline layout.
- * 
- * @var PalPipelineLayoutCreateInfo::descriptorSetLayoutCount
- * The number of descriptor set layouts.
- * 
- * @var PalPipelineLayoutCreateInfo::usePushConstant
- * If `PAL_TRUE`, ::pushConstantInfo will be read and used.
- */
-typedef struct PalPipelineLayoutCreateInfo
-{
-    PalDescriptorSetLayout** descriptorSetLayouts;
-    PalPushConstantInfo pushConstantInfo;
-    uint32_t descriptorSetLayoutCount;
-    PalBool usePushConstant;
-} PalPipelineLayoutCreateInfo;
-
-/**
  * @struct PalGraphicsPipelineCreateInfo
  * @brief Contains creation parameters of a graphics pipeline.
  *
@@ -758,42 +1012,6 @@ typedef struct PalRayTracingPipelineCreateInfo
     uint32_t maxPayloadSize;
     uint32_t reserved;
 } PalRayTracingPipelineCreateInfo;
-
-/**
- * @brief Create a pipeline layout. This defines the descriptor set interfaces and push
- * constant info.
- *
- * The created pipeline layout must be destroyed using `palDestroyPipelineLayout()`.
- *
- * @param[in] device Device that creates the pipeline layout.
- * @param[in] info Pointer to a PalPipelineLayoutCreateInfo struct that specifies parameters.
- * @param[out] outLayout Pointer to a PalPipelineLayout to recieve the created pipeline layout.
- *
- * @return `PAL_RESULT_SUCCESS` on success or a result code on
- * failure. Call palFormatResult() for more information.
- *
- * Thread safety: Thread safe if `device` is externally synchronized.
- *
- * @since Added in version 2.0
- * @sa palDestroyPipelineLayout
- */
-PAL_API PalResult PAL_CALL palCreatePipelineLayout(
-    PalDevice* device,
-    const PalPipelineLayoutCreateInfo* info,
-    PalPipelineLayout** outLayout);
-
-/**
- * @brief Destroy a pipeline layout.
- *
- * @param[in] layout Pipeline layout to destroy.
- *
- * Thread safety: Thread safe if the device used to create the pipeline layout is
- * externally synchronized.
- *
- * @since Added in version 2.0
- * @sa palCreatePipelineLayout
- */
-PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
 
 /**
  * @brief Create a graphics pipeline.

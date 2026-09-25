@@ -123,6 +123,90 @@ typedef struct PalBufferCopyInfo
 } PalBufferCopyInfo;
 
 /**
+ * @struct PalDrawIndirectData
+ * @brief Contains indirect data of a draw call.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * 
+ * @var PalDrawIndirectData::vertexCount
+ * The number of vertices.
+ * 
+ * @var PalDrawIndirectData::instanceCount
+ * The number of instances.
+ * 
+ * @var PalDrawIndirectData::firstVertex
+ * The first vertex.
+ * 
+ * @var PalDrawIndirectData::firstInstance
+ * The first instance.
+ */
+typedef struct PalDrawIndirectData
+{
+    uint32_t vertexCount;
+    uint32_t instanceCount;
+    uint32_t firstVertex;
+    uint32_t firstInstance;
+} PalDrawIndirectData;
+
+/**
+ * @struct PalDrawIndexedIndirectData
+ * @brief Contains indirect data of a draw indexed call.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * 
+ * @var PalDrawIndexedIndirectData::indexCount
+ * The number of indices.
+ * 
+ * @var PalDrawIndexedIndirectData::instanceCount
+ * The number of instances.
+ * 
+ * @var PalDrawIndexedIndirectData::firstIndex
+ * The first index.
+ * 
+ * @var PalDrawIndexedIndirectData::vertexOffset
+ * The vertex offset.
+ * 
+ * @var PalDrawIndexedIndirectData::firstInstance
+ * The first instance.
+ */
+typedef struct PalDrawIndexedIndirectData
+{
+    uint32_t indexCount; 
+    uint32_t instanceCount;
+    uint32_t firstIndex; 
+    int32_t vertexOffset;
+    uint32_t firstInstance;
+} PalDrawIndexedIndirectData;
+
+/**
+ * @struct PalDispatchIndirectData
+ * @brief Contains indirect data of a dispatch call.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * 
+ * @var PalDispatchIndirectData::groupCountXOrWidth
+ * The number of groups on the x dimension or the dispatch width.
+ * 
+ * @var PalDispatchIndirectData::groupCountXOrHeight
+ * The number of groups on the y dimension or the dispatch height.
+ * 
+ * @var PalDispatchIndirectData::groupCountXOrDepth
+ * The number of groups on the z dimension or the dispatch depth.
+ */
+typedef struct PalDispatchIndirectData
+{
+    uint32_t groupCountXOrWidth; 
+    uint32_t groupCountXOrHeight;
+    uint32_t groupCountXOrDepth; 
+} PalDispatchIndirectData;
+
+/**
  * @struct PalBufferCreateInfo
  * @brief Contains creation parameters of a buffer.
  *
