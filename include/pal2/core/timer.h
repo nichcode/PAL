@@ -26,7 +26,7 @@
 #include "defines.h"
 
 /**
- * @brief Retrieves the current high-resolution performance counter value.
+ * @brief Retrieve the current high-resolution performance counter value.
  *
  * @return Current monotonically increasing performance counter value.
  *
@@ -34,12 +34,13 @@
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palGetPerformanceFrequency
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
 
 /**
- * @brief Retrieves the frequency of the high-resolution performance counter.
+ * @brief Retrieve the frequency of the high-resolution performance counter.
  *
  * @return Performance counter frequency, in counts per second.
  *
@@ -47,6 +48,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palGetPerformanceCounter
  */
 PAL_API uint64_t PAL_CALL palGetPerformanceFrequency(void);

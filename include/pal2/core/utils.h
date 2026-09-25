@@ -27,18 +27,18 @@
 #include <string.h>
 
 /**
- * @brief Combines two 32-bit unsigned integers into a single 64-bit unsigned
+ * @brief Combine two 32-bit unsigned integers into a single 64-bit unsigned
  * integer.
  * 
  * @param[in] low The low 32-bit unsigned integer.
  * @param[in] high The high 32-bit unsigned integer.
- *
  * @return The combined 64-bit unsigned integer.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palUnpackUint32
  */
 static inline uint64_t PAL_CALL palPackUint32(
@@ -49,17 +49,17 @@ static inline uint64_t PAL_CALL palPackUint32(
 }
 
 /**
- * @brief Combines two 32-bit signed integers into a single 64-bit unsigned integer.
+ * @brief Combine two 32-bit signed integers into a single 64-bit unsigned integer.
  * 
  * @param[in] low The low 32-bit signed integer.
  * @param[in] high The high 32-bit signed integer.
- *
  * @return The combined 64-bit unsigned integer.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palUnpackInt32
  */
 static inline uint64_t PAL_CALL palPackInt32(
@@ -70,16 +70,16 @@ static inline uint64_t PAL_CALL palPackInt32(
 }
 
 /**
- * @brief Packs a pointer into a 64-bit unsigned integer.
+ * @brief Pack a pointer into a 64-bit unsigned integer.
  * 
  * @param[in] ptr The pointer to pack.
- *
  * @return The packed 64-bit unsigned integer.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palUnpackPointer
  */
 static inline uint64_t PAL_CALL palPackPointer(void* ptr)
@@ -88,17 +88,17 @@ static inline uint64_t PAL_CALL palPackPointer(void* ptr)
 }
 
 /**
- * @brief Combines two floats into a single 64-bit unsigned integer.
+ * @brief Combine two floats into a single 64-bit unsigned integer.
  * 
  * @param[in] low The low float value.
  * @param[in] high The high float value.
- *
  * @return The combined 64-bit unsigned integer.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palUnpackFloat
  */
 static inline uint64_t PAL_CALL palPackFloat(
@@ -118,16 +118,17 @@ static inline uint64_t PAL_CALL palPackFloat(
 }
 
 /**
- * @brief Retrieves two 32-bit unsigned integers from a 64-bit unsigned integer.
+ * @brief Retrieve two 32-bit unsigned integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low The output low value of the 64-bit unsigned integer.
  * @param[out] high The output high value of the 64-bit unsigned integer.
  *
- * @Thread-safety `low` and `high` must be per thread.
+ * @Thread-safety `low` and `high` parameters must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palPackUint32
  */
 static inline void PAL_CALL palUnpackUint32(
@@ -145,16 +146,17 @@ static inline void PAL_CALL palUnpackUint32(
 }
 
 /**
- * @brief Retrieves two 32-bit signed integers from a 64-bit unsigned integer.
+ * @brief Retrieve two 32-bit signed integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low The output low value of the 64-bit unsigned integer.
  * @param[out] high The output high value of the 64-bit unsigned integer.
  *
- * @Thread-safety `low` and `high` must be per thread.
+ * @Thread-safety `low` and `high` parameters must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palPackInt32
  */
 static inline void PAL_CALL palUnpackInt32(
@@ -172,7 +174,7 @@ static inline void PAL_CALL palUnpackInt32(
 }
 
 /**
- * @brief Unpacks a pointer from a 64-bit unsigned integer.
+ * @brief Unpack a pointer from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @return The pointer from the 64-bit unsigned integer.
@@ -181,6 +183,7 @@ static inline void PAL_CALL palUnpackInt32(
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palPackPointer
  */
 static inline void* PAL_CALL palUnpackPointer(uint64_t data)
@@ -189,16 +192,17 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
 }
 
 /**
- * @brief Retrieves two floats from a 64-bit unsigned integer.
+ * @brief Retrieve two floats from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low The output low value of the 64-bit unsigned integer.
  * @param[out] high The output high value of the 64-bit unsigned integer.
  *
- * @Thread-safety `low` and `high` must be per thread.
+ * @Thread-safety `low` and `high` parameters must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
  * @sa palPackFloat
  */
 static inline void PAL_CALL palUnpackFloat(

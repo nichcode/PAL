@@ -68,9 +68,11 @@
 
 /**
  * @typedef PalBool
- * @brief A boolean type.
+ * @brief A boolean type
  * 
- * Must be set to either `PAL_TRUE`/`1` or `PAL_FALSE`/`0` .
+ * Possible values are PAL_TRUE or PAL_FALSE.
+ * 
+ * These are constants for 1 and 0 and any equivalent constant can be used.
  * 
  * @since Added in version 2.0
  * @ingroup pal_core
