@@ -531,7 +531,7 @@ typedef struct PalRasterizerState
  * @var PalMultisampleState::sampleCount
  * The `MSAA` samples. (eg. `PAL_SAMPLE_COUNT_4`).
  * 
- * @var PalMultisampleState::sampleCount
+ * @var PalMultisampleState::minSampleShading
  * The minimum sample shading.
  */
 typedef struct PalMultisampleState
@@ -735,7 +735,7 @@ typedef struct PalVertexLayout
  * @var PalRenderingLayoutInfo::colorAttachmentsFormat
  * The color attachmenets formats.
  * 
- * @var PalRenderingLayoutInfo::colorAttachmentsFormat
+ * @var PalRenderingLayoutInfo::colorAttachentCount
  * The number of color attachments formats.
  * 
  * @var PalRenderingLayoutInfo::viewCount

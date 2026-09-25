@@ -34,6 +34,7 @@
  * @since Added in version 2.1
  */
 typedef struct {
+    /** TODO: */
     const PalGraphicsBackendVtable1* vtable1;
 
     /**

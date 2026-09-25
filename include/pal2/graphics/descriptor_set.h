@@ -74,7 +74,7 @@ typedef struct PalDescriptorBufferInfo
  *
  * @since Added in version 2.0
  * 
- * @var PalDescriptorBufferInfo::imageView
+ * @var PalDescriptorImageViewInfo::imageView
  * The image view associated with the descriptor.
  */
 typedef struct PalDescriptorImageViewInfo

@@ -58,7 +58,7 @@ typedef struct PalWorkGroupBuildData
  * @var PalWorkGroupInfo::workGroupBase
  * The offsets per dimension of the dispatch tile.
  * 
- * @var PalWorkGroupInfo::workGroupBase
+ * @var PalWorkGroupInfo::workGroupCount
  * The number of workgroups per dimension of the dispatch tile.
  */
 typedef struct PalWorkGroupInfo

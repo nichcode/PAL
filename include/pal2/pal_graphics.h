@@ -31,7 +31,32 @@
 #ifndef PAL_GRAPHICS_H
 #define PAL_GRAPHICS_H
 
-#include "pal_core.h"
+#include "graphics/acceleration_structure.h"
+#include "graphics/adapter.h"
+#include "graphics/buffer.h"
+#include "graphics/cmdbuffer.h"
+#include "graphics/cmdpool.h"
+#include "graphics/descriptor_pool.h"
+#include "graphics/descriptor_set_layout.h"
+#include "graphics/descriptor_set.h"
+#include "graphics/device.h"
+#include "graphics/fence.h"
+#include "graphics/image.h"
+#include "graphics/imageview.h"
+#include "graphics/memory.h"
+#include "graphics/pipeline_layout.h"
+#include "graphics/pipeline.h"
+#include "graphics/queue.h"
+#include "graphics/sampler.h"
+#include "graphics/SBT.h"
+#include "graphics/surface.h"
+#include "graphics/swapchain.h"
+#include "graphics/utils.h"
+
+#ifndef PAL_NO_GRAPHICS_BACKEND_VTABLES
+#include "graphics/vtable1.h"
+#include "graphics/vtable2.h"
+#endif // PAL_NO_GRAPHICS_BACKEND_VTABLES
 
 #define PAL_MAX_CUSTOM_BACKENDS 16
 
@@ -183,7 +208,7 @@ typedef struct PalGraphicsDebugger
  * @var PalGraphicsBackendInfo::version
  * The version of the graphics backend vtable.
  * 
- * @var PalGraphicsBackendInfo::version
+ * @var PalGraphicsBackendInfo::reserved
  * Not used. Set to `0`.
  */
 typedef struct PalGraphicsBackendInfo

@@ -109,7 +109,7 @@ typedef uint32_t PalCompositeAplha;
 typedef uint32_t PalSurfaceFormat;
 
 /**
- * @typedef WindowInstanceType
+ * @typedef PalWindowInstanceType
  * @brief Instance types of a window instance.
  * 
  * All values of this type follow the format `PAL_WINDOW_INSTANCE_TYPE_*`

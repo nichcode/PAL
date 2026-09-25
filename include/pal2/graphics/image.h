@@ -423,7 +423,7 @@ typedef struct PalImageStagingRequirements
  * @var PalImageCreateInfo::arrayLayerCount
  * The number of array layers of the image.
  * 
- * @var PalImageCreateInfo::arrayLayerCount
+ * @var PalImageCreateInfo::mipLevelCount
  * The number of mipmap levels of the image.
  * 
  * @var PalImageCreateInfo::sampleCount

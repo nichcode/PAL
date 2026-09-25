@@ -89,6 +89,7 @@ typedef void(PAL_CALL* PalFreeFn)(
     void* ptr);
 
 /**
+ * @struct PalAllocator 
  * @brief Contains information about a memory allocator.
  *
  * This struct provides a way to use a custom allocator with PAL.

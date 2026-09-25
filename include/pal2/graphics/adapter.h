@@ -308,6 +308,7 @@ typedef uint32_t PalFormat;
 typedef struct PalAdapter PalAdapter;
 
 /**
+ * @struct PalAdapterInfo
  * @brief Contains information about an adapter (GPU).
  *
  * @since Added in version 2.0
