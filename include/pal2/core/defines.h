@@ -30,6 +30,10 @@
 #define PAL_EXTERN_C extern "C"
 #else
 #define PAL_EXTERN_C
+/** @brief "cpp nullptr" or NULL.
+ * 
+ * @ingroup pal_core
+*/
 #define nullptr ((void*)0)
 #endif // __cplusplus
 
@@ -61,18 +65,27 @@
 #define PAL_BIG_ENDIAN 0
 #endif // __ORDER_BIG_ENDIAN__
 
+/** @brief Infinite number or time.
+ * 
+ * @ingroup pal_core
+*/
 #define PAL_INFINITE UINT32_MAX
 
+/** @brief true or 1.
+ * 
+ * @ingroup pal_core
+*/
 #define PAL_TRUE 1
+
+/** @brief false or 0.
+ * 
+ * @ingroup pal_core
+*/
 #define PAL_FALSE 0
 
 /**
  * @typedef PalBool
  * @brief A boolean type
- * 
- * Possible values are PAL_TRUE or PAL_FALSE.
- * 
- * These are constants for 1 and 0 and any equivalent constant can be used.
  * 
  * @since Added in version 2.0
  * @ingroup pal_core

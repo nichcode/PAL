@@ -26,10 +26,14 @@
 
 #include "defines.h"
 
+/** @brief The maximum log buffer size.
+ * 
+ * @ingroup pal_core
+*/
 #define PAL_LOG_MSG_SIZE 4096
 
 /**
- * @brief Function pointer type used for log callbacks
+ * @brief Function pointer type used for log callbacks.
  * 
  * The function signature should look like this:
  * @code
@@ -71,9 +75,10 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @sa palLog
  */
 typedef struct PalLogger {
-    // The function to forward log messages to. Must not be nullptr.
+    /** The function to forward log messages to. Must not be nullptr.*/
     PalLogCallback callback;
-    // User data passed to the callback. Can be nullptr.
+
+    /** User data passed to the callback. Can be nullptr.*/
     void* userData;
 } PalLogger;
 
@@ -93,8 +98,8 @@ typedef struct PalLogger {
  * @param[in] ... Arguments for the format string.
  *
  * @Thread-safety Thread safe, but log output and callbacks may be invoked
- * concurrently. The user must ensure the callback 
- * implementation is thread safe.
+ *                concurrently. The user must ensure the callback 
+ *                implementation is thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core

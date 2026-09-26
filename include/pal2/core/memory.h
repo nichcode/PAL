@@ -27,7 +27,7 @@
 #include "defines.h"
 
 /**
- * @brief Function pointer type used for memory allocations
+ * @brief Function pointer type used for memory allocations.
  * 
  * The function signature should look like this:
  * @code
@@ -66,7 +66,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
     uint64_t alignment);
 
 /**
- * @brief Function pointer type used for memory deallocations
+ * @brief Function pointer type used for memory deallocations.
  * 
  * The function signature should look like this:
  * @code
@@ -91,7 +91,7 @@ typedef void(PAL_CALL* PalFreeFn)(
 
 /**
  * @struct PalAllocator 
- * @brief Contains information about a memory allocator
+ * @brief Information about a memory allocator.
  *
  * This struct provides a way to use a custom allocator with PAL.
  * Some APIs are thread safe, therefore the custom allocator must be thread
@@ -103,11 +103,13 @@ typedef void(PAL_CALL* PalFreeFn)(
  * @ingroup pal_core
  */
 typedef struct PalAllocator {
-    // The allocate function of the allocator. Must not be nullptr.
+    /** The allocate function of the allocator. Must not be nullptr.*/
     PalAllocateFn allocate;
-    // The free function of the allocator. Must not be nullptr.
+
+    /** The free function of the allocator. Must not be nullptr.*/
     PalFreeFn free;
-    // User data passed to allocate and free function. Can be nullptr.
+    
+    /** User data passed to allocate and free function. Can be nullptr.*/
     void* userData;
 } PalAllocator;
 

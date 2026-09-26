@@ -27,7 +27,7 @@
 #include "defines.h"
 
 /**
- * @brief Opaque handle to a dynamic or shared library
+ * @brief Opaque handle to a dynamic or shared library.
  * 
  * @since Added in version 2.2
  * @ingroup pal_core
@@ -37,7 +37,7 @@
 typedef struct PalLibrary PalLibrary;
 
 /**
- * @brief A generic library symbol for exported functions
+ * @brief A generic library symbol for exported functions.
  * 
  * @since Added in version 2.2
  * @ingroup pal_core

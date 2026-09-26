@@ -39,11 +39,13 @@ typedef struct PalVersion {
      * This is incremented when breaking changes are made.
      */
     uint32_t major;
+
     /**
      * The minor version number of the PAL runtime. 
      * This is incremented when backward-compatible features are added.
      */
     uint32_t minor;
+    
     /**
      * The build version number of the PAL runtime.
      * This is incremented when bugs are fixed without API changes.
