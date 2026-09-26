@@ -29,28 +29,66 @@
 
 /**
  * @defgroup thread_features Thread Features
- * @brief Thread Features.
+ * @brief Thread Features
  * 
- * @{
+ * @ingroup pal_thread
  */
-#define PAL_THREAD_FEATURE_STACK_SIZE (1U << 0)
-#define PAL_THREAD_FEATURE_PRIORITY (1U << 1)
-#define PAL_THREAD_FEATURE_AFFINITY (1U << 2)
-#define PAL_THREAD_FEATURE_NAME (1U << 3)
-/** @} */
-
 
 /**
  * @defgroup thread_priorities Thread Priorities
- * @brief Thread Priorities.
+ * @brief Thread Priorities
  * 
- * @{
+ * @ingroup pal_thread
  */
+
+/** @brief The thread system supports setting thread stack size.
+ * 
+ * @ingroup thread_features
+*/
+#define PAL_THREAD_FEATURE_STACK_SIZE (1U << 0)
+
+/** @brief The thread system supports setting and getting thread priority.
+ * 
+ * @ingroup thread_features
+*/
+#define PAL_THREAD_FEATURE_PRIORITY (1U << 1)
+
+/** @brief The thread system supports setting and getting thread affinity.
+ * 
+ * @ingroup thread_features
+*/
+#define PAL_THREAD_FEATURE_AFFINITY (1U << 2)
+
+/** @brief The thread system supports setting and getting thread name.
+ * 
+ * @ingroup thread_features
+*/
+#define PAL_THREAD_FEATURE_NAME (1U << 3)
+
+/** @brief The thread has a low priority.
+ * 
+ * @ingroup thread_priorities
+*/
 #define PAL_THREAD_PRIORITY_LOW 0
+
+/** @brief The thread has a default or normal priority.
+ * 
+ * @ingroup thread_priorities
+*/
 #define PAL_THREAD_PRIORITY_NORMAL 1
+
+/** @brief The thread has a high priority.
+ * 
+ * @ingroup thread_priorities
+*/
 #define PAL_THREAD_PRIORITY_HIGH 2
+
+/** @brief The maximum number of thread priorities. The literal value must
+ * not be used.
+ * 
+ * @ingroup thread_priorities
+*/
 #define PAL_THREAD_PRIORITY_COUNT 3
-/** @} */
 
 /**
  * @struct PalThread
@@ -63,7 +101,7 @@ typedef struct PalThread PalThread;
 
 /**
  * @typedef PalThreadFeatures
- * @brief Thread system features.
+ * @brief Thread system features
  * 
  * This is a bitmask of all supported features of the thread system.
  * 
@@ -77,7 +115,7 @@ typedef uint32_t PalThreadFeatures;
 
 /**
  * @typedef PalThreadPriority
- * @brief Thread priority.
+ * @brief Thread priority
  * 
  * All values of this type follow the format `PAL_THREAD_PRIORITY_*` for API
  * consistency and ease of use.

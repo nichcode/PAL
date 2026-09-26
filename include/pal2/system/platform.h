@@ -175,8 +175,8 @@ typedef struct PalPlatformInfo {
     /** The platform API type (eg. PAL_PLATFORM_API_TYPE_WIN32).*/
     PalPlatformApiType apiType;
 
-    /** Total Disk space in GB.
-     * On `Windows`: the size is from C drive only.
+    /** Total Disk space in GB. <br>
+     * On `Windows`: the size is from C drive only. <br>
      * On `Linux`: the size is from root only.
      */
     uint32_t totalMemory;
