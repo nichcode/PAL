@@ -27,7 +27,7 @@
 
 /**
  * @defgroup decoration_modes Decoration Modes
- * @brief Decoration modes for `PAL_EVENT_TYPE_WINDOW_DECORATION_MODE` event.
+ * @brief Decoration modes.
  * 
  * @ingroup pal_event
  */
@@ -41,23 +41,20 @@
  * @ingroup pal_event
  */
 
-/** @brief A constant used to indicate the client (user) is responsible for
- * the window decorations.
+/** @brief The client (user) is responsible for window decorations.
  * 
  * @ingroup decoration_modes
 */
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0
 
-/** @brief A constant used to indicate the server is responsible for
- * the window decorations.
+/** @brief The server is responsible for window decorations.
  * 
  * @ingroup decoration_modes
 */
 #define PAL_DECORATION_MODE_SERVER_SIDE 1
 
-/** @brief A constant used to indicate the maximum number of decoration modes.
- * 
- * The literal value must not be used.
+/** @brief The maximum number of decoration modes. The literal value must
+ * not be used.
  * 
  * @ingroup decoration_modes
 */
@@ -125,6 +122,8 @@
  * 
  * Helpers:
  * 
+ * - palUnpackUint32()
+ * 
  * - palUnpackPointer()
  * 
  * @ingroup event_types
@@ -141,6 +140,8 @@
  * 
  * Helpers:
  * 
+ * - palUnpackUint32()
+ * 
  * - palUnpackPointer()
  * 
  * @ingroup event_types
@@ -156,6 +157,8 @@
  * - `event.data2`: window
  * 
  * Helpers:
+ * 
+ * - palUnpackUint32()
  * 
  * - palUnpackPointer()
  * 
@@ -204,6 +207,8 @@
  * - `event.data2`: window
  * 
  * Helpers:
+ * 
+ * - palUnpackUint32()
  * 
  * - palUnpackPointer()
  * 
@@ -372,11 +377,16 @@
 #define PAL_EVENT_TYPE_MOUSE_WHEEL 17
 
 /** @brief A user event
+ * 
  * Helpers:
  * 
- * - palUnpackFloat()
+ * - palPackUint32() / palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - palPackInt32() / palUnpackInt32()
+ * 
+ * - palPackFloat() / palUnpackFloat()
+ * 
+ * - palPackPointer() / palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -391,6 +401,8 @@
  * - `event.data2`: window
  * 
  * Helpers:
+ * 
+ * - palUnpackUint32()
  * 
  * - palUnpackPointer()
  * 
@@ -407,6 +419,8 @@
  * - `event.data2`: window
  * 
  * Helpers:
+ * 
+ * - palUnpackUint32()
  * 
  * - palUnpackPointer()
  * 

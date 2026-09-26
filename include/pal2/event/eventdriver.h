@@ -105,7 +105,7 @@ typedef struct PalEventDriver PalEventDriver;
  * @endcode
  * 
  * This callback must respect the dispatch mode 
- * (eg.PAL_DISPATCH_MODE_CALLBACK) of the event and push the event 
+ * (eg. PAL_DISPATCH_MODE_CALLBACK) of the event and push the event 
  * accordingly. If the dispatch mode of the event is callback and the
  * event driver has no callback passed to it, the event must be discarded.
  * 
@@ -174,7 +174,7 @@ typedef struct PalEventQueue {
     /** The poll function of the event queue. Must not be nullptr.*/
     PalPollFn poll;
 
-    /** User data passed to push and poll function. Can be nullptr.*/
+    /** User data passed to ::push and ::poll. Can be nullptr.*/
     void* userData;
 } PalEventQueue;
 
@@ -186,9 +186,6 @@ typedef struct PalEventQueue {
  *
  * @since Added in version 2.0
  * @ingroup pal_event
- * 
- * @var PalEventDriverCreateInfo::userData
- * 
  */
 typedef struct PalEventDriverCreateInfo {
     /** The allocator the event driver should use. Set to nullptr to use the
@@ -209,7 +206,7 @@ typedef struct PalEventDriverCreateInfo {
     */
     PalEventCallback callback;
 
-    /** User data passed to callback function. Can be nullptr.*/
+    /** User data passed to ::callback. Can be nullptr.*/
     void* userData;
 } PalEventDriverCreateInfo;
 
@@ -262,13 +259,6 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
 
 /**
  * @brief Set the dispatch mode for an event type.
- *
- * If the dispatch mode is PAL_DISPATCH_MODE_POLL, the event will be 
- * dispatched to the event queue.
- * 
- * If the dispatch mode is PAL_DISPATCH_MODE_CALLBACK, the event will be
- * dispatched to the event callback. The event will be discared if
- * the event callback is not valid.
  *
  * @param[in] eventDriver The event driver.
  * @param[in] type Event type to set dispatch mode for.
@@ -344,7 +334,7 @@ PAL_API void PAL_CALL palPushEvent(
  * @param[in] eventDriver The event driver.
  * @param[out] event The output struct to recieve the polled event.
  * 
- * @return `PAL_TRUE` if the event was polled or `PAL_FALSE`.
+ * @return PAL_TRUE if the event was polled or PAL_FAL.
  *
  * @Thread-safety The event queue of `eventDriver` parameter must be 
  *                thread safe.
