@@ -279,7 +279,6 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  *
  * @param[in] eventDriver The event driver.
  * @param[in] type The event type.
- *
  * @return The dispatch mode on success or PAL_DISPATCH_MODE_NONE on failure.
  *
  * @Thread-safety Thread safe.
@@ -331,7 +330,6 @@ PAL_API void PAL_CALL palPushEvent(
  *
  * @param[in] eventDriver The event driver.
  * @param[out] event The output struct to recieve the polled event.
- * 
  * @return PAL_TRUE if the event was polled or PAL_FAL.
  *
  * @Thread-safety The event queue of `eventDriver` parameter must be 

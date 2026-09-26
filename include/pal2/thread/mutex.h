@@ -33,24 +33,26 @@
  * @brief Opaque handle to a mutex.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
  */
 typedef struct PalMutex PalMutex;
 
 /**
- * @brief Creates a mutex.
+ * @brief Create a mutex.
  *
- * @param[in] allocator The allocator the thread should use. Set to `nullptr`
- * to use the thread-safe default.
+ * @param[in] allocator The allocator the thread should use. Set to nullptr
+ *                      to use the thread-safe default.
  * @param[out] mutex The output handle to recieve the created mutex.
+ * @return PAL_RESULT_SUCCESS on success or an appropriate result value on
+ *         failure. Call palFormatResult() to get the string representation of
+ *         the result value.
  *
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
- *
- * @Thread-safety `mutex` must be per thread and `allocator` must be 
- * thread safe.
+ * @Thread-safety `mutex` parameter must be per thread and `allocator` 
+ *                parameter must be thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palDestroyMutex
  */
 PAL_API PalResult PAL_CALL palCreateMutex(
@@ -58,43 +60,49 @@ PAL_API PalResult PAL_CALL palCreateMutex(
     PalMutex** mutex);
 
 /**
- * @brief Destroys a mutex.
+ * @brief Destroy a mutex.
  * 
  * The mutex must be unlocked before destroying if it was locked.
  *
  * @param[in] mutex The mutex.
  *
- * @Thread-safety `mutex` must be externally synchronized.
+ * @Thread-safety `mutex` parameter must be externally synchronized.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palCreateMutex
  */
 PAL_API void PAL_CALL palDestroyMutex(PalMutex* mutex);
 
 /**
- * @brief Locks a mutex. 
+ * @brief Lock a mutex. 
  * 
  * Blocks if the mutex is already locked by another thread.
  *
- * @param[in] mutex The mutex.
+ * @param[in] mutex The mutex to lock.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palUnlockMutex
  */
 PAL_API void PAL_CALL palLockMutex(PalMutex* mutex);
 
 /**
- * @brief Unlocks a mutex.
+ * @brief Unlock a mutex.
  *
  * The function must be called by the thread that first locked the mutex.
  *
- * @param[in] mutex The mutex.
+ * @param[in] mutex The mutex to unlock.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palLockMutex
  */
 PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);

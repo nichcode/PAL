@@ -169,6 +169,7 @@
  * consistency and ease of use. 
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 typedef uint32_t PalCpuArch;
 
@@ -184,6 +185,7 @@ typedef uint32_t PalCpuArch;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 typedef uint64_t PalCpuFeatures;
 
@@ -192,6 +194,7 @@ typedef uint64_t PalCpuFeatures;
  * @brief Information about a CPU.
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 typedef struct PalCPUInfo
 {
@@ -234,6 +237,7 @@ typedef struct PalCPUInfo
  *                parameter must be thread-safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 PAL_API void PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,

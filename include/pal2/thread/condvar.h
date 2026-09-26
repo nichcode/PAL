@@ -31,25 +31,27 @@
  * @brief Opaque handle to a condition variable.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
  */
 typedef struct PalCondVar PalCondVar;
 
 /**
- * @brief Creates a condition variable.
+ * @brief Create a condition variable.
  *
- * @param[in] allocator The allocator the thread should use. Set to `nullptr`
- * to use the thread-safe default.
+ * @param[in] allocator The allocator the thread should use. Set to nullptr
+ *                      to use the thread-safe default.
  * @param[out] condVar The output handle to recieve the created
- * condition variable.
+ *                     condition variable.
+ * @return PAL_RESULT_SUCCESS on success or an appropriate result value on
+ *         failure. Call palFormatResult() to get the string representation of
+ *         the result value.
  *
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
- *
- * @Thread-safety `condVar` must be per thread and `allocator` must be 
- * thread safe.
+ * @Thread-safety `condVar` parameter must be per thread and `allocator`
+ *                parameter must be thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palDestroyCondVar
  */
 PAL_API PalResult PAL_CALL palCreateCondVar(
@@ -57,27 +59,28 @@ PAL_API PalResult PAL_CALL palCreateCondVar(
     PalCondVar** condVar);
 
 /**
- * @brief Destroys a condition variable.
+ * @brief Destroy a condition variable.
  *
- * Threads must not wait on the condition variable or undefined
- * behaviour.
+ * Threads must not wait on the condition variable or behavior is undefined.
  *
  * @param[in] condVar The condition variable.
  *
- * @Thread-safety `condVar` must be externally synchronized.
+ * @Thread-safety `condVar` parameter must be externally synchronized.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palCreateCondVar
  */
 PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condVar);
 
 /**
- * @brief Unlocks the mutex and wait on the condition variable.
+ * @brief Unlock the mutex and wait on the condition variable.
  *
  * The mutex must be locked before this call. Spurious wakeups may occur, its
  * best to use a loop. This waits until the condition varibale is signaled.
  *
- * Example:
+ * Example Code:
  *
  * @code
  * while (!ready) { palWaitCondVar(condition, mutex); }
@@ -85,14 +88,15 @@ PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condVar);
  *
  * @param[in] condVar The condition variable.
  * @param[in] mutex The mutex.
- * 
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ * @return PAL_RESULT_SUCCESS on success or an appropriate result value on
+ *         failure. Call palFormatResult() to get the string representation of
+ *         the result value.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palWaitCondVarTimeout
  */
 PAL_API PalResult PAL_CALL palWaitCondVar(
@@ -100,24 +104,26 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
     PalMutex* mutex);
 
 /**
- * @brief Unlocks the mutex and wait on the condition variable for
+ * @brief Unlock the mutex and wait on the condition variable for
  * the specified duration.
  *
  * The mutex must be locked before this call. Spurious wakeups may occur, its
  * best to use a loop. If the condition variable is not signaled but the time to
- * wait is up `PAL_RESULT_TIMEOUT` is returned.
+ * wait is up, the result code of the returned result value will
+ * be PAL_RESULT_CODE_TIMEOUT.
  *
  * @param[in] condVar The condition variable.
  * @param[in] mutex The mutex.
  * @param[in] milliseconds Timeout in milliseconds.
- * 
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ * @return PAL_RESULT_SUCCESS on success or an appropriate result value on
+ *         failure. Call palFormatResult() to get the string representation of
+ *         the result value.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palWaitCondVar
  */
 PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
@@ -126,25 +132,29 @@ PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
     uint64_t milliseconds);
 
 /**
- * @brief Wakes a thread waiting on the condition variable.
+ * @brief Wake a thread waiting on the condition variable.
  *
  * @param[in] condVar The condition variable.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palBroadcastCondVar
  */
 PAL_API void PAL_CALL palSignalCondVar(PalCondVar* condVar);
 
 /**
- * @brief Wakes all threads waiting on the condition variable.
+ * @brief Wake all threads waiting on the condition variable.
  *
  * @param[in] condVar The condition variable.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palSignalCondVar
  */
 PAL_API void PAL_CALL palBroadcastCondVar(PalCondVar* condVar);

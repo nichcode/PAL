@@ -30,6 +30,7 @@
  * @brief Opaque handle to a Thread Local Storage.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
  */
 typedef uint32_t PalTLSId;
 
@@ -42,55 +43,59 @@ typedef uint32_t PalTLSId;
  * void PAL_CALL tlsDestructor(void* userData);
  * @endcode
  *
- * This is called when the TLS is destroyed and its value is not `nullptr`.
+ * This is called when the TLS is destroyed and its value is not nullptr.
  *
- * @param[in] userData User data passed from `palCreateTLS()`.
- * Can be `nullptr`.
+ * @param[in] userData User data passed from palCreateTLS(). Can be nullptr.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
  */
 typedef void (PAL_CALL* PaTlsDestructorFn)(void* userData);
 
 /**
- * @brief Creates a new TLS.
+ * @brief Create a new TLS.
  *
  * The TLS handle can be used by multiple threads to associate thread local
- * vaules. The destructor will be called if `palDestroyTLS()` is called and
+ * vaules. The destructor will be called if palDestroyTLS() is called and
  * the TLS has a valid value.
  *
- * @param[in] destructor The TLS destructor callback. Can be `nullptr`.
- *
+ * @param[in] destructor The TLS destructor callback. Can be nullptr.
  * @return The created TLS id on success or `0` on failure.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palDestroyTLS
  */
 PAL_API PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor);
 
 /**
- * @brief Destroys the provided TLS.
+ * @brief Destroy the TLS.
  *
  * @param[in] Tls The TLS.
  *
- * @Thread-safety `Tls` must be externally synchronized.
+ * @Thread-safety `Tls` parameter must be externally synchronized.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palCreateTLS
  */
 PAL_API void PAL_CALL palDestroyTLS(PalTLSId Tls);
 
 /**
- * @brief Gets the value associated with the TLS on the calling thread.
+ * @brief Get the value associated with the TLS on the calling thread.
  *
  * @param[in] Tls The TLS.
- *
- * @return the value on success or `nullptr` on failure.
+ * @return the value on success or nullptr on failure.
  *
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palSetTLS
  */
 PAL_API void* PAL_CALL palGetTLS(PalTLSId Tls);
@@ -101,9 +106,11 @@ PAL_API void* PAL_CALL palGetTLS(PalTLSId Tls);
  * @param[in] Tls The TLS.
  * @param[in] data The value to set for the calling thread.
  *
- * @Thread-safety `Tls` must be externally synchronized.
+ * @Thread-safety `Tls` parameter must be externally synchronized.
  *
  * @since Added in version 2.0
+ * @ingroup pal_thread
+ * 
  * @sa palGetTLS
  */
 PAL_API void PAL_CALL palSetTLS(

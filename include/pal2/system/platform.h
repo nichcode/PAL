@@ -143,6 +143,7 @@
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 typedef uint32_t PalPlatformType;
 
@@ -156,6 +157,7 @@ typedef uint32_t PalPlatformType;
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 typedef uint32_t PalPlatformApiType;
 
@@ -164,6 +166,7 @@ typedef uint32_t PalPlatformApiType;
  * @brief Information about a platform (OS).
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 typedef struct PalPlatformInfo {
     /** The platform type (eg. PAL_PLATFORM_TYPE_WINDOWS).*/
@@ -198,6 +201,7 @@ typedef struct PalPlatformInfo {
  * @Thread-safety `info` parameter must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_system
  */
 PAL_API void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info);
 
