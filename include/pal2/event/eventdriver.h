@@ -53,13 +53,11 @@
 */
 #define PAL_DISPATCH_MODE_NONE 0
 
-
 /** @brief The event will be dispatched to the event callback.
  * 
  * @ingroup dispatch_modes
 */
 #define PAL_DISPATCH_MODE_CALLBACK 1
-
 
 /** @brief The event will be dispatched to the event queue.
  * 
