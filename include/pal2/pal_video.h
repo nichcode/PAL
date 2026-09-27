@@ -45,6 +45,13 @@
  * @ingroup pal_video
  */
 
+/**
+ * @defgroup video_drivers Video Drivers
+ * @brief Video drivers
+ * 
+ * @ingroup pal_video
+ */
+
 /** @brief The video driver supports high DPI windows.
  * 
  * @ingroup video_features
@@ -288,7 +295,36 @@
 */
 #define PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR (1ULL << 39)
 
-typedef struct PalEventDriver PalEventDriver;
+/** @brief The video driver type is unknown to PAL.
+ * 
+ * @ingroup video_drivers
+*/
+#define PAL_VIDEO_DRIVER_TYPE_UNKNOWN 0
+
+/** @brief The video driver type is Win32.
+ * 
+ * @ingroup video_drivers
+*/
+#define PAL_VIDEO_DRIVER_TYPE_WIN32 1
+
+/** @brief The video driver type is Wayland.
+ * 
+ * @ingroup video_drivers
+*/
+#define PAL_VIDEO_DRIVER_TYPE_WAYLAND 2
+
+/** @brief The video driver type is X11.
+ * 
+ * @ingroup video_drivers
+*/
+#define PAL_VIDEO_DRIVER_TYPE_X11 3
+
+/** @brief The maximum number of video driver types. The literal value must
+ * not be used.
+ * 
+ * @ingroup video_drivers
+*/
+#define PAL_VIDEO_DRIVER_TYPE_COUNT 4
 
 /**
  * @typedef PalVideoFeatures
@@ -305,6 +341,108 @@ typedef struct PalEventDriver PalEventDriver;
 typedef uint64_t PalVideoFeatures;
 
 /**
+ * @typedef PalVideoDriverType
+ * @brief Video driver type.
+ * 
+ * All values of this type follow the format `PAL_VIDEO_DRIVER_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ */
+typedef uint32_t PalVideoDriverType;
+
+typedef struct PalEventDriver PalEventDriver;
+
+/**
+ * @struct PalVideoDriver
+ * @brief Information about a video driver.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ * 
+ * @sa palEnumerateVideoDrivers
+ */
+typedef struct PalVideoDriver {
+    /** A bitmask of supported features of the driver.*/
+    PalVideoFeatures features;
+
+    /** The video driver type. PAL_VIDEO_DRIVER_TYPE_UNKNOWN will be set
+     * if PAL does not recognized or know the drivers type. Select a
+     * driver based on ::features instead.
+     */
+    PalVideoDriverType type;
+
+    /** This is the driver id. This must not be modified.*/
+    uint32_t id;
+} PalVideoDriver;
+
+/**
+ * @brief Returns a list of all supported video drivers of the platform.
+ * 
+ * This function returns a list of all the supported video drivers of the
+ * platform. The returned array must not be freed or modified by the user.
+ * This can be called abd cached once, video drivers are not removed
+ * or added dynamically.
+ * 
+ * Set `drivers` parameter to nullptr to get the total number of supported
+ * video drivers. If the drivers array passed is less than the number of
+ * supported drivers, PAL will fill the array upto that limit sequentially.
+ * 
+ * @param[in, out] count The capacity of the video drivers array.
+ * @param drivers The video drivers array.
+ * 
+ * @Thread-safety Thread safe
+ * 
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ * 
+ * @sa palSetVideoDriver
+ * @sa palGetVideoDriver
+ */
+PAL_API void PAL_CALL palEnumerateVideoDrivers(
+    uint32_t* count,
+    PalVideoDriver* drivers);
+
+/**
+ * @brief Sets the preferred video driver the video system should use.
+ * 
+ * The video system must not be initialized before this call. If the video
+ * system is initialized already, the next initialization will use the
+ * driver. The video driver must be valid, otherwise this function will
+ * ignore it silently and select a default. Get the driver from
+ * @ref palEnumerateVideoDrivers to get a supported driver.
+ * 
+ * @param driver The video driver.
+ * 
+ * @Thread-safety Must only be called from the main thread.
+ * 
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ * 
+ * @sa palEnumerateVideoDrivers
+ * @sa palGetVideoDriver
+ */
+PAL_API void PAL_CALL palSetVideoDriver(PalVideoDriver* driver);
+
+/**
+ * @brief Gets the active or selected video driver of the video system.
+ * 
+ * The video system must be initialized before this.
+ * 
+ * @param[out] driver The output struct to recieve the video driver.
+ * 
+ * @Thread-safety Thread safe.
+ * 
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ * 
+ * @sa palEnumerateVideoDrivers
+ * @sa palSetVideoDriver
+ */
+PAL_API void PAL_CALL palGetVideoDriver(PalVideoDriver* driver);
+
+/**
  * @brief Initializes the video system.
  * 
  * This must be called before any video function. Calling this function
@@ -317,6 +455,13 @@ typedef uint64_t PalVideoFeatures;
  * If `preferredInstance` is nullptr, the video system creates one and 
  * control its lifetime. The provided instance will not be freed by
  * the video system.
+ * 
+ * The video driver the video system uses is selected by default. To override
+ * this, enumerate all the supported video drivers of the platform with
+ * @ref palEnumerateVideoDrivers and select one with @ref palSetVideoDriver.
+ * Call @ref palGetVideoDriver to get the selected driver if an explicit
+ * driver was not selected. This is not a hint, therefore the returned
+ * drivers are all available and can be used.
  * 
  * The video system must be shutdown with @ref palShutdownVideo when no
  * longer needed.
@@ -335,6 +480,9 @@ typedef uint64_t PalVideoFeatures;
  * @since Added in version 2.0
  * @ingroup pal_video
  * 
+ * @sa palEnumerateVideoDrivers
+ * @sa palSetVideoDriver
+ * @sa palGetVideoDriver
  * @sa palShutdownVideo
  */
 PAL_API PalResult PAL_CALL palInitVideo(

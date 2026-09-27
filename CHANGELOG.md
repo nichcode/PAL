@@ -12,6 +12,16 @@ PalLibrary
 palLoadLibrary()
 palGetSymbol()
 palFreeLibrary()
+PalVideoDriver
+palEnumerateVideoDrivers()
+palSetVideoDriver()
+palGetVideoDriver()
+
+#define PAL_VIDEO_DRIVER_TYPE_UNKNOWN 0
+#define PAL_VIDEO_DRIVER_TYPE_WIN32 1
+#define PAL_VIDEO_DRIVER_TYPE_WAYLAND 2
+#define PAL_VIDEO_DRIVER_TYPE_X11 3
+#define PAL_VIDEO_DRIVER_TYPE_COUNT 4
 
 - Added `PAL_DEFAULT_QUEUE_EVENT_COUNT`.
 - Improved API documentation.
