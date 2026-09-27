@@ -29,25 +29,61 @@
  * @defgroup mouse_buttons Mouse Buttons
  * @brief Mouse Buttons
  * 
- * @{
+ * @ingroup pal_video
  */
+
+/** @brief The mouse button is invalid or not known to PAL.
+ * 
+ * @ingroup mouse_buttons
+*/
 #define PAL_MOUSE_BUTTON_UNKNOWN 0
+
+/** @brief The left mouse button.
+ * 
+ * @ingroup mouse_buttons
+*/
 #define PAL_MOUSE_BUTTON_LEFT 1
+
+/** @brief The right mouse button.
+ * 
+ * @ingroup mouse_buttons
+*/
 #define PAL_MOUSE_BUTTON_RIGHT 2
+
+/** @brief The middle or scroll mouse button.
+ * 
+ * @ingroup mouse_buttons
+*/
 #define PAL_MOUSE_BUTTON_MIDDLE 3
+
+/** @brief An additional mouse button. Not all mouse have these.
+ * 
+ * @ingroup mouse_buttons
+*/
 #define PAL_MOUSE_BUTTON_X1 4
+
+/** @brief An additional mouse button. Not all mouse have these.
+ * 
+ * @ingroup mouse_buttons
+*/
 #define PAL_MOUSE_BUTTON_X2 5
+
+/** @brief The maximum number of mouse buttons. The literal value must
+ * not be used.
+ * 
+ * @ingroup mouse_buttons
+*/
 #define PAL_MOUSE_BUTTON_COUNT 6
-/** @} */
 
 /**
  * @typedef PalMouseButton
- * @brief Buttons of a mouse.
+ * @brief A mouse button
  * 
  * All values of this type follow the format `PAL_MOUSE_BUTTON_*` for API
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef uint32_t PalMouseButton;
 
@@ -55,28 +91,30 @@ typedef uint32_t PalMouseButton;
  * @brief Gets the state of the mouse buttons.
  *
  * The returned pointer must not be freed. The state is updated when
- * `palUpdateVideo()` is called. The array must be index with 
- * PalMouseButton values and not exceed `PAL_MOUSE_BUTTON_COUNT`.
+ * @ref palUpdateVideo is called. The array must be index with 
+ * @ref PalMouseButton values and not exceed @ref PAL_MOUSE_BUTTON_COUNT.
  *
- * @return A pointer to the mouse button array on success or `nullptr` on failure.
+ * @return A pointer to the mouse button array on success or nullptr on failure.
  *
  * @@Thread-safety Thread-safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API const PalBool* PAL_CALL palGetMouseState();
 
 /**
- * @brief Gets the relative movement of the mouse in desktop pixels.
+ * @brief Gets the relative movement of the mouse.
  *
- * The relative movement will be updated when `palUpdateVideo()` is called.
+ * The relative movement will be updated when @ref palUpdateVideo is called.
  *
- * @param[in] dx The output to recieve the relative x. Can be `nullptr`.
- * @param[in] dy The output to recieve the relative y. Can be `nullptr`.
+ * @param[in] dx The output to recieve the relative x. Can be nullptr.
+ * @param[in] dy The output to recieve the relative y. Can be nullptr.
  *
- * @Thread-safety `dx` and `dy` must be per thread.
+ * @Thread-safety `dx` and `dy` parameters must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palGetMouseDelta(
     float* dx,
@@ -85,14 +123,15 @@ PAL_API void PAL_CALL palGetMouseDelta(
 /**
  * @brief Gets the wheel delta of the mouse.
  *
- * The wheel delta will be updated when `palUpdateVideo()` is called.
+ * The wheel delta will be updated when @ref palUpdateVideo is called.
  *
- * @param[in] dx The output to recieve the x wheel delta. Can be `nullptr`.
- * @param[in] dy The output to recieve the y wheel delta. Can be `nullptr`.
+ * @param[in] dx The output to recieve the x wheel delta. Can be nullptr.
+ * @param[in] dy The output to recieve the y wheel delta. Can be nullptr.
  *
- * @Thread-safety `dx` and `dy` must be per thread.
+ * @Thread-safety `dx` and `dy` parameters must be per thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palGetMouseWheelDelta(
     float* dx,

@@ -30,50 +30,61 @@
  * @brief Opaque handle to an icon.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef struct PalIcon PalIcon;
 
 /**
  * @struct PalIconCreateInfo
- * @brief Contains creation parameters of an icon.
+ * @brief Creation parameters of an icon.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  * 
- * @var PalIconCreateInfo::pixels
- * The pixels to use to create the icon. It must be in `RGBA` format.
- * 
- * @var PalIconCreateInfo::width
- * The width of the icon in pixels.
- * 
- * @var PalIconCreateInfo::height
- * The height of the icon in pixels.
+ * @sa palCreateIcon
  */
-typedef struct PalIconCreateInfo
-{
+typedef struct PalIconCreateInfo {
+    /** The pixels to use to create the icon. It must be in little-endian
+     * 32bit, RGBA 8bits per channel format and order.
+     */
     const uint8_t* pixels;
+
+    /** The width of the icon in pixels.*/
     uint32_t width;
+
+    /** The height of the icon in pixels.*/
     uint32_t height;
 } PalIconCreateInfo;
 
 /**
  * @brief Creates an icon.
  *
- * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supported 
+ * PAL_VIDEO_FEATURE_WINDOW_SET_ICON must be supported 
  * otherwise undefined behavior.
+ * 
+ * This function creates an icon from the provided pixels.
+ * The created icon should be set to the window with @ref palSetWindowIcon.
+ * The provided pixels are copied after the icon is created, therefore
+ * the data can be freed after creation.
+ * 
+ * Destroying a window does not automatically destroy the icon. The
+ * icon must be destroyed with @ref palDestroyIcon when no longer needed.
  *
  * @param[in] info Information about how to create the icon.
  * @param[out] icon The output handle to recieve the created icon.
- *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palDestroyIcon
+ * @sa palSetWindowIcon
  */
 PAL_API PalResult PAL_CALL palCreateIcon(
     const PalIconCreateInfo* info,
@@ -81,12 +92,17 @@ PAL_API PalResult PAL_CALL palCreateIcon(
 
 /**
  * @brief Destroys the icon.
+ * 
+ * If `icon` parameter is the current current for any window, the platforms
+ * default icon will be set to the window after the icon is destroyed.
  *
  * @param[in] icon The icon.
  *
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palCreateIcon
  */
 PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
@@ -94,15 +110,17 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
 /**
  * @brief Sets the icon for the window.
  *
- * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` must be supporte
- * otherwise undefined behavior.
+ * PAL_VIDEO_FEATURE_WINDOW_SET_ICON must be supported
+ * otherwise undefined behavior.A single icon can be set to multiple
+ * windows at the same time.
  *
- * @param[in] window The window. Must not be `nullptr`.
- * @param[in] icon The icon. Set to `nullptr` to revert to default.
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] icon The icon. Set to nullptr to revert to default.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palSetWindowIcon(
     PalWindow* window,

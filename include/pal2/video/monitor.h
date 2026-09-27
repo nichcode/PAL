@@ -27,29 +27,61 @@
 #include "pal2/core/memory.h"
 #include "pal2/core/result.h"
 
-#define PAL_MONITOR_NAME_SIZE 32
-
 /**
  * @defgroup orientations Monitor Orientations
  * @brief Monitor orientations
  * 
- * @{
+ * @ingroup pal_video
  */
+
+/** @brief The maximum monitor name size.
+ * 
+ * @ingroup pal_video
+*/
+#define PAL_MONITOR_NAME_SIZE 32
+
+/** @brief The monitor orientation is landscape.
+ * 
+ * @ingroup orientations
+*/
 #define PAL_ORIENTATION_LANDSCAPE 0
+
+/** @brief The monitor orientation is portrait.
+ * 
+ * @ingroup orientations
+*/
 #define PAL_ORIENTATION_PORTRAIT 1
+
+/** @brief The monitor orientation is landscape, with the display
+ * rotated 180 degrees.
+ * 
+ * @ingroup orientations
+*/
 #define PAL_ORIENTATION_LANDSCAPE_FLIPPED 2
+
+/** @brief The monitor orientation is portrait, with the display
+ * rotated 180 degrees.
+ * 
+ * @ingroup orientations
+*/
 #define PAL_ORIENTATION_PORTRAIT_FLIPPED 3
+
+/** @brief The maximum number of monitor orientations. The literal value must
+ * not be used.
+ * 
+ * @ingroup orientations
+*/
 #define PAL_ORIENTATION_COUNT 4
-/** @} */
 
 /**
  * @typedef PalOrientation
- * @brief Orientation types for a monitor.
+ * @brief Monitor orientation.
  * 
  * All values of this type follow the format `PAL_ORIENTATION_*` for API
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef uint32_t PalOrientation;
 
@@ -58,78 +90,68 @@ typedef uint32_t PalOrientation;
  * @brief Opaque handle to a monitor.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef struct PalMonitor PalMonitor;
 
 /**
  * @struct PalMonitorInfo
- * @brief Contains information about a monitor.
+ * @brief Information about a monitor.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  * 
- * @var PalMonitorInfo::x
- * The x position of the monitor in pixels.
- * 
- * @var PalMonitorInfo::y
- * The y position of the monitor in pixels.
- * 
- * @var PalMonitorInfo::width
- * The width of the monitor in pixels.
- * 
- * @var PalMonitorInfo::height
- * The height of the monitor in pixels.
- * 
- * @var PalMonitorInfo::dpi
- * The DPI of the monitor.
- * 
- * @var PalMonitorInfo::refreshRate
- * The refresh rate of the monitor in Hz.
- * 
- * @var PalMonitorInfo::orientation
- * The orientation of the monitor.
- * 
- * @var PalMonitorInfo::primary
- * `PAL_TRUE` if this is the primary monitor.
- * 
- * @var PalMonitorInfo::name
- * The name of the monitor.
+ * @sa palGetMonitorInfo
  */
-typedef struct PalMonitorInfo
-{
+typedef struct PalMonitorInfo {
+    /** The x position of the monitor in screen coordinates.*/
     int32_t x;
+
+    /** The y position of the monitor in screen coordinates.*/
     int32_t y;
+
+    /** The width of the monitor in screen coordinates.*/
     uint32_t width;
+
+    /** The height of the monitor in screen coordinates.*/
     uint32_t height;
+
+    /** The DPI of the monitor.*/
     uint32_t dpi;
+
+    /** The refresh rate of the monitor in Hz.*/
     uint32_t refreshRate;
+
+    /** The orientation of the monitor.*/
     PalOrientation orientation;
+
+    /** `PAL_TRUE` if this is the primary monitor.*/
     PalBool primary;
+
+    /** The name of the monitor.*/
     char name[PAL_MONITOR_NAME_SIZE];
 } PalMonitorInfo;
 
 /**
  * @struct PalMonitorMode
- * @brief Contains information about a monitor display mode.
+ * @brief Information about a monitor display mode.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  * 
- * @var PalMonitorMode::bpp
- * The bits per pixel of the display mode.
- * 
- * @var PalMonitorMode::refreshRate
- * The refresh rate of the display mode in Hz.
- * 
- * @var PalMonitorMode::width
- * The width of the display mode in pixels.
- * 
- * @var PalMonitorMode::height
- * The height of the display mode in pixels.
+ * @sa palEnumerateMonitorModes
  */
-typedef struct PalMonitorMode
-{
+typedef struct PalMonitorMode {
+    /** The bits per pixel of the display mode.*/
     uint32_t bpp;
+
+    /** The refresh rate of the display mode in Hz.*/
     uint32_t refreshRate;
+
+    /** The width of the display mode in screen coordinates.*/
     uint32_t width;
+
+    /** The height of the display mode in screen coordinates.*/
     uint32_t height;
 } PalMonitorMode;
 
@@ -137,25 +159,26 @@ typedef struct PalMonitorMode
  * @brief Returns a list of all connected monitors.
  *
  * The video system must be initialized before this call.
+ * This function returns a snapshot of the currently connected
+ * monitors.The monitor handles must not be freed by the user, they are
+ * managed by the platform (OS). Users are required to cache this, and call
+ * this function again if monitors are added or removed.
  * 
- * The monitor handles must not be freed by the user, they are managed by the
- * platform (OS). Users are required to cache this, and call this function again
- * if monitors are added or removed.
- * 
- * Set `monitors` to `nullptr` to get the total number of connected
+ * Set `monitors` parameter to nullptr to get the total number of connected
  * monitors. If the monitor array passed is less than the number of
  * connected monitors, PAL will fill the array upto that limit sequentially.
  *
  * @param[in, out] count The capacity of the monitor array.
  * @param[out] monitors The monitor array.
- *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palGetPrimaryMonitor
  */
 PAL_API PalResult PAL_CALL palEnumerateMonitors(
@@ -165,22 +188,24 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
 /**
  * @brief Gets the primary connected monitor.
  *
- * `PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY` must be supported
+ * PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY must be supported
  * otherwise undefined behavior.
  * 
- * This function is not guaranteed to work on all platforms, its
- * recommended to enumerate the monitors and select the first one
- * if the feature is not supported on your platform.
+ * This function is not guaranteed to work on all platforms, enumerate
+ * the monitors and select the first one if the feature is not 
+ * supported on the platform.
  *
  * The monitor handle must not be freed by the user, it is managed by the
  * platform (OS).
  *
  * @param[out] monitor The output to recieve the primary monitor.
- * Must not be `nullptr`.
+ *                     Must not be nullptr.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palEnumerateMonitors
  */
 PAL_API void PAL_CALL palGetPrimaryMonitor(PalMonitor** monitor);
@@ -188,13 +213,14 @@ PAL_API void PAL_CALL palGetPrimaryMonitor(PalMonitor** monitor);
 /**
  * @brief Gets information about a monitor.
  *
- * @param[in] monitor The monitor. Must not be `nullptr`.
+ * @param[in] monitor The monitor. Must not be nullptr.
  * @param[out] info The output struct to recieve the monitor info. 
- * Must not be `nullptr`.
+ *                  Must not be nullptr.
  *
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palGetMonitorInfo(
     PalMonitor* monitor,
@@ -203,18 +229,26 @@ PAL_API void PAL_CALL palGetMonitorInfo(
 /**
  * @brief Returns a list of all supported display modes of a monitor.
  * 
- * Set `modes` to `nullptr` to get the total number of supported
- * display modes of the `monitor`. If the modes array passed is less than 
+ * Set `modes` parameter to nullptr to get the total number of supported
+ * display modes of the monitor. If the modes array passed is less than 
  * the number of display modes, PAL will fill the array upto that limit 
  * sequentially.
+ * 
+ * The returned monitor display modes are sorted in descending order
+ * using the fields in @ref PalMonitorMode, in the following order
+ * of precedence: width, height, refresh rate and bits per pixel.
+ * This fist display mode has the highest resolution, with the
+ * refresh rate an bits per pixel used to sort modes with the
+ * same resolution.
  *
- * @param[in] monitor The monitor. `Must not be nullptr`.
+ * @param[in] monitor The monitor. Must not be nullptr.
  * @param[in, out] count The capacity of the monitor display mode array.
  * @param[out] modes The display mode array.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palEnumerateMonitorModes(
     PalMonitor* monitor,
@@ -224,16 +258,18 @@ PAL_API void PAL_CALL palEnumerateMonitorModes(
 /**
  * @brief Gets the current display mode of the monitor.
  *
- * `PAL_VIDEO_FEATURE_MONITOR_GET_MODE` must be supported
+ * PAL_VIDEO_FEATURE_MONITOR_GET_MODE must be supported
  * otherwise undefined behavior.
  *
- * @param[in] monitor The monitor. Must not ne `nullptr`.
+ * @param[in] monitor The monitor. Must not be nullptr.
  * @param[out] mode The output struct to recieve the display mode. 
- * Must not ne `nullptr`.
+ *                  Must not ne nullptr.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palSetMonitorMode
  */
 PAL_API void PAL_CALL palGetCurrentMonitorMode(
@@ -243,27 +279,28 @@ PAL_API void PAL_CALL palGetCurrentMonitorMode(
 /**
  * @brief Sets the active display mode of the monitor.
  *
- * `PAL_VIDEO_FEATURE_MONITOR_SET_MODE` Must be supported 
+ * PAL_VIDEO_FEATURE_MONITOR_SET_MODE Must be supported 
  * otherwise undefined behavior.
  * 
- * Validate the display mode with `palValidateMonitorMode()` before switching
+ * Validate the display mode with @ref palValidateMonitorMode before switching
  * on supported platforms or use a display mode from
- * `palEnumerateMonitorModes()` to be safe.
- * 
- * If the monitor display mode submitted is invalid, the behavior is platform
- * specific.
+ * @ref palEnumerateMonitorModes to be safe. If the monitor display mode 
+ * submitted is invalid, the behavior is platform specific.
  *
- * @param[in] monitor The monitor. Must not ne `nullptr`.
+ * @param[in] monitor The monitor. Must not ne nullptr.
  * @param[in] mode The display mode.
- *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palGetCurrentMonitorMode
+ * @sa palEnumerateMonitorModes
+ * @sa palValidateMonitorMode
  */
 PAL_API PalResult PAL_CALL palSetMonitorMode(
     PalMonitor* monitor,
@@ -272,19 +309,21 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
 /**
  * @brief Checks if a display mode is valid on the monitor.
  *
- * `PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE` must be supported
+ * PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE must be supported
  * otherwise undefined behavior.
  *
  * @param[in] monitor The monitor.
  * @param[in] mode The display mode.
- *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palSetMonitorMode
  */
 PAL_API PalResult PAL_CALL palValidateMonitorMode(
     PalMonitor* monitor,
@@ -293,21 +332,20 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
 /**
  * @brief Sets the orientation for the monitor.
  *
- * `PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION` must be supported
- * otherwise undefined behavior.
- *
- * This change is temporary and is reset when the platform (OS) reboots.
+ * PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION must be supported
+ * otherwise undefined behavior. This change is temporary and will
+ * be reset when the platform (OS) reboots.
  *
  * @param[in] monitor The monitor.
  * @param[in] orientation The orientation.
- *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API PalResult PAL_CALL palSetMonitorOrientation(
     PalMonitor* monitor,

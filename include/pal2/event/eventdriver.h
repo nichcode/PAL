@@ -229,8 +229,8 @@ typedef struct PalEventDriverCreateInfo {
  * event driver is destroyed if they were provided.
  * 
  * PalEventDriverCreateInfo::allocator must have all its fields set and
- * valid. If any of the field is set to nullptr, this function will
- * fail and set the result code of the result value to 
+ * valid. If any of the field is set to nullptr, this function fails
+ * and sets the result code of the returned result value to 
  * @ref PAL_RESULT_CODE_INVALID_ARGUMENT.
  * 
  * After the event driver is created, all event dispatch modes are set

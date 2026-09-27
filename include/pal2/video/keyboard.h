@@ -29,9 +29,11 @@
  * @defgroup keycodes Keycodes
  * @brief Keycodes
  * 
+ * @ingroup pal_video
+ * 
  * @{
  */
-#define PAL_KEYCODE_UNKNOWN 0
+#define PAL_KEYCODE_UNKNOWN 0 /** Unknown keycode to PAL*/
 #define PAL_KEYCODE_A 1
 #define PAL_KEYCODE_B 2
 #define PAL_KEYCODE_C 3
@@ -88,12 +90,12 @@
 #define PAL_KEYCODE_CAPSLOCK 54
 #define PAL_KEYCODE_NUMLOCK 55
 #define PAL_KEYCODE_SCROLLLOCK 56
-#define PAL_KEYCODE_LSHIFT 57
-#define PAL_KEYCODE_RSHIFT 58
-#define PAL_KEYCODE_LCTRL 59
-#define PAL_KEYCODE_RCTRL 60
-#define PAL_KEYCODE_LALT 61
-#define PAL_KEYCODE_RALT 62
+#define PAL_KEYCODE_LSHIFT 57 /** Left shift*/
+#define PAL_KEYCODE_RSHIFT 58 /** Right shift*/
+#define PAL_KEYCODE_LCTRL 59 /** Left control*/
+#define PAL_KEYCODE_RCTRL 60 /** Right control*/
+#define PAL_KEYCODE_LALT 61 /** Left alt*/
+#define PAL_KEYCODE_RALT 62 /** Right alt*/
 #define PAL_KEYCODE_LEFT 63
 #define PAL_KEYCODE_RIGHT 64
 #define PAL_KEYCODE_UP 65
@@ -124,19 +126,23 @@
 #define PAL_KEYCODE_PRINTSCREEN 90
 #define PAL_KEYCODE_PAUSE 91
 #define PAL_KEYCODE_MENU 92
-#define PAL_KEYCODE_APOSTROPHE 93
-#define PAL_KEYCODE_BACKSLASH 94
+#define PAL_KEYCODE_APOSTROPHE 93 /** '*/
+#define PAL_KEYCODE_BACKSLASH 94 /** \*/
 #define PAL_KEYCODE_COMMA 95
 #define PAL_KEYCODE_EQUAL 96
-#define PAL_KEYCODE_GRAVEACCENT 97
+#define PAL_KEYCODE_GRAVEACCENT 97 /** `*/
 #define PAL_KEYCODE_SUBTRACT 98
-#define PAL_KEYCODE_PERIOD 99
+#define PAL_KEYCODE_PERIOD 99 /** .*/
 #define PAL_KEYCODE_SEMICOLON 100
-#define PAL_KEYCODE_SLASH 101
-#define PAL_KEYCODE_LBRACKET 102
-#define PAL_KEYCODE_RBRACKET 103
-#define PAL_KEYCODE_LSUPER 104
-#define PAL_KEYCODE_RSUPER 105
+#define PAL_KEYCODE_SLASH 101 /** /*/
+#define PAL_KEYCODE_LBRACKET 102 /** [*/
+#define PAL_KEYCODE_RBRACKET 103 /** ]*/
+#define PAL_KEYCODE_LSUPER 104 /** Left super or windows*/
+#define PAL_KEYCODE_RSUPER 105 /** Right super or windows*/
+
+/** @brief The maximum number of keycodes. The literal value must
+ * not be used.
+*/
 #define PAL_KEYCODE_COUNT 106
 /** @} */
 
@@ -144,9 +150,11 @@
  * @defgroup scancodes Scancodes
  * @brief Scancodes
  * 
+ * @ingroup pal_video
+ * 
  * @{
  */
-#define PAL_SCANCODE_UNKNOWN 0
+#define PAL_SCANCODE_UNKNOWN 0 /** Unknown scancode to PAL*/
 #define PAL_SCANCODE_A 1
 #define PAL_SCANCODE_B 2
 #define PAL_SCANCODE_C 3
@@ -203,12 +211,12 @@
 #define PAL_SCANCODE_CAPSLOCK 54
 #define PAL_SCANCODE_NUMLOCK 55
 #define PAL_SCANCODE_SCROLLLOCK 56
-#define PAL_SCANCODE_LSHIFT 57
-#define PAL_SCANCODE_RSHIFT 58
-#define PAL_SCANCODE_LCTRL 59
-#define PAL_SCANCODE_RCTRL 60
-#define PAL_SCANCODE_LALT 61
-#define PAL_SCANCODE_RALT 62
+#define PAL_SCANCODE_LSHIFT 57 /** Left shift*/
+#define PAL_SCANCODE_RSHIFT 58 /** Right shift*/
+#define PAL_SCANCODE_LCTRL 59 /** Left control*/
+#define PAL_SCANCODE_RCTRL 60 /** Right control*/
+#define PAL_SCANCODE_LALT 61 /** Left alt*/
+#define PAL_SCANCODE_RALT 62 /** Right alt*/
 #define PAL_SCANCODE_LEFT 63
 #define PAL_SCANCODE_RIGHT 64
 #define PAL_SCANCODE_UP 65
@@ -239,41 +247,47 @@
 #define PAL_SCANCODE_PRINTSCREEN 90
 #define PAL_SCANCODE_PAUSE 91
 #define PAL_SCANCODE_MENU 92
-#define PAL_SCANCODE_APOSTROPHE 93
-#define PAL_SCANCODE_BACKSLASH 94
+#define PAL_SCANCODE_APOSTROPHE 93 /** '*/
+#define PAL_SCANCODE_BACKSLASH 94 /** \*/
 #define PAL_SCANCODE_COMMA 95
 #define PAL_SCANCODE_EQUAL 96
-#define PAL_SCANCODE_GRAVEACCENT 97
+#define PAL_SCANCODE_GRAVEACCENT 97 /** `*/
 #define PAL_SCANCODE_SUBTRACT 98
-#define PAL_SCANCODE_PERIOD 99
+#define PAL_SCANCODE_PERIOD 99 /** .*/
 #define PAL_SCANCODE_SEMICOLON 100
-#define PAL_SCANCODE_SLASH 101
-#define PAL_SCANCODE_LBRACKET 102
-#define PAL_SCANCODE_RBRACKET 103
-#define PAL_SCANCODE_LSUPER 104
-#define PAL_SCANCODE_RSUPER 105
+#define PAL_SCANCODE_SLASH 101 /** /*/
+#define PAL_SCANCODE_LBRACKET 102 /** [*/
+#define PAL_SCANCODE_RBRACKET 103 /** ]*/
+#define PAL_SCANCODE_LSUPER 104 /** Left super or windows*/
+#define PAL_SCANCODE_RSUPER 105 /** Right super or windows*/
+
+/** @brief The maximum number of scancodes. The literal value must
+ * not be used.
+*/
 #define PAL_SCANCODE_COUNT 106
 /** @} */
 
 /**
  * @typedef PalKeycode
- * @brief Keycodes (layout aware keys) of a keyboard.
+ * @brief Keycode (layout aware key) of a keyboard.
  * 
  * All values of this type follow the format `PAL_KEYCODE_*` for API
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef uint32_t PalKeycode;
 
 /**
  * @typedef PalScancode
- * @brief scancodes (layout independent keys) of a keyboard.
+ * @brief scancode (layout independent key) of a keyboard.
  * 
  * All values of this type follow the format `PAL_SCANCODE_*` for API
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef uint32_t PalScancode;
 
@@ -282,14 +296,15 @@ typedef uint32_t PalScancode;
  * keyboard.
  *
  * The returned pointer must not be freed. The state is updated when
- * `palUpdateVideo()` is called. The array must be index with 
- * PalKeycodes values and not exceed `PAL_KEYCODE_COUNT`.
+ * @ref palUpdateVideo is called. The array must be index with 
+ * @ref PalKeycodes values and not exceed @ref PAL_KEYCODE_COUNT.
  *
- * @return A pointer to the keycodes array on success or `nullptr` on failure.
+ * @return A pointer to the keycodes array on success or nullptr on failure.
  *
  * @Thread-safety Thread-safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API const PalBool* PAL_CALL palGetKeycodeState();
 
@@ -298,10 +313,10 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  * the keyboard.
  *
  * The returned pointer must not be freed. The state is updated when
- * `palUpdateVideo()` is called. The array must be index with 
- * PalScancodes values and not exceed `PAL_SCANCODE_COUNT`.
+ * @ref palUpdateVideo is called. The array must be index with 
+ * @ref PalScancodes values and not exceed PAL_SCANCODE_COUNT.
  *
- * @return A pointer to the scancodes array on success or `nullptr` on failure.
+ * @return A pointer to the scancodes array on success or nullptr on failure.
  *
  * @Thread-safety Thread-safe.
  *

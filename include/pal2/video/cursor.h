@@ -32,15 +32,41 @@
  * @ingroup pal_video
  */
 
-/** @brief The thread has a low priority.
+/** @brief The arrow system cursor type.
  * 
- * @ingroup thread_priorities
+ * @ingroup cursor_types
 */
 #define PAL_CURSOR_TYPE_ARROW 0
+
+/** @brief The hand system cursor type.
+ * 
+ * @ingroup cursor_types
+*/
 #define PAL_CURSOR_TYPE_HAND 1
+
+/** @brief The cross system cursor type.
+ * 
+ * @ingroup cursor_types
+*/
 #define PAL_CURSOR_TYPE_CROSS 2
+
+/** @brief The ibeam system cursor type.
+ * 
+ * @ingroup cursor_types
+*/
 #define PAL_CURSOR_TYPE_IBEAM 3
+
+/** @brief The wait system cursor type.
+ * 
+ * @ingroup cursor_types
+*/
 #define PAL_CURSOR_TYPE_WAIT 4
+
+/** @brief The maximum number of system cursor types. The literal value must
+ * not be used.
+ * 
+ * @ingroup cursor_types
+*/
 #define PAL_CURSOR_TYPE_COUNT 5
 
 /**
@@ -66,46 +92,57 @@ typedef struct PalCursor PalCursor;
 
 /**
  * @struct PalCursorCreateInfo
- * @brief Contains creation parameters of a cursor.
+ * @brief Ceation parameters of a cursor.
  *
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
  * 
- * @var PalCursorCreateInfo::pixels
- * The pixels to use to create the cursor. It must be in `RGBA` format.
- * 
- * @var PalCursorCreateInfo::width
- * The width of the cursor in pixels.
- * 
- * @var PalCursorCreateInfo::height
- * The height of the cursor in pixels.
- * 
- * @var PalCursorCreateInfo::xHotspot
- * The x pixel for detecting clicks.
- * 
- * @var PalCursorCreateInfo::yHotspot
- * The y pixel for detecting clicks.
+ * @sa palCreateCursor
  */
 typedef struct PalCursorCreateInfo
 {
+    /** The pixels to use to create the cursor. It must be in little-endian
+     * 32bit, RGBA 8bits per channel format and order.
+     */
     const uint8_t* pixels;
+
+    /** The width of the cursor in pixels.*/
     uint32_t width;
+
+    /** The height of the cursor in pixels.*/
     uint32_t height;
+
+    /** The x pixel of the cursor for detecting clicks. This is relative
+     * to the left corner of the cursor with the coordinate
+     * increasing right.
+     */
     int32_t xHotspot;
+
+    /** The y pixel of the cursor for detecting clicks. This is relative
+     * to the upper corner of the cursor with the coordinate
+     * increasing down.
+     */
     int32_t yHotspot;
 } PalCursorCreateInfo;
 
 /**
  * @brief Creates a cursor.
+ * 
+ * This function creates a custom cursor from the provided pixels.
+ * The created cursor should be set to the window with @ref palSetWindowCursor.
+ * The provided pixels are copied after the cursor is created, therefore
+ * the data can be freed after creation.
+ * 
+ * Destroying a window does not automatically destroy the cursor. The
+ * cursor must be destroyed with @ref palDestroyCursor when no longer needed.
  *
  * @param[in] info Information about how to create the cursor.
  * @param[out] cursor The output handle to recieve the created cursor.
- *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -113,6 +150,7 @@ typedef struct PalCursorCreateInfo
  * @ingroup pal_video
  * 
  * @sa palDestroyCursor
+ * @sa palSetWindowCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursor(
     const PalCursorCreateInfo* info,
@@ -120,13 +158,15 @@ PAL_API PalResult PAL_CALL palCreateCursor(
 
 /**
  * @brief Creates a system cursor.
+ * 
+ * The created cursor should be set to the window with @ref palSetWindowCursor.
+ * The cursor appearance may vary based on the platform.
  *
  * @param[in] type The system cursor type.
  * @param[out] cursor The output handle to recieve the created cursor.
- *
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- * failure. Call `palFormatResult()` to get the string representation of
- * the result value.
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -134,13 +174,17 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  * @ingroup pal_video
  * 
  * @sa palDestroyCursor
+ * @sa palSetWindowCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursorFrom(
     PalCursorType type,
     PalCursor** cursor);
 
 /**
- * @brief Destroys the cursor.
+ * @brief Destroys a cursor.
+ * 
+ * If `cursor` parameter is the current current for any window, the platforms
+ * default cursor will be set to the window after the cursor is destroyed.
  *
  * @param[in] cursor The cursor.
  *
@@ -154,9 +198,9 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
 PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
 
 /**
- * @brief Shows or hide the cursor.
+ * @brief Shows or hide a cursor.
  *
- * `PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY` must be supported
+ * PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY must be supported
  * otherwise undefined behavior.
  *
  * This affects all created cursors since the platform (OS) merges all cursors
@@ -174,14 +218,14 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
 /**
  * @brief Clips the cursor to the window.
  *
- * `PAL_VIDEO_FEATURE_CLIP_CURSOR` must be supported 
+ * PAL_VIDEO_FEATURE_CLIP_CURSOR must be supported 
  * otherwise undefined behavior.
  *
  * If the window is destroyed without unclipping the cursor, this cursor might
  * not reset depending on the platform (OS). To be safe, unclip the cursor from
  * the window before destroying the window.
  *
- * @param[in] window The window. Must not be `nullptr`.
+ * @param[in] window The window. Must not be nullptr.
  * @param[in] clip `PAL_TRUE` to clip to window or `PAL_FALSE` to unclip.
  *
  * @Thread-safety Must be called from the main thread.
@@ -194,15 +238,19 @@ PAL_API void PAL_CALL palClipCursor(
     PalBool clip);
 
 /**
- * @brief Gets the position of the cursor relative to the window in
- * pixels.
+ * @brief Gets the position of the cursor relative to the window.
  *
- * `PAL_VIDEO_FEATURE_CURSOR_GET_POS` must be supported 
+ * PAL_VIDEO_FEATURE_CURSOR_GET_POS must be supported 
  * otherwise undefined behavior.
+ * 
+ * The cursor position is relative to the upper-left corner of the window
+ * in screen coordinates.
  *
- * @param[in] window The window. Must not be `nullptr`.
- * @param[out] x The output to recieve the x in pixels. Can be `nullptr`.
- * @param[out] y The output to recieve the y in pixels. Can be `nullptr`.
+ * @param[in] window The window. Must not be nullptr.
+ * @param[out] x The output to recieve the x in screen coordinates.
+ *               Can be nullptr.
+ * @param[out] y The output to recieve the y screen coordinates.
+ *               Can be nullptr.
  *
  * @Thread-safety Must be called from the main thread.
  *
@@ -215,15 +263,17 @@ PAL_API void PAL_CALL palGetCursorPos(
     int32_t* y);
 
 /**
- * @brief Sets the position of the cursor relative to the window in
- * pixels.
+ * @brief Sets the position of the cursor relative to the window.
  *
- * `PAL_VIDEO_FEATURE_CURSOR_SET_POS` must be supported
+ * PAL_VIDEO_FEATURE_CURSOR_SET_POS must be supported
  * otherwise undefined behavior.
+ * 
+ * The cursor position is relative to the upper-left corner of the window
+ * in screen coordinates.
  *
- * @param[in] window The window. Must not be `nullptr`.
- * @param[in] x The new x coordinate of the cursor in pixels.
- * @param[in] y The new y coordinate of the cursor in pixels.
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] x The new x coordinate of the cursor relative to the window.
+ * @param[in] y The new y coordinate of the cursor relative to the window.
  *
  * @Thread-safety Must be called from the main thread.
  *
@@ -237,9 +287,11 @@ PAL_API void PAL_CALL palSetCursorPos(
 
 /**
  * @brief Sets the cursor for the window.
+ * 
+ * A single cursor can be set to multiple windows at the same time.
  *
- * @param[in] window The window. Must not be `nullptr`.
- * @param[in] cursor The cursor. Set to `nullptr` to revert to default.
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] cursor The cursor. Set to nullptr to revert to platforms default.
  *
  * @Thread-safety Must be called from the main thread.
  *
