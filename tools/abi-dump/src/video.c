@@ -162,6 +162,26 @@ bool windowCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
+bool videoDriverStruct(void)
+{
+    FieldInfo fields[] = {
+        {"features", {0, 8}, FIELD(PalVideoDriver, features)},
+        {"type", {8, 4}, FIELD(PalVideoDriver, type)},
+        {"id", {12, 4}, FIELD(PalVideoDriver, id)},
+    };
+
+    StructInfo info = {0};
+    info.name = "PalVideoDriver";
+    info.fields = fields;
+    info.fieldCount = ARRAY_SIZE(fields);
+    info.expected.align = 8;
+    info.expected.size = 16;
+    info.expected.padding = 0;
+    info.actual = STRUCT(PalVideoDriver);
+
+    return dumpStruct(&info);
+}
+
 bool videoStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
@@ -202,5 +222,10 @@ bool videoStructs(void)
         return PAL_FALSE;
     }
 
-    return windowCreateInfoStruct();
+    status = windowCreateInfoStruct();
+    if (status == PAL_FALSE) {
+        return PAL_FALSE;
+    }
+
+    return videoDriverStruct();
 }
