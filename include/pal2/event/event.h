@@ -70,7 +70,7 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -86,9 +86,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -104,9 +104,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackInt32()
+ * - @sa palUnpackInt32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -122,9 +122,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -140,9 +140,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -158,9 +158,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -176,7 +176,7 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -192,7 +192,7 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -208,9 +208,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -226,7 +226,7 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -242,9 +242,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -260,9 +260,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -278,9 +278,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -296,9 +296,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -314,9 +314,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -332,9 +332,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackInt32()
+ * - @sa palUnpackInt32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -350,9 +350,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackFloat()
+ * - @sa palUnpackFloat()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -368,9 +368,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackFloat()
+ * - @sa palUnpackFloat()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -380,13 +380,13 @@
  * 
  * Helpers:
  * 
- * - @ref palPackUint32() / @ref palUnpackUint32()
+ * - @sa palPackUint32() / @sa palUnpackUint32()
  * 
- * - @ref palPackInt32() / @ref palUnpackInt32()
+ * - @sa palPackInt32() / @sa palUnpackInt32()
  * 
- * - @ref palPackFloat() / @ref palUnpackFloat()
+ * - @sa palPackFloat() / @sa palUnpackFloat()
  * 
- * - @ref palPackPointer() / @ref palUnpackPointer()
+ * - @sa palPackPointer() / @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -402,9 +402,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -420,9 +420,9 @@
  * 
  * Helpers:
  * 
- * - @ref palUnpackUint32()
+ * - @sa palUnpackUint32()
  * 
- * - @ref palUnpackPointer()
+ * - @sa palUnpackPointer()
  * 
  * @ingroup event_types
 */

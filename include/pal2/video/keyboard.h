@@ -297,7 +297,7 @@ typedef uint32_t PalScancode;
  *
  * The returned pointer must not be freed. The state is updated when
  * @ref palUpdateVideo is called. The array must be index with 
- * @ref PalKeycodes values and not exceed @ref PAL_KEYCODE_COUNT.
+ * PalKeycode values and not exceed @ref PAL_KEYCODE_COUNT.
  *
  * @return A pointer to the keycodes array on success or nullptr on failure.
  *
@@ -314,7 +314,7 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  *
  * The returned pointer must not be freed. The state is updated when
  * @ref palUpdateVideo is called. The array must be index with 
- * @ref PalScancodes values and not exceed PAL_SCANCODE_COUNT.
+ * PalScancodes values and not exceed PAL_SCANCODE_COUNT.
  *
  * @return A pointer to the scancodes array on success or nullptr on failure.
  *
