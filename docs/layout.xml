@@ -64,7 +64,7 @@
       <constructors visible="yes" title=""/>
       <functions visible="yes" title=""/>
       <related visible="yes" title=""/>
-      <variables visible="yes" title="Fields Documentation"/>
+      <variables visible="yes" title="Field Documentation"/>
       <properties visible="yes" title=""/>
       <events visible="yes" title=""/>
     </memberdef>
@@ -190,12 +190,12 @@
       <pagedocs/>
       <inlineclasses visible="yes" title=""/>
       <defines visible="yes" title="Constants Documentation"/>
-      <typedefs visible="yes" title="Types Documentation"/>
+      <typedefs visible="yes" title="Type Documentation"/>
       <sequences visible="yes" title=""/>
       <dictionaries visible="yes" title=""/>
       <enums visible="yes" title=""/>
       <enumvalues visible="yes" title=""/>
-      <functions visible="yes" title="Functions Documentation"/>
+      <functions visible="yes" title="Function Documentation"/>
       <variables visible="no" title=""/>
       <signals visible="yes" title=""/>
       <publicslots visible="yes" title=""/>

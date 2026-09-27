@@ -41,7 +41,7 @@
  *
  * If the requested size is `0`, the callback must determines the behavior. The
  * callback must decide whether to initialize the allocated memory or not.
- * PAL does not filter any requested size or alignment.
+ * PAL does not filter away 0 size allocation.
  *
  * PAL uses this callback to allocate all of its internal memory, this means
  * if a PAL function is thread safe and it will be called from multiple
@@ -101,20 +101,31 @@ typedef void(PAL_CALL* PalFreeFn)(
  * 
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
+ * @sa palAllocate
+ * @sa palFree
  */
 typedef struct PalAllocator {
-    /** The allocate function of the allocator. Must not be nullptr.*/
+    /** The allocate function of the allocator. Must not be nullptr.
+     * See @ref PalAllocateFn for more information about the allocatation
+     * function.
+     */
     PalAllocateFn allocate;
 
-    /** The free function of the allocator. Must not be nullptr.*/
+    /** The free function of the allocator. Must not be nullptr.
+     * See @ref PalFreeFn for more information about the deallocatation
+     * function.
+     */
     PalFreeFn free;
-    
-    /** User data passed to allocate and free function. Can be nullptr.*/
+
+    /** User data passed to ::allocate and ::free function. Can be nullptr
+     * if there is no value.
+     */
     void* userData;
 } PalAllocator;
 
 /**
- * @brief Allocate memory using a custom or default allocator.
+ * @brief Allocates memory using a custom or default allocator.
  *
  * This function allocates atleast `size` parameter of memory with the
  * requested `alignment` parameter. 
@@ -147,7 +158,7 @@ PAL_API void* PAL_CALL palAllocate(
     uint64_t alignment);
 
 /**
- * @brief Deallocate memory allocated by palAllocate().
+ * @brief Deallocates memory allocated by @ref palAllocate.
  *
  * The memory must be valid and not deallocated before this call.
  * This function does not set the `ptr` parameter to nullptr after

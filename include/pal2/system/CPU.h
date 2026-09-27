@@ -195,13 +195,15 @@ typedef uint64_t PalCpuFeatures;
  *
  * @since Added in version 2.0
  * @ingroup pal_system
+ * 
+ * @sa palGetCPUInfo
  */
 typedef struct PalCPUInfo
 {
     /** A bitmask of supported CPU features (instructions).*/
     PalCpuFeatures features;
 
-    /** The CPU architecture (eg. PAL_CPU_ARCH_X86_64).*/
+    /** The CPU architecture (eg. @ref PAL_CPU_ARCH_X86_64).*/
     PalCpuArch architecture;
 
     /** The total number of CPU cores.*/
@@ -227,7 +229,7 @@ typedef struct PalCPUInfo
 } PalCPUInfo;
 
 /**
- * @brief Get the CPU information.
+ * @brief Gets the CPU information.
  *
  * @param[in] allocator The allocator to use. Set to nullptr to use the
  *                      thread-safe default allocator.

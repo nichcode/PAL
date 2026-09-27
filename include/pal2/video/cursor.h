@@ -29,24 +29,29 @@
  * @defgroup cursor_types Cursor Types
  * @brief Cursor Types
  * 
- * @{
+ * @ingroup pal_video
  */
+
+/** @brief The thread has a low priority.
+ * 
+ * @ingroup thread_priorities
+*/
 #define PAL_CURSOR_TYPE_ARROW 0
 #define PAL_CURSOR_TYPE_HAND 1
 #define PAL_CURSOR_TYPE_CROSS 2
 #define PAL_CURSOR_TYPE_IBEAM 3
 #define PAL_CURSOR_TYPE_WAIT 4
 #define PAL_CURSOR_TYPE_COUNT 5
-/** @} */
 
 /**
  * @typedef PalCursorType
- * @brief System cursor types.
+ * @brief System cursor type.
  * 
  * All values of this type follow the format `PAL_CURSOR_TYPE_*` for API
  * consistency and ease of use.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef uint32_t PalCursorType;
 
@@ -55,6 +60,7 @@ typedef uint32_t PalCursorType;
  * @brief Opaque handle to a cursor.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 typedef struct PalCursor PalCursor;
 
@@ -65,6 +71,7 @@ typedef struct PalCursor PalCursor;
  * Uninitialized fields may result in undefined behavior.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  * 
  * @var PalCursorCreateInfo::pixels
  * The pixels to use to create the cursor. It must be in `RGBA` format.
@@ -103,6 +110,8 @@ typedef struct PalCursorCreateInfo
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palDestroyCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursor(
@@ -122,6 +131,8 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palDestroyCursor
  */
 PAL_API PalResult PAL_CALL palCreateCursorFrom(
@@ -136,6 +147,8 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
  * @sa palCreateCursor
  */
 PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
@@ -154,6 +167,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palShowCursor(PalBool show);
 
@@ -173,6 +187,7 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palClipCursor(
     PalWindow* window,
@@ -192,6 +207,7 @@ PAL_API void PAL_CALL palClipCursor(
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palGetCursorPos(
     PalWindow* window,
@@ -212,6 +228,7 @@ PAL_API void PAL_CALL palGetCursorPos(
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palSetCursorPos(
     PalWindow* window,
@@ -227,6 +244,7 @@ PAL_API void PAL_CALL palSetCursorPos(
  * @Thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_video
  */
 PAL_API void PAL_CALL palSetWindowCursor(
     PalWindow* window,

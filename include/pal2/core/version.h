@@ -32,6 +32,8 @@
  * 
  * @since Added in version 2.0
  * @ingroup pal_core
+ * 
+ * @sa palGetVersion
  */
 typedef struct PalVersion {
     /**
@@ -54,12 +56,12 @@ typedef struct PalVersion {
 } PalVersion;
 
 /**
- * @brief Retrieve the PAL runtime version number.
+ * @brief Retrieves the PAL runtime version number.
  *
  * @param[out] version The output struct to recieve the runtime version. 
  *                     Must not be nullptr.
  *
- * @Thread-safety `version` must be per thread.
+ * @Thread-safety `version` parameter must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -69,7 +71,7 @@ typedef struct PalVersion {
 PAL_API void PAL_CALL palGetVersion(PalVersion* version);
 
 /**
- * @brief Retrieve the PAL runtime version as a string.
+ * @brief Retrieves the PAL runtime version as a string.
  *
  * @return Null-terminated string containing the PAL runtime version. The
  *         returned string is owned by PAL and must not be freed or modified.

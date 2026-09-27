@@ -47,20 +47,20 @@ typedef struct PalLibrary PalLibrary;
 typedef void (PAL_CALL *PalLibrarySymbol)(void);
 
 /**
- * @brief Load the specified shared library module dynamically into 
+ * @brief Loads the specified shared library module dynamically into 
  * address space.
  * 
  * The specified module will load other modules if there is a dependency
  * between them. the `path` parameter will be searched in the systems default
  * module directories. The library does not validate and resolves
  * its function symbols after creation, the symbol is resolved when
- * palGetSymbol() is called.
+ * @ref palGetSymbol is called.
  * 
  * Calling the function with the `path` parameter set to nullptr is 
  * implementation-defined. An implementation might return the
  * handle to the main program. Another implementation might fail.
  * 
- * The returned library must be freed with palFreeLibrary() when no longer
+ * The returned library must be freed with @ref palFreeLibrary when no longer
  * needed. Loading the library multiple times is implementation-defined
  * behavior.
  * 
@@ -79,11 +79,12 @@ typedef void (PAL_CALL *PalLibrarySymbol)(void);
 PAL_API PalLibrary* PAL_CALL palLoadLibrary(const char* path);
 
 /**
- * @brief Retrieve the address or symbol of an exported function or variable
+ * @brief Retrieves the address or symbol of an exported function or variable
  * from the loaded library.
  * 
- * Exported functions are returned as `PalLibrarySymbol`. Therefore they 
- * must be casted to the required type.
+ * Exported functions are returned as @ref PalLibrarySymbol. Therefore they 
+ * must be casted to the required type. The returned function or variable
+ * is valid until the library has been unloaded.
  *
  * @param[in] library The library. Must not be nullptr.
  * @param[in] name The name of the exported function or variable.
@@ -108,7 +109,7 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  * 
  * This function invalidates all the symbols loaded from it after this call.
  * Unloading the library multiple times is implementation-defined
- * behavior.
+ * behavior so it must be avoided.
  * 
  * @param[in] library The library to free. Must not be nullptr.
  *

@@ -67,17 +67,24 @@
 
 /** @brief Infinite number or time.
  * 
+ * This is used to specify an infinite time or number for time or number
+ * related functions.
+ * 
  * @ingroup pal_core
 */
 #define PAL_INFINITE UINT32_MAX
 
 /** @brief true or 1.
  * 
+ * Any other constant that equals to 1 also is valid.
+ * 
  * @ingroup pal_core
 */
 #define PAL_TRUE 1
 
 /** @brief false or 0.
+ * 
+ * Any other constant that equals to 0 also is valid.
  * 
  * @ingroup pal_core
 */

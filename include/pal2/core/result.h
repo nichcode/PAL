@@ -211,7 +211,7 @@ typedef uint16_t PalResultCode;
 typedef uint16_t PalResultSource;
 
 /**
- * @brief Get the result code from the result value.
+ * @brief Gets the result code from the result value.
  *
  * @param[in] result The result value.
  * @return The result code from the result value.
@@ -230,7 +230,7 @@ static inline PalResultCode PAL_CALL palGetResultCode(PalResult result)
 }
 
 /**
- * @brief Get the result source from the result value.
+ * @brief Gets the result source from the result value.
  *
  * @param[in] result The result value.
  * @return The result source from the result value.
@@ -249,7 +249,7 @@ static inline PalResultSource PAL_CALL palGetResultSource(PalResult result)
 }
 
 /**
- * @brief Get the result native code from the result value.
+ * @brief Gets the result native code from the result value.
  *
  * @param[in] result The result value.
  * @return The result native code from the result value.
@@ -268,7 +268,7 @@ static inline uint32_t PAL_CALL palGetResultNativeCode(PalResult result)
 }
 
 /**
- * @brief Create a result value.
+ * @brief Creates a result value.
  *
  * If `nativeCode` paramter is not 0 and the result source is
  * PAL_RESULT_SOURCE_NONE, it will be ignored when formatting the result value.
@@ -297,7 +297,7 @@ static inline PalResult PAL_CALL palMakeResult(
 }
 
 /**
- * @brief Convert a result value to a human-readable string.
+ * @brief Converts a result value to a human-readable string.
  *
  * @param[in] result The result value to format.
  * @param[in] bufferSize The size of the buffer. Must not be `0`.

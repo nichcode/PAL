@@ -27,7 +27,7 @@
 #include <string.h>
 
 /**
- * @brief Combine two 32-bit unsigned integers into a single 64-bit unsigned
+ * @brief Combines two 32-bit unsigned integers into a single 64-bit unsigned
  * integer.
  * 
  * @param[in] low The low 32-bit unsigned integer.
@@ -49,7 +49,7 @@ static inline uint64_t PAL_CALL palPackUint32(
 }
 
 /**
- * @brief Combine two 32-bit signed integers into a single 64-bit unsigned integer.
+ * @brief Combines two 32-bit signed integers into a single 64-bit unsigned integer.
  * 
  * @param[in] low The low 32-bit signed integer.
  * @param[in] high The high 32-bit signed integer.
@@ -70,7 +70,7 @@ static inline uint64_t PAL_CALL palPackInt32(
 }
 
 /**
- * @brief Pack a pointer into a 64-bit unsigned integer.
+ * @brief Packs a pointer into a 64-bit unsigned integer.
  * 
  * @param[in] ptr The pointer to pack.
  * @return The packed 64-bit unsigned integer.
@@ -88,7 +88,7 @@ static inline uint64_t PAL_CALL palPackPointer(void* ptr)
 }
 
 /**
- * @brief Combine two floats into a single 64-bit unsigned integer.
+ * @brief Combines two floats into a single 64-bit unsigned integer.
  * 
  * @param[in] low The low float value.
  * @param[in] high The high float value.
@@ -118,7 +118,7 @@ static inline uint64_t PAL_CALL palPackFloat(
 }
 
 /**
- * @brief Retrieve two 32-bit unsigned integers from a 64-bit unsigned integer.
+ * @brief Retrieves two 32-bit unsigned integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low The output low value of the 64-bit unsigned integer.
@@ -146,7 +146,7 @@ static inline void PAL_CALL palUnpackUint32(
 }
 
 /**
- * @brief Retrieve two 32-bit signed integers from a 64-bit unsigned integer.
+ * @brief Retrieves two 32-bit signed integers from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low The output low value of the 64-bit unsigned integer.
@@ -174,7 +174,7 @@ static inline void PAL_CALL palUnpackInt32(
 }
 
 /**
- * @brief Unpack a pointer from a 64-bit unsigned integer.
+ * @brief Unpacks a pointer from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @return The pointer from the 64-bit unsigned integer.
@@ -192,7 +192,7 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
 }
 
 /**
- * @brief Retrieve two floats from a 64-bit unsigned integer.
+ * @brief Retrieves two floats from a 64-bit unsigned integer.
  *
  * @param[in] data The 64-bit unsigned integer.
  * @param[out] low The output low value of the 64-bit unsigned integer.

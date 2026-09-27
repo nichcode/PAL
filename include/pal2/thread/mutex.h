@@ -38,14 +38,14 @@
 typedef struct PalMutex PalMutex;
 
 /**
- * @brief Create a mutex.
+ * @brief Creates a mutex.
  *
  * @param[in] allocator The allocator the thread should use. Set to nullptr
  *                      to use the thread-safe default.
  * @param[out] mutex The output handle to recieve the created mutex.
- * @return PAL_RESULT_SUCCESS on success or an appropriate result value on
- *         failure. Call palFormatResult() to get the string representation of
- *         the result value.
+ * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
+ *         failure. Call @ref palFormatResult to get the string representation
+ *         of the result value.
  *
  * @Thread-safety `mutex` parameter must be per thread and `allocator` 
  *                parameter must be thread safe.
@@ -60,7 +60,7 @@ PAL_API PalResult PAL_CALL palCreateMutex(
     PalMutex** mutex);
 
 /**
- * @brief Destroy a mutex.
+ * @brief Destroys a mutex.
  * 
  * The mutex must be unlocked before destroying if it was locked.
  *
@@ -76,7 +76,7 @@ PAL_API PalResult PAL_CALL palCreateMutex(
 PAL_API void PAL_CALL palDestroyMutex(PalMutex* mutex);
 
 /**
- * @brief Lock a mutex. 
+ * @brief Locks a mutex. 
  * 
  * Blocks if the mutex is already locked by another thread.
  *
@@ -92,7 +92,7 @@ PAL_API void PAL_CALL palDestroyMutex(PalMutex* mutex);
 PAL_API void PAL_CALL palLockMutex(PalMutex* mutex);
 
 /**
- * @brief Unlock a mutex.
+ * @brief Unlocks a mutex.
  *
  * The function must be called by the thread that first locked the mutex.
  *

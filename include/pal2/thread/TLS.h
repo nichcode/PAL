@@ -45,7 +45,7 @@ typedef uint32_t PalTLSId;
  *
  * This is called when the TLS is destroyed and its value is not nullptr.
  *
- * @param[in] userData User data passed from palCreateTLS(). Can be nullptr.
+ * @param[in] userData User data passed from @ref palCreateTLS. Can be nullptr.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -53,10 +53,10 @@ typedef uint32_t PalTLSId;
 typedef void (PAL_CALL* PaTlsDestructorFn)(void* userData);
 
 /**
- * @brief Create a new TLS.
+ * @brief Creates a new TLS.
  *
  * The TLS handle can be used by multiple threads to associate thread local
- * vaules. The destructor will be called if palDestroyTLS() is called and
+ * vaules. The destructor will be called if @ref palDestroyTLS is called and
  * the TLS has a valid value.
  *
  * @param[in] destructor The TLS destructor callback. Can be nullptr.
@@ -72,7 +72,7 @@ typedef void (PAL_CALL* PaTlsDestructorFn)(void* userData);
 PAL_API PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor);
 
 /**
- * @brief Destroy the TLS.
+ * @brief Destroys the TLS.
  *
  * @param[in] Tls The TLS.
  *
@@ -86,7 +86,7 @@ PAL_API PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor);
 PAL_API void PAL_CALL palDestroyTLS(PalTLSId Tls);
 
 /**
- * @brief Get the value associated with the TLS on the calling thread.
+ * @brief Gets the value associated with the TLS on the calling thread.
  *
  * @param[in] Tls The TLS.
  * @return the value on success or nullptr on failure.

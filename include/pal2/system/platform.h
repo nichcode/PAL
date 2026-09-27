@@ -167,12 +167,14 @@ typedef uint32_t PalPlatformApiType;
  *
  * @since Added in version 2.0
  * @ingroup pal_system
+ * 
+ * @sa palGetPlatformInfo
  */
 typedef struct PalPlatformInfo {
-    /** The platform type (eg. PAL_PLATFORM_TYPE_WINDOWS).*/
+    /** The platform type (eg. @ref PAL_PLATFORM_TYPE_WINDOWS).*/
     PalPlatformType type;
 
-    /** The platform API type (eg. PAL_PLATFORM_API_TYPE_WIN32).*/
+    /** The platform API type (eg. @ref PAL_PLATFORM_API_TYPE_WIN32).*/
     PalPlatformApiType apiType;
 
     /** Total Disk space in GB. <br>
@@ -194,7 +196,7 @@ typedef struct PalPlatformInfo {
 } PalPlatformInfo;
 
 /**
- * @brief Get the platform (OS) information.
+ * @brief Gets the platform (OS) information.
  *
  * @param[out] info The output struct to recieve the platform information.
  *

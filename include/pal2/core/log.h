@@ -26,7 +26,7 @@
 
 #include "defines.h"
 
-/** @brief The maximum log buffer size.
+/** @brief The maximum size of the log buffer.
  * 
  * @ingroup pal_core
 */
@@ -40,8 +40,8 @@
  * void PAL_CALL logCallback(void* userData, const char* msg);
  * @endcode
  *
- * The message is only valid for the duration of the callback and must not be
- * modified or freed by the callback, the memory is owned by PAL.
+ * The `msg` parameter is only valid for the duration of the callback and 
+ * must not be modified or freed by the callback, the memory is owned by PAL.
  *
  * The callback may be called concurrently from multiple threads. The callback
  * must be thread safe if the same callback is used by multiple threads.
@@ -75,17 +75,22 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @sa palLog
  */
 typedef struct PalLogger {
-    /** The function to forward log messages to. Must not be nullptr.*/
+    /** The function to forward log messages to. Must not be nullptr.
+     * See @ref PalLogCallback for more information about the log 
+     * callback function.
+     */
     PalLogCallback callback;
-
-    /** User data passed to the callback. Can be nullptr.*/
+    
+    /** User data passed to ::callback. Can be nullptr if there is
+     * no value.
+     */
     void* userData;
 } PalLogger;
 
 /**
- * @brief Log a formatted message to a custom or default logger.
+ * @brief Logs a formatted message to a custom or default logger.
  * 
- * Log messages have a limit of `PAL_LOG_MSG_SIZE` (4096), any message greater
+ * Log messages have a limit of @ref PAL_LOG_MSG_SIZE, any message greater
  * than the limit will be truncated and the remaining discarded.
  * 
  * Logging in a log callback with the default logger is valid. Double logging

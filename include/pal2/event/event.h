@@ -36,7 +36,7 @@
  * @defgroup event_types Event Types
  * @brief Event types.
  * 
- * See [Event Payload](@ref event_payload) for how to get and use the payload.
+ * See [Event Guide](@ref event_guide) for more informtion.
  * 
  * @ingroup pal_event
  */
@@ -70,7 +70,7 @@
  * 
  * Helpers:
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -86,9 +86,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -104,9 +104,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackInt32()
+ * - @ref palUnpackInt32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -122,9 +122,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -140,9 +140,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -158,9 +158,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -176,7 +176,7 @@
  * 
  * Helpers:
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -192,7 +192,7 @@
  * 
  * Helpers:
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -208,9 +208,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -226,7 +226,7 @@
  * 
  * Helpers:
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -242,9 +242,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -260,9 +260,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -278,9 +278,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -296,9 +296,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -314,9 +314,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -332,9 +332,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackInt32()
+ * - @ref palUnpackInt32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -350,9 +350,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackFloat()
+ * - @ref palUnpackFloat()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -368,9 +368,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackFloat()
+ * - @ref palUnpackFloat()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -380,13 +380,13 @@
  * 
  * Helpers:
  * 
- * - palPackUint32() / palUnpackUint32()
+ * - @ref palPackUint32() / @ref palUnpackUint32()
  * 
- * - palPackInt32() / palUnpackInt32()
+ * - @ref palPackInt32() / @ref palUnpackInt32()
  * 
- * - palPackFloat() / palUnpackFloat()
+ * - @ref palPackFloat() / @ref palUnpackFloat()
  * 
- * - palPackPointer() / palUnpackPointer()
+ * - @ref palPackPointer() / @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -402,9 +402,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -420,9 +420,9 @@
  * 
  * Helpers:
  * 
- * - palUnpackUint32()
+ * - @ref palUnpackUint32()
  * 
- * - palUnpackPointer()
+ * - @ref palUnpackPointer()
  * 
  * @ingroup event_types
 */
@@ -472,10 +472,14 @@ typedef uint32_t PalDecorationMode;
  */
 typedef struct PalEvent
 {
-    /** The first data payload. The data is defined by ::type.*/
+    /** The first data payload. The data is defined by ::type.
+     * See [Event Guide](@ref event_guide) for more informtion.
+     */
     uint64_t data;
 
-    /** The second data payload. The data is defined by ::type.*/
+    /** The second data payload. The data is defined by ::type.
+     * See [Event Guide](@ref event_guide) for more informtion.
+     */
     uint64_t data2;
 
     /**
@@ -500,10 +504,10 @@ typedef struct PalEvent
  * void PAL_CALL eventCallback(void* userData, const PalEvent* event);
  * @endcode
  * 
- * The event is only valid for the duration of the callback and must not be
- * modified or freed by the callback, the memory is owned by PAL.
- * The callback must be thread-safe if the event driver that uses it
- * is thread-safe.
+ * `event` parameter is only valid for the duration of the callback 
+ * and must not be modified or freed by the callback, the memory is 
+ * owned by PAL. The callback must be thread-safe if the event driver 
+ * that uses it is thread-safe.
  *
  * @param[in] userData User data passed from
  *                     PalEventDriverCreateInfo::userData. Can be nullptr.
