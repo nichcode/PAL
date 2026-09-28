@@ -382,7 +382,7 @@ typedef struct PalVideoDriver {
  * 
  * This function returns a list of all the supported video drivers of the
  * platform. The returned array must not be freed or modified by the user.
- * This can be called abd cached once, video drivers are not removed
+ * This can be called and cached once, video drivers are not removed
  * or added dynamically.
  * 
  * Set `drivers` parameter to nullptr to get the total number of supported
