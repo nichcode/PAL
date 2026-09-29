@@ -109,12 +109,12 @@ typedef struct PalMultiViewportCapabilities
  * 
  * @var PalDepthStencilCapabilities::supportedDepthResolveModes
  * A bitmask of supported depth resolve modes. A specific resolve mode
- * should be check like this: @nl
+ * should be check like this: 
  * palIsSupported(::supportedDepthResolveModes, `PAL_RESOLVE_MODE_AVERAGE`).
  * 
  * @var PalDepthStencilCapabilities::supportedStencilResolveModes
  * A bitmask of supported stencil resolve modes. A specific resolve mode
- * should be check like this: @nl
+ * should be check like this: 
  * palIsSupported(::supportedStencilResolveModes, `PAL_RESOLVE_MODE_MIN`).
  * 
  * @var PalDepthStencilCapabilities::supportsIndependentResolve
@@ -140,12 +140,12 @@ typedef struct PalDepthStencilCapabilities
  * 
  * @var PalFragmentShadingRateCapabilities::supportedShadingRates
  * A bitmask of supported fragment shading rates. A specific shading rate
- * should be check like this: @nl
+ * should be check like this: 
  * palIsSupported(::supportedShadingRates, `PAL_FRAGMENT_SHADING_RATE_2X2`).
  * 
  * @var PalFragmentShadingRateCapabilities::supportedCombinerOps
  * A bitmask of supported fragment shading rate combiner operations.
- * A specific combiner operation should be check like this: @nl
+ * A specific combiner operation should be check like this: 
  * palIsSupported(::supportedCombinerOps,
  * `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP`).
  * 

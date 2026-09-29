@@ -36,6 +36,7 @@
 
 /**
  * @defgroup thread_features Thread Features
+ * @{
  */
 #define PAL_THREAD_FEATURE_STACK_SIZE (1U << 0) /**< support for setting thread stack size */
 #define PAL_THREAD_FEATURE_PRIORITY (1U << 1) /**< support for setting and getting thread priority */
@@ -45,6 +46,7 @@
 
 /**
  * @defgroup thread_priorities Thread Priorities
+ * @{
  */
 #define PAL_THREAD_PRIORITY_LOW 0
 #define PAL_THREAD_PRIORITY_NORMAL 1
@@ -162,7 +164,7 @@ typedef void (PAL_CALL* PaTlsDestructorFn)(void* userData);
  * @ingroup pal_thread
  */
 typedef struct PalThreadCreateInfo {
-    uint64_t stackSize; /** thread stack size or `0` */
+    uint64_t stackSize; /**< thread stack size or `0` */
     const PalAllocator* allocator; /**< allocator to use or `nullptr` for default */
     PalThreadFn entry; /**< thread entry function */
     void* arg; /**< user-defined data passed to the function or `nullptr` */
@@ -181,7 +183,7 @@ typedef struct PalThreadCreateInfo {
  * Created threads starts execution from `info->entry` function. The thread will
  * not be created if the entry function is `nullptr`. The created thread executes
  * until its detached or has finished. The thread is created with a priority of
- * @ref PAL_THREAD_PRIORITY_NORMAL. Use @ref palSetThreadPriority() to change
+ * `PAL_THREAD_PRIORITY_NORMAL`. Use @ref palSetThreadPriority() to change
  * the priority of the created thread.
  * 
  * Threads that are joined will automatically be detached after execution.

@@ -116,9 +116,9 @@ function findFieldDescription(document, definition, field)
             }
 
             if (found && brief) {
-                // check if there is @nl in the line.
-                if (next.includes('@nl')) {
-                    const tmp = next.replace('@nl', '');
+                // check if there is  in the line.
+                if (next.includes('')) {
+                    const tmp = next.replace('', '');
                     descriptionLines.push(tmp);
                     descriptionLines.push('');
 

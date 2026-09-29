@@ -358,8 +358,8 @@ typedef struct PalGeometry
  * 
  * @var PalAccelerationStructureBuildInfo::count
  * If ::type is `PAL_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL`, this is
- * the number of instances in ::instanceBufferAddress. @nl
- * If ::type is `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`, this is @nl
+ * the number of instances in ::instanceBufferAddress. 
+ * If ::type is `PAL_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL`, this is 
  * the number of geometries in ::geometries.
  */
 typedef struct PalAccelerationStructureBuildInfo

@@ -142,25 +142,25 @@ typedef struct PalGLWindow
  * 
  * @var PalGLContextCreateInfo::profile
  * The opengl context profile.
- * - `PAL_GL_PROFILE_NONE:` create a default profile context. @nl
+ * - `PAL_GL_PROFILE_NONE:` create a default profile context. 
  * - `PAL_GL_PROFILE_CORE:` create a core profile context.
- *   `PAL_GL_EXTENSION_CONTEXT_PROFILE` Must be supported. @nl 
+ *   `PAL_GL_EXTENSION_CONTEXT_PROFILE` Must be supported.  
  * - `PAL_GL_PROFILE_COMPATIBILITY:` create a compatibility profile context.
- *   `PAL_GL_EXTENSION_CONTEXT_PROFILE` Must be supported. @nl
+ *   `PAL_GL_EXTENSION_CONTEXT_PROFILE` Must be supported. 
  * - `PAL_GL_PROFILE_COMPATIBILITY:` create an `ES` profile context.
  *   `PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2` Must be supported.
  * 
  * @var PalGLContextCreateInfo::reset
  * The context reset behavior.
- * - `PAL_GL_CONTEXT_RESET_NONE:` default context reset behavior. @nl
+ * - `PAL_GL_CONTEXT_RESET_NONE:` default context reset behavior. 
  * - `PAL_GL_CONTEXT_RESET_NO_NOTIFICATION:` context will be reset by driver.
- *   `PAL_GL_EXTENSION_ROBUSTNESS` must be supported. @nl
+ *   `PAL_GL_EXTENSION_ROBUSTNESS` must be supported. 
  * - `PAL_GL_CONTEXT_RESET_LOSE_CONTEXT:` invalidate the context on reset.
  *   `PAL_GL_EXTENSION_ROBUSTNESS` must be supported.
  * 
  * @var PalGLContextCreateInfo::release
  * The context release behavior.
- * - `PAL_GL_RELEASE_BEHAVIOR_NONE:` default context release behavior. @nl
+ * - `PAL_GL_RELEASE_BEHAVIOR_NONE:` default context release behavior. 
  * - `PAL_GL_RELEASE_BEHAVIOR_FLUSH:` flush context before release.
  *   `PAL_GL_EXTENSION_FLUSH_CONTROL` must be supported.
  * 

@@ -76,7 +76,7 @@ typedef struct PalMemory PalMemory;
  * 
  * @var PalMemoryRequirements::supportedMemoryTypes
  * A bitmask of supported memory types. A specific memory type
- * should be check like this: @nl
+ * should be check like this: 
  * palIsSupported(::supportedMemoryTypes, `PAL_MEMORY_TYPE_GPU_ONLY`).
  * 
  * @var PalMemoryRequirements::reserved

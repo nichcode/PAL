@@ -135,17 +135,17 @@ typedef struct PalSurface PalSurface;
  * 
  * @var PalSurfaceCapabilities::supportedPresentModes
  * A bitmask of supported present modes. A specific present mode
- * should be check like this: @nl
+ * should be check like this: 
  * palIsSupported(::supportedPresentModes, `PAL_PRESENT_MODE_FIFO`).
  * 
  * @var PalSurfaceCapabilities::supportedCompositeAlphas
  * A bitmask of supported composite alphas. A specific composite alpha
- * should be check like this: @nl
+ * should be check like this: 
  * palIsSupported(::supportedCompositeAlphas, `PAL_COMPOSITE_ALPHA_OPAQUE`).
  * 
  * @var PalSurfaceCapabilities::supportedFormats
  * A bitmask of supported surface formats. A specific surface format
- * should be check like this: @nl
+ * should be check like this: 
  * palIsSupported(::supportedFormats, `PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10`).
  * 
  * @var PalSurfaceCapabilities::minImageCount
