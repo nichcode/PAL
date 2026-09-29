@@ -47,6 +47,7 @@
 
 /**
  * @defgroup event_types Event Types
+ * @{
  */
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0 /**< window close button has been clicked */
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1 /**< window has been resized */
