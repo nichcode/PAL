@@ -51,26 +51,26 @@
  */
 #define PAL_EVENT_TYPE_WINDOW_CLOSE 0 /**< window close button has been clicked */
 #define PAL_EVENT_TYPE_WINDOW_SIZE 1 /**< window has been resized */
-#define PAL_EVENT_TYPE_WINDOW_MOVE 1 /**< window has been moved */
-#define PAL_EVENT_TYPE_WINDOW_STATE 1 /**< window state has changed */
-#define PAL_EVENT_TYPE_WINDOW_FOCUS 1 /**< window has gained or lost focus */
-#define PAL_EVENT_TYPE_WINDOW_VISIBILITY 1 /**< window has been shown or hidden */
-#define PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN 1 /**< window has entered model mode */
-#define PAL_EVENT_TYPE_WINDOW_MODAL_END 1 /**< window has exited model mode */
-#define PAL_EVENT_TYPE_MONITOR_DPI_CHANGED 1 /**< monitor DPI has changed */
-#define PAL_EVENT_TYPE_MONITOR_LIST_CHANGED 1 /**< number of connected monitors has changed */
-#define PAL_EVENT_TYPE_KEYDOWN 1 /**< key was pressed */
-#define PAL_EVENT_TYPE_KEYREPEAT 1 /**< key is being held down */
-#define PAL_EVENT_TYPE_KEYUP 1 /**< key has been released */
-#define PAL_EVENT_TYPE_MOUSE_BUTTONDOWN 1 /**< mouse button has been pressed */
-#define PAL_EVENT_TYPE_MOUSE_BUTTONUP 1 /**< mouse button has been released */
-#define PAL_EVENT_TYPE_MOUSE_MOVE 1 /**< mouse was moved */
-#define PAL_EVENT_TYPE_MOUSE_DELTA 1 /**< mouse movement delta has changed */
-#define PAL_EVENT_TYPE_MOUSE_WHEEL 1 /**< mouse wheel delta has changed */
-#define PAL_EVENT_TYPE_USER 1 /**< user event */
-#define PAL_EVENT_TYPE_KEYCHAR 1 /**< character key has been pressed */
-#define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 1 /**< window decoration mode has been selected */
-#define PAL_EVENT_TYPE_COUNT 1 /**< number of event types */
+#define PAL_EVENT_TYPE_WINDOW_MOVE 2 /**< window has been moved */
+#define PAL_EVENT_TYPE_WINDOW_STATE 3 /**< window state has changed */
+#define PAL_EVENT_TYPE_WINDOW_FOCUS 4 /**< window has gained or lost focus */
+#define PAL_EVENT_TYPE_WINDOW_VISIBILITY 5 /**< window has been shown or hidden */
+#define PAL_EVENT_TYPE_WINDOW_MODAL_BEGIN 6 /**< window has entered model mode */
+#define PAL_EVENT_TYPE_WINDOW_MODAL_END 7 /**< window has exited model mode */
+#define PAL_EVENT_TYPE_MONITOR_DPI_CHANGED 8 /**< monitor DPI has changed */
+#define PAL_EVENT_TYPE_MONITOR_LIST_CHANGED 9 /**< number of connected monitors has changed */
+#define PAL_EVENT_TYPE_KEYDOWN 10 /**< key was pressed */
+#define PAL_EVENT_TYPE_KEYREPEAT 11 /**< key is being held down */
+#define PAL_EVENT_TYPE_KEYUP 12 /**< key has been released */
+#define PAL_EVENT_TYPE_MOUSE_BUTTONDOWN 13 /**< mouse button has been pressed */
+#define PAL_EVENT_TYPE_MOUSE_BUTTONUP 14 /**< mouse button has been released */
+#define PAL_EVENT_TYPE_MOUSE_MOVE 15 /**< mouse was moved */
+#define PAL_EVENT_TYPE_MOUSE_DELTA 16 /**< mouse movement delta has changed */
+#define PAL_EVENT_TYPE_MOUSE_WHEEL 17 /**< mouse wheel delta has changed */
+#define PAL_EVENT_TYPE_USER 18 /**< user event */
+#define PAL_EVENT_TYPE_KEYCHAR 19 /**< character key has been pressed */
+#define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20 /**< window decoration mode has been selected */
+#define PAL_EVENT_TYPE_COUNT 21 /**< number of event types */
 /** @} */
 
 /**
@@ -137,10 +137,10 @@ typedef struct PalEventDriver PalEventDriver;
  * @ingroup pal_event
  */
 typedef struct PalEvent {
-    uint64_t data; /**< First data payload */
-    uint64_t data2; /**< Additional data payload */
-    uint32_t userId; /**< Id for user events */
-    PalEventType type; /**< Event type */
+    uint64_t data; /**< data payload */
+    uint64_t data2; /**< additional data payload */
+    uint32_t userId; /**< id for user events */
+    PalEventType type; /**< event type */
 } PalEvent;
 
 /**
@@ -157,7 +157,7 @@ typedef struct PalEvent {
  * @endcode
  * 
  * @param[in] userData User-defined data passed to the callback or `nullptr`.
- * @param[in] event The pushed event.
+ * @param[in] event Pushed event.
  *
  * @since Added in version 2.0
  * @ingroup pal_event
@@ -181,7 +181,7 @@ typedef void(PAL_CALL* PalEventCallback)(
  * void PAL_CALL queuePush(void* userData, PalEvent* event);
  * @endcode
  *
- * @param[in] userData User_defined data passed to the function or `nullptr`.
+ * @param[in] userData User-defined data passed to the function or `nullptr`.
  * @param[in] event Pointer to the event to push.
  *
  * @since Added in version 2.0
@@ -207,7 +207,7 @@ typedef void(PAL_CALL* PalPushFn)(
  * PalBool PAL_CALL queuePoll(void* userData, PalEvent* event);
  * @endcode
  *
- * @param[in] userData User_defined data passed to the function or `nullptr`.
+ * @param[in] userData User-defined data passed to the function or `nullptr`.
  * @param[out] event Output struct to recieve the event.
  *
  * @since Added in version 2.0
@@ -239,7 +239,7 @@ typedef PalBool(PAL_CALL* PalPollFn)(
 typedef struct PalEventQueue {
     PalPushFn push; /**< push function */
     PalPollFn poll; /**< poll function */
-    void* userData; /**< user_defined data passed to the functions or `nullptr` */
+    void* userData; /**< user-defined data passed to the functions or `nullptr` */
 } PalEventQueue;
 
 /**
@@ -258,7 +258,7 @@ typedef struct PalEventDriverCreateInfo {
     const PalAllocator* allocator; /**< allocator to use or `nullptr` for default */
     PalEventQueue* queue; /**< event queue to use for @ref PAL_DISPATCH_MODE_POLL */
     PalEventCallback callback; /**< event callback for @ref PAL_DISPATCH_MODE_CALLBACK */
-    void* userData; /**< user_defined data passed to the callback or `nullptr` */
+    void* userData; /**< user-defined data passed to the callback or `nullptr` */
 } PalEventDriverCreateInfo;
 
 /**

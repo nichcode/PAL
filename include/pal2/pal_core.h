@@ -210,7 +210,7 @@ typedef void*(PAL_CALL* PalAllocateFn)(
  * @endcode
  *
  * @param[in] userData User-defined data passed to the callback or `nullptr`.
- * @param[in] ptr The memory to free.
+ * @param[in] ptr Memory to free.
  *
  * @since Added in version 2.0
  * 
