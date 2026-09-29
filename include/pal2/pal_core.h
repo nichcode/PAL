@@ -85,7 +85,7 @@
  */
 #define PAL_RESULT_CODE_NONE 0 /**< no result code */
 #define PAL_RESULT_CODE_INVALID_ARGUMENT 1 /**< invalid argument was passed */
-#define PAL_RESULT_CODE_OUT_OF_MEMORY 2 /**< allocation failed */
+#define PAL_RESULT_CODE_OUT_OF_MEMORY 2 /**< memory allocation failed */
 #define PAL_RESULT_CODE_PLATFORM_FAILURE 3 /**< platform-specific error not known to PAL */
 #define PAL_RESULT_CODE_TIMEOUT 4 /**< timeout occured */
 #define PAL_RESULT_CODE_INVALID_HANDLE 5 /**< invalid handle was passed */
