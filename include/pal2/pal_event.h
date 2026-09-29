@@ -256,8 +256,8 @@ typedef struct PalEventQueue {
  */
 typedef struct PalEventDriverCreateInfo {
     const PalAllocator* allocator; /**< allocator to use or `nullptr` for default */
-    PalEventQueue* queue; /**< event queue to use for @ref PAL_DISPATCH_MODE_POLL */
-    PalEventCallback callback; /**< event callback for @ref PAL_DISPATCH_MODE_CALLBACK */
+    PalEventQueue* queue; /**< event queue to use or `nullptr` for default. */
+    PalEventCallback callback; /**< event callback or `nullptr` */
     void* userData; /**< user-defined data passed to the callback or `nullptr` */
 } PalEventDriverCreateInfo;
 
