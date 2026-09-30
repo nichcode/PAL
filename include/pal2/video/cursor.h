@@ -36,59 +36,37 @@
  * 
  * @ingroup cursor_types
 */
-#define PAL_CURSOR_TYPE_ARROW 0
+
 
 /** @brief The hand system cursor type.
  * 
  * @ingroup cursor_types
 */
-#define PAL_CURSOR_TYPE_HAND 1
+
 
 /** @brief The cross system cursor type.
  * 
  * @ingroup cursor_types
 */
-#define PAL_CURSOR_TYPE_CROSS 2
+
 
 /** @brief The ibeam system cursor type.
  * 
  * @ingroup cursor_types
 */
-#define PAL_CURSOR_TYPE_IBEAM 3
+
 
 /** @brief The wait system cursor type.
  * 
  * @ingroup cursor_types
 */
-#define PAL_CURSOR_TYPE_WAIT 4
+
 
 /** @brief The maximum number of system cursor types. The literal value must
  * not be used.
  * 
  * @ingroup cursor_types
 */
-#define PAL_CURSOR_TYPE_COUNT 5
-
-/**
- * @typedef PalCursorType
- * @brief System cursor type.
- * 
- * All values of this type follow the format `PAL_CURSOR_TYPE_*` for API
- * consistency and ease of use.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- */
-typedef uint32_t PalCursorType;
-
-/**
- * @struct PalCursor
- * @brief Opaque handle to a cursor.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- */
-typedef struct PalCursor PalCursor;
 
 /**
  * @struct PalCursorCreateInfo

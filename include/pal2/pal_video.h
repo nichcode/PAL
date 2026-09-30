@@ -26,305 +26,376 @@
 
 /**
  * @defgroup pal_video Video Module
+ * @{
  */
 
 #ifndef PAL_VIDEO_H
 #define PAL_VIDEO_H
 
-#include "video/cursor.h"
-#include "video/icon.h"
-#include "video/keyboard.h"
-#include "video/monitor.h"
-#include "video/mouse.h"
-#include "video/window.h"
+#define PAL_MONITOR_NAME_SIZE 32
 
 /**
  * @defgroup video_features Video Features
- * @brief Video features
- * 
- * @ingroup pal_video
+ * @{
  */
+#define PAL_VIDEO_FEATURE_HIGH_DPI (1ULL << 0) /**< support for high-DPI windows */
+#define PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION (1ULL << 1) /**< support for setting monitor orientation */
+#define PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION (1ULL << 2) /**< support for getting monitor orientation */
+#define PAL_VIDEO_FEATURE_BORDERLESS_WINDOW (1ULL << 3) /**< support for borderless windows */
+#define PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW (1ULL << 4) /**< support for transparent windows */
+#define PAL_VIDEO_FEATURE_TOOL_WINDOW (1ULL << 5) /**< support for windows without taskbar icon */
+#define PAL_VIDEO_FEATURE_MONITOR_SET_MODE (1ULL << 6) /**< support for setting monitor display mode */
+#define PAL_VIDEO_FEATURE_MONITOR_GET_MODE (1ULL << 7) /**< support for getting monitor display mode */
+#define PAL_VIDEO_FEATURE_MULTI_MONITORS (1ULL << 8) /**< depreciated. */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_SIZE (1ULL << 9) /**< support for setting window size */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_SIZE (1ULL << 10) /**< support for getting window size */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_POS (1ULL << 11) /**< support for setting window position */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_POS (1ULL << 12) /**< support for getting window position */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_STATE (1ULL << 13) /**< support for setting window state */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_STATE (1ULL << 14) /**< support for getting window state */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY (1ULL << 15) /**< support for setting window visibility */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY (1ULL << 16) /**< support for getting window visibility */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_TITLE (1ULL << 17) /**< support for setting window title */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_TITLE (1ULL << 18) /**< support for getting window title */
+#define PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX (1ULL << 19) /**< support for windows with no maximize button */
+#define PAL_VIDEO_FEATURE_NO_MINIMIZEBOX (1ULL << 20) /**< support for windows with no minimize button */
+#define PAL_VIDEO_FEATURE_CLIP_CURSOR (1ULL << 21) /**< support for clipping cursor to window */
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION (1ULL << 22) /**< support for flashing window titlebar */
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY (1ULL << 23) /**< support for flashing window taskbar icon */
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL (1ULL << 24) /**< support for setting flash intervals */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS (1ULL << 25) /**< support for setting window input focus */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS (1ULL << 26) /**< support for getting window input focus */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_STYLE (1ULL << 27) /**< support for setting window style */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_STYLE (1ULL << 28) /**< support for getting window style */
+#define PAL_VIDEO_FEATURE_CURSOR_SET_POS (1ULL << 29) /**< support for setting cursor position */
+#define PAL_VIDEO_FEATURE_CURSOR_GET_POS (1ULL << 30) /**< support for getting cursor position */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_ICON (1ULL << 31) /**< support for setting window icon */
+#define PAL_VIDEO_FEATURE_TOPMOST_WINDOW (1ULL << 32) /**< support for topmost windows */
+#define PAL_VIDEO_FEATURE_DECORATED_WINDOW (1ULL << 33) /**< support for decorated windows */
+#define PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY (1ULL << 34) /**< support for setting cursor visibility */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR (1ULL << 35) /**< support for getting window monitor */
+#define PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY (1ULL << 36) /**< support for getting primary monitor */
+#define PAL_VIDEO_FEATURE_FOREIGN_WINDOWS (1ULL << 37) /**< support for attaching and detaching foreign windows */
+#define PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE (1ULL << 38) /**< support for validating monitor display modes */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR (1ULL << 39) /**< support for setting window cursor */
+/** @} */
 
 /**
  * @defgroup video_drivers Video Drivers
- * @brief Video drivers
- * 
- * @ingroup pal_video
+ * @{
  */
-
-/** @brief The video driver supports high DPI windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_HIGH_DPI (1ULL << 0)
-
-/** @brief The video driver supports setting monitor orientation.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION (1ULL << 1)
-
-/** @brief The video driver supports getting monitor orientation.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION (1ULL << 2)
-
-/** @brief The video driver supports borderless windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_BORDERLESS_WINDOW (1ULL << 3)
-
-/** @brief The video driver supports transparent windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW (1ULL << 4)
-
-/** @brief The video driver supports tool windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_TOOL_WINDOW (1ULL << 5)
-
-/** @brief The video driver supports setting current monitor display mode.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_MONITOR_SET_MODE (1ULL << 6)
-
-/** @brief The video driver supports getting current monitor display mode.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_MONITOR_GET_MODE (1ULL << 7)
-
-/** @brief The video driver supports multiple monitors.
- * 
- * This is depreciated and will be removed.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_MULTI_MONITORS (1ULL << 8)
-
-/** @brief The video driver supports setting window size dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_SIZE (1ULL << 9)
-
-/** @brief The video driver supports getting window size dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_SIZE (1ULL << 10)
-
-/** @brief The video driver supports setting window position dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_POS (1ULL << 11)
-
-/** @brief The video driver supports getting window position dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_POS (1ULL << 12)
-
-/** @brief The video driver supports setting window state dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_STATE (1ULL << 13)
-
-/** @brief The video driver supports getting window state dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_STATE (1ULL << 14)
-
-/** @brief The video driver supports setting window visibility dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY (1ULL << 15)
-
-/** @brief The video driver supports getting window visibility dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY (1ULL << 16)
-
-/** @brief The video driver supports setting window title dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_TITLE (1ULL << 17)
-
-/** @brief The video driver supports getting window title dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_TITLE (1ULL << 18)
-
-/** @brief The video driver supports removing the maximizebox from windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX (1ULL << 19)
-
-/** @brief The video driver supports removing the minimizebox from windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_NO_MINIMIZEBOX (1ULL << 20)
-
-/** @brief The video driver supports clipping cursor to a window.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_CLIP_CURSOR (1ULL << 21)
-
-/** @brief The video driver supports flashing the titlebar of a window.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION (1ULL << 22)
-
-/** @brief The video driver supports flashing the taskbar icon of a window.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY (1ULL << 23)
-
-/** @brief The video driver supports flash interval greater than `0`.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL (1ULL << 24)
-
-/** @brief The video driver supports setting input-focus for a window.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS (1ULL << 25)
-
-/** @brief The video driver supports getting input-focus for a window.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS (1ULL << 26)
-
-/** @brief The video driver supports setting window styles dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_STYLE (1ULL << 27)
-
-/** @brief The video driver supports getting window styles dynamically.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_STYLE (1ULL << 28)
-
-/** @brief The video driver supports setting cursor position.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_CURSOR_SET_POS (1ULL << 29)
-
-/** @brief The video driver supports getting cursor position.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_CURSOR_GET_POS (1ULL << 30)
-
-/** @brief The video driver supports setting window icon.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_ICON (1ULL << 31)
-
-/** @brief The video driver supports topmost windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_TOPMOST_WINDOW (1ULL << 32)
-
-/** @brief The video driver supports decorated windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_DECORATED_WINDOW (1ULL << 33)
-
-/** @brief The video driver supports setting cursor visibility.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY (1ULL << 34)
-
-/** @brief The video driver supports getting the monitor a window 
- * is currently on.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR (1ULL << 35)
-
-/** @brief The video driver supports getting primary monitors.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY (1ULL << 36)
-
-/** @brief The video driver supports attaching and detaching foreign windows.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_FOREIGN_WINDOWS (1ULL << 37)
-
-/** @brief The video driver supports validating monitor display modes.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE (1ULL << 38)
-
-/** @brief The video driver supports setting window cursors.
- * 
- * @ingroup video_features
-*/
-#define PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR (1ULL << 39)
-
-/** @brief The video driver type is unknown to PAL.
- * 
- * @ingroup video_drivers
-*/
-#define PAL_VIDEO_DRIVER_TYPE_UNKNOWN 0
-
-/** @brief The video driver type is Win32.
- * 
- * @ingroup video_drivers
-*/
+#define PAL_VIDEO_DRIVER_TYPE_UNKNOWN 0 /**< unknown video driver type to PAL */
 #define PAL_VIDEO_DRIVER_TYPE_WIN32 1
-
-/** @brief The video driver type is Wayland.
- * 
- * @ingroup video_drivers
-*/
 #define PAL_VIDEO_DRIVER_TYPE_WAYLAND 2
-
-/** @brief The video driver type is X11.
- * 
- * @ingroup video_drivers
-*/
 #define PAL_VIDEO_DRIVER_TYPE_X11 3
+#define PAL_VIDEO_DRIVER_TYPE_COUNT 4 /**< number of video drivers */
+/** @} */
 
-/** @brief The maximum number of video driver types. The literal value must
- * not be used.
- * 
- * @ingroup video_drivers
-*/
-#define PAL_VIDEO_DRIVER_TYPE_COUNT 4
+/**
+ * @defgroup window_styles Window Styles
+ * @{
+ */
+#define PAL_WINDOW_STYLE_RESIZABLE (1U << 0) /**< window is resizable */
+#define PAL_WINDOW_STYLE_TRANSPARENT (1U << 1) /**< window is transparent */
+#define PAL_WINDOW_STYLE_TOPMOST (1U << 2) /**< window is topmost */
+#define PAL_WINDOW_STYLE_NO_MINIMIZEBOX (1U << 3) /**< window has no minimize button */
+#define PAL_WINDOW_STYLE_NO_MAXIMIZEBOX (1U << 4) /**< window has no maximize button */
+#define PAL_WINDOW_STYLE_TOOL (1U << 5) /**< window has no taskbar icon */
+#define PAL_WINDOW_STYLE_BORDERLESS (1U << 6) /**< window has no decorations */
+/** @} */
+
+/**
+ * @defgroup window_states Window States
+ * @{
+ */
+#define PAL_WINDOW_STATE_NORMAL 0 /**< windowed mode */
+#define PAL_WINDOW_STATE_MAXIMIZED 1
+#define PAL_WINDOW_STATE_MINIMIZED 2
+#define PAL_WINDOW_STATE_RESTORED 3
+#define PAL_WINDOW_STATE_COUNT 4 /**< number of window states */
+/** @} */
+
+/**
+ * @defgroup flash_flags Flash Flags
+ * @{
+ */
+#define PAL_FLASH_FLAG_STOP 0 /**< stop all flash operations */
+#define PAL_FLASH_FLAG_CAPTION (1U << 0) /**< flash window titlebar */
+#define PAL_FLASH_FLAG_TRAY (1U << 1) /**< flash window taskbar icon */
+/** @} */
+
+/**
+ * @defgroup fbconfig_backends Framebuffer Configuration Backends
+ * @{
+ */
+#define PAL_FBCONFIG_BACKEND_PAL_OPENGL 0 /**< PAL OpenGL backend */
+#define PAL_FBCONFIG_BACKEND_EGL 1
+#define PAL_FBCONFIG_BACKEND_GLX 2
+#define PAL_FBCONFIG_BACKEND_WGL 3
+#define PAL_FBCONFIG_BACKEND_COUNT 4 /**< number of framebuffer configuration backends */
+/** @} */
+
+/**
+ * @defgroup orientations Orientations
+ * @{
+ */
+#define PAL_ORIENTATION_LANDSCAPE 0
+#define PAL_ORIENTATION_PORTRAIT 1
+#define PAL_ORIENTATION_LANDSCAPE_FLIPPED 2 /**< landscape rotated 180 degrees */
+#define PAL_ORIENTATION_PORTRAIT_FLIPPED 3 /**< portrait rotated 180 degrees */
+#define PAL_ORIENTATION_COUNT 4 /**< number of orientations */
+/** @} */
+
+/**
+ * @defgroup cursor_types Cursor Types
+ * @{
+ */
+#define PAL_CURSOR_TYPE_ARROW 0
+#define PAL_CURSOR_TYPE_HAND 1
+#define PAL_CURSOR_TYPE_CROSS 2
+#define PAL_CURSOR_TYPE_IBEAM 3
+#define PAL_CURSOR_TYPE_WAIT 4
+#define PAL_CURSOR_TYPE_COUNT 5 /**< number of cursor types */
+/** @} */
+
+/**
+ * @defgroup keycodes Keycodes
+ * @{
+ */
+#define PAL_KEYCODE_UNKNOWN 0 /**< unknown keycode to PAL*/
+#define PAL_KEYCODE_A 1
+#define PAL_KEYCODE_B 2
+#define PAL_KEYCODE_C 3
+#define PAL_KEYCODE_D 4
+#define PAL_KEYCODE_E 5
+#define PAL_KEYCODE_F 6
+#define PAL_KEYCODE_G 7
+#define PAL_KEYCODE_H 8
+#define PAL_KEYCODE_I 9
+#define PAL_KEYCODE_J 10
+#define PAL_KEYCODE_K 11
+#define PAL_KEYCODE_L 12
+#define PAL_KEYCODE_M 13
+#define PAL_KEYCODE_N 14
+#define PAL_KEYCODE_O 15
+#define PAL_KEYCODE_P 16
+#define PAL_KEYCODE_Q 17
+#define PAL_KEYCODE_R 18
+#define PAL_KEYCODE_S 19
+#define PAL_KEYCODE_T 20
+#define PAL_KEYCODE_U 21
+#define PAL_KEYCODE_V 22
+#define PAL_KEYCODE_W 23
+#define PAL_KEYCODE_X 24
+#define PAL_KEYCODE_Y 25
+#define PAL_KEYCODE_Z 26
+#define PAL_KEYCODE_0 27
+#define PAL_KEYCODE_1 28
+#define PAL_KEYCODE_2 29
+#define PAL_KEYCODE_3 30
+#define PAL_KEYCODE_4 31
+#define PAL_KEYCODE_5 32
+#define PAL_KEYCODE_6 33
+#define PAL_KEYCODE_7 34
+#define PAL_KEYCODE_8 35
+#define PAL_KEYCODE_9 36
+#define PAL_KEYCODE_F1 37
+#define PAL_KEYCODE_F2 38
+#define PAL_KEYCODE_F3 39
+#define PAL_KEYCODE_F4 40
+#define PAL_KEYCODE_F5 41
+#define PAL_KEYCODE_F6 42
+#define PAL_KEYCODE_F7 43
+#define PAL_KEYCODE_F8 44
+#define PAL_KEYCODE_F9 45
+#define PAL_KEYCODE_F10 46
+#define PAL_KEYCODE_F11 47
+#define PAL_KEYCODE_F12 48
+#define PAL_KEYCODE_ESCAPE 49
+#define PAL_KEYCODE_ENTER 50
+#define PAL_KEYCODE_TAB 51
+#define PAL_KEYCODE_BACKSPACE 52
+#define PAL_KEYCODE_SPACE 53
+#define PAL_KEYCODE_CAPSLOCK 54
+#define PAL_KEYCODE_NUMLOCK 55
+#define PAL_KEYCODE_SCROLLLOCK 56
+#define PAL_KEYCODE_LSHIFT 57 /**< left shift */
+#define PAL_KEYCODE_RSHIFT 58 /**< right shift */
+#define PAL_KEYCODE_LCTRL 59 /**< left control */
+#define PAL_KEYCODE_RCTRL 60 /**< right control */
+#define PAL_KEYCODE_LALT 61 /**< left alt */
+#define PAL_KEYCODE_RALT 62 /**< right alt */
+#define PAL_KEYCODE_LEFT 63
+#define PAL_KEYCODE_RIGHT 64
+#define PAL_KEYCODE_UP 65
+#define PAL_KEYCODE_DOWN 66
+#define PAL_KEYCODE_INSERT 67
+#define PAL_KEYCODE_DELETE 68
+#define PAL_KEYCODE_HOME 69
+#define PAL_KEYCODE_END 70
+#define PAL_KEYCODE_PAGEUP 71
+#define PAL_KEYCODE_PAGEDOWN 72
+#define PAL_KEYCODE_KP_0 73
+#define PAL_KEYCODE_KP_1 74
+#define PAL_KEYCODE_KP_2 75
+#define PAL_KEYCODE_KP_3 76
+#define PAL_KEYCODE_KP_4 77
+#define PAL_KEYCODE_KP_5 78
+#define PAL_KEYCODE_KP_6 79
+#define PAL_KEYCODE_KP_7 80
+#define PAL_KEYCODE_KP_8 81
+#define PAL_KEYCODE_KP_9 82
+#define PAL_KEYCODE_KP_ENTER 83
+#define PAL_KEYCODE_KP_ADD 84
+#define PAL_KEYCODE_KP_SUBTRACT 85
+#define PAL_KEYCODE_KP_MULTIPLY 86
+#define PAL_KEYCODE_KP_DIVIDE 87
+#define PAL_KEYCODE_KP_DECIMAL 88
+#define PAL_KEYCODE_KP_EQUAL 89
+#define PAL_KEYCODE_PRINTSCREEN 90
+#define PAL_KEYCODE_PAUSE 91
+#define PAL_KEYCODE_MENU 92
+#define PAL_KEYCODE_APOSTROPHE 93 /**< ' */
+#define PAL_KEYCODE_BACKSLASH 94 /**< \ */
+#define PAL_KEYCODE_COMMA 95
+#define PAL_KEYCODE_EQUAL 96
+#define PAL_KEYCODE_GRAVEACCENT 97 /**< ` */
+#define PAL_KEYCODE_SUBTRACT 98
+#define PAL_KEYCODE_PERIOD 99 /**< . */
+#define PAL_KEYCODE_SEMICOLON 100
+#define PAL_KEYCODE_SLASH 101 /**< / */
+#define PAL_KEYCODE_LBRACKET 102 /**< [ */
+#define PAL_KEYCODE_RBRACKET 103 /**< ] */
+#define PAL_KEYCODE_LSUPER 104 /**< left super or windows */
+#define PAL_KEYCODE_RSUPER 105 /**< right super or windows */
+#define PAL_KEYCODE_COUNT 106
+/** @} */
+
+/**
+ * @defgroup scancodes Scancodes
+ * @{
+ */
+#define PAL_SCANCODE_UNKNOWN 0 /**< unknown scancode to PAL*/
+#define PAL_SCANCODE_A 1
+#define PAL_SCANCODE_B 2
+#define PAL_SCANCODE_C 3
+#define PAL_SCANCODE_D 4
+#define PAL_SCANCODE_E 5
+#define PAL_SCANCODE_F 6
+#define PAL_SCANCODE_G 7
+#define PAL_SCANCODE_H 8
+#define PAL_SCANCODE_I 9
+#define PAL_SCANCODE_J 10
+#define PAL_SCANCODE_K 11
+#define PAL_SCANCODE_L 12
+#define PAL_SCANCODE_M 13
+#define PAL_SCANCODE_N 14
+#define PAL_SCANCODE_O 15
+#define PAL_SCANCODE_P 16
+#define PAL_SCANCODE_Q 17
+#define PAL_SCANCODE_R 18
+#define PAL_SCANCODE_S 19
+#define PAL_SCANCODE_T 20
+#define PAL_SCANCODE_U 21
+#define PAL_SCANCODE_V 22
+#define PAL_SCANCODE_W 23
+#define PAL_SCANCODE_X 24
+#define PAL_SCANCODE_Y 25
+#define PAL_SCANCODE_Z 26
+#define PAL_SCANCODE_0 27
+#define PAL_SCANCODE_1 28
+#define PAL_SCANCODE_2 29
+#define PAL_SCANCODE_3 30
+#define PAL_SCANCODE_4 31
+#define PAL_SCANCODE_5 32
+#define PAL_SCANCODE_6 33
+#define PAL_SCANCODE_7 34
+#define PAL_SCANCODE_8 35
+#define PAL_SCANCODE_9 36
+#define PAL_SCANCODE_F1 37
+#define PAL_SCANCODE_F2 38
+#define PAL_SCANCODE_F3 39
+#define PAL_SCANCODE_F4 40
+#define PAL_SCANCODE_F5 41
+#define PAL_SCANCODE_F6 42
+#define PAL_SCANCODE_F7 43
+#define PAL_SCANCODE_F8 44
+#define PAL_SCANCODE_F9 45
+#define PAL_SCANCODE_F10 46
+#define PAL_SCANCODE_F11 47
+#define PAL_SCANCODE_F12 48
+#define PAL_SCANCODE_ESCAPE 49
+#define PAL_SCANCODE_ENTER 50
+#define PAL_SCANCODE_TAB 51
+#define PAL_SCANCODE_BACKSPACE 52
+#define PAL_SCANCODE_SPACE 53
+#define PAL_SCANCODE_CAPSLOCK 54
+#define PAL_SCANCODE_NUMLOCK 55
+#define PAL_SCANCODE_SCROLLLOCK 56
+#define PAL_SCANCODE_LSHIFT 57 /**< left shift */
+#define PAL_SCANCODE_RSHIFT 58 /**< right shift */
+#define PAL_SCANCODE_LCTRL 59 /**< left control */
+#define PAL_SCANCODE_RCTRL 60 /**< right control */
+#define PAL_SCANCODE_LALT 61 /**< left alt */
+#define PAL_SCANCODE_RALT 62 /**< right alt */
+#define PAL_SCANCODE_LEFT 63
+#define PAL_SCANCODE_RIGHT 64
+#define PAL_SCANCODE_UP 65
+#define PAL_SCANCODE_DOWN 66
+#define PAL_SCANCODE_INSERT 67
+#define PAL_SCANCODE_DELETE 68
+#define PAL_SCANCODE_HOME 69
+#define PAL_SCANCODE_END 70
+#define PAL_SCANCODE_PAGEUP 71
+#define PAL_SCANCODE_PAGEDOWN 72
+#define PAL_SCANCODE_KP_0 73
+#define PAL_SCANCODE_KP_1 74
+#define PAL_SCANCODE_KP_2 75
+#define PAL_SCANCODE_KP_3 76
+#define PAL_SCANCODE_KP_4 77
+#define PAL_SCANCODE_KP_5 78
+#define PAL_SCANCODE_KP_6 79
+#define PAL_SCANCODE_KP_7 80
+#define PAL_SCANCODE_KP_8 81
+#define PAL_SCANCODE_KP_9 82
+#define PAL_SCANCODE_KP_ENTER 83
+#define PAL_SCANCODE_KP_ADD 84
+#define PAL_SCANCODE_KP_SUBTRACT 85
+#define PAL_SCANCODE_KP_MULTIPLY 86
+#define PAL_SCANCODE_KP_DIVIDE 87
+#define PAL_SCANCODE_KP_DECIMAL 88
+#define PAL_SCANCODE_KP_EQUAL 89
+#define PAL_SCANCODE_PRINTSCREEN 90
+#define PAL_SCANCODE_PAUSE 91
+#define PAL_SCANCODE_MENU 92
+#define PAL_SCANCODE_APOSTROPHE 93 /**< ' */
+#define PAL_SCANCODE_BACKSLASH 94 /**< \ */
+#define PAL_SCANCODE_COMMA 95
+#define PAL_SCANCODE_EQUAL 96
+#define PAL_SCANCODE_GRAVEACCENT 97 /**< ` */
+#define PAL_SCANCODE_SUBTRACT 98
+#define PAL_SCANCODE_PERIOD 99 /**< . */
+#define PAL_SCANCODE_SEMICOLON 100
+#define PAL_SCANCODE_SLASH 101 /**< / */
+#define PAL_SCANCODE_LBRACKET 102 /**< [ */
+#define PAL_SCANCODE_RBRACKET 103 /**< ] */
+#define PAL_SCANCODE_LSUPER 104 /**< left super or windows */
+#define PAL_SCANCODE_RSUPER 105 /**< right super or windows */
+#define PAL_SCANCODE_COUNT 106
+/** @} */
+
+/**
+ * @defgroup mouse_buttons Mouse Buttons
+ * @{
+ */
+#define PAL_MOUSE_BUTTON_UNKNOWN 0 /**< unknown mouse button to PAL */
+#define PAL_MOUSE_BUTTON_LEFT 1
+#define PAL_MOUSE_BUTTON_RIGHT 2
+#define PAL_MOUSE_BUTTON_MIDDLE 3
+#define PAL_MOUSE_BUTTON_X1 4
+#define PAL_MOUSE_BUTTON_X2 5
+#define PAL_MOUSE_BUTTON_COUNT 6 /**< number of mouse buttons */
+/** @} */
 
 /**
  * @typedef PalVideoFeatures
@@ -336,7 +407,6 @@
  * consistency and ease of use.
  *
  * @since Added in version 2.0
- * @ingroup pal_video
  */
 typedef uint64_t PalVideoFeatures;
 
@@ -348,9 +418,141 @@ typedef uint64_t PalVideoFeatures;
  * consistency and ease of use.
  *
  * @since Added in version 2.2
- * @ingroup pal_video
  */
 typedef uint32_t PalVideoDriverType;
+
+/**
+ * @typedef PalWindowStyle
+ * @brief Window style.
+ * 
+ * All values of this type follow the format `PAL_WINDOW_STYLE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalWindowStyle;
+
+/**
+ * @typedef PalWindowState
+ * @brief Window state.
+ * 
+ * All values of this type follow the format `PAL_WINDOW_STATE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalWindowState;
+
+/**
+ * @typedef PalFlashFlags
+ * @brief Flash flags.
+ * 
+ * All values of this type follow the format `PAL_FLASH_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalFlashFlags;
+
+/**
+ * @typedef PalFBConfigBackend
+ * @brief Framebuffer configuration backend.
+ * 
+ * All values of this type follow the format `PAL_FBCONFIG_BACKEND_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalFBConfigBackend;
+
+/**
+ * @typedef PalOrientation
+ * @brief Monitor orientation.
+ * 
+ * All values of this type follow the format `PAL_ORIENTATION_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalOrientation;
+
+/**
+ * @typedef PalCursorType
+ * @brief System cursor type.
+ * 
+ * All values of this type follow the format `PAL_CURSOR_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalCursorType;
+
+/**
+ * @typedef PalKeycode
+ * @brief Keycode (layout aware key) of a keyboard.
+ * 
+ * All values of this type follow the format `PAL_KEYCODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalKeycode;
+
+/**
+ * @typedef PalScancode
+ * @brief Scancode (layout independent key) of a keyboard.
+ * 
+ * All values of this type follow the format `PAL_SCANCODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ */
+typedef uint32_t PalScancode;
+
+/**
+ * @typedef PalMouseButton
+ * @brief Mouse button.
+ * 
+ * All values of this type follow the format `PAL_MOUSE_BUTTON_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalMouseButton;
+
+/**
+ * @struct PalWindow
+ * @brief Opaque handle to a window.
+ *
+ * @since Added in version 2.0
+ */
+typedef struct PalWindow PalWindow;
+
+/**
+ * @struct PalMonitor
+ * @brief Opaque handle to a monitor.
+ *
+ * @since Added in version 2.0
+ */
+typedef struct PalMonitor PalMonitor;
+
+/**
+ * @struct PalCursor
+ * @brief Opaque handle to a cursor.
+ *
+ * @since Added in version 2.0
+ */
+typedef struct PalCursor PalCursor;
+
+/**
+ * @struct PalIcon
+ * @brief Opaque handle to an icon.
+ *
+ * @since Added in version 2.0
+ */
+typedef struct PalIcon PalIcon;
+/** @} */
 
 typedef struct PalEventDriver PalEventDriver;
 

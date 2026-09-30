@@ -36,56 +36,43 @@
  * 
  * @ingroup mouse_buttons
 */
-#define PAL_MOUSE_BUTTON_UNKNOWN 0
+
 
 /** @brief The left mouse button.
  * 
  * @ingroup mouse_buttons
 */
-#define PAL_MOUSE_BUTTON_LEFT 1
+
 
 /** @brief The right mouse button.
  * 
  * @ingroup mouse_buttons
 */
-#define PAL_MOUSE_BUTTON_RIGHT 2
+
 
 /** @brief The middle or scroll mouse button.
  * 
  * @ingroup mouse_buttons
 */
-#define PAL_MOUSE_BUTTON_MIDDLE 3
+
 
 /** @brief An additional mouse button. Not all mouse have these.
  * 
  * @ingroup mouse_buttons
 */
-#define PAL_MOUSE_BUTTON_X1 4
+
 
 /** @brief An additional mouse button. Not all mouse have these.
  * 
  * @ingroup mouse_buttons
 */
-#define PAL_MOUSE_BUTTON_X2 5
+
 
 /** @brief The maximum number of mouse buttons. The literal value must
  * not be used.
  * 
  * @ingroup mouse_buttons
 */
-#define PAL_MOUSE_BUTTON_COUNT 6
-
-/**
- * @typedef PalMouseButton
- * @brief A mouse button
- * 
- * All values of this type follow the format `PAL_MOUSE_BUTTON_*` for API
- * consistency and ease of use.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- */
-typedef uint32_t PalMouseButton;
 
 /**
  * @brief Gets the state of the mouse buttons.

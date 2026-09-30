@@ -26,15 +26,6 @@
 #include "window.h"
 
 /**
- * @struct PalIcon
- * @brief Opaque handle to an icon.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- */
-typedef struct PalIcon PalIcon;
-
-/**
  * @struct PalIconCreateInfo
  * @brief Creation parameters of an icon.
  *
