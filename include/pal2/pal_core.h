@@ -1,7 +1,6 @@
 
 /**
- * @file pal_core.h
- * @brief This is the header file for PAL Core API.
+ * @brief This is the header file for PAL Core Module API.
  *
  * It defines all the types and functions of the core module.
  *

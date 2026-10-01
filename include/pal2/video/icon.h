@@ -26,30 +26,6 @@
 #include "window.h"
 
 /**
- * @struct PalIconCreateInfo
- * @brief Creation parameters of an icon.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- * 
- * @sa palCreateIcon
- */
-typedef struct PalIconCreateInfo {
-    /** The pixels to use to create the icon. It must be in little-endian
-     * 32bit, RGBA 8bits per channel format and order.
-     */
-    const uint8_t* pixels;
-
-    /** The width of the icon in pixels.*/
-    uint32_t width;
-
-    /** The height of the icon in pixels.*/
-    uint32_t height;
-} PalIconCreateInfo;
-
-/**
  * @brief Creates an icon.
  *
  * PAL_VIDEO_FEATURE_WINDOW_SET_ICON must be supported 
@@ -66,7 +42,7 @@ typedef struct PalIconCreateInfo {
  * @param[in] info Information about how to create the icon.
  * @param[out] icon The output handle to recieve the created icon.
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
+ *         failure. Call @ref palFormatResult() to get the string representation
  *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.

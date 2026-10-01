@@ -26,86 +26,6 @@
 #include "window.h"
 
 /**
- * @defgroup cursor_types Cursor Types
- * @brief Cursor Types
- * 
- * @ingroup pal_video
- */
-
-/** @brief The arrow system cursor type.
- * 
- * @ingroup cursor_types
-*/
-
-
-/** @brief The hand system cursor type.
- * 
- * @ingroup cursor_types
-*/
-
-
-/** @brief The cross system cursor type.
- * 
- * @ingroup cursor_types
-*/
-
-
-/** @brief The ibeam system cursor type.
- * 
- * @ingroup cursor_types
-*/
-
-
-/** @brief The wait system cursor type.
- * 
- * @ingroup cursor_types
-*/
-
-
-/** @brief The maximum number of system cursor types. The literal value must
- * not be used.
- * 
- * @ingroup cursor_types
-*/
-
-/**
- * @struct PalCursorCreateInfo
- * @brief Ceation parameters of a cursor.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- * 
- * @sa palCreateCursor
- */
-typedef struct PalCursorCreateInfo
-{
-    /** The pixels to use to create the cursor. It must be in little-endian
-     * 32bit, RGBA 8bits per channel format and order.
-     */
-    const uint8_t* pixels;
-
-    /** The width of the cursor in pixels.*/
-    uint32_t width;
-
-    /** The height of the cursor in pixels.*/
-    uint32_t height;
-
-    /** The x pixel of the cursor for detecting clicks. This is relative
-     * to the left corner of the cursor with the coordinate
-     * increasing right.
-     */
-    int32_t xHotspot;
-
-    /** The y pixel of the cursor for detecting clicks. This is relative
-     * to the upper corner of the cursor with the coordinate
-     * increasing down.
-     */
-    int32_t yHotspot;
-} PalCursorCreateInfo;
-
-/**
  * @brief Creates a cursor.
  * 
  * This function creates a custom cursor from the provided pixels.
@@ -119,7 +39,7 @@ typedef struct PalCursorCreateInfo
  * @param[in] info Information about how to create the cursor.
  * @param[out] cursor The output handle to recieve the created cursor.
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
+ *         failure. Call @ref palFormatResult() to get the string representation
  *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
@@ -143,7 +63,7 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  * @param[in] type The system cursor type.
  * @param[out] cursor The output handle to recieve the created cursor.
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
+ *         failure. Call @ref palFormatResult() to get the string representation
  *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.

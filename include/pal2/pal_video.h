@@ -32,6 +32,8 @@
 #ifndef PAL_VIDEO_H
 #define PAL_VIDEO_H
 
+#include "pal_core.h"
+
 #define PAL_MONITOR_NAME_SIZE 32
 
 /**
@@ -268,7 +270,7 @@
 #define PAL_KEYCODE_RBRACKET 103 /**< ] */
 #define PAL_KEYCODE_LSUPER 104 /**< left super or windows */
 #define PAL_KEYCODE_RSUPER 105 /**< right super or windows */
-#define PAL_KEYCODE_COUNT 106
+#define PAL_KEYCODE_COUNT 106 /**< number of keycodes */
 /** @} */
 
 /**
@@ -381,7 +383,7 @@
 #define PAL_SCANCODE_RBRACKET 103 /**< ] */
 #define PAL_SCANCODE_LSUPER 104 /**< left super or windows */
 #define PAL_SCANCODE_RSUPER 105 /**< right super or windows */
-#define PAL_SCANCODE_COUNT 106
+#define PAL_SCANCODE_COUNT 106 /**< number of scancodes */
 /** @} */
 
 /**
@@ -558,38 +560,195 @@ typedef struct PalEventDriver PalEventDriver;
 
 /**
  * @struct PalVideoDriver
- * @brief Information about a video driver.
+ * @brief Video driver.
  *
  * @since Added in version 2.2
  * @ingroup pal_video
- * 
- * @sa palEnumerateVideoDrivers
  */
 typedef struct PalVideoDriver {
-    /** A bitmask of supported features of the driver.*/
-    PalVideoFeatures features;
-
-    /** The video driver type. PAL_VIDEO_DRIVER_TYPE_UNKNOWN will be set
-     * if PAL does not recognized or know the drivers type. Select a
-     * driver based on ::features instead.
-     */
-    PalVideoDriverType type;
-
-    /** This is the driver id. This must not be modified.*/
-    uint32_t id;
+    PalVideoFeatures features; /**< bitmask of supported features */
+    PalVideoDriverType type; /**< video driver type */
+    uint32_t id; /**< video driver id */
 } PalVideoDriver;
 
 /**
- * @brief Returns a list of all supported video drivers of the platform.
+ * @struct PalFlashInfo
+ * @brief Flash information.
  * 
- * This function returns a list of all the supported video drivers of the
- * platform. The returned array must not be freed or modified by the user.
- * This can be called and cached once, video drivers are not removed
- * or added dynamically.
+ * `interval` greater than `0` requires @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL
+ * feature to be supported.
  * 
- * Set `drivers` parameter to nullptr to get the total number of supported
- * video drivers. If the drivers array passed is less than the number of
- * supported drivers, PAL will fill the array upto that limit sequentially.
+ * The following flash flags requires:
+ * 
+ * - PAL_FLASH_FLAG_CAPTION - @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION feature to be supported
+ * 
+ * - PAL_FLASH_FLAG_TRAY - @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY feature to be supported
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalFlashInfo {
+    PalFlashFlags flags; /**< bitmask of supported flash flags */
+    uint32_t interval; /**< flash interval or `0` */
+    uint32_t count; /**< number of times to flash or `0` */
+} PalFlashInfo;
+
+/**
+ * @struct PalWindowHandleInfo
+ * @brief Window handle information.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalWindowHandleInfo {
+    void* nativeInstance; /**< window native instance or display */
+    void* nativeWindow; /**< window handle */
+    void* nativeHandle1; /**< additional window handle or `nullptr` */
+    void* nativeHandle2; /**< additional window handle or `nullptr` */
+    void* nativeHandle3; /**< additional window handle or `nullptr` */
+} PalWindowHandleInfo;
+
+/**
+ * @struct PalMonitorInfo
+ * @brief Monitor information.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalMonitorInfo {
+    int32_t x; /**< monitor x position in screen coordinates */
+    int32_t y; /**< monitor y position in screen coordinates */
+    uint32_t width; /**< monitor wdith in screen coordinates */
+    uint32_t height; /**< monitor height in screen coordinates */
+    uint32_t dpi; /**< monitor DPI */
+    uint32_t refreshRate; /**< monitor refresh rate in Hz*/
+    PalOrientation orientation; /**< monitor orientation */
+    PalBool primary; /**< whether this is the primary monitor */
+    char name[PAL_MONITOR_NAME_SIZE]; /**< monitor name*/
+} PalMonitorInfo;
+
+/**
+ * @struct PalMonitorMode
+ * @brief Monitor display mode.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalMonitorMode {
+    uint32_t bpp; /**< display mode bits per pixel */
+    uint32_t refreshRate; /**< display mode refresh rate in Hz */
+    uint32_t width; /**< display mode width in screen coordinates */
+    uint32_t height; /**< display mode height in screen coordinates */
+} PalMonitorMode;
+
+/**
+ * @struct PalWindowCreateInfo
+ * @brief Window creation parameters.
+ * 
+ * This struct is used only during @ref palCreateWindow() and may be
+ * discarded after the function returns.
+ * 
+ * `center` only works for windowed mode. If `monitor` is `nullptr` and the initial state
+ * of the window is not @ref PAL_WINDOW_STATE_NORMAL, it will be ignored.
+ * 
+ * The following window styles requires:
+ * 
+ * - PAL_WINDOW_STYLE_TRANSPARENT - @ref PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW feature to be supported
+ * 
+ * - PAL_WINDOW_STYLE_TOPMOST - @ref PAL_VIDEO_FEATURE_TOPMOST_WINDOW feature to be supported
+ * 
+ * - PAL_WINDOW_STYLE_NO_MINIMIZEBOX - @ref PAL_VIDEO_FEATURE_NO_MINIMIZEBOX feature to be supported
+ * 
+ * - PAL_WINDOW_STYLE_NO_MAXIMIZEBOX - @ref PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX feature to be supported
+ * 
+ * - PAL_WINDOW_STYLE_TOOL - @ref PAL_VIDEO_FEATURE_TOOL_WINDOW feature to be supported
+ * 
+ * - PAL_WINDOW_STYLE_BORDERLESS - @ref PAL_VIDEO_FEATURE_BORDERLESS_WINDOW feature to be supported
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalWindowCreateInfo {
+    const char* title; /**< null-terminated UTF-8 encoded title */
+    PalMonitor* monitor; /**< monitor to use or `nullptr` for windowed mode */
+    const char* appName; /**< null-terminated UTF-8 encoded app name or `nullptr` to use `PAL` */
+    const char* instanceName; /**< null-terminated UTF-8 encoded instance name or `nullptr` to use `title` */
+    PalFBConfigBackend fbConfigBackend; /**< framebuffer configuration backend */
+    int32_t fbConfigIndex; /**< framebuffer configuration index or `0` for no configuration */
+    uint32_t width; /**< window width in screen coordinates */
+    uint32_t height; /**< window height in screen coordinates */
+    PalBool show; /**< whether window should be visible after creation */
+    PalWindowStyle style; /**< bitmask of supported window styles */
+    PalWindowState state; /**< initial window state */
+    PalBool center; /**< whether to center window after creation. */
+} PalWindowCreateInfo;
+
+/**
+ * @struct PalCursorCreateInfo
+ * @brief Cursor creation parameters.
+ * 
+ * This struct is used only during @ref palCreateCursor() and may be
+ * discarded after the function returns.
+ * 
+ * Coordinates are relative to the upper-left corner of the cursor. 
+ * X-coordinate increases to the right and Y-coordinate increases down. 
+ * 
+ * `pixels` must be little-endian 32-bit, RGBA 8-bits per channel.
+ * After the cursor is created, the pixels can be freed, it is copied.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalCursorCreateInfo {
+    const uint8_t* pixels; /**< cursor pixels */
+    uint32_t width; /**< cursor width in pixels */
+    uint32_t height; /**< cursor height in pixels */
+    int32_t xHotspot; /**< cursor x hotspot pixel */
+    int32_t yHotspot; /**< cursor y hotspot pixel */
+} PalCursorCreateInfo;
+
+/**
+ * @struct PalIconCreateInfo
+ * @brief Icon creation parameters.
+ * 
+ * This struct is used only during @ref palCreateIcon() and may be
+ * discarded after the function returns.
+ * 
+ * Coordinates are relative to the upper-left corner of the icon. 
+ * X-coordinate increases to the right and Y-coordinate increases down. 
+ * 
+ * `pixels` must be little-endian 32-bit, RGBA 8-bits per channel.
+ * After the icon is created, the pixels can be freed, it is copied.
+ *
+ * Uninitialized fields may result in undefined behavior.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalIconCreateInfo {
+    const uint8_t* pixels; /**< icon pixels */
+    uint32_t width; /**< icon width in pixels */
+    uint32_t height; /**< icon height in pixels */
+} PalIconCreateInfo;
+
+/**
+ * @brief Enumerates supported video drivers.
+ * 
+ * This function gets all supported video drivers that can be used with the platform.
+ * This is a two-call function, set `drivers` to `nullptr` and `count` to 0 to obtain
+ * the number of supported video drivers. Allocate the array and call this function
+ * again to with `drivers` set to the allocated array and `count` set to the 
+ * capacity of the array.
+ * 
+ * If the specified count is less than the number of supported video drivers,
+ * only the video drivers that fit in the array will be written. You may call
+ * this function once, video drivers are not removed or added at runtime.
  * 
  * @param[in, out] count The capacity of the video drivers array.
  * @param drivers The video drivers array.
@@ -607,15 +766,14 @@ PAL_API void PAL_CALL palEnumerateVideoDrivers(
     PalVideoDriver* drivers);
 
 /**
- * @brief Sets the preferred video driver the video system should use.
+ * @brief Sets the preferred video driver.
  * 
- * The video system must not be initialized before this call. If the video
- * system is initialized already, the next initialization will use the
- * driver. The video driver must be valid, otherwise this function will
- * ignore it silently and select a default. Get the driver from
- * @ref palEnumerateVideoDrivers to get a supported driver.
+ * This function sets the preferred video driver the video system should use. 
+ * The video driver must be supported. If the video system has been initialized,
+ * the video driver will be ignored. Setting an unsupported video driber will be
+ * ignored and the video system will select a default.
  * 
- * @param driver The video driver.
+ * @param driver Preferred video driver.
  * 
  * @Thread-safety Must only be called from the main thread.
  * 
@@ -628,9 +786,11 @@ PAL_API void PAL_CALL palEnumerateVideoDrivers(
 PAL_API void PAL_CALL palSetVideoDriver(PalVideoDriver* driver);
 
 /**
- * @brief Gets the active or selected video driver of the video system.
+ * @brief Gets the active video driver.
  * 
- * The video system must be initialized before this.
+ * This function gets the active or selected video driver of the system.
+ * If the video system has not been initialized, this function will
+ * set `driver` to `nullptr`.
  * 
  * @param[out] driver The output struct to recieve the video driver.
  * 
@@ -647,37 +807,32 @@ PAL_API void PAL_CALL palGetVideoDriver(PalVideoDriver* driver);
 /**
  * @brief Initializes the video system.
  * 
- * This must be called before any video function. Calling this function
- * multiple times does nothing if the video system is already initialized.
+ * The function initializes the video system. If the video system has been initialized,
+ * the function does nothing.
  *
- * `allocator` and `eventDriver` parameters will not not copied, therefore
- * the pointers must remain valid until the video system has shutdown. 
- * The event driver must be valid to recieve video events.
+ * `allocator` and `eventDriver` are not copied. The allocator and the event driver
+ * with any state referenced by them must remain valid until @ref palShutdownVideo() is called.
+ * If the event driver is `nullptr`, the video system will not process events`.
  *
- * If `preferredInstance` is nullptr, the video system creates one and 
- * control its lifetime. The provided instance will not be freed by
- * the video system.
+ * If `preferredInstance` is `nullptr`, the video system creates one and 
+ * control its lifetime. On Linux, `preferredInstance` is the displat associated with
+ * the connection. On Windows, `preferredInstance` is the process HINSTANCE.
+ * The preferred instance will not be destroyed by the video system when
+ * @ref palShutdownVideo().
  * 
- * The video driver the video system uses is selected by default. To override
- * this, enumerate all the supported video drivers of the platform with
- * @ref palEnumerateVideoDrivers and select one with @ref palSetVideoDriver.
- * Call @ref palGetVideoDriver to get the selected driver if an explicit
- * driver was not selected. This is not a hint, therefore the returned
- * drivers are all available and can be used.
+ * If the preferred instance is `nullptr`, the video system creates and control
+ * its lifetime.
  * 
- * The video system must be shutdown with @ref palShutdownVideo when no
- * longer needed.
- *
- * @param[in] allocator The allocator. Set to nullptr to use the
- *                      thread-safe default.
- * @param[in] eventDriver The event driver. If nullptr, the video system
- *                        will not process events.
- * @param[in] preferredInstance User instance or display. Can be nullptr.
- * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
- *         of the result value.
+ * @param[in] allocator Allocator to use or `nullptr` for default.
+ * @param[in] eventDriver Event driver to use or `nullptr` to disable events.
+ * @param[in] preferredInstance User-provided instance or `nullptr`.
+ * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
+ *         Call @ref palFormatResult() for more information.
  *
  * @Thread-safety Must only be called from the main thread.
+ * 
+ * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -694,10 +849,11 @@ PAL_API PalResult PAL_CALL palInitVideo(
 
 /**
  * @brief Shutdowns the video system.
- *
- * If the video system has not been initialized, the function returns silently.
- * All created windows, icons, and cursors must be destroyed before this call.
- *
+ * 
+ * This function shutdowns the video system. All created windows, icons and cursors
+ * must be destroyed before this call. If the video system has not been
+ * initialized, the function returns silently.
+ * 
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
@@ -708,17 +864,13 @@ PAL_API PalResult PAL_CALL palInitVideo(
 PAL_API void PAL_CALL palShutdownVideo();
 
 /**
- * @brief Updates the video system and all created windows.
- *
- * If the video system has not been initialized, the function returns silently.
- * This function pushes generated video events to the event driver set at
- * @ref palInitVideo. If there was no event driver, the events will not be
- * processed. Windows might be responsive even if there is no event driver
- * but thats implementation-defined behavior.
+ * @brief Updates the video system.
  * 
- * This function processes the events and return immediately if there
- * is an event driver. For now, there is no way to block or wait for events
- * to be processed.
+ * This function updates the video system and created and attached windows.
+ * If the event driver supplied to palInitVideo() is `nullptr`, the
+ * events will not be processed and created or attached windows may be 
+ * unresponsive, the behavior is undefined. This function does not
+ * block or waits for the event driver to populate events.
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -732,10 +884,9 @@ PAL_API void PAL_CALL palUpdateVideo();
 /**
  * @brief Gets the supported features of the video system.
  * 
- * This returned supported features is from the active or 
- * selected video driver.
+ * This function returns the selected or active video driver features.
  *
- * @return video features on success or `0` on failure.
+ * @return Video features on success or `0` on failure.
  *
  * @Thread-safety Thread safe.
  *
@@ -747,25 +898,575 @@ PAL_API void PAL_CALL palUpdateVideo();
 PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures();
 
 /**
- * @brief Gets the native application instance or display.
+ * @brief Gets the video system instance.
+ * 
+ * This function returns the video system instance.
+ * The instance is the display associated with the connect on Linux and the
+ * process HINSTANCE on Windows.
+ * 
+ * The instance must not be destroyed if its owned by video system.
  *
- * This returns the native instance or display of the application
- * PAL video was initialized in.
- *
- * On `Linux:` This is the Display associated with the connection.
-
- * On `Windows:` This is the HINSTANCE of the process.
- *
- * @return The instance or display on success or nullptr on failure.
+ * @return Instance on success or `nullptr` on failure.
  *
  * @Thread-safety Thread safe.
- *
- * @note The returned instance or display must not be freed if its
- * owned by PAL.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
  */
 PAL_API void* PAL_CALL palGetInstance();
+
+/**
+ * @brief Creates a window.
+ * 
+ * This function creates a window using the specified creation parameters.
+ * `info` must remain valid for the duration of this function. PAL does not
+ * copy the its contents.
+ * 
+ * Very large or small `info->width` and `info->height` will be overridden
+ * by the video system and will be ignored if `info->monitor` is not `nullptr`.
+ * Setting `info->fbConfigIndex` does not create a vulkan surface or OpengGL context
+ * for the specified window. This creates the window with the specified
+ * framebuffer configuration or pixel format index.
+ * 
+ * To create a borderless fullscreen window, use @ref PAL_WINDOW_STYLE_BORDERLESS style
+ * and select a monitor. The window will be created in windowed mode if the selected
+ * monitor is not valid.To create an exclusive fullscreen window, use @ref palSetMonitorMode
+ * to set the display mode of the monitor. The monitor display mode will not be switched if 
+ * its invalid.
+ * 
+ * The created window must be destroyed with @ref palDestroyWindow() when
+ * no longer needed.
+ *
+ * @param[in] info window creation parameters.
+ * @param[out] window Output handle to recieve the created window.
+ * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
+ *         Call @ref palFormatResult() for more information.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ * 
+ * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ *
+ * @note On `Wayland`:
+ *
+ * - Creating non resizable windows is not supported. It will be ignored.
+ *
+ * - Creating windows on a specific monitor is not supported.
+ *
+ * - Creating hidden windows is not supported. It will be ignored.
+ * 
+ * On `Win32`:
+ * 
+ * - Creating non resizable windows also removes the maximize box.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palDestroyWindow
+ */
+PAL_API PalResult PAL_CALL palCreateWindow(
+    const PalWindowCreateInfo* info,
+    PalWindow** window);
+
+/**
+ * @brief Destroys a window.
+ * 
+ * This function destroys the specified window and frees it resources if it was
+ * created by the video system. Using this function with a foreign does nothing.
+ *
+ * @param[in] window The window to destroy.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palCreateWindow
+ */
+PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
+
+/**
+ * @brief Minimizes a window.
+ * 
+ * This function minimizes a window if its not already minimized.
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_STATE feature must be supported or this function
+ * results in undefined behavior.
+ *
+ * @param[in] window Window to minimize.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palMaximizeWindow
+ * @sa palRestoreWindow
+ */
+PAL_API void PAL_CALL palMinimizeWindow(PalWindow* window);
+
+/**
+ * @brief Maximizes a window.
+ * 
+ * This function Maximizes a window if its not already maximized.
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_STATE feature must be supported or this function
+ * results in undefined behavior.
+ *
+ * @param[in] window Window to maximize.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palMinimizeWindow
+ * @sa palRestoreWindow
+ */
+PAL_API void PAL_CALL palMaximizeWindow(PalWindow* window);
+
+/**
+ * @brief Restores a window.
+ * 
+ * This function restores the specified window to its previous state if not restored already.
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_STATE feature must be supported or this function
+ * results in undefined behavior.
+ *
+ * @param[in] window Window to restore.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @note Wayland does not support restoring a minimized window.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palMinimizeWindow
+ * @sa palMaximizeWindow
+ */
+PAL_API void PAL_CALL palRestoreWindow(PalWindow* window);
+
+/**
+ * @brief Shows the window.
+ * 
+ * This function shows the specified window if its not shown.
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY feature must be supported or this function
+ * results in undefined behavior.
+ *
+ * @param[in] window Window to show.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palHideWindow
+ */
+PAL_API void PAL_CALL palShowWindow(PalWindow* window);
+
+/**
+ * @brief Hides the window.
+ *
+ * This function hides the specified window if its not hidden.
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY feature must be supported or this function
+ * results in undefined behavior.
+ *
+ * @param[in] window Window to hide.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palShowWindow
+ */
+PAL_API void PAL_CALL palHideWindow(PalWindow* window);
+
+/**
+ * @brief Flash a window.
+ * 
+ * This function requests the platform to visually flash the specified window.
+ *
+ * @param[in] window Window to flash.
+ * @param[in] info Window flash parameters.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palFlashWindow(
+    PalWindow* window,
+    const PalFlashInfo* info);
+
+/**
+ * @brief Attachs a window.
+ * 
+ * This functions attachs a foreign or native window to the video system.
+ * @ref PAL_VIDEO_FEATURE_FOREIGN_WINDOWS feature must be supported
+ *
+ * This function registers `windowHandle` with the video system to allow the window
+ * use the video system API. The video system does mot own the attached window, users
+ * are required to destroy the window after it has been detached with @ref palDetachWindow().
+ * 
+ * `windowHandle` must be created with the same instance the video system uses. Use
+ * @ref palGetInstance() to get the instance the video system uses. see @ref palInitVideo()
+ * to set a preferred instance.
+ *
+ * @param[in] windowHandle Foreign or native window.
+ * @param[out] window Output handle to recieve the attached window.
+ * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
+ *         Call @ref palFormatResult() for more information.
+ *
+ * @Thread-safety Must be called from the main thread.
+ * 
+ * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palInitVideo
+ * @sa palGetInstance
+ * @sa palDetachWindow
+ */
+PAL_API PalResult PAL_CALL palAttachWindow(
+    void* windowHandle,
+    PalWindow** window);
+
+/**
+ * @brief Detaches a window.
+ * 
+ * This function detaches a foreign or native window from the video system.
+ * `window` must not be owned by the video system and detaching the window will not
+ * destroy it, users are responsible for destroy the window after its been detached.
+ * @ref PAL_VIDEO_FEATURE_FOREIGN_WINDOWS feature must be supported.
+ *
+ * @param[in] window Window to detach.
+ * @param[out] windowHandle Output handle to recieve the foreign window or `nullptr`.
+ * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
+ *         Call @ref palFormatResult() for more information.
+ *
+ * @Thread-safety Must be called from the main thread.
+ * 
+ * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ *               @ref PAL_RESULT_CODE_INVALID_HANDLE
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palAttachWindow
+ */
+PAL_API PalResult PAL_CALL palDetachWindow(
+    PalWindow* window,
+    void** windowHandle);
+
+/**
+ * @brief Gets the current style of the window.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_GET_STYLE must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[out] style The output to recieve the window style.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palSetWindowStyle
+ */
+PAL_API void PAL_CALL palGetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle* style);
+
+/**
+ * @brief Gets the monitor the window is currently on.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[out] monitor The output handle to recieve the monitor.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palGetWindowMonitor(
+    PalWindow* window,
+    PalMonitor** monitor);
+
+/**
+ * @brief Gets the title of the window.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_GET_TITLE must be supported
+ * otherwise undefined behavior.
+ *
+ * Set the buffer to nullptr to get the size of the window name in bytes.
+ * If the size of the provided buffer is less than the actual size of window
+ * title, PAL will write upto that limit.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] bufferSize The size of the buffer in bytes.
+ * @param[out] size The actual size of the window title in bytes.
+ * @param[out] buffer The output buffer to write to.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palSetWindowTitle
+ */
+PAL_API void PAL_CALL palGetWindowTitle(
+    PalWindow* window,
+    uint64_t bufferSize,
+    uint64_t* size,
+    char* buffer);
+
+/**
+ * @brief Gets the position of the window in screen coordinates.
+ *
+ * `PAL_VIDEO_FEATURE_WINDOW_GET_POS` must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[out] x The output to recieve the window x position in
+ *               screen coordinates. Can be nullptr.
+ * @param[out] y The output to recieve the window y position in
+ *               screen coordinates. Can be nullptr.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palSetWindowPos
+ */
+PAL_API void PAL_CALL palGetWindowPos(
+    PalWindow* window,
+    int32_t* x,
+    int32_t* y);
+
+/**
+ * @brief Gets the size of the window in screen coordinates.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_GET_SIZE must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[out] width The output to recieve the window width in
+ * screen coordinates. Can be nullptr.
+ * @param[out] height The output to recieve the window height in
+ * screen coordinates. Can be nullptr.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palSetWindowSize
+ */
+PAL_API void PAL_CALL palGetWindowSize(
+    PalWindow* window,
+    uint32_t* width,
+    uint32_t* height);
+
+/**
+ * @brief Gets the state of the window.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_GET_STATE must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[out] state The output to recieve the window state.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palGetWindowState(
+    PalWindow* window,
+    PalWindowState* state);
+
+/**
+ * @brief Checks if the window is visible.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @return `PAL_TRUE` if the window is visible otherwise `PAL_FALSE`.
+ *
+ * @Thread-safety Thread safe.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
+
+/**
+ * @brief Gets the current input-focused window per application.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS must be supported
+ * otherwise undefined behavior. This function returns the keyboard
+ * or mouse input-focused window.
+ *
+ * @return The current input-focused window on success or nullptr on
+ * failure.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API PalWindow* PAL_CALL palGetFocusWindow();
+
+/**
+ * @brief Gets the native handle of the window.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[out] info The output struct to recieve the window handle info.
+ *
+ * @Thread-safety Thread-safe.
+ * 
+ * @note On `Wayland`:
+ * 
+ * - PalWindowHandleInfo::nativeHandle1 is set to the `xdg_surface`.
+ * 
+ * - PalWindowHandleInfo::nativeHandle1 is set to the `xdg_toplevel`.
+ * 
+ * - PalWindowHandleInfo::nativeHandle1 is set to the `wl_egl_window`.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palGetWindowHandleInfo(
+    PalWindow* window,
+    PalWindowHandleInfo* info);
+
+/**
+ * @brief Sets the opacity of the window.
+ *
+ * PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW must be supported
+ * otherwise undefined behavior. The window must have be
+ * have been created with @ref PAL_WINDOW_STYLE_TRANSPARENT style.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] opacity Must be in the range `0.0 - 1.0`.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palSetWindowOpacity(
+    PalWindow* window,
+    float opacity);
+
+/**
+ * @brief Sets the style of the window.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_SET_STYLE must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] style The window style.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palGetWindowStyle
+ */
+PAL_API void PAL_CALL palSetWindowStyle(
+    PalWindow* window,
+    PalWindowStyle style);
+
+/**
+ * @brief Sets the title of the window.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_SET_TITLE must be supported 
+ * otherwise undefined behavior. The title must be a UTF-8 encoding
+ * null terminated string.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] title The window title.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palGetWindowTitle
+ */
+PAL_API void PAL_CALL palSetWindowTitle(
+    PalWindow* window,
+    const char* title);
+
+/**
+ * @brief Sets the position of the window in screen coordinates.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_SET_POS must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] x The new x coordinate in screen coordinates.
+ * @param[in] y The new y coordinate in screen coordinates.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palGetWindowPos
+ */
+PAL_API void PAL_CALL palSetWindowPos(
+    PalWindow* window,
+    int32_t x,
+    int32_t y);
+
+/**
+ * @brief Sets the size of the window in screen coordinates.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_SET_SIZE must be supported
+ * otherwise undefined behavior.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ * @param[in] width The new width of the window in screen coordinates. 
+ *                  Must be greater than `0`.
+ * @param[in] height The new height of the window in screen coordinates. 
+ *                   Must be greater than `0`.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palGetWindowSize
+ */
+PAL_API void PAL_CALL palSetWindowSize(
+    PalWindow* window,
+    uint32_t width,
+    uint32_t height);
+
+/**
+ * @brief Requests input focus for the window.
+ *
+ * PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS must be supported
+ * otherwise undefined behavior. The window must be visible.
+ *
+ * @param[in] window The window. Must not be nullptr.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palGetFocusWindow
+ */
+PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
 
 #endif // PAL_VIDEO_H

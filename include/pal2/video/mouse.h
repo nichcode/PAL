@@ -23,57 +23,6 @@
 #ifndef PAL_VIDEO_MOUSE_H
 #define PAL_VIDEO_MOUSE_H
 
-#include "pal2/core/defines.h"
-
-/**
- * @defgroup mouse_buttons Mouse Buttons
- * @brief Mouse Buttons
- * 
- * @ingroup pal_video
- */
-
-/** @brief The mouse button is invalid or not known to PAL.
- * 
- * @ingroup mouse_buttons
-*/
-
-
-/** @brief The left mouse button.
- * 
- * @ingroup mouse_buttons
-*/
-
-
-/** @brief The right mouse button.
- * 
- * @ingroup mouse_buttons
-*/
-
-
-/** @brief The middle or scroll mouse button.
- * 
- * @ingroup mouse_buttons
-*/
-
-
-/** @brief An additional mouse button. Not all mouse have these.
- * 
- * @ingroup mouse_buttons
-*/
-
-
-/** @brief An additional mouse button. Not all mouse have these.
- * 
- * @ingroup mouse_buttons
-*/
-
-
-/** @brief The maximum number of mouse buttons. The literal value must
- * not be used.
- * 
- * @ingroup mouse_buttons
-*/
-
 /**
  * @brief Gets the state of the mouse buttons.
  *

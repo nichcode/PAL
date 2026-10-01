@@ -26,66 +26,6 @@
 #include "pal2/core/defines.h"
 #include "pal2/core/memory.h"
 #include "pal2/core/result.h"
-/**
- * @struct PalMonitorInfo
- * @brief Information about a monitor.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- * 
- * @sa palGetMonitorInfo
- */
-typedef struct PalMonitorInfo {
-    /** The x position of the monitor in screen coordinates.*/
-    int32_t x;
-
-    /** The y position of the monitor in screen coordinates.*/
-    int32_t y;
-
-    /** The width of the monitor in screen coordinates.*/
-    uint32_t width;
-
-    /** The height of the monitor in screen coordinates.*/
-    uint32_t height;
-
-    /** The DPI of the monitor.*/
-    uint32_t dpi;
-
-    /** The refresh rate of the monitor in Hz.*/
-    uint32_t refreshRate;
-
-    /** The orientation of the monitor.*/
-    PalOrientation orientation;
-
-    /** `PAL_TRUE` if this is the primary monitor.*/
-    PalBool primary;
-
-    /** The name of the monitor.*/
-    char name[PAL_MONITOR_NAME_SIZE];
-} PalMonitorInfo;
-
-/**
- * @struct PalMonitorMode
- * @brief Information about a monitor display mode.
- *
- * @since Added in version 2.0
- * @ingroup pal_video
- * 
- * @sa palEnumerateMonitorModes
- */
-typedef struct PalMonitorMode {
-    /** The bits per pixel of the display mode.*/
-    uint32_t bpp;
-
-    /** The refresh rate of the display mode in Hz.*/
-    uint32_t refreshRate;
-
-    /** The width of the display mode in screen coordinates.*/
-    uint32_t width;
-
-    /** The height of the display mode in screen coordinates.*/
-    uint32_t height;
-} PalMonitorMode;
 
 /**
  * @brief Returns a list of all connected monitors.
@@ -103,7 +43,7 @@ typedef struct PalMonitorMode {
  * @param[in, out] count The capacity of the monitor array.
  * @param[out] monitors The monitor array.
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
+ *         failure. Call @ref palFormatResult() to get the string representation
  *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
@@ -222,7 +162,7 @@ PAL_API void PAL_CALL palGetCurrentMonitorMode(
  * @param[in] monitor The monitor. Must not ne nullptr.
  * @param[in] mode The display mode.
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
+ *         failure. Call @ref palFormatResult() to get the string representation
  *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
@@ -247,7 +187,7 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  * @param[in] monitor The monitor.
  * @param[in] mode The display mode.
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
+ *         failure. Call @ref palFormatResult() to get the string representation
  *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
@@ -271,7 +211,7 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
  * @param[in] monitor The monitor.
  * @param[in] orientation The orientation.
  * @return `PAL_RESULT_SUCCESS` on success or an appropriate result value on
- *         failure. Call @ref palFormatResult to get the string representation
+ *         failure. Call @ref palFormatResult() to get the string representation
  *         of the result value.
  *
  * @Thread-safety Must only be called from the main thread.
