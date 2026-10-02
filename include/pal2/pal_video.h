@@ -1436,8 +1436,8 @@ PAL_API void PAL_CALL palGetWindowTitle(
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to get its position.
- * @param[out] x Output to recieve the window x position.
- * @param[out] y Output to recieve the window y position.
+ * @param[out] x Output to recieve the window x position or `nullptr`.
+ * @param[out] y Output to recieve the window y position or `nullptr`.
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -1459,8 +1459,8 @@ PAL_API void PAL_CALL palGetWindowPos(
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to get its size.
- * @param[out] width Output to recieve the window width.
- * @param[out] height Output to recieve the window height.
+ * @param[out] width Output to recieve the window width or `nullptr`.
+ * @param[out] height Output to recieve the window height or `nullptr`.
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -1682,7 +1682,7 @@ PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
  * This function creates a cursor from the provided pixels.
  * The created cursor should be set to the window with @ref palSetWindowCursor().
  * The provided pixels are copied after the cursor is created, the data may be freed
- * after creation.
+ * after creation. @ref PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR feature must be supported.
  *
  * @param[in] info Cursor creation parameters.
  * @param[out] cursor Output handle to recieve the created cursor.
@@ -1710,6 +1710,7 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  * This function creates a cursor from the platform predefined types.
  * The created cursor should be set to the window with @ref palSetWindowCursor().
  * The cursor appearance may vary based on the platform.
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR feature must be supported.
  *
  * @param[in] type System cursor type.
  * @param[out] cursor Output handle to recieve the created cursor.
@@ -1792,8 +1793,8 @@ PAL_API void PAL_CALL palClipCursor(
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window.
- * @param[out] x Output to recieve the x cursor position.
- * @param[out] y Output to recieve the y cursor position.
+ * @param[out] x Output to recieve the x cursor position or `nullptr`.
+ * @param[out] y Output to recieve the y cursor position or `nullptr`.
  *
  * @Thread-safety Must be called from the main thread.
  *
@@ -1846,5 +1847,71 @@ PAL_API void PAL_CALL palSetCursorPos(
 PAL_API void PAL_CALL palSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor);
+
+/**
+ * @brief Creates an icon.
+ * 
+ * This function creates an icon from the provided pixels.
+ * The created icon should be set to the window with @ref palSetWindowIcon().
+ * The provided pixels are copied after the icon is created, the data may be freed
+ * after creation. @ref PAL_VIDEO_FEATURE_WINDOW_SET_ICON feature must be supported.
+ *
+ * @param[in] info Icon creation parameters.
+ * @param[out] icon Output handle to recieve the created icon.
+ * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
+ *         Call @ref palFormatResult for more information.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ * 
+ * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palDestroyIcon
+ * @sa palSetWindowIcon
+ */
+PAL_API PalResult PAL_CALL palCreateIcon(
+    const PalIconCreateInfo* info,
+    PalIcon** icon);
+
+/**
+ * @brief Destroys an icon.
+ * 
+ * If the specified icon is used by any window, the window must revert to the default
+ * icon after the icon is destroyed or `icon` must be set to `nullptr` after this function.
+ *
+ * @param[in] icon Icon to destroy.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palCreateIcon
+ */
+PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
+
+/**
+ * @brief Sets the icon for the window.
+ * 
+ * A single icon can be set to multiple windows at the same time. `icon` will not be copied,
+ * it must remain valid until the window is destroyed or reverted. Destroying the icon and not
+ * setting it to `nullptr` will result in undefined behavior if windows are referencing it. 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_ICON feature must be supported or this function results
+ * in undefined behavior.
+ *
+ * @param[in] window Window to set icon on.
+ * @param[in] icon Icon or `nullptr` to revert to platforms default.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palSetWindowIcon(
+    PalWindow* window,
+    PalIcon* icon);
 
 #endif // PAL_VIDEO_H
