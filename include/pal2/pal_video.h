@@ -1914,4 +1914,37 @@ PAL_API void PAL_CALL palSetWindowIcon(
     PalWindow* window,
     PalIcon* icon);
 
+/**
+ * @brief Gets the state of the keycodes.
+ * 
+ * This function returns the state of the keycodes (layout aware keys) of the keyboard.
+ * The returned pointer must not be freed. The state is updated when @ref palUpdateVideo() is called.
+ * The returned array contains one PalBool for each keycode, indexed by the corresponding constant
+ * (eg. `PAL_KEYCODE_A`) and must not exceed @ref PAL_KEYCODE_COUNT.
+ *
+ * @return Pointer to the keycodes array on success or `nullptr` on failure.
+ *
+ * @Thread-safety Thread-safe.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API const PalBool* PAL_CALL palGetKeycodeState();
+
+/**
+ * @brief Gets the state of the scancodes.
+ * 
+ * This function returns the state of the scancodes (layout independent keys) of the keyboard.
+ * The returned pointer must not be freed. The state is updated when @ref palUpdateVideo() is called.
+ * The returned array contains one PalBool for each scancode, indexed by the corresponding constant
+ * (eg. `PAL_SCANCODE_RIGHT`) and must not exceed @ref PAL_SCANCODE_COUNT.
+ *
+ * @return Pointer to the scancodes array on success or `nullptr` on failure.
+ *
+ * @Thread-safety Thread-safe.
+ *
+ * @since Added in version 2.0
+ */
+PAL_API const PalBool* PAL_CALL palGetScancodeState();
+
 #endif // PAL_VIDEO_H
