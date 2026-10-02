@@ -1947,4 +1947,55 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState();
  */
 PAL_API const PalBool* PAL_CALL palGetScancodeState();
 
+/**
+ * @brief Gets the state of the mouse buttons.
+ * 
+ * This function returns the state of the buttons of the mouse.
+ * The returned pointer must not be freed. The state is updated when @ref palUpdateVideo() is called.
+ * The returned array contains one PalBool for each button, indexed by the corresponding constant
+ * (eg. `PAL_MOUSE_BUTTON_LEFT`) and must not exceed @ref PAL_MOUSE_BUTTON_COUNT.
+ *
+ * @return Pointer to the mouse button array on success or `nullptr` on failure.
+ *
+ * @@Thread-safety Thread-safe.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API const PalBool* PAL_CALL palGetMouseState();
+
+/**
+ * @brief Gets the relative movement of the mouse.
+ *
+ * The relative movement will be updated when @ref palUpdateVideo() is called.
+ *
+ * @param[in] dx Output to recieve the relative x or `nullptr`.
+ * @param[in] dy Output to recieve the relative y or `nullptr`.
+ *
+ * @Thread-safety `dx` and `dy` must be per thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palGetMouseDelta(
+    float* dx,
+    float* dy);
+
+/**
+ * @brief Gets the wheel delta of the mouse.
+ *
+ * The wheel delta will be updated when @ref palUpdateVideo() is called.
+ *
+ * @param[in] dx Output to recieve the x wheel delta or `nullptr`.
+ * @param[in] dy Output to recieve the y wheel delta or `nullptr`.
+ *
+ * @Thread-safety `dx` and `dy` must be per thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palGetMouseWheelDelta(
+    float* dx,
+    float* dy);
+
 #endif // PAL_VIDEO_H
