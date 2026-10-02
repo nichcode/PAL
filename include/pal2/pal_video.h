@@ -1618,8 +1618,8 @@ PAL_API void PAL_CALL palSetWindowTitle(
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to set position its position.
- * @param[in] x X coordinate.
- * @param[in] y Y coordinate.
+ * @param[in] x X coordinate of the window.
+ * @param[in] y Y coordinate of the window.
  *
  * @Thread-safety Must be called from the main thread.
  *
@@ -1642,8 +1642,8 @@ PAL_API void PAL_CALL palSetWindowPos(
  * supported or this function results in undefined behavior.
  * 
  * @param[in] window Window to set its size.
- * @param[in] width Width.
- * @param[in] height Height.
+ * @param[in] width Width of the window.
+ * @param[in] height Height of the window.
  *
  * @Thread-safety Must be called from the main thread.
  *
@@ -1675,5 +1675,176 @@ PAL_API void PAL_CALL palSetWindowSize(
  * @sa palGetFocusWindow
  */
 PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
+
+/**
+ * @brief Creates a cursor.
+ * 
+ * This function creates a cursor from the provided pixels.
+ * The created cursor should be set to the window with @ref palSetWindowCursor().
+ * The provided pixels are copied after the cursor is created, the data may be freed
+ * after creation.
+ *
+ * @param[in] info Cursor creation parameters.
+ * @param[out] cursor Output handle to recieve the created cursor.
+ * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
+ *         Call @ref palFormatResult for more information.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ * 
+ * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palDestroyCursor
+ * @sa palSetWindowCursor
+ */
+PAL_API PalResult PAL_CALL palCreateCursor(
+    const PalCursorCreateInfo* info,
+    PalCursor** cursor);
+
+/**
+ * @brief Creates a system cursor.
+ * 
+ * This function creates a cursor from the platform predefined types.
+ * The created cursor should be set to the window with @ref palSetWindowCursor().
+ * The cursor appearance may vary based on the platform.
+ *
+ * @param[in] type System cursor type.
+ * @param[out] cursor Output handle to recieve the created cursor.
+ * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
+ *         Call @ref palFormatResult for more information.
+ *
+ * @Thread-safety Must only be called from the main thread.
+ * 
+ * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palDestroyCursor
+ * @sa palSetWindowCursor
+ */
+PAL_API PalResult PAL_CALL palCreateCursorFrom(
+    PalCursorType type,
+    PalCursor** cursor);
+
+/**
+ * @brief Destroys a cursor.
+ * 
+ * If the specified cursor is used by any window, the window must revert to the default
+ * cursor after the cursor is destroyed or `cursor` must be set to `nullptr` after this function.
+ *
+ * @param[in] cursor Cursor to destroy.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ * 
+ * @sa palCreateCursor
+ */
+PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
+
+/**
+ * @brief Shows or hide a cursor.
+ * 
+ * This function shows or hides the specified cursor. This affects all created cursors
+ * of the screen. @ref PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY feature must be supported
+ * or this function results in undefined behavior.
+ *
+ * @param[in] show `PAL_TRUE` to make the cursor visible otherwise `PAL_FALSE`.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palShowCursor(PalBool show);
+
+/**
+ * @brief Confines the cursor to a window.
+ * 
+ * This function confines the specified cursor to the bounds of the specified window.
+ * The cursor must be unclipped before the window is destroyed or behavior is undefined.
+ * @ref PAL_VIDEO_FEATURE_CLIP_CURSOR feature must be supported or this function 
+ * results in undefined behavior.
+ *
+ * @param[in] window Window.
+ * @param[in] clip `PAL_TRUE` to clip to window or `PAL_FALSE` to unclip.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palClipCursor(
+    PalWindow* window,
+    PalBool clip);
+
+/**
+ * @brief Gets the position of the cursor relative to the window.
+ * 
+ * The cursor position is relative to the upper-left corner of the window
+ * in screen coordinates. @ref PAL_VIDEO_FEATURE_CURSOR_GET_POS feature must be 
+ * supported or this function results in undefined behavior.
+ *
+ * @param[in] window Window.
+ * @param[out] x Output to recieve the x cursor position.
+ * @param[out] y Output to recieve the y cursor position.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palGetCursorPos(
+    PalWindow* window,
+    int32_t* x,
+    int32_t* y);
+
+/**
+ * @brief Sets the position of the cursor relative to the window.
+ * 
+ * The cursor position is relative to the upper-left corner of the window
+ * in screen coordinates. @ref PAL_VIDEO_FEATURE_CURSOR_SET_POS feature must be 
+ * supported or this function results in undefined behavior.
+ *
+ * @param[in] window Window.
+ * @param[in] x X coordinate of the cursor.
+ * @param[in] y Y coordinate of the cursor.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palSetCursorPos(
+    PalWindow* window,
+    int32_t x,
+    int32_t y);
+
+/**
+ * @brief Sets the cursor for a window.
+ * 
+ * A single cursor can be set to multiple windows at the same time. `cursor` will not be copied,
+ * it must remain valid until the window is destroyed or reverted. Destroying the cursor and not
+ * setting it to `nullptr` will result in undefined behavior if windows are referencing it. 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR feature must be supported or this function results
+ * in undefined behavior.
+ *
+ * @param[in] window Window to set cursor on.
+ * @param[in] cursor Cursor or `nullptr` to revert to platforms default.
+ *
+ * @Thread-safety Must be called from the main thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+PAL_API void PAL_CALL palSetWindowCursor(
+    PalWindow* window,
+    PalCursor* cursor);
 
 #endif // PAL_VIDEO_H
