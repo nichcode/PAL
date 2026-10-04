@@ -6,7 +6,6 @@
 ### Features
 
 // TODO: add API to get native handles
-// TODO: add API for window client/drawable area
 PAL_LOG_MSG_SIZE
 PalLibrary
 palLoadLibrary()
@@ -16,6 +15,7 @@ PalVideoDriver
 palEnumerateVideoDrivers()
 palSetVideoDriver()
 palGetVideoDriver()
+PAL_GL_EXTENSION_SWAP_CONTROL_TEAR
 
 #define PAL_VIDEO_DRIVER_TYPE_UNKNOWN 0
 #define PAL_VIDEO_DRIVER_TYPE_WIN32 1

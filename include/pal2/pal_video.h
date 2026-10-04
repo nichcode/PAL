@@ -622,7 +622,7 @@ typedef struct PalMonitorInfo {
     int32_t y; /**< monitor y position in screen coordinates */
     uint32_t width; /**< monitor wdith in screen coordinates */
     uint32_t height; /**< monitor height in screen coordinates */
-    uint32_t dpi; /**< monitor DPI */
+    uint32_t dpi; /**< monitor DPI where 96 is scale 1.0x */
     uint32_t refreshRate; /**< monitor refresh rate in Hz*/
     PalOrientation orientation; /**< monitor orientation */
     PalBool primary; /**< whether this is the primary monitor */
@@ -1427,15 +1427,15 @@ PAL_API void PAL_CALL palGetWindowTitle(
     char* buffer);
 
 /**
- * @brief Gets the position of a window.
+ * @brief Gets the position of the content area of a window.
  * 
- * This function gets the position of the specified window in screen coordinates.
- * Coordinates are relative to the upper-left corner of the window. 
+ * This function gets the position of the content area of the specified window
+ * in screen coordinates. Coordinates are relative to the upper-left corner of the window. 
  * X-coordinate increases to the right and Y-coordinate increases down. 
  * @ref PAL_VIDEO_FEATURE_WINDOW_GET_POS feature must be 
  * supported or this function results in undefined behavior.
  *
- * @param[in] window Window to get its position.
+ * @param[in] window Window to get its content area position.
  * @param[out] x Output to recieve the window x position or `nullptr`.
  * @param[out] y Output to recieve the window y position or `nullptr`.
  *
@@ -1452,13 +1452,13 @@ PAL_API void PAL_CALL palGetWindowPos(
     int32_t* y);
 
 /**
- * @brief Gets the size of a window.
+ * @brief Gets the size of the content area of a window.
  * 
- * this function gets the size of the specified window in screen coordinates.
- * @ref PAL_VIDEO_FEATURE_WINDOW_GET_SIZE feature must be 
+ * this function gets the size of the content area of the specified window in 
+ * screen coordinates. @ref PAL_VIDEO_FEATURE_WINDOW_GET_SIZE feature must be 
  * supported or this function results in undefined behavior.
  *
- * @param[in] window Window to get its size.
+ * @param[in] window Window to get its content area size.
  * @param[out] width Output to recieve the window width or `nullptr`.
  * @param[out] height Output to recieve the window height or `nullptr`.
  *
@@ -1609,15 +1609,15 @@ PAL_API void PAL_CALL palSetWindowTitle(
     const char* title);
 
 /**
- * @brief Sets the position of the window.
+ * @brief Sets the position of the content area of a window.
  * 
- * This function sets the position of the specified window in screen coordinates.
- * Coordinates are relative to the upper-left corner of the window. 
+ * This function sets the position of the content area of the specified window in
+ * screen coordinates. Coordinates are relative to the upper-left corner of the window. 
  * X-coordinate increases to the right and Y-coordinate increases down. 
  * @ref PAL_VIDEO_FEATURE_WINDOW_SET_POS feature must be 
  * supported or this function results in undefined behavior.
  *
- * @param[in] window Window to set position its position.
+ * @param[in] window Window to set its content area position.
  * @param[in] x X coordinate of the window.
  * @param[in] y Y coordinate of the window.
  *
@@ -1634,14 +1634,14 @@ PAL_API void PAL_CALL palSetWindowPos(
     int32_t y);
 
 /**
- * @brief Sets the size of the window.
+ * @brief Sets the size of the content area of a window.
  * 
- * This function sets the size of the specified window in screen coordinates.
- * Very large or small `width` and `height` will be overridden
+ * This function sets the size of the content area of the specified window in
+ * screen coordinates. Very large or small `width` and `height` will be overridden
  * by the video system. @ref PAL_VIDEO_FEATURE_WINDOW_SET_SIZE feature must be 
  * supported or this function results in undefined behavior.
  * 
- * @param[in] window Window to set its size.
+ * @param[in] window Window to set its content area size.
  * @param[in] width Width of the window.
  * @param[in] height Height of the window.
  *
