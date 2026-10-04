@@ -37,7 +37,7 @@
 #define PAL_DEFAULT_QUEUE_EVENT_COUNT 512 /**< maximum number of default queue events */
 
 /**
- * @defgroup decoration_modes Decoration Modes
+ * @defgroup decoration_modes Window Decoration Modes
  * @{
  */
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0 /**< client is responsible for decoration */
@@ -74,7 +74,7 @@
 /** @} */
 
 /**
- * @defgroup dispatch_modes Dispatch Modes
+ * @defgroup dispatch_modes Event Dispatch Modes
  * @{
  */
 #define PAL_DISPATCH_MODE_NONE 0 /**< event will be discarded */
@@ -85,7 +85,7 @@
 
 /**
  * @typedef PalDecorationMode
- * @brief Decoration mode.
+ * @brief Window decoration mode.
  * 
  * All values of this type follow the format `PAL_DECORATION_MODE_*` for API
  * consistency and ease of use.
@@ -107,7 +107,7 @@ typedef uint32_t PalEventType;
 
 /**
  * @typedef PalDispatchMode
- * @brief Dispatch mode.
+ * @brief Event dispatch mode.
  *
  * All values of this type follow the format `PAL_DISPATCH_MODE_*` for API
  * consistency and ease of use.

@@ -83,7 +83,7 @@
 /** @} */
 
 /**
- * @defgroup video_drivers Video Drivers
+ * @defgroup video_drivers Video Driver Types
  * @{
  */
 #define PAL_VIDEO_DRIVER_TYPE_UNKNOWN 0 /**< unknown video driver type to PAL */
@@ -118,7 +118,7 @@
 /** @} */
 
 /**
- * @defgroup flash_flags Flash Flags
+ * @defgroup flash_flags Window Flash Flags
  * @{
  */
 #define PAL_FLASH_FLAG_STOP 0 /**< stop all flash operations */
@@ -127,7 +127,7 @@
 /** @} */
 
 /**
- * @defgroup fbconfig_backends Framebuffer Configuration Backends
+ * @defgroup fbconfig_backends Window Framebuffer Configuration Backends
  * @{
  */
 #define PAL_FBCONFIG_BACKEND_PAL_OPENGL 0 /**< PAL OpenGL backend */
@@ -138,7 +138,7 @@
 /** @} */
 
 /**
- * @defgroup orientations Orientations
+ * @defgroup orientations Monitor Orientations
  * @{
  */
 #define PAL_ORIENTATION_LANDSCAPE 0
@@ -161,7 +161,7 @@
 /** @} */
 
 /**
- * @defgroup keycodes Keycodes
+ * @defgroup keycodes Keyboard Keycodes
  * @{
  */
 #define PAL_KEYCODE_UNKNOWN 0 /**< unknown keycode to PAL*/
@@ -274,7 +274,7 @@
 /** @} */
 
 /**
- * @defgroup scancodes Scancodes
+ * @defgroup scancodes Keyboard Scancodes
  * @{
  */
 #define PAL_SCANCODE_UNKNOWN 0 /**< unknown scancode to PAL*/
@@ -447,7 +447,7 @@ typedef uint32_t PalWindowState;
 
 /**
  * @typedef PalFlashFlags
- * @brief Flash flags.
+ * @brief Window flash flags.
  * 
  * All values of this type follow the format `PAL_FLASH_FLAG_*` for API
  * consistency and ease of use.
@@ -458,7 +458,7 @@ typedef uint32_t PalFlashFlags;
 
 /**
  * @typedef PalFBConfigBackend
- * @brief Framebuffer configuration backend.
+ * @brief Window framebuffer configuration backend.
  * 
  * All values of this type follow the format `PAL_FBCONFIG_BACKEND_*` for API
  * consistency and ease of use.
