@@ -27,61 +27,6 @@
 #include "pal2/core/result.h"
 
 /**
- * @struct PalGLFBConfig
- * @brief Contains information about an opengl framebuffer.
- *
- * @since Added in version 2.0
- * 
- * @var PalGLFBConfig::doubleBuffer
- * If `PAL_TRUE`, double buffering is supported.
- * 
- * @var PalGLFBConfig::stereo
- * If `PAL_TRUE`, stereo is supported.
- * 
- * @var PalGLFBConfig::sRGB
- * If `PAL_TRUE`, SRGB colorspace is supported.
- * 
- * @var PalGLFBConfig::index
- * The driver index of the opengl framebuffer config. 
- * Its driver specific and must not be changed.
- * 
- * @var PalGLFBConfig::redBits
- * The number of bits in the red channel.
- * 
- * @var PalGLFBConfig::greenBits
- * The number of bits in the green channel.
- *
- * @var PalGLFBConfig::blueBits
- * The number of bits in the blue channel.
- * 
- * @var PalGLFBConfig::alphaBits
- * The number of bits in the alpha channel.
- * 
- * @var PalGLFBConfig::depthBits
- * The number of depth buffer bits.
- * 
- * @var PalGLFBConfig::stencilBits
- * The number of stencil buffer bits.
- * 
- * @var PalGLFBConfig::samples
- * The number of `MSAA` samples.
- */
-typedef struct PalGLFBConfig
-{
-    PalBool doubleBuffer;
-    PalBool stereo;
-    PalBool sRGB;
-    uint16_t index;
-    uint16_t redBits;
-    uint16_t greenBits;
-    uint16_t blueBits;
-    uint16_t alphaBits;
-    uint16_t depthBits;
-    uint16_t stencilBits;
-    uint16_t samples;
-} PalGLFBConfig;
-
-/**
  * @brief Returns a list of all supported framebuffer configs by 
  * the opengl driver.
  *
@@ -102,6 +47,8 @@ typedef struct PalGLFBConfig
  * @Thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
+ * @ingroup pal_opengl
+ * 
  * @sa palInitGL
  */
 PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
@@ -121,6 +68,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  * @Thread-safety Thread safe.
  *
  * @since Added in version 2.0
+ * @ingroup pal_opengl
  */
 PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     PalGLFBConfig* configs,

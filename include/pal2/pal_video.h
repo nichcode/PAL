@@ -34,7 +34,7 @@
 
 #include "pal_core.h"
 
-#define PAL_MONITOR_NAME_SIZE 32
+#define PAL_MONITOR_NAME_SIZE 32 /**< maximum monitor name size */
 
 /**
  * @defgroup video_features Video Features
