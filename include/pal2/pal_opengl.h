@@ -295,7 +295,7 @@ typedef struct PalGLContextCreateInfo
  * @brief Initializes the OpenGL system.
  * 
  * This function initialized the OpenGL system with the specified API and instance.
- * `api` must be supported by the specified instance. Use @ref palGetSupportedAPIs() to
+ * `api` must be supported by the specified instance. Use @ref palGetSupportedGLAPIs() to
  * to check the supported APIs of the instance.
  * 
  * The specified instance must not be `nullptr` and must remain valid until 

@@ -261,9 +261,9 @@
 #define PAL_KEYCODE_BACKSLASH 94 /**< \ */
 #define PAL_KEYCODE_COMMA 95
 #define PAL_KEYCODE_EQUAL 96
-#define PAL_KEYCODE_GRAVEACCENT 97 /**< ` */
+#define PAL_KEYCODE_GRAVEACCENT 97
 #define PAL_KEYCODE_SUBTRACT 98
-#define PAL_KEYCODE_PERIOD 99 /**< . */
+#define PAL_KEYCODE_PERIOD 99
 #define PAL_KEYCODE_SEMICOLON 100
 #define PAL_KEYCODE_SLASH 101 /**< / */
 #define PAL_KEYCODE_LBRACKET 102 /**< [ */
@@ -374,9 +374,9 @@
 #define PAL_SCANCODE_BACKSLASH 94 /**< \ */
 #define PAL_SCANCODE_COMMA 95
 #define PAL_SCANCODE_EQUAL 96
-#define PAL_SCANCODE_GRAVEACCENT 97 /**< ` */
+#define PAL_SCANCODE_GRAVEACCENT 97
 #define PAL_SCANCODE_SUBTRACT 98
-#define PAL_SCANCODE_PERIOD 99 /**< . */
+#define PAL_SCANCODE_PERIOD 99
 #define PAL_SCANCODE_SEMICOLON 100
 #define PAL_SCANCODE_SLASH 101 /**< / */
 #define PAL_SCANCODE_LBRACKET 102 /**< [ */
@@ -812,10 +812,10 @@ PAL_API void PAL_CALL palGetVideoDriver(PalVideoDriver* driver);
  *
  * `allocator` and `eventDriver` are not copied. The allocator and the event driver
  * with any state referenced by them must remain valid until @ref palShutdownVideo() is called.
- * If the event driver is `nullptr`, the video system will not process events`.
- *
- * If `preferredInstance` is `nullptr`, the video system creates one and 
- * control its lifetime. On Linux, `preferredInstance` is the displat associated with
+ * If the event driver is `nullptr`, the video system will not process events.
+ * 
+ * If the preferred instance is `nullptr`, the video system creates one and 
+ * control its lifetime. On Linux, `preferredInstance` is the display associated with
  * the connection. On Windows, `preferredInstance` is the process HINSTANCE.
  * The preferred instance will not be destroyed by the video system when
  * @ref palShutdownVideo().
