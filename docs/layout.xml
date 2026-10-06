@@ -161,20 +161,20 @@
     <briefdescription visible="yes"/>
     <groupgraph visible="yes"/>
     <memberdecl>
-      <nestedgroups visible="yes" title="Sub Groups"/>
       <modules visible="yes" title=""/>
       <dirs visible="yes" title=""/>
       <files visible="yes" title=""/>
       <namespaces visible="yes" title=""/>
       <concepts visible="yes" title=""/>
+      <functions visible="yes" title="Functions"/>
       <classes visible="yes" title="Structs"/>
-      <defines visible="yes" title="Constants"/>
       <typedefs visible="yes" title="Types"/>
+      <defines visible="yes" title="Constants"/>
+      <nestedgroups visible="yes" title="Constant Groups"/>
       <sequences visible="yes" title=""/>
       <dictionaries visible="yes" title=""/>
       <enums visible="yes" title=""/>
       <enumvalues visible="yes" title=""/>
-      <functions visible="yes" title="Functions"/>
       <variables visible="no" title=""/>
       <signals visible="yes" title=""/>
       <publicslots visible="yes" title=""/>
@@ -189,13 +189,13 @@
     <memberdef>
       <pagedocs/>
       <inlineclasses visible="yes" title=""/>
-      <defines visible="yes" title="Constants Documentation"/>
+      <functions visible="yes" title="Function Documentation"/>
       <typedefs visible="yes" title="Type Documentation"/>
+      <defines visible="yes" title="Constant Documentation"/>
       <sequences visible="yes" title=""/>
       <dictionaries visible="yes" title=""/>
       <enums visible="yes" title=""/>
       <enumvalues visible="yes" title=""/>
-      <functions visible="yes" title="Function Documentation"/>
       <variables visible="no" title=""/>
       <signals visible="yes" title=""/>
       <publicslots visible="yes" title=""/>
