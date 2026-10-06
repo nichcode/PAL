@@ -1,5 +1,5 @@
 
-#### Event Guide {#event_guide}
+#### Event Payload {#event_payload}
 
 `Data` and `Data2` fields are in the format (bits 0-31, bits 32-63).  
 Unused is used if both low and high bits are unused.

@@ -4,6 +4,7 @@
 | Guides | Description |
 |---|---|
 | @ref getting_started "Getting Started" | Create your first PAL application |
-| @ref event_guide "Event Guide" | See how to get the payload of an event |
+| @ref event_payload "Event Payload" | See how to get the payload of an event |
+| @ref custom_gfx_backend "Custom Graphics Backend" | See how to use custom graphics backend |
 | @ref migrating_vulkan "Migrating Vulkan" | Migrate an existing vulkan application to PAL |
 | @ref migrating_d3d12 "Migrating D3D12" | Migrate an existing D3D12 application to PAL |

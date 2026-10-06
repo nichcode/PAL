@@ -131,7 +131,7 @@ typedef struct PalEventDriver PalEventDriver;
  * 
  * The payloads are packed in the `data` and `data2` fields of the struct.
  * User events define how their payloads are packed.
- * See [Event Guide](@ref event_guide) for more information.
+ * See [Event Payload](@ref event_payload) for more information.
  * 
  * @since Added in version 2.0
  * @ingroup pal_event
