@@ -23,11 +23,21 @@ def main():
         # remove all macro warnings
         file_contents = file.readlines()
         warnings = []
-        tag = "(macro definition)"
+        tags = []
+        tags.append("(macro definition)")
+        tags.append("(variable) of struct PalGraphicsBackendVtable1")
+        tags.append("(variable) of struct PalGraphicsBackendVtable2")
 
         for line in file_contents:
-            if tag not in line:
-                warnings.append(line);
+            found = False
+
+            for tag in tags:
+                if tag in line:
+                    found = True
+                    break
+
+            if not found:
+                warnings.append(line)
     
     # write the clean warnings to the file
     with open(log_file, "w") as file:

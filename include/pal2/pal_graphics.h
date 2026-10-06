@@ -63,7 +63,7 @@
 #define PAL_ADAPTER_FEATURE_RAY_TRACING (1ULL << 11)
 #define PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING (1ULL << 12)
 #define PAL_ADAPTER_FEATURE_MESH_SHADER (1ULL << 13)
-#define PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE (1ULL << 14)
+#define PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE (1ULL << 14) /**< variable shading rate */
 #define PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING (1ULL << 15)
 #define PAL_ADAPTER_FEATURE_SWAPCHAIN (1ULL << 16)
 #define PAL_ADAPTER_FEATURE_MULTI_VIEW (1ULL << 17)
@@ -77,7 +77,7 @@
 #define PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE (1ULL << 25)
 #define PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP (1ULL << 26)
 #define PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE (1ULL << 27)
-#define PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT (1ULL << 28)
+#define PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT (1ULL << 28) /**< variable shading rate attachment */
 #define PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS (1ULL << 29)
 #define PAL_ADAPTER_FEATURE_INDIRECT_DRAW (1ULL << 30)
 #define PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH (1ULL << 31)
@@ -85,7 +85,7 @@
 #define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH (1ULL << 33)
 #define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT (1ULL << 34)
 #define PAL_ADAPTER_FEATURE_DISPATCH_BASE (1ULL << 35)
-#define PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS (1ULL << 36)
+#define PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS (1ULL << 36) /**< empty descriptors */
 #define PAL_ADAPTER_FEATURE_RAY_QUERY (1ULL << 37)
 /** @} */
 
@@ -885,7 +885,7 @@
 
 /**
  * @struct PalAdapter
- * @brief Opaque handle to an adapter (GPU).
+ * @brief Opaque handle to an adapter.
  *
  * @since Added in version 2.0
  */
@@ -1987,6 +1987,18 @@ typedef struct PalRayTracingCapabilities {
 /**
  * @struct PalDescriptorIndexingCapabilities
  * @brief Adapter descriptor indexing capabilities.
+ * 
+ * `flags` shows the sub-features or capabilities of the descriptor indexing feature.
+ * Each bit represents a supported operation. See below for more information:
+ * 
+ * - PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND - Descriptors can be updated after
+ *   the descriptor set been bound.
+ * 
+ * - PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND - Unused descriptors can be
+ *   left uninitialized if shaders never accesses them.
+ * 
+ * - PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING - Different threads
+ *   can access different descriptors.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -2824,7 +2836,17 @@ typedef struct PalShaderEntryInfo {
  * @struct PalImageCreateInfo
  * @brief Image creation parameters.
  * 
- * TODO: put image usage docs here
+ * `memoryUsage` may be one of the following:
+ * 
+ * - PAL_IMAGE_MEMORY_USAGE_MANUAL - The graphics system does not allocate
+ *   memory for the image. Call @ref palGetImageMemoryRequirements() to get the
+ *   memory requirement of the image and allocate memory with @ref palAllocateMemory()
+ *   after the image has been created. Users are required to free the allocated
+ *   memory with @ref palFreeMemory() when no longer needed.
+ * 
+ * - PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY - The graphics system allocates GPU
+ *   only memory for the image after creation. This is recommended if a custom
+ *   allocator or sub-allocations allocator is used.
  * 
  * This struct is used only during @ref palCreateImage() and may be
  * discarded after the function returns.
@@ -2943,7 +2965,22 @@ typedef struct PalShaderCreateInfo {
  * @struct PalBufferCreateInfo
  * @brief Buffer creation parameters.
  * 
- * TODO: put buffer memory usage docs
+ * `memoryUsage` may be one of the following:
+ * 
+ * - PAL_BUFFER_MEMORY_USAGE_MANUAL - The graphics system does not allocate
+ *   memory for the buffer. Call @ref palGetBufferMemoryRequirements() to get the
+ *   memory requirement of the buffer and allocate memory with @ref palAllocateMemory()
+ *   after the buffer has been created. Users are required to free the allocated
+ *   memory with @ref palFreeMemory() when no longer needed.
+ * 
+ * - PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY - The graphics system allocates GPU
+ *   only memory for the buffer after creation.
+ * 
+ * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD - The graphics system allocates CPU
+ *   upload memory for the buffer after creation.
+ * 
+ * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK - The graphics system allocates CPU
+ *   readback memory for the buffer after creation.
  * 
  * This struct is used only during @ref palCreateBuffer() and may be
  * discarded after the function returns.
@@ -3191,139 +3228,139 @@ typedef struct PalGraphicsBackendInfo {
  */
 typedef struct PalGraphicsBackendVtable1 {
     //clang-format off
-    PalResult(PAL_CALL* enumerateAdapters)(uint32_t* count, PalAdapter** outAdapters);
-    void(PAL_CALL* getAdapterInfo)(PalAdapter* adapter, PalAdapterInfo* info);
-    void(PAL_CALL* getAdapterCapabilities)(PalAdapter* adapter, PalAdapterCapabilities* caps);
-    PalAdapterFeatures(PAL_CALL* getAdapterFeatures)(PalAdapter* adapter);
-    uint32_t(PAL_CALL* getHighestSupportedShaderTarget)(PalAdapter* adapter, PalShaderFormats shaderFormat);
-    PalResult(PAL_CALL* createDevice)(PalAdapter* adapter, PalAdapterFeatures features, PalDevice** outDevice);
-    void(PAL_CALL* destroyDevice)(PalDevice* device);
-    uint32_t(PAL_CALL* getDeviceLostReason)(PalDevice* device);
-    PalResult(PAL_CALL* allocateMemory)(PalDevice* device, PalMemoryType type, uint64_t memoryMask, uint64_t size, PalMemory** outMemory);
-    void(PAL_CALL* freeMemory)(PalMemory* memory);
-    void(PAL_CALL* querySamplerAnisotropyCapabilities)(PalDevice* device, PalSamplerAnisotropyCapabilities* caps);
-    void(PAL_CALL* queryMultiViewCapabilities)(PalDevice* device, PalMultiViewCapabilities* caps);
-    void(PAL_CALL* queryMultiViewportCapabilities)( PalDevice* device, PalMultiViewportCapabilities* caps);
-    void(PAL_CALL* queryDepthStencilCapabilities)(PalDevice* device, PalDepthStencilCapabilities* caps);
-    void(PAL_CALL* queryFragmentShadingRateCapabilities)(PalDevice* device, PalFragmentShadingRateCapabilities* caps);
-    void(PAL_CALL* queryMeshShaderCapabilities)(PalDevice* device, PalMeshShaderCapabilities* caps);
-    void(PAL_CALL* queryRayTracingCapabilities)(PalDevice* device, PalRayTracingCapabilities* caps);
-    void(PAL_CALL* queryDescriptorIndexingCapabilities)(PalDevice* device, PalDescriptorIndexingCapabilities* caps);
-    PalResult(PAL_CALL* createQueue)(PalDevice* device, PalQueueType type, PalQueue** outQueue);
-    void(PAL_CALL* destroyQueue)(PalQueue* queue);
-    PalBool(PAL_CALL* canQueuePresent)(PalQueue* queue, PalSurface* surface);
-    PalResult(PAL_CALL* waitQueue)(PalQueue* queue);
-    void(PAL_CALL* enumerateFormats)(PalAdapter* adapter, uint32_t* count, PalFormatInfo* outFormats);
-    PalBool(PAL_CALL* isFormatSupported)(PalAdapter* adapter, PalFormat format);
-    PalImageUsages(PAL_CALL* queryFormatImageUsages)(PalAdapter* adapter, PalFormat format);
-    PalSampleCount(PAL_CALL* queryFormatSampleCount)(PalAdapter* adapter, PalFormat format);
-    PalResult(PAL_CALL* createImage)(PalDevice* device, const PalImageCreateInfo* info, PalImage** outImage);
-    void(PAL_CALL* destroyImage)(PalImage* image);
-    void(PAL_CALL* getImageInfo)(PalImage* image, PalImageInfo* info);
-    void(PAL_CALL* getImageMemoryRequirements)(PalImage* image, PalMemoryRequirements* requirements);
-    PalResult(PAL_CALL* bindImageMemory)(PalImage* image, PalMemory* memory, uint64_t offset);
-    PalResult(PAL_CALL* createImageView)(PalDevice* device, PalImage* image, const PalImageViewCreateInfo* info, PalImageView** outImageView);
-    void(PAL_CALL* destroyImageView)(PalImageView* imageView);
-    PalResult(PAL_CALL* createSampler)(PalDevice* device, const PalSamplerCreateInfo* info, PalSampler** outSampler);
-    void(PAL_CALL* destroySampler)(PalSampler* sampler);
-    PalResult(PAL_CALL* createSurface)(PalDevice* device, void* window, void* windowInstance, PalWindowInstanceType instanceType, PalSurface** outSurface);
-    void(PAL_CALL* destroySurface)(PalSurface* surface);
-    void(PAL_CALL* getSurfaceCapabilities)(PalDevice* device, PalSurface* surface, PalSurfaceCapabilities* caps);
-    PalResult(PAL_CALL* createSwapchain)(PalDevice* device, PalQueue* queue, PalSurface* surface, const PalSwapchainCreateInfo* info, PalSwapchain** outSwapchain);
-    void(PAL_CALL* destroySwapchain)(PalSwapchain* swapchain);
-    PalImage*(PAL_CALL* getSwapchainImage)(PalSwapchain* swapchain, uint32_t index);
-    PalResult(PAL_CALL* getNextSwapchainImage)(PalSwapchain* swapchain, PalSwapchainNextImageInfo* info, uint32_t* outIndex);
-    PalResult(PAL_CALL* presentSwapchain)(PalSwapchain* swapchain, uint32_t imageIndex, PalSemaphore* waitSemaphore);
-    PalResult(PAL_CALL* resizeSwapchain)(PalSwapchain* swapchain, uint32_t newWidth, uint32_t newHeight);
-    PalResult(PAL_CALL* createShader)(PalDevice* device, const PalShaderCreateInfo* info, PalShader** outShader);
-    void(PAL_CALL* destroyShader)(PalShader* shader);
-    PalResult(PAL_CALL* createFence)(PalDevice* device, PalBool signaled, PalFence** outFence);
-    void(PAL_CALL* destroyFence)(PalFence* fence);
-    PalResult(PAL_CALL* waitFence)(PalFence* fence, uint64_t timeout);
-    PalResult(PAL_CALL* resetFence)(PalFence* fence);
-    PalBool(PAL_CALL* isFenceSignaled)(PalFence* fence);
-    PalResult(PAL_CALL* createSemaphore)(PalDevice* device, PalBool enableTimeline, PalSemaphore** outSemaphore);
-    void(PAL_CALL* destroySemaphore)(PalSemaphore* semaphore);
-    PalResult(PAL_CALL* waitSemaphore)(PalSemaphore* semaphore, uint64_t value, uint64_t timeout);
-    PalResult(PAL_CALL* signalSemaphore)(PalSemaphore* semaphore, PalQueue* queue, uint64_t value);
-    PalResult(PAL_CALL* getSemaphoreValue)(PalSemaphore* semaphore, uint64_t* value);
-    PalResult(PAL_CALL* createCommandPool)(PalDevice* device, PalQueue* queue, PalCommandPool** outPool);
-    void(PAL_CALL* destroyCommandPool)(PalCommandPool* pool);
-    PalResult(PAL_CALL* allocateCommandBuffer)(PalDevice* device, PalCommandPool* pool, PalCommandBufferType type, PalCommandBuffer** outCmdBuffer);
-    void(PAL_CALL* freeCommandBuffer)(PalCommandBuffer* cmdBuffer);
-    PalResult(PAL_CALL* resetCommandBuffer)(PalCommandBuffer* cmdBuffer);
-    PalResult(PAL_CALL* submitCommandBuffer)(PalQueue* queue, PalCommandBufferSubmitInfo* info);
-    PalResult(PAL_CALL* cmdBegin)(PalCommandBuffer* cmdBuffer, PalRenderingLayoutInfo* info);
-    PalResult(PAL_CALL* cmdEnd)(PalCommandBuffer* cmdBuffer);
-    void(PAL_CALL* cmdExecuteCommandBuffer)(PalCommandBuffer* primaryCmdBuffer, PalCommandBuffer* secondaryCmdBuffer);
-    void(PAL_CALL* cmdSetFragmentShadingRate)(PalCommandBuffer* cmdBuffer, PalFragmentShadingRateState* state);
-    void(PAL_CALL* cmdDrawMeshTasks)(PalCommandBuffer* cmdBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-    void(PAL_CALL* cmdDrawMeshTasksIndirect)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, uint32_t drawCount);
-    void(PAL_CALL* cmdDrawMeshTasksIndirectCount)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, PalBuffer* countBuffer, uint32_t maxDrawCount);
-    void(PAL_CALL* cmdBuildAccelerationStructure)(PalCommandBuffer* cmdBuffer, PalAccelerationStructureBuildInfo* info);
-    void(PAL_CALL* cmdBeginRendering)(PalCommandBuffer* cmdBuffer, PalRenderingInfo* info);
-    void(PAL_CALL* cmdEndRendering)(PalCommandBuffer* cmdBuffer);
-    void(PAL_CALL* cmdCopyBuffer)(PalCommandBuffer* cmdBuffer, PalBuffer* dst, PalBuffer* src, PalBufferCopyInfo* copyInfo);
-    void(PAL_CALL* cmdCopyBufferToImage)(PalCommandBuffer* cmdBuffer, PalImage* dstImage, PalBuffer* srcBuffer, PalBufferImageCopyInfo* copyInfo);
-    void(PAL_CALL* cmdCopyImage)(PalCommandBuffer* cmdBuffer, PalImage* dst, PalImage* src, PalImageCopyInfo* copyInfo);
-    void(PAL_CALL* cmdCopyImageToBuffer)(PalCommandBuffer* cmdBuffer, PalBuffer* dstBuffer, PalImage* srcImage, PalBufferImageCopyInfo* copyInfo);
-    void(PAL_CALL* cmdBindPipeline)(PalCommandBuffer* cmdBuffer, PalPipeline* pipeline);
-    void(PAL_CALL* cmdSetViewport)(PalCommandBuffer* cmdBuffer, uint32_t count, PalViewport* viewports);
-    void(PAL_CALL* cmdSetScissors)(PalCommandBuffer* cmdBuffer, uint32_t count, PalRect2D* scissors);
-    void(PAL_CALL* cmdBindVertexBuffers)(PalCommandBuffer* cmdBuffer, uint32_t firstSlot, uint32_t count, PalBuffer** buffers, uint64_t* offsets);
-    void(PAL_CALL* cmdBindIndexBuffer)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, uint64_t offset, PalIndexType type);
-    void(PAL_CALL* cmdDraw)(PalCommandBuffer* cmdBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-    void(PAL_CALL* cmdDrawIndirect)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, uint32_t count);
-    void(PAL_CALL* cmdDrawIndirectCount)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, PalBuffer* countBuffer, uint32_t count);
-    void(PAL_CALL* cmdDrawIndexed)(PalCommandBuffer* cmdBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
-    void(PAL_CALL* cmdDrawIndexedIndirect)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, uint32_t count);
-    void(PAL_CALL* cmdDrawIndexedIndirectCount)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, PalBuffer* countBuffer, uint32_t count);
-    void(PAL_CALL* cmdAccelerationStructureBarrier)(PalCommandBuffer* cmdBuffer, PalAccelerationStructure* as, PalBarrierInfo* info);
-    void(PAL_CALL* cmdImageBarrier)(PalCommandBuffer* cmdBuffer, PalImage* image, PalImageSubresourceRange* subresourceRange, PalBarrierInfo* info);
-    void(PAL_CALL* cmdBufferBarrier)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer, PalBarrierInfo* info);
-    void(PAL_CALL* cmdDispatch)(PalCommandBuffer* cmdBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-    void(PAL_CALL* cmdDispatchBase)(PalCommandBuffer* cmdBuffer, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-    void(PAL_CALL* cmdDispatchIndirect)(PalCommandBuffer* cmdBuffer, PalBuffer* buffer);
-    void(PAL_CALL* cmdTraceRays)(PalCommandBuffer* cmdBuffer, PalShaderBindingTable* sbt, uint32_t raygenIndex, uint32_t width, uint32_t height, uint32_t depth);
-    void(PAL_CALL* cmdTraceRaysIndirect)(PalCommandBuffer* cmdBuffer, uint32_t raygenIndex, PalShaderBindingTable* sbt, PalBuffer* buffer);
-    void(PAL_CALL* cmdBindDescriptorSet)(PalCommandBuffer* cmdBuffer, uint32_t setIndex, PalDescriptorSet* set);
-    void(PAL_CALL* cmdPushConstants)(PalCommandBuffer* cmdBuffer, uint32_t offset, uint32_t size, const void* value);
-    void(PAL_CALL* cmdSetCullMode)(PalCommandBuffer* cmdBuffer, PalCullMode cullMode);
-    void(PAL_CALL* cmdSetFrontFace)(PalCommandBuffer* cmdBuffer, PalFrontFace frontFace);
-    void(PAL_CALL* cmdSetPrimitiveTopology)(PalCommandBuffer* cmdBuffer, PalPrimitiveTopology topology);
-    void(PAL_CALL* cmdSetDepthTestEnable)(PalCommandBuffer* cmdBuffer, PalBool enable);
-    void(PAL_CALL* cmdSetDepthWriteEnable)(PalCommandBuffer* cmdBuffer, PalBool enable);
-    void(PAL_CALL* cmdSetStencilOp)(PalCommandBuffer* cmdBuffer, PalStencilFaceFlags faceMask, PalStencilOp failOp, PalStencilOp passOp, PalStencilOp depthFailOp, PalCompareOp compareOp);
-    PalResult(PAL_CALL* createAccelerationstructure)(PalDevice* device, const PalAccelerationStructureCreateInfo* info, PalAccelerationStructure** outAs);
-    void(PAL_CALL* destroyAccelerationstructure)(PalAccelerationStructure* as);
-    void(PAL_CALL* getAccelerationStructureBuildSize)(PalDevice* device, PalAccelerationStructureBuildInfo* info, PalAccelerationStructureBuildSize* size);
-    PalResult(PAL_CALL* createBuffer)(PalDevice* device, const PalBufferCreateInfo* info, PalBuffer** outBuffer);
-    void(PAL_CALL* destroyBuffer)(PalBuffer* buffer);
-    void(PAL_CALL* getBufferMemoryRequirements)(PalBuffer* buffer, PalMemoryRequirements* requirements);
-    void(PAL_CALL* computeInstanceStagingSize)(PalDevice* device, uint32_t instanceCount, uint64_t* outSize);
-    void(PAL_CALL* computeImageStagingRequirements)(PalDevice* device, PalFormat imageFormat, const PalBufferImageCopyInfo* copyInfo, PalImageStagingRequirements* requirements);
-    void(PAL_CALL* writeInstanceStaging)(PalDevice* device, uint32_t instanceCount, PalAccelerationStructureInstance* instances, void* ptr);
-    void(PAL_CALL* writeImageStaging)(PalDevice* device, PalFormat imageFormat, PalBufferImageCopyInfo* copyInfo, void* srcData, void* ptr);
-    PalResult(PAL_CALL* bindBufferMemory)(PalBuffer* buffer, PalMemory* memory, uint64_t offset);
-    PalResult(PAL_CALL* mapBuffer)(PalBuffer* buffer, uint64_t offset, uint64_t size, void** outPtr);
-    void(PAL_CALL* unmapBuffer)(PalBuffer* buffer);
-    PalDeviceAddress(PAL_CALL* getBufferDeviceAddress)(PalBuffer* buffer);
-    PalResult(PAL_CALL* createDescriptorSetLayout)(PalDevice* device, const PalDescriptorSetLayoutCreateInfo* info, PalDescriptorSetLayout** outLayout);
-    void(PAL_CALL* destroyDescriptorSetLayout)(PalDescriptorSetLayout* layout);
-    PalResult(PAL_CALL* createDescriptorPool)(PalDevice* device, const PalDescriptorPoolCreateInfo* info, PalDescriptorPool** outPool);
-    void(PAL_CALL* destroyDescriptorPool)(PalDescriptorPool* pool);
-    PalResult(PAL_CALL* resetDescriptorPool)(PalDescriptorPool* pool);
-    PalResult(PAL_CALL* allocateDescriptorSet)(PalDevice* device, PalDescriptorPool* pool, PalDescriptorSetLayout* layout, PalDescriptorSet** outSet);
-    PalResult(PAL_CALL* updateDescriptorSet)(PalDevice* device, uint32_t count, PalDescriptorSetWriteInfo* infos);
-    PalResult(PAL_CALL* createPipelineLayout)(PalDevice* device, const PalPipelineLayoutCreateInfo* info, PalPipelineLayout** outLayout);
-    void(PAL_CALL* destroyPipelineLayout)(PalPipelineLayout* layout);
-    PalResult(PAL_CALL* createGraphicsPipeline)(PalDevice* device, const PalGraphicsPipelineCreateInfo* info, PalPipeline** outPipeline);
-    PalResult(PAL_CALL* createComputePipeline)(PalDevice* device, const PalComputePipelineCreateInfo* info, PalPipeline** outPipeline);
-    PalResult(PAL_CALL* createRayTracingPipeline)(PalDevice* device, const PalRayTracingPipelineCreateInfo* info, PalPipeline** outPipeline);
-    void(PAL_CALL* destroyPipeline)(PalPipeline* pipeline);
-    PalResult(PAL_CALL* createShaderBindingTable)(PalDevice* device, const PalShaderBindingTableCreateInfo* info, PalShaderBindingTable** outSbt);
-    void(PAL_CALL* destroyShaderBindingTable)(PalShaderBindingTable* sbt);
-    void(PAL_CALL* updateShaderBindingTable)(PalShaderBindingTable* sbt, uint32_t count, PalShaderBindingTableRecordInfo* infos);
+    PalResult(PAL_CALL* enumerateAdapters)(uint32_t*, PalAdapter**);
+    void(PAL_CALL* getAdapterInfo)(PalAdapter*, PalAdapterInfo*);
+    void(PAL_CALL* getAdapterCapabilities)(PalAdapter*, PalAdapterCapabilities*);
+    PalAdapterFeatures(PAL_CALL* getAdapterFeatures)(PalAdapter*);
+    uint32_t(PAL_CALL* getHighestSupportedShaderTarget)(PalAdapter*, PalShaderFormats);
+    PalResult(PAL_CALL* createDevice)(PalAdapter*, PalAdapterFeatures, PalDevice**);
+    void(PAL_CALL* destroyDevice)(PalDevice*);
+    uint32_t(PAL_CALL* getDeviceLostReason)(PalDevice*);
+    PalResult(PAL_CALL* allocateMemory)(PalDevice*, PalMemoryType, uint64_t, uint64_t, PalMemory**);
+    void(PAL_CALL* freeMemory)(PalMemory*);
+    void(PAL_CALL* querySamplerAnisotropyCapabilities)(PalDevice*, PalSamplerAnisotropyCapabilities*);
+    void(PAL_CALL* queryMultiViewCapabilities)(PalDevice*, PalMultiViewCapabilities*);
+    void(PAL_CALL* queryMultiViewportCapabilities)( PalDevice*, PalMultiViewportCapabilities*);
+    void(PAL_CALL* queryDepthStencilCapabilities)(PalDevice*, PalDepthStencilCapabilities*);
+    void(PAL_CALL* queryFragmentShadingRateCapabilities)(PalDevice*, PalFragmentShadingRateCapabilities*);
+    void(PAL_CALL* queryMeshShaderCapabilities)(PalDevice*, PalMeshShaderCapabilities*);
+    void(PAL_CALL* queryRayTracingCapabilities)(PalDevice*, PalRayTracingCapabilities*);
+    void(PAL_CALL* queryDescriptorIndexingCapabilities)(PalDevice*, PalDescriptorIndexingCapabilities*);
+    PalResult(PAL_CALL* createQueue)(PalDevice*, PalQueueType, PalQueue**);
+    void(PAL_CALL* destroyQueue)(PalQueue*);
+    PalBool(PAL_CALL* canQueuePresent)(PalQueue*, PalSurface*);
+    PalResult(PAL_CALL* waitQueue)(PalQueue*);
+    void(PAL_CALL* enumerateFormats)(PalAdapter*, uint32_t*, PalFormatInfo*);
+    PalBool(PAL_CALL* isFormatSupported)(PalAdapter*, PalFormat);
+    PalImageUsages(PAL_CALL* queryFormatImageUsages)(PalAdapter*, PalFormat);
+    PalSampleCount(PAL_CALL* queryFormatSampleCount)(PalAdapter*, PalFormat);
+    PalResult(PAL_CALL* createImage)(PalDevice*, const PalImageCreateInfo*, PalImage**);
+    void(PAL_CALL* destroyImage)(PalImage*);
+    void(PAL_CALL* getImageInfo)(PalImage*, PalImageInfo*);
+    void(PAL_CALL* getImageMemoryRequirements)(PalImage*, PalMemoryRequirements*);
+    PalResult(PAL_CALL* bindImageMemory)(PalImage*, PalMemory*, uint64_t);
+    PalResult(PAL_CALL* createImageView)(PalDevice*, PalImage*, const PalImageViewCreateInfo*, PalImageView**);
+    void(PAL_CALL* destroyImageView)(PalImageView*);
+    PalResult(PAL_CALL* createSampler)(PalDevice*, const PalSamplerCreateInfo*, PalSampler**);
+    void(PAL_CALL* destroySampler)(PalSampler*);
+    PalResult(PAL_CALL* createSurface)(PalDevice*, void*, void*, PalWindowInstanceType, PalSurface**);
+    void(PAL_CALL* destroySurface)(PalSurface*);
+    void(PAL_CALL* getSurfaceCapabilities)(PalDevice*, PalSurface*, PalSurfaceCapabilities*);
+    PalResult(PAL_CALL* createSwapchain)(PalDevice*, PalQueue*, PalSurface*, const PalSwapchainCreateInfo*, PalSwapchain**);
+    void(PAL_CALL* destroySwapchain)(PalSwapchain*);
+    PalImage*(PAL_CALL* getSwapchainImage)(PalSwapchain*, uint32_t);
+    PalResult(PAL_CALL* getNextSwapchainImage)(PalSwapchain*, PalSwapchainNextImageInfo*, uint32_t*);
+    PalResult(PAL_CALL* presentSwapchain)(PalSwapchain*, uint32_t, PalSemaphore*);
+    PalResult(PAL_CALL* resizeSwapchain)(PalSwapchain*, uint32_t, uint32_t);
+    PalResult(PAL_CALL* createShader)(PalDevice*, const PalShaderCreateInfo*, PalShader**);
+    void(PAL_CALL* destroyShader)(PalShader*);
+    PalResult(PAL_CALL* createFence)(PalDevice*, PalBool, PalFence**);
+    void(PAL_CALL* destroyFence)(PalFence*);
+    PalResult(PAL_CALL* waitFence)(PalFence*, uint64_t);
+    PalResult(PAL_CALL* resetFence)(PalFence*);
+    PalBool(PAL_CALL* isFenceSignaled)(PalFence*);
+    PalResult(PAL_CALL* createSemaphore)(PalDevice*, PalBool, PalSemaphore**);
+    void(PAL_CALL* destroySemaphore)(PalSemaphore*);
+    PalResult(PAL_CALL* waitSemaphore)(PalSemaphore*, uint64_t, uint64_t);
+    PalResult(PAL_CALL* signalSemaphore)(PalSemaphore*, PalQueue*, uint64_t);
+    PalResult(PAL_CALL* getSemaphoreValue)(PalSemaphore*, uint64_t*);
+    PalResult(PAL_CALL* createCommandPool)(PalDevice*, PalQueue*, PalCommandPool**);
+    void(PAL_CALL* destroyCommandPool)(PalCommandPool*);
+    PalResult(PAL_CALL* allocateCommandBuffer)(PalDevice*, PalCommandPool*, PalCommandBufferType, PalCommandBuffer**);
+    void(PAL_CALL* freeCommandBuffer)(PalCommandBuffer*);
+    PalResult(PAL_CALL* resetCommandBuffer)(PalCommandBuffer*);
+    PalResult(PAL_CALL* submitCommandBuffer)(PalQueue*, PalCommandBufferSubmitInfo*);
+    PalResult(PAL_CALL* cmdBegin)(PalCommandBuffer*, PalRenderingLayoutInfo*);
+    PalResult(PAL_CALL* cmdEnd)(PalCommandBuffer*);
+    void(PAL_CALL* cmdExecuteCommandBuffer)(PalCommandBuffer*, PalCommandBuffer*);
+    void(PAL_CALL* cmdSetFragmentShadingRate)(PalCommandBuffer*, PalFragmentShadingRateState*);
+    void(PAL_CALL* cmdDrawMeshTasks)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t);
+    void(PAL_CALL* cmdDrawMeshTasksIndirect)(PalCommandBuffer*, PalBuffer*, uint32_t);
+    void(PAL_CALL* cmdDrawMeshTasksIndirectCount)(PalCommandBuffer*, PalBuffer*, PalBuffer*, uint32_t);
+    void(PAL_CALL* cmdBuildAccelerationStructure)(PalCommandBuffer*, PalAccelerationStructureBuildInfo*);
+    void(PAL_CALL* cmdBeginRendering)(PalCommandBuffer*, PalRenderingInfo*);
+    void(PAL_CALL* cmdEndRendering)(PalCommandBuffer*);
+    void(PAL_CALL* cmdCopyBuffer)(PalCommandBuffer*, PalBuffer*, PalBuffer*, PalBufferCopyInfo*);
+    void(PAL_CALL* cmdCopyBufferToImage)(PalCommandBuffer*, PalImage*, PalBuffer*, PalBufferImageCopyInfo*);
+    void(PAL_CALL* cmdCopyImage)(PalCommandBuffer*, PalImage*, PalImage*, PalImageCopyInfo*);
+    void(PAL_CALL* cmdCopyImageToBuffer)(PalCommandBuffer*, PalBuffer*, PalImage*, PalBufferImageCopyInfo*);
+    void(PAL_CALL* cmdBindPipeline)(PalCommandBuffer*, PalPipeline*);
+    void(PAL_CALL* cmdSetViewport)(PalCommandBuffer*, uint32_t, PalViewport*);
+    void(PAL_CALL* cmdSetScissors)(PalCommandBuffer*, uint32_t, PalRect2D*);
+    void(PAL_CALL* cmdBindVertexBuffers)(PalCommandBuffer*, uint32_t, uint32_t, PalBuffer**, uint64_t*);
+    void(PAL_CALL* cmdBindIndexBuffer)(PalCommandBuffer*, PalBuffer*, uint64_t, PalIndexType);
+    void(PAL_CALL* cmdDraw)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, uint32_t);
+    void(PAL_CALL* cmdDrawIndirect)(PalCommandBuffer*, PalBuffer*, uint32_t);
+    void(PAL_CALL* cmdDrawIndirectCount)(PalCommandBuffer*, PalBuffer*, PalBuffer*, uint32_t);
+    void(PAL_CALL* cmdDrawIndexed)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, int32_t, uint32_t);
+    void(PAL_CALL* cmdDrawIndexedIndirect)(PalCommandBuffer*, PalBuffer*, uint32_t);
+    void(PAL_CALL* cmdDrawIndexedIndirectCount)(PalCommandBuffer*, PalBuffer*, PalBuffer*, uint32_t);
+    void(PAL_CALL* cmdAccelerationStructureBarrier)(PalCommandBuffer*, PalAccelerationStructure*, PalBarrierInfo*);
+    void(PAL_CALL* cmdImageBarrier)(PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalBarrierInfo*);
+    void(PAL_CALL* cmdBufferBarrier)(PalCommandBuffer*, PalBuffer*, PalBarrierInfo*);
+    void(PAL_CALL* cmdDispatch)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t);
+    void(PAL_CALL* cmdDispatchBase)(PalCommandBuffer*, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+    void(PAL_CALL* cmdDispatchIndirect)(PalCommandBuffer*, PalBuffer*);
+    void(PAL_CALL* cmdTraceRays)(PalCommandBuffer*, PalShaderBindingTable*, uint32_t, uint32_t, uint32_t, uint32_t);
+    void(PAL_CALL* cmdTraceRaysIndirect)(PalCommandBuffer*, uint32_t, PalShaderBindingTable*, PalBuffer*);
+    void(PAL_CALL* cmdBindDescriptorSet)(PalCommandBuffer*, uint32_t, PalDescriptorSet*);
+    void(PAL_CALL* cmdPushConstants)(PalCommandBuffer*, uint32_t, uint32_t, const void*);
+    void(PAL_CALL* cmdSetCullMode)(PalCommandBuffer*, PalCullMode);
+    void(PAL_CALL* cmdSetFrontFace)(PalCommandBuffer*, PalFrontFace);
+    void(PAL_CALL* cmdSetPrimitiveTopology)(PalCommandBuffer*, PalPrimitiveTopology);
+    void(PAL_CALL* cmdSetDepthTestEnable)(PalCommandBuffer*, PalBool);
+    void(PAL_CALL* cmdSetDepthWriteEnable)(PalCommandBuffer*, PalBool);
+    void(PAL_CALL* cmdSetStencilOp)(PalCommandBuffer*, PalStencilFaceFlags, PalStencilOp, PalStencilOp, PalStencilOp, PalCompareOp);
+    PalResult(PAL_CALL* createAccelerationstructure)(PalDevice*, const PalAccelerationStructureCreateInfo*, PalAccelerationStructure**);
+    void(PAL_CALL* destroyAccelerationstructure)(PalAccelerationStructure*);
+    void(PAL_CALL* getAccelerationStructureBuildSize)(PalDevice*, PalAccelerationStructureBuildInfo*, PalAccelerationStructureBuildSize*);
+    PalResult(PAL_CALL* createBuffer)(PalDevice*, const PalBufferCreateInfo*, PalBuffer**);
+    void(PAL_CALL* destroyBuffer)(PalBuffer*);
+    void(PAL_CALL* getBufferMemoryRequirements)(PalBuffer*, PalMemoryRequirements*);
+    void(PAL_CALL* computeInstanceStagingSize)(PalDevice*, uint32_t, uint64_t*);
+    void(PAL_CALL* computeImageStagingRequirements)(PalDevice*, PalFormat, const PalBufferImageCopyInfo*, PalImageStagingRequirements*);
+    void(PAL_CALL* writeInstanceStaging)(PalDevice*, uint32_t, PalAccelerationStructureInstance*, void*);
+    void(PAL_CALL* writeImageStaging)(PalDevice*, PalFormat, PalBufferImageCopyInfo*, void*, void*);
+    PalResult(PAL_CALL* bindBufferMemory)(PalBuffer*, PalMemory*, uint64_t);
+    PalResult(PAL_CALL* mapBuffer)(PalBuffer*, uint64_t, uint64_t, void**);
+    void(PAL_CALL* unmapBuffer)(PalBuffer*);
+    PalDeviceAddress(PAL_CALL* getBufferDeviceAddress)(PalBuffer*);
+    PalResult(PAL_CALL* createDescriptorSetLayout)(PalDevice*, const PalDescriptorSetLayoutCreateInfo*, PalDescriptorSetLayout**);
+    void(PAL_CALL* destroyDescriptorSetLayout)(PalDescriptorSetLayout*);
+    PalResult(PAL_CALL* createDescriptorPool)(PalDevice*, const PalDescriptorPoolCreateInfo*, PalDescriptorPool**);
+    void(PAL_CALL* destroyDescriptorPool)(PalDescriptorPool*);
+    PalResult(PAL_CALL* resetDescriptorPool)(PalDescriptorPool*);
+    PalResult(PAL_CALL* allocateDescriptorSet)(PalDevice*, PalDescriptorPool*, PalDescriptorSetLayout*, PalDescriptorSet**);
+    PalResult(PAL_CALL* updateDescriptorSet)(PalDevice*, uint32_t, PalDescriptorSetWriteInfo*);
+    PalResult(PAL_CALL* createPipelineLayout)(PalDevice*, const PalPipelineLayoutCreateInfo*, PalPipelineLayout**);
+    void(PAL_CALL* destroyPipelineLayout)(PalPipelineLayout*);
+    PalResult(PAL_CALL* createGraphicsPipeline)(PalDevice*, const PalGraphicsPipelineCreateInfo*, PalPipeline**);
+    PalResult(PAL_CALL* createComputePipeline)(PalDevice*, const PalComputePipelineCreateInfo*, PalPipeline**);
+    PalResult(PAL_CALL* createRayTracingPipeline)(PalDevice*, const PalRayTracingPipelineCreateInfo*, PalPipeline**);
+    void(PAL_CALL* destroyPipeline)(PalPipeline*);
+    PalResult(PAL_CALL* createShaderBindingTable)(PalDevice*, const PalShaderBindingTableCreateInfo*, PalShaderBindingTable**);
+    void(PAL_CALL* destroyShaderBindingTable)(PalShaderBindingTable*);
+    void(PAL_CALL* updateShaderBindingTable)(PalShaderBindingTable*, uint32_t, PalShaderBindingTableRecordInfo*);
     //clang-format on
 } PalGraphicsBackendVtable1;
 
@@ -3343,11 +3380,11 @@ typedef struct PalGraphicsBackendVtable1 {
 typedef struct PalGraphicsBackendVtable2 {
     //clang-format off
     const PalGraphicsBackendVtable1* vtable1;
-    PalBool(PAL_CALL* canQueueShareOwnership)(PalQueue* a, PalQueue* b);
-    PalBool(PAL_CALL* canQueueUseUsageState)(PalQueue* queue, PalUsageState state);
-    PalBool(PAL_CALL* canQueueUsePipelineStages)(PalQueue* queue, PalPipelineStages stages);
-    void(PAL_CALL* cmdImageOwnershipTransfer)(PalCommandBuffer* srcCmdBuffer, PalCommandBuffer* dstCmdBuffer, PalImage* image, PalImageSubresourceRange* subresourceRange, PalUsageState srcUsageState, PalPipelineStages srcPipelineStages);
-    void(PAL_CALL* cmdBufferOwnershipTransfer)(PalCommandBuffer* srcCmdBuffer, PalCommandBuffer* dstCmdBuffer, PalBuffer* buffer, PalUsageState srcUsageState, PalPipelineStages srcPipelineStages);
+    PalBool(PAL_CALL* canQueueShareOwnership)(PalQueue*, PalQueue*);
+    PalBool(PAL_CALL* canQueueUseUsageState)(PalQueue*, PalUsageState);
+    PalBool(PAL_CALL* canQueueUsePipelineStages)(PalQueue*, PalPipelineStages);
+    void(PAL_CALL* cmdImageOwnershipTransfer)(PalCommandBuffer*, PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalUsageState, PalPipelineStages);
+    void(PAL_CALL* cmdBufferOwnershipTransfer)(PalCommandBuffer*, PalCommandBuffer*, PalBuffer*, PalUsageState, PalPipelineStages);
     //clang-format on
 } PalGraphicsBackendVtable2;
 
@@ -3403,7 +3440,7 @@ PAL_API PalResult PAL_CALL palInitGraphics(
 PAL_API void PAL_CALL palShutdownGraphics();
 
 /**
- * @brief Returns a list of all adapters (GPU) from custom and internal backends.
+ * @brief Returns a list of all adapters from custom and internal backends.
  *
  * The graphics system must be initialized before this call.
  *
@@ -3436,7 +3473,7 @@ PAL_API PalResult PAL_CALL palEnumerateAdapters(
     PalAdapter** outAdapters);
 
 /**
- * @brief Get information about an adapter (GPU).
+ * @brief Get information about an adapter.
  *
  * @param[in] adapter Adapter to query information on.
  * @param[out] info Pointer to a PalAdapterInfo to fill.
@@ -3453,7 +3490,7 @@ PAL_API void PAL_CALL palGetAdapterInfo(
     PalAdapterInfo* info);
 
 /**
- * @brief Get capabilites or limits about an adapter (GPU).
+ * @brief Get capabilites or limits about an adapter.
  *
  * @param[in] adapter Adapter to query capabilities on.
  * @param[out] caps Pointer to a PalAdapterCapabilities to fill.
@@ -3470,7 +3507,7 @@ PAL_API void PAL_CALL palGetAdapterCapabilities(
     PalAdapterCapabilities* caps);
 
 /**
- * @brief Get the supported features of an adapter (GPU).
+ * @brief Get the supported features of an adapter.
  *
  * @param[in] adapter Adapter to query features on.
  *
@@ -3486,7 +3523,7 @@ PAL_API void PAL_CALL palGetAdapterCapabilities(
 PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
 
 /**
- * @brief Get the highest supported shader target of an adapter (GPU).
+ * @brief Get the highest supported shader target of an adapter.
  *
  * @param[in] adapter Adapter to query.
  * @param[in] shaderFormat The shader format. Must have only a single bit set.
@@ -3506,7 +3543,7 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
     PalShaderFormats shaderFormat);
 
 /**
- * @brief Create a device from an adapter (GPU).
+ * @brief Create a device from an adapter.
  *
  * PAL does not enable any features by default. The created device must be destroyed using
  * `palDestroyDevice()`.
@@ -3911,7 +3948,7 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
 PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 
 /**
- * @brief Returns a list of all supported formats of an adapter (GPU).
+ * @brief Returns a list of all supported formats of an adapter.
  *
  * This function returns the supported format with the supported image usages
  * associated with the format. This is a handy way of selecting a format based on the image
@@ -3938,7 +3975,7 @@ PAL_API void PAL_CALL palEnumerateFormats(
     PalFormatInfo* outFormats);
 
 /**
- * @brief Check support for a format on an adapter (GPU).
+ * @brief Check support for a format on an adapter.
  *
  * This is much faster than enumerating all the formats to pick one. You directly check support
  * for the format you want to use. Call palQueryFormatImageUsages() to check for supported image
