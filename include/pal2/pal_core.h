@@ -414,7 +414,7 @@ PAL_API void PAL_CALL palFree(
  * @brief Logs a formatted message.
  * 
  * This function logs a formatted message to a custom or default logger.
- * Log messages are limited to `PAL_LOG_MSG_SIZE`, messages exceeding this
+ * Log messages are limited to @ref PAL_LOG_MSG_SIZE, messages exceeding this
  * limit are truncated and the remaining characters are discarded.
  * 
  * Logging in a log callback with the default logger is valid but logging
@@ -504,7 +504,7 @@ PAL_API PalLibrary* PAL_CALL palLoadLibrary(const char* path);
  * This function retrieves a symbol from the specified library. `library` must be
  * loaded into address space before this call.
  * 
- * Exported symbols are returned as `PalLibrarySymbol`, a cast is required to use
+ * Exported symbols are returned as @ref PalLibrarySymbol, a cast is required to use
  * the symbol as its declared type.
  *
  * @param[in] library Library to retrieve the symbol from.

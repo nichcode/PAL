@@ -42,51 +42,51 @@
 #define PAL_MAX_CUSTOM_BACKENDS 16 /*<< maximum number of custom backends */
 
 #define PAL_MAKE_SHADER_TARGET(major, minor) ((uint32_t)((major) << 8) | (minor))
-#define PAL_SHADER_TARGET_MAJOR(target) ((uint32_t)(target) >> 8);
-#define PAL_SHADER_TARGET_MINOR(target) ((uint32_t)(target) & 0xFF);
+#define PAL_SHADER_TARGET_MAJOR(target) ((uint32_t)(target) >> 8)
+#define PAL_SHADER_TARGET_MINOR(target) ((uint32_t)(target) & 0xFF)
 
 /**
  * @defgroup adapter_features Adapter Features
  * @{
  */
 #define PAL_ADAPTER_FEATURE_NONE 0 /**< no adapter features */
-#define PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY (1ULL << 1)
-#define PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING (1ULL << 2)
-#define PAL_ADAPTER_FEATURE_MULTI_VIEWPORT (1ULL << 3)
-#define PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE (1ULL << 4)
-#define PAL_ADAPTER_FEATURE_TESSELLATION_SHADER (1ULL << 5)
-#define PAL_ADAPTER_FEATURE_GEOMETRY_SHADER (1ULL << 6)
-#define PAL_ADAPTER_FEATURE_SHADER_FLOAT16 (1ULL << 7)
-#define PAL_ADAPTER_FEATURE_SHADER_FLOAT64 (1ULL << 8)
-#define PAL_ADAPTER_FEATURE_SHADER_INT16 (1ULL << 9)
-#define PAL_ADAPTER_FEATURE_SHADER_INT64 (1ULL << 10)
-#define PAL_ADAPTER_FEATURE_RAY_TRACING (1ULL << 11)
-#define PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING (1ULL << 12)
-#define PAL_ADAPTER_FEATURE_MESH_SHADER (1ULL << 13)
+#define PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY (1ULL << 1) /**< anisotropic texture filtering */
+#define PAL_ADAPTER_FEATURE_SAMPLE_RATE_SHADING (1ULL << 2) /**< per-sample shading */
+#define PAL_ADAPTER_FEATURE_MULTI_VIEWPORT (1ULL << 3) /**< multiple viewports */
+#define PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE (1ULL << 4) /**< timeline semaphores */
+#define PAL_ADAPTER_FEATURE_TESSELLATION_SHADER (1ULL << 5) /**< tessellation shaders */
+#define PAL_ADAPTER_FEATURE_GEOMETRY_SHADER (1ULL << 6) /**< geometry shaders */
+#define PAL_ADAPTER_FEATURE_SHADER_FLOAT16 (1ULL << 7) /**< 16-bit floats in shaders */
+#define PAL_ADAPTER_FEATURE_SHADER_FLOAT64 (1ULL << 8) /**< 64-bit floats in shaders */
+#define PAL_ADAPTER_FEATURE_SHADER_INT16 (1ULL << 9) /**< 16-bit integers in shaders */
+#define PAL_ADAPTER_FEATURE_SHADER_INT64 (1ULL << 10) /**< 64-bit integers in shaders */
+#define PAL_ADAPTER_FEATURE_RAY_TRACING (1ULL << 11) /**< ray tracing pipelines */
+#define PAL_ADAPTER_FEATURE_INDIRECT_RAY_TRACING (1ULL << 12) /**< indirect ray tracing dispatch */
+#define PAL_ADAPTER_FEATURE_MESH_SHADER (1ULL << 13) /**< mesh and task shaders */
 #define PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE (1ULL << 14) /**< variable shading rate */
-#define PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING (1ULL << 15)
-#define PAL_ADAPTER_FEATURE_SWAPCHAIN (1ULL << 16)
-#define PAL_ADAPTER_FEATURE_MULTI_VIEW (1ULL << 17)
-#define PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY (1ULL << 18)
-#define PAL_ADAPTER_FEATURE_FENCE_RESET (1ULL << 19)
-#define PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE (1ULL << 20)
-#define PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE (1ULL << 21)
-#define PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE (1ULL << 22)
-#define PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY (1ULL << 23)
-#define PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE (1ULL << 24)
-#define PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE (1ULL << 25)
-#define PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP (1ULL << 26)
-#define PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE (1ULL << 27)
+#define PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING (1ULL << 15) /**< bindless/descriptor indexing */
+#define PAL_ADAPTER_FEATURE_SWAPCHAIN (1ULL << 16) /**< presenting to surfaces */
+#define PAL_ADAPTER_FEATURE_MULTI_VIEW (1ULL << 17) /**< rendering to multiple views in one pass */
+#define PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY (1ULL << 18) /**< cube map array image views */
+#define PAL_ADAPTER_FEATURE_FENCE_RESET (1ULL << 19) /**< resetting fences */
+#define PAL_ADAPTER_FEATURE_POLYGON_MODE_LINE (1ULL << 20) /**< wireframe rendering */
+#define PAL_ADAPTER_FEATURE_DYNAMIC_CULL_MODE (1ULL << 21) /**< cull mode set at record time */
+#define PAL_ADAPTER_FEATURE_DYNAMIC_FRONT_FACE (1ULL << 22) /**< front face set at record time */
+#define PAL_ADAPTER_FEATURE_DYNAMIC_PRIMITIVE_TOPOLOGY (1ULL << 23) /**< primitive topology set at record time */
+#define PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_TEST_ENABLE (1ULL << 24) /**< depth test toggle set at record time */
+#define PAL_ADAPTER_FEATURE_DYNAMIC_DEPTH_WRITE_ENABLE (1ULL << 25) /**< depth write toggle set at record time */
+#define PAL_ADAPTER_FEATURE_DYNAMIC_STENCIL_OP (1ULL << 26) /**< stencil ops set at record time */
+#define PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE (1ULL << 27) /**< depth/stencil resolve */
 #define PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT (1ULL << 28) /**< variable shading rate attachment */
-#define PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS (1ULL << 29)
-#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW (1ULL << 30)
-#define PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH (1ULL << 31)
-#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT (1ULL << 32)
-#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH (1ULL << 33)
-#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT (1ULL << 34)
-#define PAL_ADAPTER_FEATURE_DISPATCH_BASE (1ULL << 35)
+#define PAL_ADAPTER_FEATURE_BUFFER_DEVICE_ADDRESS (1ULL << 29) /**< buffer device addresses */
+#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW (1ULL << 30) /**< indirect draws */
+#define PAL_ADAPTER_FEATURE_INDIRECT_DISPATCH (1ULL << 31) /**< indirect compute dispatch */
+#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_COUNT (1ULL << 32) /**< indirect draws with a GPU-side count */
+#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH (1ULL << 33) /**< indirect mesh draws */
+#define PAL_ADAPTER_FEATURE_INDIRECT_DRAW_MESH_COUNT (1ULL << 34) /**< indirect mesh draws with a GPU-side count */
+#define PAL_ADAPTER_FEATURE_DISPATCH_BASE (1ULL << 35) /**< compute dispatch with a base work group */
 #define PAL_ADAPTER_FEATURE_NULL_DESCRIPTORS (1ULL << 36) /**< empty descriptors */
-#define PAL_ADAPTER_FEATURE_RAY_QUERY (1ULL << 37)
+#define PAL_ADAPTER_FEATURE_RAY_QUERY (1ULL << 37) /**< ray queries from non ray tracing shaders */
 /** @} */
 
 /**
@@ -94,10 +94,10 @@
  * @{
  */
 #define PAL_ADAPTER_TYPE_UNKNOWN 0 /**< unknown adapter type to PAL */
-#define PAL_ADAPTER_TYPE_DISCRETE 1
-#define PAL_ADAPTER_TYPE_INTEGRATED 2
-#define PAL_ADAPTER_TYPE_VIRTUAL 3
-#define PAL_ADAPTER_TYPE_CPU 4
+#define PAL_ADAPTER_TYPE_DISCRETE 1 /**< dedicated GPU */
+#define PAL_ADAPTER_TYPE_INTEGRATED 2 /**< integrated GPU */
+#define PAL_ADAPTER_TYPE_VIRTUAL 3 /**< virtualized GPU */
+#define PAL_ADAPTER_TYPE_CPU 4 /**< software/CPU renderer */
 #define PAL_ADAPTER_TYPE_COUNT 5 /**< number of adapter types */
 /** @} */
 
@@ -121,9 +121,9 @@
  * @defgroup queue_types Queue Types
  * @{
  */
-#define PAL_QUEUE_TYPE_GRAPHICS 0
-#define PAL_QUEUE_TYPE_COMPUTE 1
-#define PAL_QUEUE_TYPE_COPY 2
+#define PAL_QUEUE_TYPE_GRAPHICS 0 /**< graphics, compute and transfer work */
+#define PAL_QUEUE_TYPE_COMPUTE 1 /**< compute and transfer work */
+#define PAL_QUEUE_TYPE_COPY 2 /**< transfer work only */
 #define PAL_QUEUE_TYPE_COUNT 3 /**< number of queue types */
 /** @} */
 
@@ -132,8 +132,8 @@
  * @{
  */
 #define PAL_PRESENT_MODE_FIFO 0 /**< v-sync present mode */
-#define PAL_PRESENT_MODE_IMMEDIATE 1
-#define PAL_PRESENT_MODE_MAILBOX 2
+#define PAL_PRESENT_MODE_IMMEDIATE 1 /**< present right away, may tear */
+#define PAL_PRESENT_MODE_MAILBOX 2 /**< newest image replaces the queued one, no tearing */
 #define PAL_PRESENT_MODE_COUNT 3 /**< number of swapchain present modes */
 /** @} */
 
@@ -141,9 +141,9 @@
  * @defgroup composite_alphas Swapchain Composite Alphas
  * @{
  */
-#define PAL_COMPOSITE_ALPHA_OPAQUE 0
-#define PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED 1
-#define PAL_COMPOSITE_ALPHA_POST_MULTIPLIED 2
+#define PAL_COMPOSITE_ALPHA_OPAQUE 0 /**< alpha is ignored */
+#define PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED 1 /**< color is already multiplied by alpha */
+#define PAL_COMPOSITE_ALPHA_POST_MULTIPLIED 2 /**< color is multiplied by alpha on composite */
 #define PAL_COMPOSITE_ALPHA_COUNT 3 /**< number of swapchain composite alphas */
 /** @} */
 
@@ -823,10 +823,10 @@
  * @defgroup buffer_memory_usages Buffer Memory Usages
  * @{
  */
-#define PAL_BUFFER_MEMORY_USAGE_MANUAL 0 /**< pAL should not allocate memory for the buffer */
-#define PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY 1
-#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD 2
-#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK 3
+#define PAL_BUFFER_MEMORY_USAGE_MANUAL 0 /**< PAL should not allocate memory for the buffer */
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY 1 /**< PAL allocates GPU memory for the buffer */
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD 2 /**< PAL allocates CPU upload memory for the buffer */
+#define PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK 3 /**< PAL allocates CPU readback memory for the buffer */
 #define PAL_BUFFER_MEMORY_USAGE_COUNT 4 /**< number of buffer memory usages */
 /** @} */
 
@@ -834,8 +834,8 @@
  * @defgroup image_memory_usages Image Memory Usages
  * @{
  */
-#define PAL_IMAGE_MEMORY_USAGE_MANUAL 0 /**< pAL should not allocate memory for the image */
-#define PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY 1
+#define PAL_IMAGE_MEMORY_USAGE_MANUAL 0 /**< PAL should not allocate memory for the image */
+#define PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY 1 /**< PAL allocates GPU memory for the image */
 #define PAL_IMAGE_MEMORY_USAGE_COUNT 2 /**< number of image memory usages */
 /** @} */
 
@@ -2366,7 +2366,7 @@ typedef struct PalVertexLayout {
  * @ingroup pal_graphics
  */
 typedef struct PalGraphicsDebugger {
-    void* userData;              /**< user-defined data passed to callback or `nullptr`. */
+    void* userData;              /**< user-defined data passed to callback or `nullptr` */
     PalDebugCallback callback;   /**< debug callback function */
     PalBool enableGPUValidation; /**< enable GPU-Based validation */
     PalBool denyGeneral;         /**< do not recieve general messages */
@@ -2820,6 +2820,8 @@ typedef struct PalShaderBindingTableRecordInfo {
 /**
  * @struct PalShaderEntryInfo
  * @brief Shader entry information.
+ * 
+ * `entryName` must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE`.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2838,15 +2840,15 @@ typedef struct PalShaderEntryInfo {
  * 
  * `memoryUsage` may be one of the following:
  * 
- * - PAL_IMAGE_MEMORY_USAGE_MANUAL - The graphics system does not allocate
- *   memory for the image. Call @ref palGetImageMemoryRequirements() to get the
+ * - PAL_IMAGE_MEMORY_USAGE_MANUAL - PAL does not allocate memory for the image.
+ *   Call @ref palGetImageMemoryRequirements() to get the
  *   memory requirement of the image and allocate memory with @ref palAllocateMemory()
  *   after the image has been created. Users are required to free the allocated
  *   memory with @ref palFreeMemory() when no longer needed.
  * 
- * - PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY - The graphics system allocates GPU
- *   only memory for the image after creation. This is recommended if a custom
- *   allocator or sub-allocations allocator is used.
+ * - PAL_IMAGE_MEMORY_USAGE_AUTO_GPU_ONLY - PAL allocates GPU only memory for the image
+ *   after creation. This is recommended if a custom allocator or sub-allocations
+ *   allocator is used.
  * 
  * This struct is used only during @ref palCreateImage() and may be
  * discarded after the function returns.
@@ -2948,6 +2950,30 @@ typedef struct PalSwapchainCreateInfo {
  * 
  * This struct is used only during @ref palCreateShader() and may be
  * discarded after the function returns.
+ * 
+ * The following shader stages requires:
+ * 
+ * - PAL_SHADER_STAGE_GEOMETRY - @ref PAL_ADAPTER_FEATURE_GEOMETRY_SHADER feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_MESH - @ref PAL_ADAPTER_FEATURE_MESH_SHADER feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_TASK - @ref PAL_ADAPTER_FEATURE_MESH_SHADER feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_TESSELLATION_CONTROL - @ref PAL_ADAPTER_FEATURE_TESSELLATION_SHADER feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_TESSELLATION_EVALUATION - @ref PAL_ADAPTER_FEATURE_TESSELLATION_SHADER feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_RAYGEN - @ref PAL_ADAPTER_FEATURE_RAY_TRACING feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_CLOSEST_HIT - @ref PAL_ADAPTER_FEATURE_RAY_TRACING feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_ANY_HIT - @ref PAL_ADAPTER_FEATURE_RAY_TRACING feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_MISS - @ref PAL_ADAPTER_FEATURE_RAY_TRACING feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_INTERSECTION - @ref PAL_ADAPTER_FEATURE_RAY_TRACING feature to be supported
+ * 
+ * - PAL_SHADER_STAGE_CALLABLE - @ref PAL_ADAPTER_FEATURE_RAY_TRACING feature to be supported
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -2967,19 +2993,19 @@ typedef struct PalShaderCreateInfo {
  * 
  * `memoryUsage` may be one of the following:
  * 
- * - PAL_BUFFER_MEMORY_USAGE_MANUAL - The graphics system does not allocate
+ * - PAL_BUFFER_MEMORY_USAGE_MANUAL - PAL does not allocate
  *   memory for the buffer. Call @ref palGetBufferMemoryRequirements() to get the
  *   memory requirement of the buffer and allocate memory with @ref palAllocateMemory()
  *   after the buffer has been created. Users are required to free the allocated
  *   memory with @ref palFreeMemory() when no longer needed.
  * 
- * - PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY - The graphics system allocates GPU
+ * - PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY - PAL allocates GPU
  *   only memory for the buffer after creation.
  * 
- * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD - The graphics system allocates CPU
+ * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD - PAL allocates CPU
  *   upload memory for the buffer after creation.
  * 
- * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK - The graphics system allocates CPU
+ * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK - PAL allocates CPU
  *   readback memory for the buffer after creation.
  * 
  * This struct is used only during @ref palCreateBuffer() and may be
@@ -3217,9 +3243,7 @@ typedef struct PalGraphicsBackendInfo {
  * @struct PalGraphicsBackendVtable1
  * @brief Graphics backend dispatch table version 1.
  * 
- * This struct contains the required function implementations of
- * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1`. This struct must remain valid
- * until @ref palShutdownGraphics() is called.
+ * This struct must remain valid until @ref palShutdownGraphics() is called.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -3368,9 +3392,7 @@ typedef struct PalGraphicsBackendVtable1 {
  * @struct PalGraphicsBackendVtable2
  * @brief Graphics backend dispatch table version 2.
  * 
- * This struct contains the required function implementations of
- * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2`. This struct must remain valid
- * until @ref palShutdownGraphics() is called.
+ * This struct must remain valid until @ref palShutdownGraphics() is called.
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -3389,7 +3411,7 @@ typedef struct PalGraphicsBackendVtable2 {
 } PalGraphicsBackendVtable2;
 
 /**
- * @brief Initialize the graphics system.
+ * @brief Initializes the graphics system.
  * 
  * The function initializes the graphics system. If the graphics system has been
  * initialized, the function does nothing.
@@ -3427,10 +3449,11 @@ PAL_API PalResult PAL_CALL palInitGraphics(
     const PalGraphicsBackendInfo* backends);
 
 /**
- * @brief Shutdown the graphics system.
- *
- * If the graphics system has not been initialized, the function returns silently.
- * All created devices, queues, images, swapchains etc must be destroyed before this call.
+ * @brief Shutdowns the graphics system.
+ * 
+ * All devices, swapchains and other objects created through the graphics system must be
+ * destroyed before this call. If the graphics system has not been initialized, the
+ * function returns silently.
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -3442,31 +3465,31 @@ PAL_API PalResult PAL_CALL palInitGraphics(
 PAL_API void PAL_CALL palShutdownGraphics();
 
 /**
- * @brief Returns a list of all adapters from custom and internal backends.
+ * @brief Enumerates available adapters.
+ * 
+ * This function enumerates both PAL adapters and custom-backend adapters. First set `adapters` to
+ * `nullptr` and `count` to 0 to query the number of available adapters. Allocate memory for the
+ * array and pass in the count and the allocated array. If the specified count is less than the
+ * number of adapters, only the adapters that fit in the array will be written. The returned 
+ * adapter handles are owned by PAL and must not be modified or freed.
+ * 
+ * If two adapters have the same API type, both will be returned. Get the adapter information
+ * with @ref palGetAdapterInfo() and check PalAdapterInfo::backendName to differentiate
+ * between the custom and internal adapters. The backend name for the internal adapters
+ * is `PAL`.
+ * 
+ * Call this function once and cache the result. Subsequent calls invalidate the previously
+ * returned adapter handles. Only enumerate again if an adapter has been removed or added.
  *
  * The graphics system must be initialized before this call.
  *
- * If a custom backend which implements an adapter with its API type of Vulkan, and there is an
- * adapter from the internal backends with the same specifications, this function will return both
- * of them in the list. Use PalAdapterInfo::backendName to differentiate between custom and
- * internal backend. the backend name for internal backend is `PAL`.
- *
- * Call this function first with PalAdapter array set to `nullptr` to get the number of adapters.
- * Allocate memory for the PalAdapter array and passed in the count and the allocated array. If
- * the count of the array is less than the number of adapters, PAL will write upto that limit.
- *
- * The adapter handles must not be freed by the user, they are managed by the
- * graphics system. Users are required to cache this, and call this function again
- * if adapters are added or removed which is rare except for virtual ones.
- *
- * @param[in, out] count Capacity of the PalAdapter array.
- * @param[out] outAdapters User allocated array of PalAdapter.
- *
+ * @param[in, out] count Capacity of the `outAdapters` array on input; number of adapters written on output.
+ * @param[out] adapters Adapter array.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -3478,12 +3501,12 @@ PAL_API PalResult PAL_CALL palEnumerateAdapters(
     PalAdapter** outAdapters);
 
 /**
- * @brief Get information about an adapter.
+ * @brief Gets information about an adapter.
  *
- * @param[in] adapter Adapter to query information on.
- * @param[out] info Pointer to a PalAdapterInfo to fill.
+ * @param[in] adapter Adapter to get its information.
+ * @param[out] info Output struct to receive the adapter information.
  *
- * @Thread-safety `info` is per thread.
+ * @Thread-safety `info` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3495,12 +3518,12 @@ PAL_API void PAL_CALL palGetAdapterInfo(
     PalAdapterInfo* info);
 
 /**
- * @brief Get capabilites or limits about an adapter.
+ * @brief Gets capabilites of an adapter.
  *
- * @param[in] adapter Adapter to query capabilities on.
- * @param[out] caps Pointer to a PalAdapterCapabilities to fill.
+ * @param[in] adapter Adapter to get its capabilities.
+ * @param[out] caps Output struct to receive the adapter capabilities.
  *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3512,11 +3535,10 @@ PAL_API void PAL_CALL palGetAdapterCapabilities(
     PalAdapterCapabilities* caps);
 
 /**
- * @brief Get the supported features of an adapter.
- *
- * @param[in] adapter Adapter to query features on.
- *
- * @return adapter features on success or `0` on failure.
+ * @brief Gets the supported features of an adapter.
+ * 
+ * @param[in] adapter Adapter to get its features.
+ * @return Adapter features on success or `0` on failure.
  *
  * @Thread-safety Thread safe.
  *
@@ -3528,13 +3550,19 @@ PAL_API void PAL_CALL palGetAdapterCapabilities(
 PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
 
 /**
- * @brief Get the highest supported shader target of an adapter.
+ * @brief Gets the highest supported shader target for an adapter.
+ * 
+ * This function gets the highest supported shader target per shader format
+ * on the specified adapter. `shaderFormat` must be supported by the adapter
+ * otherwise, the function returns `0`.
+ * 
+ * The returned shader target is encoded with `PAL_MAKE_SHADER_TARGET` constant.
+ * Use `PAL_SHADER_TARGET_MAJOR` and `PAL_SHADER_TARGET_MINOR` to get the major and
+ * minor parts of the target.
  *
- * @param[in] adapter Adapter to query.
- * @param[in] shaderFormat The shader format. Must have only a single bit set.
- *
- * @return The highest supported shader target encoded with `PAL_MAKE_SHADER_TARGET` macro
- * on success otherwise `0` on failure.
+ * @param[in] adapter Adapter to query its highest shader target.
+ * @param[in] shaderFormat Shader format. Must only have a single bit set.
+ * @return Highest supported shader target, or `0` if the format is unsupported.
  *
  * @Thread-safety Thread safe.
  *
@@ -3548,24 +3576,23 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
     PalShaderFormats shaderFormat);
 
 /**
- * @brief Create a device from an adapter.
- *
- * PAL does not enable any features by default. The created device must be destroyed using
- * `palDestroyDevice()`.
- *
- * Every requested feature must be supported by the adapter. Use `palGetAdapterFeatures` to check
- * the supported features of the adapter that can be enabled. Using a feature which is not
- * supported will fail and return `PAL_RESULT_ADAPTER_FEATURE_NOT_SUPPORTED`.
+ * @brief Creates a device.
+ * 
+ * The requested features in `features` must all be supported by the adapter. Use
+ * @ref palGetAdapterFeatures() to query the supported features before creating the device.
+ * Enabling an unsupported feature causes device creation to fail.
+ * 
+ * Enabling every feature the adapter supports is valid, but not recommended. It is
+ * better to create the device with only the features you need.
  *
  * @param[in] adapter Adapter that creates the device.
- * @param[in] features Adapter features to enable. Must be supported.
- * @param[out] outDevice Pointer to a PalDevice to recieve the created device.
- *
+ * @param[in] features Adapter features to enable.
+ * @param[out] outDevice Output handle to receive the created device.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `adapter` must be externally synchronized.
  *
@@ -3580,14 +3607,13 @@ PAL_API PalResult PAL_CALL palCreateDevice(
     PalDevice** outDevice);
 
 /**
- * @brief Destroy a device.
+ * @brief Destroys a device.
  *
  * All resources created with the device must be destroyed before this call.
  *
  * @param[in] device Pointer to the device to destroy.
  *
- * @Thread-safety the adapter used to create the device is
- * externally synchronized.
+ * @Thread-safety the adapter used to create the device must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3597,14 +3623,13 @@ PAL_API PalResult PAL_CALL palCreateDevice(
 PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
 
 /**
- * @brief Get the native device lost reason code.
- *
- * This function returns the backend-specific native code for the reason the device
- * was lost. Backends that do not provide explicit device lost reason codes return
- * their standard device lost code.
+ * @brief Gets the native device lost reason code.
+ * 
+ * This function returns the backend-specific native code associated with the device-loss
+ * reason. Backends that do not expose an explicit reason return their standard device-lost code.
  *
  * @param[in] device The device.
- * @return Tmp
+ * @return Backend-specific native device lost reason code.
  *
  * @Thread-safety Thread safe.
  *
@@ -3615,25 +3640,23 @@ PAL_API uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device);
 
 /**
  * @brief Allocates GPU memory for the specified device.
+ * 
+ * CPU adapters usually have no real `PAL_MEMORY_TYPE_GPU_ONLY` memory. On those adapters PAL
+ * treats shared memory as VRAM and reports it as `PAL_MEMORY_TYPE_GPU_ONLY`, so the type is
+ * always available.
  *
- * On CPU adapters, there is usually no
- * `PAL_MEMORY_TYPE_GPU_ONLY` memory type available. So it uses shared memory as the vram and set
- * the shared memory to the `PAL_MEMORY_TYPE_GPU_ONLY` for correctness.
- *
- * @param[in] device Pointer to device to allocate memory on.
- * @param[in] type Memory type to allocate. Must be supported by the adapter associated with the
- * device.
+ * @param[in] device Device to alocate memory for.
+ * @param[in] type Memory type. Must be supported by the adapter associated with the device.
  * @param[in] memoryMask Memory mask. Must match memory type.
- * @param[in] size Number of bytes to allocate. Must not be 0.
- * @param[out] outMemory Pointer to a PalMemory to recieved the allocated GPU memory.
+ * @param[in] size Number of bytes to allocate. Must not be `0`.
+ * @param[out] memory Output to receive the allocated memory.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
- * @Thread-safety `device` must be externally synchronized and
- * `outMemory` is per thread.
+ * @Thread-safety `device` must be externally synchronized and `memory` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3645,17 +3668,16 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
     PalMemoryType type,
     uint64_t memoryMask,
     uint64_t size,
-    PalMemory** outMemory);
+    PalMemory** memory);
 
 /**
- * @brief Free GPU memory allocated by palAllocateMemory.
+ * @brief Free memory allocated by @ref palAllocateMemory().
  *
  * If `memory` is `nullptr`, this function will return silently.
  *
- * @param[in] memory Pointer to memory to free.
+ * @param[in] memory Memory to free.
  *
- * @Thread-safety `device` must be externally synchronized and
- * `outMemory` is per thread.
+ * @Thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3665,15 +3687,15 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
 PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
 
 /**
- * @brief Get sampler anisotropy feature capabilites or limits about a device.
+ * @brief Gets sampler anisotropy feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its sampler anisotropy capabilities.
+ * @param[out] caps Output struct to recieve the sampler anisotropy capabilities.
  *
- * @param[in] device Device to query sampler anisotropy feature capabilities on.
- * @param[out] caps Pointer to a PalSamplerAnisotropyCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3683,15 +3705,15 @@ PAL_API void PAL_CALL palQuerySamplerAnisotropyCapabilities(
     PalSamplerAnisotropyCapabilities* caps);
 
 /**
- * @brief Get multi view feature capabilites or limits about a device.
+ * @brief Gets multi view feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_MULTI_VIEW feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_MULTI_VIEW` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its multi view capabilities.
+ * @param[out] caps Output struct to recieve the multi view capabilities.
  *
- * @param[in] device Device to query multi view feature capabilities on.
- * @param[out] caps Pointer to a PalMultiViewCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3701,15 +3723,15 @@ PAL_API void PAL_CALL palQueryMultiViewCapabilities(
     PalMultiViewCapabilities* caps);
 
 /**
- * @brief Get multi viewport feature capabilites or limits about a device.
+ * @brief Gets multi viewport feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_MULTI_VIEWPORT feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_MULTI_VIEWPORT` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its multi viewport capabilities.
+ * @param[out] caps Output struct to recieve the multi viewport capabilities.
  *
- * @param[in] device Device to query multi viewport feature capabilities on.
- * @param[out] caps Pointer to a PalMultiViewportCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3719,15 +3741,15 @@ PAL_API void PAL_CALL palQueryMultiViewportCapabilities(
     PalMultiViewportCapabilities* caps);
 
 /**
- * @brief Get depth stencil feature capabilites or limits about a device.
+ * @brief Gets depth stencil feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_DEPTH_STENCIL_RESOLVE` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its depth stencil capabilities.
+ * @param[out] caps Output struct to recieve the depth stencil capabilities.
  *
- * @param[in] device Device to query depth stencil feature capabilities on.
- * @param[out] caps Pointer to a PalDepthStencilCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3737,15 +3759,15 @@ PAL_API void PAL_CALL palQueryDepthStencilCapabilities(
     PalDepthStencilCapabilities* caps);
 
 /**
- * @brief Get fragment shading rate feature capabilites or limits about a device.
+ * @brief Gets fragment (variable) shading rate feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_FRAGMENT_SHADING_RATE` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its fragment shading rate capabilities.
+ * @param[out] caps Output struct to recieve the fragment shading rate capabilities.
  *
- * @param[in] device Device to query fragment shading rate feature capabilities on.
- * @param[out] caps Pointer to a PalFragmentShadingRateCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3755,15 +3777,15 @@ PAL_API void PAL_CALL palQueryFragmentShadingRateCapabilities(
     PalFragmentShadingRateCapabilities* caps);
 
 /**
- * @brief Get mesh shader feature capabilites or limits about a device.
+ * @brief Gets mesh shader feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_MESH_SHADER feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_MESH_SHADER` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its mesh shader capabilities.
+ * @param[out] caps Output struct to recieve the mesh shader capabilities.
  *
- * @param[in] device Device to query mesh shader feature capabilities on.
- * @param[out] caps Pointer to a PalMeshShaderCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3773,15 +3795,15 @@ PAL_API void PAL_CALL palQueryMeshShaderCapabilities(
     PalMeshShaderCapabilities* caps);
 
 /**
- * @brief Get ray tracing feature capabilites or limits about a device.
+ * @brief Gets ray tracing feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_RAY_TRACING feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its ray tracing capabilities.
+ * @param[out] caps Output struct to recieve the ray tracing capabilities.
  *
- * @param[in] device Device to query ray tracing feature capabilities on.
- * @param[out] caps Pointer to a PalRayTracingCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3791,15 +3813,15 @@ PAL_API void PAL_CALL palQueryRayTracingCapabilities(
     PalRayTracingCapabilities* caps);
 
 /**
- * @brief Get descriptor indexing feature capabilites or limits about a device.
+ * @brief Gets bindless/descriptor indexing feature capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @param[in] device Device to get its bindless/descriptor indexing capabilities.
+ * @param[out] caps Output struct to recieve the bindless/descriptor indexing capabilities.
  *
- * @param[in] device Device to query descriptor indexing feature capabilities on.
- * @param[out] caps Pointer to a PalDescriptorIndexingCapabilities to fill.
- *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3809,29 +3831,28 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
     PalDescriptorIndexingCapabilities* caps);
 
 /**
- * @brief Create a queue from a device.
+ * @brief Creates a queue from a device.
  *
- * The created queue must be destroyed using `palDestroyQueue()`.
+ * The created queue must be destroyed using @ref palDestroyQueue().
  *
  * The number of queues of each type which can be created is limited per adapter. check with
  * PalAdapterCapabilities::maxComputeQueues, PalAdapterCapabilities::maxGraphicsQueues and
  * PalAdapterCapabilities::maxCopyQueues respectively for the limit for each queue type.
- * Creating more queues than the supported will fail and return `PAL_RESULT_OUT_OF_QUEUE`.
  *
  * Not all graphics queues support presentation. Create a graphics queue and then check if
- * its support presentation for the provided surface. see `palCanQueuePresent()`. Any graphics
+ * its support presentation for the provided surface. see `palCanQueuePresent()`. All graphics
  * queue supports offscreen rendering.
  *
  * @param[in] device Device that creates the queue.
- * @param[in] type Queue type. (eg. PAL_QUEUE_TYPE_GRAPHICS).
- * @param[out] outQueue Pointer to a PalQueue to recieve the created queue.
+ * @param[in] type Queue type.
+ * @param[out] queue Output to receive the created queue.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_INVALID_OPERATION
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @Thread-safety `device` must be externally synchronized and `queue` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3841,15 +3862,14 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
 PAL_API PalResult PAL_CALL palCreateQueue(
     PalDevice* device,
     PalQueueType type,
-    PalQueue** outQueue);
+    PalQueue** queue);
 
 /**
- * @brief Destroy a queue.
+ * @brief Destroys a queue.
  *
  * @param[in] queue Queue to destroy.
  *
- * @Thread-safety the device used to create the queue is
- * externally synchronized.
+ * @Thread-safety the device used to create the queue must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3859,12 +3879,11 @@ PAL_API PalResult PAL_CALL palCreateQueue(
 PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
 
 /**
- * @brief Check if a queue is presentable to the provided window.
+ * @brief Checks whether a queue supports presentation to the provided surface.
  *
  * @param[in] queue Queue to query.
  * @param[in] surface Surface to check presentation support for.
- *
- * @return `PAL_TRUE` if queue can present otherwise `PAL_FALSE`.
+ * @return `PAL_TRUE` if the queue supports presentation to `surface` otherwise `PAL_FALSE`.
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -3878,15 +3897,15 @@ PAL_API PalBool PAL_CALL palCanQueuePresent(
     PalSurface* surface);
 
 /**
- * @brief Check if two queues can share resources without requiring ownership transfer.
+ * @brief Checks whether two queues can access the same resources without a 
+ * queue-family ownership transfer.
  *
  * The adapter used to create the queue's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  *
- * @param[in] a First queue
+ * @param[in] a First queue.
  * @param[in] b Second queue.
- *
- * @return `PAL_TRUE` if both queues can share resources otherwise `PAL_FALSE`.
+ * @return `PAL_TRUE` if resources can be shared without an ownership transfer otherwise `PAL_FALSE`.
  *
  * @Thread-safety Thread safe.
  *
@@ -3898,15 +3917,14 @@ PAL_API PalBool PAL_CALL palCanQueueShareOwnership(
     PalQueue* b);
 
 /**
- * @brief Check if a queue can use the provided usage state.
+ * @brief Checks whether a queue supports the provided resource usage state.
  *
  * The adapter used to create the queue's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  *
  * @param[in] queue The queue to query.
  * @param[in] state The usage state.
- *
- * @return `PAL_TRUE` if the queue can use the usage state otherwise `PAL_FALSE`.
+ * @return `PAL_TRUE` if the queue supports the usage state otherwise `PAL_FALSE`.
  *
  * @Thread-safety Thread safe.
  *
@@ -3920,15 +3938,14 @@ PAL_API PalBool PAL_CALL palCanQueueUseUsageState(
     PalUsageState state);
 
 /**
- * @brief Check if a queue can use the provided pipeline stages.
+ * @brief Checks whether a queue supports the provided pipeline stages.
  *
  * The adapter used to create the queue's device must support
  * `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2` or later.
  *
  * @param[in] queue The queue to query.
  * @param[in] stages The pipeline stages.
- *
- * @return `PAL_TRUE` if the queue can use the pipeline stages otherwise `PAL_FALSE`.
+ * @return `PAL_TRUE` if the queue supports the pipeline stages otherwise `PAL_FALSE`.
  *
  * @Thread-safety Thread safe.
  *
@@ -3942,17 +3959,16 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
     PalPipelineStages stages);
 
 /**
- * @brief Blocks indefinitely until the queue becomes idle.
+ * @brief Waits until the queue becomes idle.
  *
- * This function blocks indefinitely until all submitted work on the queue has been completetd.
- * Returns `PAL_RESULT_SUCCESS` to indicate all pending operations has been completetd.
+ * This function blocks until all previously submitted work on the queue has completed.
+ * Returns `PAL_RESULT_SUCCESS` when all previously submitted work has completed.
  *
- * @param[in] queue Pointer to queue to wait.
+ * @param[in] queue Queue to wait.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @Thread-safety `queue` must be externally synchronized.
  *
@@ -3962,21 +3978,22 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
 PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 
 /**
- * @brief Returns a list of all supported formats of an adapter.
+ * @brief Enumerates the formats supported by an adapter.
  *
- * This function returns the supported format with the supported image usages
- * associated with the format. This is a handy way of selecting a format based on the image
- * usages. Use palIsFormatSupported() to check for a specific format.
+ * This function returns each supported format together with the image usages supported for that format.
+ * Use this to select a format based on the required image usages. Use @ref palIsFormatSupported()
+ * to check a specific format.
  *
- * Call this function first with PalFormatInfo array set to `nullptr` to get the number of formats.
- * Allocate memory for the PalFormatInfo array and passed in the count and the allocated array. If
- * the count of the array is less than the number of formats, PAL will write upto that limit.
+ * Call this function first with `formats` set to `nullptr` and `count` set to 0 to get the 
+ * number of formats. Allocate memory for the array and pass in the count and the allocated
+ * array. If the specified count is less than the number of formats, only the formats that 
+ * fit in the array will be written.
  *
- * @param[in] adapter Adapter to query formats on.
- * @param[in, out] count Capacity of the PalFormatInfo array.
- * @param[out] outFormats User allocated array of PalFormatInfo.
+ * @param[in] adapter Adapter to query its formats.
+ * @param[in, out] count Capacity of the `formats` array on input; number of formats written on output.
+ * @param[out] formats Format array.
  *
- * @Thread-safety `outFormats` is per thread.
+ * @Thread-safety `formats` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3986,19 +4003,18 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 PAL_API void PAL_CALL palEnumerateFormats(
     PalAdapter* adapter,
     uint32_t* count,
-    PalFormatInfo* outFormats);
+    PalFormatInfo* formats);
 
 /**
- * @brief Check support for a format on an adapter.
+ * @brief Checks whether an adapter supports a format.
  *
- * This is much faster than enumerating all the formats to pick one. You directly check support
- * for the format you want to use. Call palQueryFormatImageUsages() to check for supported image
- * usages if format is supported.
+ * Use this when a specific format is already preferred instead of enumerating every format.
+ * If the format is supported, use @ref palQueryFormatImageUsages() to determine which image
+ * usages are supported for it.
  *
- * @param[in] adapter Adapter to query format on.
+ * @param[in] adapter Adapter to query.
  * @param[in] format Format to query support for.
- *
- * @return True if format is supported otherwise `PAL_FALSE` if not supported.
+ * @return `PAL_TRUE` if the format is supported otherwise `PAL_FALSE`.
  *
  * @Thread-safety Thread safe.
  *
@@ -4013,12 +4029,11 @@ PAL_API PalBool PAL_CALL palIsFormatSupported(
     PalFormat format);
 
 /**
- * @brief Checks supported image usages associated with a format.
+ * @brief Gets the image usages supported for a format.
  *
- * @param[in] adapter Adapter to query format on.
+ * @param[in] adapter Adapter to query.
  * @param[in] format Format to query image usages for.
- *
- * @return Supported image usages on success otherwise `0` on failure.
+ * @return Bitmask of image usages supported for the format or `0` if the format is unsupported.
  *
  * @Thread-safety Thread safe.
  *
@@ -4030,12 +4045,11 @@ PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
     PalFormat format);
 
 /**
- * @brief Checks supported sample count associated with a format.
+ * @brief Gets the sample counts supported for a format.
  *
  * @param[in] adapter Adapter to query format on.
  * @param[in] format Format to query sample count for.
- *
- * @return Supported sample count on success otherwise 0 on failure.
+ * @return Bitmask of supported sample counts, or `0` if the format is unsupported.
  *
  * @Thread-safety Thread safe.
  *
@@ -4047,22 +4061,25 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
     PalFormat format);
 
 /**
- * @brief Create an image.
+ * @brief Creates an image.
  *
- * The created image must be destroyed using `palDestroyImage()`.
+ * The created image must be destroyed using @ref palDestroyImage().
+ * 
+ * This function creates an image using the specified creation parameters.
+ * `info` must remain valid for the duration of this function. PAL does not
+ * copy the its contents.
  *
- * PalImageCreateInfo::width, PalImageCreateInfo::height and PalImageCreateInfo::sampleCount
- * must not be greater than the limits of the adapter used to create the device. Check
- * adapter capabilities for the limits.
+ * `info->width`, `info->height` and `info->sampleCount` must not be greater than the limits
+ * of the adapter used to create the device. Check limits with @ref palGetAdapterCapabilities().
  *
  * @param[in] device Device that creates the image.
- * @param[in] info Pointer to a PalImageCreateInfo struct that specifies parameters.
- * @param[out] outImage Pointer to a PalImage to recieve the created image.
+ * @param[in] info Image creation parameters.
+ * @param[out] outImage Output handle to recieve the created image.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @Thread-safety `device` must be externally synchronized.
  *
@@ -4077,12 +4094,11 @@ PAL_API PalResult PAL_CALL palCreateImage(
     PalImage** outImage);
 
 /**
- * @brief Destroy an image.
+ * @brief Destroys an image.
  *
  * @param[in] image Image to destroy.
  *
- * @Thread-safety the device used to create the image is
- * externally synchronized.
+ * @Thread-safety the device used to create the image must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4092,14 +4108,12 @@ PAL_API PalResult PAL_CALL palCreateImage(
 PAL_API void PAL_CALL palDestroyImage(PalImage* image);
 
 /**
- * @brief Get information about an image.
+ * @brief Gets information about an image.
  *
- * This function also supports swapchain images.
+ * @param[in] image Image to query its information.
+ * @param[out] info Output struct to recieve image information.
  *
- * @param[in] image Image to query information on.
- * @param[out] info Pointer to a PalImageInfo to fill.
- *
- * @Thread-safety `info` is per thread.
+ * @Thread-safety `info` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4111,12 +4125,12 @@ PAL_API void PAL_CALL palGetImageInfo(
     PalImageInfo* info);
 
 /**
- * @brief Get memory requirements for the provided image.
+ * @brief Gets memory requirements of an image.
  *
- * @param[in] image Image to query memory requirements on.
- * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
+ * @param[in] image Image to query its memory requirements.
+ * @param[out] requirements Output struct to recieve image memory requirements.
  *
- * @Thread-safety `requirements` is per thread.
+ * @Thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4126,10 +4140,10 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
     PalMemoryRequirements* requirements);
 
 /**
- * @brief Bind an allocated memory to an image.
+ * @brief Binds an allocated memory to an image.
  *
  * The memory size and alignment should match the requirements of the image.
- * Get the requirements with palGetImageMemoryRequirements().
+ * Get the requirements with @ref palGetImageMemoryRequirements().
  *
  * @param[in] image Image to bind memory to.
  * @param[in] memory Memory to bind.
@@ -4138,9 +4152,9 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_INVALID_OPERATION
  *
- * @Thread-safety `requirements` is per thread.
+ * @Thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4153,28 +4167,31 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
     uint64_t offset);
 
 /**
- * @brief Create an image view.
+ * @brief Creates an image view.
  *
- * The created image view must be destroyed using `palDestroyImageView()`.
+ * The created image view must be destroyed using @ref palDestroyImageView().
+ * 
+ * This function creates an image view using the specified creation parameters.
+ * `info` must remain valid for the duration of this function. PAL does not
+ * copy the its contents.
  *
- * PalImageViewCreateInfo::type must be compatible by the type of the base image. Eg. A 2D base
+ * `info->type` must be compatible by the type of the base image. For example, A 2D base
  * image must be have an image view of either `PAL_IMAGE_VIEW_TYPE_2D` or
  * `PAL_IMAGE_VIEW_TYPE_2D_ARRAY`.
  *
- * `PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY` must be supported and enabled by the device
+ * @ref PAL_ADAPTER_FEATURE_IMAGE_VIEW_CUBE_ARRAY must be supported and enabled by the device
  * used to create the image view if `PAL_IMAGE_VIEW_TYPE_CUBE_ARRAY` will be used.
  * Otherwise behavior is undefined.
  *
  * @param[in] device Device that creates the image view.
  * @param[in] image Image to create the image view with.
- * @param[in] info Pointer to a PalImageViewCreateInfo struct that specifies parameters.
- * @param[out] outImageView Pointer to a PalImageView to recieve the created image view.
+ * @param[in] info Image view creation parameters.
+ * @param[out] imageView Output handle to recieve the created image view.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILUREon
- * failure. Call palFormatResult() for more information.
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `device` must be externally synchronized.
  *
@@ -4187,15 +4204,14 @@ PAL_API PalResult PAL_CALL palCreateImageView(
     PalDevice* device,
     PalImage* image,
     const PalImageViewCreateInfo* info,
-    PalImageView** outImageView);
+    PalImageView** imageView);
 
 /**
- * @brief Destroy an image view.
+ * @brief Destroys an image view.
  *
  * @param[in] imageView Image view to destroy.
  *
- * @Thread-safety the device used to create the image view is
- * externally synchronized.
+ * @Thread-safety the device used to create the image view must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4205,18 +4221,18 @@ PAL_API PalResult PAL_CALL palCreateImageView(
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
 /**
- * @brief Create a sampler.
+ * @brief Creates a sampler.
  *
- * The created sampler must be destroyed using `palDestroySampler()`.
+ * The created sampler must be destroyed using @ref palDestroySampler().
  *
  * @param[in] device Device that creates the sampler.
- * @param[in] info Pointer to a PalSamplerCreateInfo struct that specifies parameters.
- * @param[out] outSampler Pointer to a PalSampler to recieve the created sampler.
+ * @param[in] info Sampler creation parameters.
+ * @param[out] sampler Output handle to recieve the created sampler.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @Thread-safety `device` must be externally synchronized.
  *
@@ -4228,15 +4244,14 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 PAL_API PalResult PAL_CALL palCreateSampler(
     PalDevice* device,
     const PalSamplerCreateInfo* info,
-    PalSampler** outSampler);
+    PalSampler** sampler);
 
 /**
- * @brief Destroy a sampler.
+ * @brief Destroys a sampler.
  *
  * @param[in] sampler Sampler to destroy.
  *
- * @Thread-safety the device used to create the sampler is
- * externally synchronized.
+ * @Thread-safety the device used to create the sampler must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4246,23 +4261,23 @@ PAL_API PalResult PAL_CALL palCreateSampler(
 PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
 
 /**
- * @brief Create a surface for a window.
+ * @brief Creates a presentation surface for a window.
  *
- * The created surface must be destroyed using `palDestroySurface()`.
- *
- * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the device.
- * Otherwise behavior is undefined.
+ * The created surface must be destroyed using @ref palDestroySurface().
+ * 
+ * @ref PAL_ADAPTER_FEATURE_SWAPCHAIN feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
  * @param[in] device Device that creates the surface.
  * @param[in] window Window to create the surface for.
- * @param[in] windowInstance The instance of the window.
- * @param[in] instanceType The instance type of the window.
- * @param[out] outSurface Pointer to a PalSurface to recieve the created surface.
+ * @param[in] windowInstance Instance of the window.
+ * @param[in] instanceType Instance type of the window.
+ * @param[out] surface Output handle to recieve the created surface.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @Thread-safety `device` must be externally synchronized.
  *
@@ -4279,12 +4294,11 @@ PAL_API PalResult PAL_CALL palCreateSurface(
     PalSurface** outSurface);
 
 /**
- * @brief Destroy a surface.
+ * @brief Destroys a presentation surface.
  *
  * @param[in] surface Surface to destroy.
  *
- * @Thread-safety the device used to create the surface is
- * externally synchronized.
+ * @Thread-safety the device used to create the surface must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4294,16 +4308,16 @@ PAL_API PalResult PAL_CALL palCreateSurface(
 PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
 
 /**
- * @brief Get surface capabilites about a device.
+ * @brief Gets surface capabilites of a device.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_SWAPCHAIN feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
- * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
- *
- * @param[in] device Device to query surface feature capabilities on.
+ * @param[in] device Device to query its surface capabilities.
  * @param[in] surface Surface to query capabilities.
- * @param[out] caps Pointer to a PalSurfaceCapabilities to fill.
+ * @param[out] caps Output struct to recieve surface capabilities.
  *
- * @Thread-safety `caps` is per thread.
+ * @Thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4314,23 +4328,27 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
     PalSurfaceCapabilities* caps);
 
 /**
- * @brief Create a swaphain.
+ * @brief Creates a swaphain.
  *
- * The created swapchain must be destroyed using `palDestroySwapchain()`.
- *
- * `PAL_ADAPTER_FEATURE_SWAPCHAIN` must be supported and enabled when creating the device.
- * Otherwise behavior is undefined.
+ * The created swapchain must be destroyed using @ref palDestroySwapchain().
+ * 
+ * This function creates a swapchain using the specified creation parameters.
+ * `info` must remain valid for the duration of this function. PAL does not
+ * copy the its contents.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_SWAPCHAIN feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
  * @param[in] device Device that creates the swapchain.
  * @param[in] queue Queue to create swapchain with. This must be a graphics queue.
  * @param[in] surface Surface to create swapchain with.
- * @param[in] info Pointer to a PalSwapchainCreateInfo struct that specifies parameters.
- * @param[out] outSwapchain Pointer to a PalSwapchain to recieve the created swapchain.
+ * @param[in] info Swapchain creation parameters.
+ * @param[out] outSwapchain Output handle to recieve the created swapchain.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `device` must be externally synchronized.
  *
@@ -4347,12 +4365,11 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
     PalSwapchain** outSwapchain);
 
 /**
- * @brief Destroy a swapchain.
+ * @brief Destroys a swapchain.
  *
  * @param[in] swapchain Swapchain to destroy.
  *
- * @Thread-safety the device used to create the swapchain is
- * externally synchronized.
+ * @Thread-safety the device used to create the swapchain must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4362,11 +4379,10 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
 PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
 
 /**
- * @brief Get a swapchain image from the list of images with an index.
- *
+ * @brief Gets a swapchain image by index.
+ * 
  * @param[in] swapchain Swapchain to get image from.
- * @param[in] index Index of image in the list. Must not be greater than the image count.
- *
+ * @param[in] index Index of the swapchain image. Must be less than the swapchain image count.
  * @return A pointer to the image on success otherwise `nullptr` on failure.
  *
  * @Thread-safety Thread safe.
@@ -4381,16 +4397,16 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
     uint32_t index);
 
 /**
- * @brief Get the next available image from the swapchain image list.
+ * @brief Acquires the next available image from the swapchain.
  *
  * @param[in] swapchain Swapchain to get image index from.
- * @param[in] info Pointer to a PalSwapchainNextImageInfo struct that specifies parameters.
- * @param[out] outIndex Pointer to a uint32_t to recieve the next image index.
+ * @param[in] info Next image acquisition parameters.
+ * @param[out] outIndex Output to recieve the next image index.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_TIMEOUT @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `swapchain` externally synchronized.
  *
@@ -4405,16 +4421,16 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
     uint32_t* outIndex);
 
 /**
- * @brief Present the swapchain.
+ * @brief Presents a swapchain image.
  *
- * @param[in] swapchain Swapchain to present.
- * @param[in] imageIndex Swapchain image index to present.
- * @param[in] waitSemaphore The semaphore to wait for.
+ * @param[in] swapchain Swapchain containing the image to present.
+ * @param[in] imageIndex Index of the swapchain image to present.
+ * @param[in] waitSemaphore Semaphore to wait on before presenting the image.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety Must only be called from the main thread.
  *
@@ -4427,19 +4443,20 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
     PalSemaphore* waitSemaphore);
 
 /**
- * @brief Resize the provided swapchain.
- *
- * The swapchain images must not be in use before this call. All resources (image views) that
- * reference the swapchain images must be destroyed and recreated.
+ * @brief Resizes the specified swapchain.
+ * 
+ * The swapchain images must not be in use when this function is called. Image views and other
+ * resources that reference the old swapchain images must be destroyed before this call and
+ * recreated afterward.
  *
  * @param[in] swapchain Swapchain to resize.
- * @param[in] newWidth The new width of the swapchain.
- * @param[in] newHeight The new height of the swapchain.
+ * @param[in] newWidth New swapchain width.
+ * @param[in] newHeight New swapchain height.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_DEVICE_LOST
  *
  * @Thread-safety `swapchain` externally synchronized.
  *
@@ -4452,37 +4469,24 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
     uint32_t newHeight);
 
 /**
- * @brief Create a shader.
+ * @brief Creates a shader.
  *
- * The created shader must be destroyed using `palDestroyShader()`.
- *
- * `PAL_ADAPTER_FEATURE_GEOMETRY_SHADER` must be supported and enabled by the device if
- * `PAL_SHADER_STAGE_GEOMETRY` will be used.
- *
- * `PAL_ADAPTER_FEATURE_MESH_SHADER` must be supported and enabled by the device if
- * `PAL_SHADER_STAGE_MESH` or `PAL_SHADER_STAGE_TASK` will be used.
- *
- * `PAL_ADAPTER_FEATURE_TESSELLATION_SHADER` must be supported and enabled by the device if
- * `PAL_SHADER_STAGE_TESSELLATION_CONTROL` or `PAL_SHADER_STAGE_TESSELLATION_EVALUATION` will
- * be used.
- *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device if
- * `PAL_SHADER_STAGE_RAYGEN` or `PAL_SHADER_STAGE_CLOSEST_HIT` or `PAL_SHADER_STAGE_ANY_HIT` or
- * `PAL_SHADER_STAGE_MISS` or `PAL_SHADER_STAGE_INTERSECTION` or `PAL_SHADER_STAGE_CALLABLE` will
- * be used.
+ * The created shader must be destroyed using @ref palDestroyShader().
+ * 
+ * This function creates a shader using the specified creation parameters.
+ * `info` must remain valid for the duration of this function. PAL does not
+ * copy the its contents.
  *
  * @param[in] device Device that creates the shader.
- * @param[in] info Pointer to a PalShaderCreateInfo struct that specifies parameters.
- * @param[out] outShader Pointer to a PalShader to recieve the created shader.
+ * @param[in] info Shadder creation parameters.
+ * @param[out] outShader Output handle to recieve the created shader.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `device` must be externally synchronized.
- *
- * @note The shader entry name must not be greater than `PAL_SHADER_ENTRY_NAME_SIZE (32)`.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4495,12 +4499,11 @@ PAL_API PalResult PAL_CALL palCreateShader(
     PalShader** outShader);
 
 /**
- * @brief Destroy a shader.
+ * @brief Destroys a shader.
  *
  * @param[in] shader Shader to destroy.
  *
- * @Thread-safety the device used to create the shader is
- * externally synchronized.
+ * @Thread-safety the device used to create the shader must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4512,17 +4515,16 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
 /**
  * @brief Create a fence.
  *
- * The created fence must be destroyed using `palDestroyFence()`.
+ * The created fence must be destroyed using @ref palDestroyFence().
  *
  * @param[in] device Device that creates the fence.
  * @param[in] signaled True if fence should be created signaled. If true, the fence must be reset
  * before waiting for it to prevent waiting forever.
- * @param[out] outFence Pointer to a PalFence to recieve the created fence.
+ * @param[out] outFence Output handle to receive the created fence.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @Thread-safety `device` must be externally synchronized.
  *
@@ -4534,15 +4536,14 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
 PAL_API PalResult PAL_CALL palCreateFence(
     PalDevice* device,
     PalBool signaled,
-    PalFence** outFence);
+    PalFence** fence);
 
 /**
- * @brief Destroy a fence.
+ * @brief Destroys a fence.
  *
  * @param[in] fence Fence to destroy.
  *
- * @Thread-safety the device used to create the fence is
- * externally synchronized.
+ * @Thread-safety the device used to create the fence must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4552,18 +4553,18 @@ PAL_API PalResult PAL_CALL palCreateFence(
 PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
 
 /**
- * @brief Wait for a fence.
- *
- * This function blocks for `timeout` until the fence is signaled or there is a timeout.
- * Returns `PAL_RESULT_SUCCESS` or `PAL_RESULT_TIMEOUT` respectively.
+ * @brief Waits for a fence.
+ * 
+ * This function blocks until the fence is signaled or `timeout` expires.
+ * It returns `PAL_RESULT_SUCCESS` when the fence is signaled.
  *
  * @param[in] fence Fence to wait for.
- * @param[in] timeout Time to wait for in milliseconds. Set to `PAL_INFINITE` for indefintely.
+ * @param[in] timeout Maximum time to wait in milliseconds. Set to `PAL_INFINITE` to wait indefinitely.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_TIMEOUT
  *
  * @Thread-safety `fence` must be externally synchronized.
  *
@@ -4577,17 +4578,17 @@ PAL_API PalResult PAL_CALL palWaitFence(
     uint64_t timeout);
 
 /**
- * @brief Reset a fence to an unsignaled state.
- *
- * `PAL_ADAPTER_FEATURE_FENCE_RESET` must be supported and enabled when creating the
- * device. Otherwise behavior is undefined.
+ * @brief Resets a fence to an unsignaled state.
+ * 
+ * @ref PAL_ADAPTER_FEATURE_FENCE_RESET feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
  *
  * @param[in] fence Fence to reset.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `fence` must be externally synchronized.
  *
@@ -4599,11 +4600,11 @@ PAL_API PalResult PAL_CALL palWaitFence(
 PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
 
 /**
- * @brief Checks if the provided fence is in a signaled state.
+ * @brief Checks whether the specified fence is in a signaled state.
  *
  * @param[in] fence Fence to check.
  *
- * @return True if signaled otherwise `PAL_FALSE`.
+ * @return `PAL_TRUE` if signaled otherwise `PAL_FALSE`.
  *
  * @Thread-safety Thread safe.
  *
@@ -4616,19 +4617,19 @@ PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
 PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
 
 /**
- * @brief Create a semaphore.
+ * @brief Creates a semaphore.
  *
- * The created semaphore must be destroyed using `palDestroySemaphore()`.
+ * The created semaphore must be destroyed using @ref palDestroySemaphore().
  *
  * @param[in] device Device that creates the semaphore.
  * @param[in] enableTimeline If true, `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported
  * and enabled by the device creating the semaphore.
- * @param[out] outSemaphore Pointer to a PalSemaphore to recieve the created semaphore.
+ * @param[out] semaphore Output handle to receive the created semaphore.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @Thread-safety `device` must be externally synchronized.
  *
@@ -4640,15 +4641,14 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
 PAL_API PalResult PAL_CALL palCreateSemaphore(
     PalDevice* device,
     PalBool enableTimeline,
-    PalSemaphore** outSemaphore);
+    PalSemaphore** semaphore);
 
 /**
- * @brief Destroy a semaphore.
+ * @brief Destroys a semaphore.
  *
  * @param[in] semaphore Semaphore to destroy.
  *
- * @Thread-safety the device used to create the semaphore is
- * externally synchronized.
+ * @Thread-safety the device used to create the semaphore must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4658,9 +4658,9 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
 PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
 
 /**
- * @brief Waits for a semaphore to reach the provided value.
+ * @brief Waits for a timeline semaphore to reach a value.
  *
- * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
+ * The specified semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to wait on.
  * @param[in] value Value to wait for.
@@ -4669,7 +4669,7 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_TIMEOUT @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `semaphore` must be externally synchronized.
  *
@@ -4685,9 +4685,9 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
     uint64_t timeout);
 
 /**
- * @brief Signals a semaphore from the provided value.
+ * @brief Signal a timeline semaphore from a queue.
  *
- * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
+ * The specified semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to signal.
  * @param[in] queue Queue used to signal the semaphore.
@@ -4696,7 +4696,7 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `queue` must be externally synchronized.
  *
@@ -4712,17 +4712,17 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
     uint64_t value);
 
 /**
- * @brief Get the value of a semaphore.
+ * @brief Gets the current value of a timeline semaphore.
  *
  * The provided semaphore must be a timeline semaphore. Otherwise undefined behavior.
  *
  * @param[in] semaphore Semaphore to get its value.
- * @param[out] value The semaphore value.
+ * @param[out] value Output to recieve the semaphore value.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @Thread-safety `semaphore` must be externally synchronized.
  *
@@ -6039,7 +6039,7 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
  * @param[in] buffer Buffer to query memory requirements on.
  * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
  *
- * @Thread-safety `requirements` is per thread.
+ * @Thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6164,7 +6164,7 @@ PAL_API void PAL_CALL palWriteImageStaging(
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `requirements` is per thread.
+ * @Thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6237,7 +6237,7 @@ PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
  *
  * @return Buffer device address on success or `0` on failure.
  *
- * @Thread-safety `buffer` is per thread.
+ * @Thread-safety `buffer` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

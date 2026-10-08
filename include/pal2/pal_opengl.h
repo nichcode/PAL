@@ -48,17 +48,17 @@
  * @defgroup opengl_extensions OpenGL Extensions
  * @{
  */
-#define PAL_GL_EXTENSION_CREATE_CONTEXT (1ULL << 0) /**< support for modern context */
-#define PAL_GL_EXTENSION_CONTEXT_PROFILE (1ULL << 1) /**< support for creating profile context */
-#define PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 (1ULL << 2) /**< support for creating ES2 profile context */
-#define PAL_GL_EXTENSION_ROBUSTNESS (1ULL << 3) /**< support for creating robust (reset behavior) context */
-#define PAL_GL_EXTENSION_NO_ERROR (1ULL << 4) /**< support for creating no error context */
-#define PAL_GL_EXTENSION_PIXEL_FORMAT (1ULL << 5) /**< support for modern framebuffer configurations */
-#define PAL_GL_EXTENSION_MULTISAMPLE (1ULL << 6) /**< support for multisample context */
-#define PAL_GL_EXTENSION_SWAP_CONTROL (1ULL << 7) /**< support for setting swap control options */
-#define PAL_GL_EXTENSION_FLUSH_CONTROL (1ULL << 8) /**< support for setting flush control options */
-#define PAL_GL_EXTENSION_COLORSPACE_SRGB (1ULL << 9) /**< support for sRGB colorspace */
-#define PAL_GL_EXTENSION_SWAP_CONTROL_TEAR (1ULL << 10) /**< support for negative swap intervals */
+#define PAL_GL_EXTENSION_CREATE_CONTEXT (1ULL << 0) /**< modern context */
+#define PAL_GL_EXTENSION_CONTEXT_PROFILE (1ULL << 1) /**< context profile */
+#define PAL_GL_EXTENSION_CONTEXT_PROFILE_ES2 (1ULL << 2) /**< ES2 profile context */
+#define PAL_GL_EXTENSION_ROBUSTNESS (1ULL << 3) /**< context reset behavior */
+#define PAL_GL_EXTENSION_NO_ERROR (1ULL << 4) /**< no error context */
+#define PAL_GL_EXTENSION_PIXEL_FORMAT (1ULL << 5) /**< modern framebuffer configurations */
+#define PAL_GL_EXTENSION_MULTISAMPLE (1ULL << 6) /**< multisample context */
+#define PAL_GL_EXTENSION_SWAP_CONTROL (1ULL << 7) /**< sswap control options */
+#define PAL_GL_EXTENSION_FLUSH_CONTROL (1ULL << 8) /**< flush control options */
+#define PAL_GL_EXTENSION_COLORSPACE_SRGB (1ULL << 9) /**< sRGB colorspace */
+#define PAL_GL_EXTENSION_SWAP_CONTROL_TEAR (1ULL << 10) /**< negative swap intervals */
 /** @} */
 
 /**
@@ -276,8 +276,7 @@ typedef struct PalGLWindow {
  * @since Added in version 2.0
  * @ingroup pal_opengl
  */
-typedef struct PalGLContextCreateInfo
-{
+typedef struct PalGLContextCreateInfo {
     const PalGLWindow* window; /**< window the context will be created for */
     const PalGLFBConfig* fbConfig; /**< framebuffer configuration to use */
     PalGLContext* shareContext; /**< context to share resource ownership with or `nullptr` */
@@ -293,6 +292,8 @@ typedef struct PalGLContextCreateInfo
 
 /**
  * @brief Initializes the OpenGL system.
+ * 
+ * The OpenGL system must be shutdown using @ref palShutdownGL().
  * 
  * This function initialized the OpenGL system with the specified API and instance.
  * `api` must be supported by the specified instance. Use @ref palGetSupportedGLAPIs() to
@@ -471,6 +472,8 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
 /**
  * @brief Creates an OpenGL context.
  * 
+ * The created context must be destroyed using @ref palDestroyGLContext().
+ * 
  * This function creates an OpenGL context using the specified creation parameters.
  * `info` must remain valid for the duration of this function. PAL does not
  * copy the its contents.
@@ -485,8 +488,7 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * with that context. The created context will not be made current. Use 
  * @ref palMakeContextCurrent() to make the context current on the calling thread.
  * 
- * The created context is owned by PAL an must be destroyed with 
- * @ref palDestroyGLContext(). The OpenGL system must be initialized before this call.
+ * The OpenGL system must be initialized before this call.
  *
  * @param[in] info Context creation parameters.
  * @param[out] context Output handle to recieve the created context.

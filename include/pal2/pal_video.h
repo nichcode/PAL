@@ -40,46 +40,46 @@
  * @defgroup video_features Video Features
  * @{
  */
-#define PAL_VIDEO_FEATURE_HIGH_DPI (1ULL << 0)
-#define PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION (1ULL << 1)
-#define PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION (1ULL << 2)
-#define PAL_VIDEO_FEATURE_BORDERLESS_WINDOW (1ULL << 3)
-#define PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW (1ULL << 4)
-#define PAL_VIDEO_FEATURE_TOOL_WINDOW (1ULL << 5)
-#define PAL_VIDEO_FEATURE_MONITOR_SET_MODE (1ULL << 6)
-#define PAL_VIDEO_FEATURE_MONITOR_GET_MODE (1ULL << 7)
+#define PAL_VIDEO_FEATURE_HIGH_DPI (1ULL << 0) /**< high-DPI windows */
+#define PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION (1ULL << 1) /**< set monitor orientation */
+#define PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION (1ULL << 2) /**< get monitor orientation */
+#define PAL_VIDEO_FEATURE_BORDERLESS_WINDOW (1ULL << 3) /**< borderless windows */
+#define PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW (1ULL << 4) /**< transparent windows */
+#define PAL_VIDEO_FEATURE_TOOL_WINDOW (1ULL << 5) /**< windows without taskbar icons */
+#define PAL_VIDEO_FEATURE_MONITOR_SET_MODE (1ULL << 6) /**< set monitor display mode */
+#define PAL_VIDEO_FEATURE_MONITOR_GET_MODE (1ULL << 7) /*<< get monitor display mode */
 #define PAL_VIDEO_FEATURE_MULTI_MONITORS (1ULL << 8) /**< depreciated. */
-#define PAL_VIDEO_FEATURE_WINDOW_SET_SIZE (1ULL << 9)
-#define PAL_VIDEO_FEATURE_WINDOW_GET_SIZE (1ULL << 10)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_POS (1ULL << 11)
-#define PAL_VIDEO_FEATURE_WINDOW_GET_POS (1ULL << 12)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_STATE (1ULL << 13)
-#define PAL_VIDEO_FEATURE_WINDOW_GET_STATE (1ULL << 14)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY (1ULL << 15) 
-#define PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY (1ULL << 16)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_TITLE (1ULL << 17)
-#define PAL_VIDEO_FEATURE_WINDOW_GET_TITLE (1ULL << 18)
-#define PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX (1ULL << 19)
-#define PAL_VIDEO_FEATURE_NO_MINIMIZEBOX (1ULL << 20)
-#define PAL_VIDEO_FEATURE_CLIP_CURSOR (1ULL << 21)
-#define PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION (1ULL << 22)
-#define PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY (1ULL << 23)
-#define PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL (1ULL << 24)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS (1ULL << 25)
-#define PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS (1ULL << 26)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_STYLE (1ULL << 27)
-#define PAL_VIDEO_FEATURE_WINDOW_GET_STYLE (1ULL << 28)
-#define PAL_VIDEO_FEATURE_CURSOR_SET_POS (1ULL << 29)
-#define PAL_VIDEO_FEATURE_CURSOR_GET_POS (1ULL << 30)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_ICON (1ULL << 31)
-#define PAL_VIDEO_FEATURE_TOPMOST_WINDOW (1ULL << 32)
-#define PAL_VIDEO_FEATURE_DECORATED_WINDOW (1ULL << 33)
-#define PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY (1ULL << 34)
-#define PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR (1ULL << 35)
-#define PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY (1ULL << 36)
-#define PAL_VIDEO_FEATURE_FOREIGN_WINDOWS (1ULL << 37)
-#define PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE (1ULL << 38)
-#define PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR (1ULL << 39)
+#define PAL_VIDEO_FEATURE_WINDOW_SET_SIZE (1ULL << 9) /** set window size */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_SIZE (1ULL << 10) /**< get window size */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_POS (1ULL << 11) /**< set window position */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_POS (1ULL << 12) /**< get window position */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_STATE (1ULL << 13) /**< set window state */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_STATE (1ULL << 14) /**< get window state */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY (1ULL << 15) /**< set window visibility */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY (1ULL << 16) /**< get window visibility */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_TITLE (1ULL << 17) /**< set window title */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_TITLE (1ULL << 18) /**< get window title */
+#define PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX (1ULL << 19) /**< no maximize button */
+#define PAL_VIDEO_FEATURE_NO_MINIMIZEBOX (1ULL << 20) /**< no minimize button */
+#define PAL_VIDEO_FEATURE_CLIP_CURSOR (1ULL << 21) /**< clip cursor to window */
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION (1ULL << 22) /**< flash window titlebar */
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY (1ULL << 23) /**< flash window taskbar icon */
+#define PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL (1ULL << 24) /**< set window flash interval */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS (1ULL << 25) /**< set input-focus window */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS (1ULL << 26) /**< get input-focus window */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_STYLE (1ULL << 27) /**< set window style */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_STYLE (1ULL << 28) /**< get window title */
+#define PAL_VIDEO_FEATURE_CURSOR_SET_POS (1ULL << 29) /**< set cursor position */
+#define PAL_VIDEO_FEATURE_CURSOR_GET_POS (1ULL << 30) /**< get cursor position */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_ICON (1ULL << 31) /**< set window icon */
+#define PAL_VIDEO_FEATURE_TOPMOST_WINDOW (1ULL << 32) /**< topmost windows */
+#define PAL_VIDEO_FEATURE_DECORATED_WINDOW (1ULL << 33) /**< decorated windows */
+#define PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY (1ULL << 34) /**< set cursor visibility */
+#define PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR (1ULL << 35) /**< get window monitor */
+#define PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY (1ULL << 36) /**< get primary monitor */
+#define PAL_VIDEO_FEATURE_FOREIGN_WINDOWS (1ULL << 37) /**< attach and detach foreign windows */
+#define PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE (1ULL << 38) /**< validate monitor display mode */
+#define PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR (1ULL << 39) /**< set window cursor */
 /** @} */
 
 /**
@@ -575,14 +575,14 @@ typedef struct PalVideoDriver {
  * @struct PalFlashInfo
  * @brief Flash information.
  * 
- * `interval` greater than `0` requires `PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL`
+ * `interval` greater than `0` requires @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL
  * feature to be supported.
  * 
  * The following flash flags requires:
  * 
- * - PAL_FLASH_FLAG_CAPTION - `PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION` feature to be supported
+ * - PAL_FLASH_FLAG_CAPTION - @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION feature to be supported
  * 
- * - PAL_FLASH_FLAG_TRAY - `PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY` feature to be supported
+ * - PAL_FLASH_FLAG_TRAY - @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY feature to be supported
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -655,17 +655,17 @@ typedef struct PalMonitorMode {
  * 
  * The following window styles requires:
  * 
- * - PAL_WINDOW_STYLE_TRANSPARENT - `PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW` feature to be supported
+ * - PAL_WINDOW_STYLE_TRANSPARENT - @ref PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW feature to be supported
  * 
- * - PAL_WINDOW_STYLE_TOPMOST - `PAL_VIDEO_FEATURE_TOPMOST_WINDOW` feature to be supported
+ * - PAL_WINDOW_STYLE_TOPMOST - @ref PAL_VIDEO_FEATURE_TOPMOST_WINDOW feature to be supported
  * 
- * - PAL_WINDOW_STYLE_NO_MINIMIZEBOX - `PAL_VIDEO_FEATURE_NO_MINIMIZEBOX` feature to be supported
+ * - PAL_WINDOW_STYLE_NO_MINIMIZEBOX - @ref PAL_VIDEO_FEATURE_NO_MINIMIZEBOX feature to be supported
  * 
- * - PAL_WINDOW_STYLE_NO_MAXIMIZEBOX - `PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX` feature to be supported
+ * - PAL_WINDOW_STYLE_NO_MAXIMIZEBOX - @ref PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX feature to be supported
  * 
- * - PAL_WINDOW_STYLE_TOOL - `PAL_VIDEO_FEATURE_TOOL_WINDOW` feature to be supported
+ * - PAL_WINDOW_STYLE_TOOL - @ref PAL_VIDEO_FEATURE_TOOL_WINDOW feature to be supported
  * 
- * - PAL_WINDOW_STYLE_BORDERLESS - `PAL_VIDEO_FEATURE_BORDERLESS_WINDOW` feature to be supported
+ * - PAL_WINDOW_STYLE_BORDERLESS - @ref PAL_VIDEO_FEATURE_BORDERLESS_WINDOW feature to be supported
  *
  * Uninitialized fields may result in undefined behavior.
  *
@@ -953,7 +953,7 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
  * 
  * This function gets the primary connected monitor of the platform. The returned
  * monitor handle must not be modified or freed.
- * `PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY feature must be supported or this function
  * results in undefined behavior.
  * 
  * @param[out] monitor Output to recieve the monitor.
@@ -1017,7 +1017,7 @@ PAL_API void PAL_CALL palEnumerateMonitorModes(
 /**
  * @brief Gets the current display mode of the monitor.
  * 
- * `PAL_VIDEO_FEATURE_MONITOR_GET_MODE` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_MONITOR_GET_MODE feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] monitor Monitor to get its current display mode.
@@ -1041,7 +1041,7 @@ PAL_API void PAL_CALL palGetCurrentMonitorMode(
  * `mode` is not validated by the video system, use @ref palEnumerateMonitorModes()
  * to get a supported one or call @ref palValidateMonitorMode() to validate the
  * display mode before switching. Setting an invalid behavior results in undefined
- * behavior. `PAL_VIDEO_FEATURE_MONITOR_SET_MODE` feature must be supported.
+ * behavior. @ref PAL_VIDEO_FEATURE_MONITOR_SET_MODE feature must be supported.
  *
  * @param[in] monitor Monitor to set its current display mode.
  * @param[in] mode Monitor display mode.
@@ -1068,7 +1068,7 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  * @brief Checks whether a display mode is valid on a monitor.
  * 
  * This finction validates the specified display mode if its supported
- * on the specified monitor. `PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE` 
+ * on the specified monitor. @ref PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE
  * feature must be supported.
  *
  * @param[in] monitor Monitor to validate display mode on.
@@ -1095,7 +1095,7 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
  * 
  * This function sets the orientation of the specified monitor. The change is temporary
  * and will be reset when the platform reboots.
- * `PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION` feature must be supported.
+ * @ref PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION feature must be supported.
  *
  * @param[in] monitor Monitor to set its orientation.
  * @param[in] orientation Monitor orientation.
@@ -1117,6 +1117,8 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
 /**
  * @brief Creates a window.
  * 
+ * The created window must be destroyed using @ref palDestroyWindow().
+ * 
  * This function creates a window using the specified creation parameters.
  * `info` must remain valid for the duration of this function. PAL does not
  * copy the its contents.
@@ -1134,7 +1136,6 @@ PAL_API PalResult PAL_CALL palSetMonitorOrientation(
  * its invalid.
  * 
  * The video system must be initialized before this call.
- * The created window must be destroyed with @ref palDestroyWindow() when no longer needed.
  *
  * @param[in] info window creation parameters.
  * @param[out] window Output handle to recieve the created window.
@@ -1188,7 +1189,7 @@ PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
  * @brief Minimizes a window.
  * 
  * This function minimizes a window if its not already minimized.
- * `PAL_VIDEO_FEATURE_WINDOW_SET_STATE` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_STATE feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] window Window to minimize.
@@ -1207,7 +1208,7 @@ PAL_API void PAL_CALL palMinimizeWindow(PalWindow* window);
  * @brief Maximizes a window.
  * 
  * This function Maximizes a window if its not already maximized.
- * `PAL_VIDEO_FEATURE_WINDOW_SET_STATE` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_STATE feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] window Window to maximize.
@@ -1226,7 +1227,7 @@ PAL_API void PAL_CALL palMaximizeWindow(PalWindow* window);
  * @brief Restores a window.
  * 
  * This function restores the specified window to its previous state if not restored already.
- * `PAL_VIDEO_FEATURE_WINDOW_SET_STATE` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_STATE feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] window Window to restore.
@@ -1247,7 +1248,7 @@ PAL_API void PAL_CALL palRestoreWindow(PalWindow* window);
  * @brief Shows the window.
  * 
  * This function shows the specified window if its not shown.
- * `PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] window Window to show.
@@ -1265,7 +1266,7 @@ PAL_API void PAL_CALL palShowWindow(PalWindow* window);
  * @brief Hides the window.
  *
  * This function hides the specified window if its not hidden.
- * `PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] window Window to hide.
@@ -1300,7 +1301,7 @@ PAL_API void PAL_CALL palFlashWindow(
  * @brief Attachs a window.
  * 
  * This functions attachs a foreign or native window to the video system.
- * `PAL_VIDEO_FEATURE_FOREIGN_WINDOWS` feature must be supported.
+ * @ref PAL_VIDEO_FEATURE_FOREIGN_WINDOWS feature must be supported.
  *
  * This function registers `windowHandle` with the video system to allow the window
  * use the video system API. The video system does mot own the attached window, users
@@ -1336,7 +1337,7 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * This function detaches a foreign or native window from the video system.
  * `window` must not be owned by the video system and detaching the window will not
  * destroy it, users are responsible for destroy the window after its been detached.
- * `PAL_VIDEO_FEATURE_FOREIGN_WINDOWS` feature must be supported.
+ * @ref PAL_VIDEO_FEATURE_FOREIGN_WINDOWS feature must be supported.
  *
  * @param[in] window Window to detach.
  * @param[out] windowHandle Output handle to recieve the foreign window or `nullptr`.
@@ -1361,7 +1362,7 @@ PAL_API PalResult PAL_CALL palDetachWindow(
  * @brief Gets the style of a window.
  * 
  * This function gets the current style of the specified window.
- * `PAL_VIDEO_FEATURE_WINDOW_GET_STYLE` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_WINDOW_GET_STYLE feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] window Window to get its style.
@@ -1381,7 +1382,7 @@ PAL_API void PAL_CALL palGetWindowStyle(
 /**
  * @brief Gets the monitor the window is currently on.
  * 
- * `PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR` feature must be supported or this function
+ * @ref PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR feature must be supported or this function
  * results in undefined behavior.
  *
  * @param[in] window Window to get its monitor.
@@ -1402,7 +1403,7 @@ PAL_API void PAL_CALL palGetWindowMonitor(
  * This is a two-call function, set `buffer` to `nullptr` and `size` to 0 to obtain
  * the size window title in bytes. Allocate the array and call this function
  * again to with `buffer` set to the allocated array and `size` set to the 
- * capacity of the array. `PAL_VIDEO_FEATURE_WINDOW_GET_TITLE` feature must be 
+ * capacity of the array. @ref PAL_VIDEO_FEATURE_WINDOW_GET_TITLE feature must be 
  * supported or this function results in undefined behavior.
  * 
  * If the specified size is less than the size of the window title, only the
@@ -1432,7 +1433,7 @@ PAL_API void PAL_CALL palGetWindowTitle(
  * This function gets the position of the content area of the specified window
  * in screen coordinates. Coordinates are relative to the upper-left corner of the window. 
  * X-coordinate increases to the right and Y-coordinate increases down. 
- * `PAL_VIDEO_FEATURE_WINDOW_GET_POS` feature must be 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_GET_POS feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to get its content area position.
@@ -1455,7 +1456,7 @@ PAL_API void PAL_CALL palGetWindowPos(
  * @brief Gets the size of the content area of a window.
  * 
  * this function gets the size of the content area of the specified window in 
- * screen coordinates. `PAL_VIDEO_FEATURE_WINDOW_GET_SIZE` feature must be 
+ * screen coordinates. @ref PAL_VIDEO_FEATURE_WINDOW_GET_SIZE feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to get its content area size.
@@ -1477,7 +1478,7 @@ PAL_API void PAL_CALL palGetWindowSize(
 /**
  * @brief Gets the state of a window.
  * 
- * `PAL_VIDEO_FEATURE_WINDOW_GET_STATE` feature must be 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_GET_STATE feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to get its state.
@@ -1495,7 +1496,7 @@ PAL_API void PAL_CALL palGetWindowState(
 /**
  * @brief Checks whether a window is visible.
  * 
- * `PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY` feature must be 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to check its visibility.
@@ -1512,7 +1513,7 @@ PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
  * @brief Gets the input-focused window.
  * 
  * This function gets the current keyboard or mouse focused window per application.
- * `PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS` feature must be 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS feature must be 
  * supported or this function results in undefined behavior.
  *
  * @return Input-focused window on success or `nullptr` on failure.
@@ -1552,7 +1553,7 @@ PAL_API void PAL_CALL palGetWindowHandleInfo(
  * 
  * This function sets the opacity of the specified window. The window must have
  * @ref PAL_WINDOW_STYLE_TRANSPARENT style. 
- * `PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW` feature must be 
+ * @ref PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to set its opacity.
@@ -1570,7 +1571,7 @@ PAL_API void PAL_CALL palSetWindowOpacity(
 /**
  * @brief Sets the style of a window.
  * 
- * `PAL_VIDEO_FEATURE_WINDOW_SET_STYLE` feature must be 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_STYLE feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to set its style.
@@ -1591,7 +1592,7 @@ PAL_API void PAL_CALL palSetWindowStyle(
  * @brief Sets the title of a window.
  * 
  * This function sets the title of the specified window. `title` must be null-terminated
- * UTF-8 encoded string. `PAL_VIDEO_FEATURE_WINDOW_SET_TITLE` feature must be 
+ * UTF-8 encoded string. @ref PAL_VIDEO_FEATURE_WINDOW_SET_TITLE feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to set its title.
@@ -1614,7 +1615,7 @@ PAL_API void PAL_CALL palSetWindowTitle(
  * This function sets the position of the content area of the specified window in
  * screen coordinates. Coordinates are relative to the upper-left corner of the window. 
  * X-coordinate increases to the right and Y-coordinate increases down. 
- * `PAL_VIDEO_FEATURE_WINDOW_SET_POS` feature must be 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_POS feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to set its content area position.
@@ -1638,7 +1639,7 @@ PAL_API void PAL_CALL palSetWindowPos(
  * 
  * This function sets the size of the content area of the specified window in
  * screen coordinates. Very large or small `width` and `height` will be overridden
- * by the video system. `PAL_VIDEO_FEATURE_WINDOW_SET_SIZE` feature must be 
+ * by the video system. @ref PAL_VIDEO_FEATURE_WINDOW_SET_SIZE feature must be 
  * supported or this function results in undefined behavior.
  * 
  * @param[in] window Window to set its content area size.
@@ -1662,7 +1663,7 @@ PAL_API void PAL_CALL palSetWindowSize(
  * 
  * This function requests keyboard or mouse focused for the specified window per 
  * application. The window must be visible.
- * `PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS` feature must be 
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to request input-focus for.
@@ -1679,10 +1680,12 @@ PAL_API void PAL_CALL palSetFocusWindow(PalWindow* window);
 /**
  * @brief Creates a cursor.
  * 
+ * The created cursor must be destroyed using @ref palDestroyCursor().
+ * 
  * This function creates a cursor from the provided pixels.
  * The created cursor should be set to the window with @ref palSetWindowCursor().
  * The provided pixels are copied after the cursor is created, the data may be freed
- * after creation. `PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR` feature must be supported.
+ * after creation. @ref PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR feature must be supported.
  *
  * @param[in] info Cursor creation parameters.
  * @param[out] cursor Output handle to recieve the created cursor.
@@ -1707,10 +1710,12 @@ PAL_API PalResult PAL_CALL palCreateCursor(
 /**
  * @brief Creates a system cursor.
  * 
+ * The created cursor must be destroyed using @ref palDestroyCursor().
+ * 
  * This function creates a cursor from the platform predefined types.
  * The created cursor should be set to the window with @ref palSetWindowCursor().
  * The cursor appearance may vary based on the platform.
- * `PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR` feature must be supported.
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR feature must be supported.
  *
  * @param[in] type System cursor type.
  * @param[out] cursor Output handle to recieve the created cursor.
@@ -1753,7 +1758,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  * @brief Shows or hide a cursor.
  * 
  * This function shows or hides the specified cursor. This affects all created cursors
- * of the screen. `PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY` feature must be supported
+ * of the screen. @ref PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY feature must be supported
  * or this function results in undefined behavior.
  *
  * @param[in] show `PAL_TRUE` to make the cursor visible otherwise `PAL_FALSE`.
@@ -1770,7 +1775,7 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
  * 
  * This function confines the specified cursor to the bounds of the specified window.
  * The cursor must be unclipped before the window is destroyed or behavior is undefined.
- * `PAL_VIDEO_FEATURE_CLIP_CURSOR` feature must be supported or this function 
+ * @ref PAL_VIDEO_FEATURE_CLIP_CURSOR feature must be supported or this function 
  * results in undefined behavior.
  *
  * @param[in] window Window.
@@ -1789,7 +1794,7 @@ PAL_API void PAL_CALL palClipCursor(
  * @brief Gets the position of the cursor relative to the window.
  * 
  * The cursor position is relative to the upper-left corner of the window
- * in screen coordinates. `PAL_VIDEO_FEATURE_CURSOR_GET_POS` feature must be 
+ * in screen coordinates. @ref PAL_VIDEO_FEATURE_CURSOR_GET_POS feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window.
@@ -1810,7 +1815,7 @@ PAL_API void PAL_CALL palGetCursorPos(
  * @brief Sets the position of the cursor relative to the window.
  * 
  * The cursor position is relative to the upper-left corner of the window
- * in screen coordinates. `PAL_VIDEO_FEATURE_CURSOR_SET_POS` feature must be 
+ * in screen coordinates. @ref PAL_VIDEO_FEATURE_CURSOR_SET_POS feature must be 
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window.
@@ -1833,7 +1838,7 @@ PAL_API void PAL_CALL palSetCursorPos(
  * A single cursor can be set to multiple windows at the same time. `cursor` will not be copied,
  * it must remain valid until the window is destroyed or reverted. Destroying the cursor and not
  * setting it to `nullptr` will result in undefined behavior if windows are referencing it. 
- * `PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR` feature must be supported or this function results
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR feature must be supported or this function results
  * in undefined behavior.
  *
  * @param[in] window Window to set cursor on.
@@ -1851,10 +1856,12 @@ PAL_API void PAL_CALL palSetWindowCursor(
 /**
  * @brief Creates an icon.
  * 
+ * The created icon must be destroyed using @ref palDestroyIcon().
+ * 
  * This function creates an icon from the provided pixels.
  * The created icon should be set to the window with @ref palSetWindowIcon().
  * The provided pixels are copied after the icon is created, the data may be freed
- * after creation. `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` feature must be supported.
+ * after creation. @ref PAL_VIDEO_FEATURE_WINDOW_SET_ICON feature must be supported.
  *
  * @param[in] info Icon creation parameters.
  * @param[out] icon Output handle to recieve the created icon.
@@ -1899,7 +1906,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * A single icon can be set to multiple windows at the same time. `icon` will not be copied,
  * it must remain valid until the window is destroyed or reverted. Destroying the icon and not
  * setting it to `nullptr` will result in undefined behavior if windows are referencing it. 
- * `PAL_VIDEO_FEATURE_WINDOW_SET_ICON` feature must be supported or this function results
+ * @ref PAL_VIDEO_FEATURE_WINDOW_SET_ICON feature must be supported or this function results
  * in undefined behavior.
  *
  * @param[in] window Window to set icon on.

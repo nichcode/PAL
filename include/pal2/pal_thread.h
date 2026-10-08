@@ -38,10 +38,10 @@
  * @defgroup thread_features Thread Features
  * @{
  */
-#define PAL_THREAD_FEATURE_STACK_SIZE (1U << 0) /**< support for setting thread stack size */
-#define PAL_THREAD_FEATURE_PRIORITY (1U << 1) /**< support for setting and getting thread priority */
-#define PAL_THREAD_FEATURE_AFFINITY (1U << 2) /**< support for setting and getting thread affinity */
-#define PAL_THREAD_FEATURE_NAME (1U << 3) /**< support for setting and getting thread name */
+#define PAL_THREAD_FEATURE_STACK_SIZE (1U << 0) /**< set thread stack size */
+#define PAL_THREAD_FEATURE_PRIORITY (1U << 1) /**< set and get thread priority */
+#define PAL_THREAD_FEATURE_AFFINITY (1U << 2) /**< set and get thread affinity */
+#define PAL_THREAD_FEATURE_NAME (1U << 3) /**< set and get thread name */
 /** @} */
 
 /**
@@ -114,8 +114,7 @@ typedef struct PalCondVar PalCondVar;
  * @typedef PalThreadFn
  * @brief Thread entry function.
  * 
- * This is an application-defined function where a thread starts executing
- * from.
+ * This is an application-defined function where a thread starts executing from.
  * 
  * The function signature should look like this:
  * @code
@@ -172,6 +171,8 @@ typedef struct PalThreadCreateInfo {
 
 /**
  * @brief Creates a new thread.
+ * 
+ * The created thread must be destroyed if not joined using @ref palDetachThread().
  * 
  * This function creates a thread using the specified creation parameters.
  * `info` must remain valid for the duration of this function. PAL does not
@@ -444,6 +445,8 @@ PAL_API PalResult PAL_CALL palSetThreadName(
 
 /**
  * @brief Creates a TLS.
+ * 
+ * The created TLS must be destroyed using @ref palDestroyTLS().
  *
  * The TLS handle can be used by multiple threads to associate thread local
  * vaules. The destructor will be called if @ref palDestroyTLS() is called and
@@ -509,6 +512,8 @@ PAL_API void PAL_CALL palSetTLS(
 
 /**
  * @brief Creates a mutex.
+ * 
+ * The created mutex must be destroyed using @ref palDestroyMutex().
  *
  * @param[in] allocator Allocator to use or `nullptr` for default.
  * @param[out] mutex Output handle to recieve the created mutex.
@@ -579,6 +584,8 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
 
 /**
  * @brief Creates a condition variable.
+ * 
+ * The created condition variable must be destroyed using @ref palDestroyCondVar().
  *
  * @param[in] allocator Allocator to use or `nullptr` for default.
  * @param[out] condVar Output handle to recieve the created condition variable.

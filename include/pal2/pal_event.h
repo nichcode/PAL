@@ -40,9 +40,9 @@
  * @defgroup decoration_modes Window Decoration Modes
  * @{
  */
-#define PAL_DECORATION_MODE_CLIENT_SIDE 0 /**< client is responsible for decoration */
-#define PAL_DECORATION_MODE_SERVER_SIDE 1 /**< server is responsible for decoration */
-#define PAL_DECORATION_MODE_COUNT 2 /**< number of decoration modes */
+#define PAL_DECORATION_MODE_CLIENT_SIDE 0 /**< client is responsible for window decoration */
+#define PAL_DECORATION_MODE_SERVER_SIDE 1 /**< server is responsible for window decoration */
+#define PAL_DECORATION_MODE_COUNT 2 /**< number of window decoration modes */
 /** @} */
 
 /**
@@ -264,6 +264,8 @@ typedef struct PalEventDriverCreateInfo {
 /**
  * @brief Creates an event driver.
  * 
+ * The created event driver must be destroyed using @ref palDestroyEventDriver().
+ * 
  * This function creates an event driver using the specified creation parameters.
  * `info` must remain valid for the duration of this function. PAL does not
  * copy the its contents.
@@ -275,9 +277,6 @@ typedef struct PalEventDriverCreateInfo {
  * This function creates the event driver and sets the dispatch mode of all
  * the event types to @ref PAL_DISPATCH_MODE_NONE. Change the dispatch mode
  * of an event type with @ref palSetEventDispatchMode().
- * 
- * The created event driver is owned by PAL an must be destroyed with 
- * @ref palDestroyEventDriver().
  *
  * @param[in] info Event driver creation parameters.
  * @param[out] eventDriver Output handle to recieve the created event driver.
@@ -291,6 +290,8 @@ typedef struct PalEventDriverCreateInfo {
  *
  * @since Added in version 2.0
  * @ingroup pal_event
+ * 
+ * @sa palDestroyEventDriver
  */
 PAL_API PalResult PAL_CALL palCreateEventDriver(
     const PalEventDriverCreateInfo* info,
@@ -338,8 +339,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  *
  * @param[in] eventDriver Event driver.
  * @param[in] type Event type.
- * @return The dispatch mode on success or @ref PAL_DISPATCH_MODE_NONE
- *         on failure.
+ * @return The dispatch mode on success or @ref PAL_DISPATCH_MODE_NONE on failure.
  *
  * @Thread-safety Thread safe.
  *
