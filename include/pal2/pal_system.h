@@ -1,7 +1,8 @@
 /**
- * @brief This is the header file for PAL System API.
- *
- * It defines all the types and functions of the system module.
+ * @file pal_system.h
+ * @brief Header file for the PAL System API.
+ * 
+ * Defines all the types, constants and functions of the system module.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -34,72 +35,74 @@
  * @{
  */
 
-#define PAL_CPU_VENDOR_NAME_SIZE 16 /**< maximum CPU vendor name size */
-#define PAL_CPU_MODEL_NAME_SIZE 64 /**< maximum CPU model name size */
-#define PAL_PLATFORM_NAME_SIZE 32 /**< maximum platform name size */
+#define PAL_CPU_VENDOR_NAME_SIZE 16 /**< Maximum size of the CPU vendor name, including the null terminator. */
+#define PAL_CPU_MODEL_NAME_SIZE 64 /**< Maximum size of the CPU model name, including the null terminator. */
+#define PAL_PLATFORM_NAME_SIZE 32 /**< Maximum size of the platform name, including the null terminator. */
 
 /**
  * @defgroup cpu_architectures CPU Architectures
  * @{
  */
-#define PAL_CPU_ARCH_UNKNOWN 0
-#define PAL_CPU_ARCH_X86 1
-#define PAL_CPU_ARCH_X86_64 2
-#define PAL_CPU_ARCH_ARM 3
-#define PAL_CPU_ARCH_ARM64 4
-#define PAL_CPU_ARCH_COUNT 5 /**< number of CPU architectures */
+#define PAL_CPU_ARCH_UNKNOWN 0 /**< Unknown or unsupported architecture. */
+#define PAL_CPU_ARCH_X86 1 /**< 32-bit x86. */
+#define PAL_CPU_ARCH_X86_64 2 /**< 64-bit x86 (x64 / AMD64). */
+#define PAL_CPU_ARCH_ARM 3 /**< 32-bit ARM. */
+#define PAL_CPU_ARCH_ARM64 4 /**< 64-bit ARM (AArch64). */
+#define PAL_CPU_ARCH_COUNT 5 /**< Number of CPU architectures. */
 /** @} */
 
 /**
  * @defgroup cpu_features CPU Features (Instruction Sets)
  * @{
  */
-#define PAL_CPU_FEATURE_SSE (1ULL << 0)
-#define PAL_CPU_FEATURE_SSE2 (1ULL << 1)
-#define PAL_CPU_FEATURE_SSE3 (1ULL << 2)
-#define PAL_CPU_FEATURE_SSSE3 (1ULL << 3)
-#define PAL_CPU_FEATURE_SSE41 (1ULL << 4) /**< SSE4.1 */
-#define PAL_CPU_FEATURE_SSE42 (1ULL << 5) /**< SSE4.2 */
-#define PAL_CPU_FEATURE_AVX (1ULL << 6)
-#define PAL_CPU_FEATURE_AVX2 (1ULL << 7)
-#define PAL_CPU_FEATURE_AVX512F (1ULL << 8)
-#define PAL_CPU_FEATURE_FMA3 (1ULL << 9)
-#define PAL_CPU_FEATURE_BMI1 (1ULL << 10)
-#define PAL_CPU_FEATURE_BMI2 (1ULL << 11)
+#define PAL_CPU_FEATURE_SSE (1ULL << 0) /**< SSE. */
+#define PAL_CPU_FEATURE_SSE2 (1ULL << 1) /**< SSE2. */
+#define PAL_CPU_FEATURE_SSE3 (1ULL << 2) /**< SSE3. */
+#define PAL_CPU_FEATURE_SSSE3 (1ULL << 3) /**< Supplemental SSE3 (SSSE3). */
+#define PAL_CPU_FEATURE_SSE41 (1ULL << 4) /**< SSE4.1. */
+#define PAL_CPU_FEATURE_SSE42 (1ULL << 5) /**< SSE4.2. */
+#define PAL_CPU_FEATURE_AVX (1ULL << 6) /**< AVX. */
+#define PAL_CPU_FEATURE_AVX2 (1ULL << 7) /**< AVX2. */
+#define PAL_CPU_FEATURE_AVX512F (1ULL << 8) /**< AVX-512 Foundation (AVX-512F). */
+#define PAL_CPU_FEATURE_FMA3 (1ULL << 9) /**< Fused multiply-add (FMA3). */
+#define PAL_CPU_FEATURE_BMI1 (1ULL << 10) /**< Bit Manipulation Instructions 1 (BMI1). */
+#define PAL_CPU_FEATURE_BMI2 (1ULL << 11) /**< Bit Manipulation Instructions 2 (BMI2). */
 /** @} */
 
 /**
  * @defgroup platform_types Platform Types
  * @{
  */
-#define PAL_PLATFORM_TYPE_WINDOWS 0
-#define PAL_PLATFORM_TYPE_LINUX 1
-#define PAL_PLATFORM_TYPE_MACOS 2
-#define PAL_PLATFORM_TYPE_ANDROID 3
-#define PAL_PLATFORM_TYPE_IOS 4
-#define PAL_PLATFORM_TYPE_COUNT 5 /**< number of platform types */
+#define PAL_PLATFORM_TYPE_WINDOWS 0 /**< Windows. */
+#define PAL_PLATFORM_TYPE_LINUX 1 /**< Linux. */
+#define PAL_PLATFORM_TYPE_MACOS 2 /**< MacOS. */
+#define PAL_PLATFORM_TYPE_ANDROID 3 /**< Android. */
+#define PAL_PLATFORM_TYPE_IOS 4 /**< iOS. */
+#define PAL_PLATFORM_TYPE_COUNT 5 /**< Number of platform types. */
 /** @} */
 
 /**
  * @defgroup platform_api_types Platform API Types
  * @{
  */
-#define PAL_PLATFORM_API_TYPE_WIN32 0
-#define PAL_PLATFORM_API_TYPE_WAYLAND 1
-#define PAL_PLATFORM_API_TYPE_X11 2
-#define PAL_PLATFORM_API_TYPE_COCOA 3
-#define PAL_PLATFORM_API_TYPE_ANDRIOD 4
-#define PAL_PLATFORM_API_TYPE_UIKIT 5
-#define PAL_PLATFORM_API_TYPE_HEADLESS 6
-#define PAL_PLATFORM_API_TYPE_COUNT 7 /**< number of platform API types */
+#define PAL_PLATFORM_API_TYPE_WIN32 0 /**< Win32 (Windows). */
+#define PAL_PLATFORM_API_TYPE_WAYLAND 1 /**< Wayland (Linux). */
+#define PAL_PLATFORM_API_TYPE_X11 2 /**< X11 (Linux). */
+#define PAL_PLATFORM_API_TYPE_COCOA 3 /**< Cocoa (macOS). */
+#define PAL_PLATFORM_API_TYPE_ANDRIOD 4 /**< Android native windowing. */
+#define PAL_PLATFORM_API_TYPE_UIKIT 5 /**< UIKit (iOS). */
+#define PAL_PLATFORM_API_TYPE_HEADLESS 6 /**< No windowing system available. */
+#define PAL_PLATFORM_API_TYPE_COUNT 7 /**< Number of platform API types. */
 /** @} */
 
 /**
  * @typedef PalCpuArch
- * @brief CPU achitecture.
- * 
+ * @brief CPU architecture.
+ *
+ * Identifies the instruction set architecture of the CPU.
+ *
  * All values of this type follow the format `PAL_CPU_ARCH_*` for API
- * consistency and ease of use. 
+ * consistency and ease of use.
  *
  * @since Added in version 2.0
  */
@@ -108,10 +111,10 @@ typedef uint32_t PalCpuArch;
 /**
  * @typedef PalCpuFeatures
  * @brief CPU features (instruction sets).
- * 
+ *
  * This is a bitmask of all supported instruction sets of the CPU. This
- * only includes the instruction sets known to PAL, the CPU might support more.
- * 
+ * only includes the instruction sets known to PAL; the CPU might support more.
+ *
  * All values of this type follow the format `PAL_CPU_FEATURE_*` for API
  * consistency and ease of use.
  *
@@ -121,7 +124,7 @@ typedef uint64_t PalCpuFeatures;
 
 /**
  * @typedef PalPlatformType
- * @brief Platform type.
+ * @brief Platform (operating system) type.
  *
  * All values of this type follow the format `PAL_PLATFORM_TYPE_*` for API
  * consistency and ease of use.
@@ -133,7 +136,9 @@ typedef uint32_t PalPlatformType;
 /**
  * @typedef PalPlatformApiType
  * @brief Platform API type.
- * 
+ *
+ * Identifies the windowing/system API used on the platform.
+ *
  * All values of this type follow the format `PAL_PLATFORM_API_TYPE_*` for API
  * consistency and ease of use.
  *
@@ -150,15 +155,15 @@ typedef uint32_t PalPlatformApiType;
  * @ingroup pal_system
  */
 typedef struct PalCPUInfo {
-    PalCpuFeatures features; /**< supported CPU features (instruction sets) */
-    PalCpuArch architecture; /**< CPU architecture */
-    uint32_t numCores; /**< number of CPU cores */
-    uint32_t cacheL1; /**< l1 cache in KB */
-    uint32_t cacheL2; /**< l2 cache in KB */
-    uint32_t cacheL3; /**< l3 cache in KB */
-    uint32_t numLogicalProcessors; /**< number of CPUs */
-    char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name */
-    char model[PAL_CPU_MODEL_NAME_SIZE]; /**< CPU model name */
+    PalCpuFeatures features; /**< Supported CPU features (instruction sets). */
+    PalCpuArch architecture; /**< CPU architecture. */
+    uint32_t numCores; /**< Number of physical CPU cores. */
+    uint32_t cacheL1; /**< L1 cache size in KB. */
+    uint32_t cacheL2; /**< L2 cache size in KB. */
+    uint32_t cacheL3; /**< L3 cache size in KB. */
+    uint32_t numLogicalProcessors; /**< Number of logical processors (hardware threads). */
+    char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name (null-terminated). */
+    char model[PAL_CPU_MODEL_NAME_SIZE]; /**< CPU model name (null-terminated). */
 } PalCPUInfo;
 
 /**
@@ -169,22 +174,22 @@ typedef struct PalCPUInfo {
  * @ingroup pal_system
  */
 typedef struct PalPlatformInfo {
-    PalPlatformType type; /**< platform type */
-    PalPlatformApiType apiType; /**< platform API type */
-    uint32_t totalMemory; /**< platform disk size in GB*/
-    uint32_t totalRAM; /**< platform memory (RAM) in MB */
-    PalVersion version; /**< platform version */
-    char name[PAL_PLATFORM_NAME_SIZE]; /**< platform name */
+    PalPlatformType type; /**< Platform type. */
+    PalPlatformApiType apiType; /**< Platform API type. */
+    uint32_t totalMemory; /**< Total disk size in GB. */
+    uint32_t totalRAM; /**< Total system memory (RAM) in MB. */
+    PalVersion version; /**< Platform (OS) version. */
+    char name[PAL_PLATFORM_NAME_SIZE]; /**< Platform name (null-terminated). */
 } PalPlatformInfo;
 
 /**
  * @brief Gets the CPU information.
- * 
+ *
  * `allocator` is not copied. The allocator and any state referenced by it must
  * remain valid for the duration of this function.
  *
- * @param[in] allocator Allocator to use or `nullptr` for default.
- * @param[out] info Output struct to recieve the CPU information.
+ * @param[in] allocator Allocator to use, or `nullptr` for the default.
+ * @param[out] info Output struct to receive the CPU information. Must not be `nullptr`.
  *
  * @Thread-safety `info` must be per thread.
  *
@@ -198,7 +203,7 @@ PAL_API void PAL_CALL palGetCPUInfo(
 /**
  * @brief Gets the platform information.
  *
- * @param[out] info Output struct to recieve the platform information.
+ * @param[out] info Output struct to receive the platform information. Must not be `nullptr`.
  *
  * @Thread-safety `info` must be per thread.
  *
