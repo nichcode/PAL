@@ -667,7 +667,7 @@ typedef struct PalMonitorInfo {
     uint32_t refreshRate; /**< Monitor refresh rate in Hz. */
     PalOrientation orientation; /**< Monitor orientation. */
     PalBool primary; /**< Whether this is the primary monitor. */
-    char name[PAL_MONITOR_NAME_SIZE]; /**< Monitor name (NULL-Terminated). */
+    char name[PAL_MONITOR_NAME_SIZE]; /**< Monitor name (NULL-terminated). */
 } PalMonitorInfo;
 
 /**
@@ -717,10 +717,10 @@ typedef struct PalMonitorMode {
  * @ingroup pal_video
  */
 typedef struct PalWindowCreateInfo {
-    const char* title; /**< Window title (NULL-Terminated, UTF-8 encoded). */
+    const char* title; /**< Window title (NULL-terminated, UTF-8 encoded). */
     PalMonitor* monitor; /**< Monitor to use, or `nullptr` for windowed mode. */
-    const char* appName; /**< Application name (NULL-Terminated, UTF-8 encoded), or `nullptr` to use `PAL`. */
-    const char* instanceName; /**< Instance name (NULL-Terminated, UTF-8 encoded), or `nullptr` to use `title`. */
+    const char* appName; /**< Application name (NULL-terminated, UTF-8 encoded), or `nullptr` to use `PAL`. */
+    const char* instanceName; /**< Instance name (NULL-terminated, UTF-8 encoded), or `nullptr` to use `title`. */
     PalFBConfigBackend fbConfigBackend; /**< Framebuffer configuration backend. */
     int32_t fbConfigIndex; /**< Framebuffer configuration index, or `0` for no configuration. */
     uint32_t width; /**< Window width in screen coordinates. */
@@ -1639,7 +1639,7 @@ PAL_API void PAL_CALL palSetWindowStyle(
  * supported or this function results in undefined behavior.
  *
  * @param[in] window Window to set its title.
- * @param[in] title Window title (NULL-Terminated, UTF-8 encoded).
+ * @param[in] title Window title (NULL-terminated, UTF-8 encoded).
  *
  * @Thread-safety Must be called from the main thread.
  *

@@ -10,3 +10,7 @@ is a capacity not a count of exiting events.
 
 ## Thread Module
 - Rename `PaTlsDestructorFn` to `PalTlsDestructorFn`.
+
+## System Module
+- Rename `PAL_PLATFORM_API_TYPE_ANDRIOD` to `PAL_PLATFORM_API_TYPE_ANDROID`.
+- Rename `PalPlatformInfo::totalMemory` to `PalPlatformInfo::totalDisk`.

@@ -216,9 +216,9 @@ typedef struct PalGLInfo
     uint32_t minor; /**< Minor version. */
     PalGLBackend backend; /**< OpenGL backend of the driver. */
     PalGLAPI api; /**< OpenGL API of the driver. */
-    char vendor[PAL_GL_VENDOR_NAME_SIZE]; /**< Vendor name (NULL-Terminated). */
-    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE]; /**< Graphics card name (NULL-Terminated). */
-    char version[PAL_GL_VERSION_NAME_SIZE]; /**< Version name (NULL-Terminated). */
+    char vendor[PAL_GL_VENDOR_NAME_SIZE]; /**< Vendor name (NULL-terminated). */
+    char graphicsCard[PAL_GL_GRAPHICS_CARD_NAME_SIZE]; /**< Graphics card name (NULL-terminated). */
+    char version[PAL_GL_VERSION_NAME_SIZE]; /**< Version name (NULL-terminated). */
 } PalGLInfo;
 
 /**
@@ -396,7 +396,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  *
  * The OpenGL system must be initialized before this call.
  *
- * @param[in] name UTF-8 encoded function name (NULL-Terminated).
+ * @param[in] name UTF-8 encoded function name (NULL-terminated).
  * @return Pointer to the function on success or `nullptr` on failure.
  *
  * @Thread-safety Thread safe.

@@ -1,8 +1,9 @@
 /**
  * @file pal_system.h
  * @brief Header file for the PAL System API.
- * 
- * Defines all the types, constants and functions of the system module.
+ *
+ * Defines the types, constants and functions of the system module. The module
+ * provides information about the CPU and the platform the application runs on.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -35,9 +36,9 @@
  * @{
  */
 
-#define PAL_CPU_VENDOR_NAME_SIZE 16 /**< Maximum size of the CPU vendor name, including the null terminator. */
-#define PAL_CPU_MODEL_NAME_SIZE 64 /**< Maximum size of the CPU model name, including the null terminator. */
-#define PAL_PLATFORM_NAME_SIZE 32 /**< Maximum size of the platform name, including the null terminator. */
+#define PAL_CPU_VENDOR_NAME_SIZE 16 /**< Maximum size of the CPU vendor name, including the NULL terminator. */
+#define PAL_CPU_MODEL_NAME_SIZE 64 /**< Maximum size of the CPU model name, including the NULL terminator. */
+#define PAL_PLATFORM_NAME_SIZE 32 /**< Maximum size of the platform name, including the NULL terminator. */
 
 /**
  * @defgroup cpu_architectures CPU Architectures
@@ -65,8 +66,8 @@
 #define PAL_CPU_FEATURE_AVX2 (1ULL << 7) /**< AVX2. */
 #define PAL_CPU_FEATURE_AVX512F (1ULL << 8) /**< AVX-512 Foundation (AVX-512F). */
 #define PAL_CPU_FEATURE_FMA3 (1ULL << 9) /**< Fused multiply-add (FMA3). */
-#define PAL_CPU_FEATURE_BMI1 (1ULL << 10) /**< Bit Manipulation Instructions 1 (BMI1). */
-#define PAL_CPU_FEATURE_BMI2 (1ULL << 11) /**< Bit Manipulation Instructions 2 (BMI2). */
+#define PAL_CPU_FEATURE_BMI1 (1ULL << 10) /**< Bit manipulation instructions 1 (BMI1). */
+#define PAL_CPU_FEATURE_BMI2 (1ULL << 11) /**< Bit manipulation instructions 2 (BMI2). */
 /** @} */
 
 /**
@@ -75,7 +76,7 @@
  */
 #define PAL_PLATFORM_TYPE_WINDOWS 0 /**< Windows. */
 #define PAL_PLATFORM_TYPE_LINUX 1 /**< Linux. */
-#define PAL_PLATFORM_TYPE_MACOS 2 /**< MacOS. */
+#define PAL_PLATFORM_TYPE_MACOS 2 /**< macOS. */
 #define PAL_PLATFORM_TYPE_ANDROID 3 /**< Android. */
 #define PAL_PLATFORM_TYPE_IOS 4 /**< iOS. */
 #define PAL_PLATFORM_TYPE_COUNT 5 /**< Number of platform types. */
@@ -112,8 +113,9 @@ typedef uint32_t PalCpuArch;
  * @typedef PalCpuFeatures
  * @brief CPU features (instruction sets).
  *
- * This is a bitmask of all supported instruction sets of the CPU. This
- * only includes the instruction sets known to PAL; the CPU might support more.
+ * Identifies the instruction sets supported by the CPU. This is a bitmask of all
+ * supported instruction sets of the CPU. This only includes the instruction sets
+ * known to PAL; the CPU might support more.
  *
  * All values of this type follow the format `PAL_CPU_FEATURE_*` for API
  * consistency and ease of use.
@@ -125,6 +127,8 @@ typedef uint64_t PalCpuFeatures;
 /**
  * @typedef PalPlatformType
  * @brief Platform (operating system) type.
+ *
+ * Identifies the operating system of the platform.
  *
  * All values of this type follow the format `PAL_PLATFORM_TYPE_*` for API
  * consistency and ease of use.
@@ -151,24 +155,28 @@ typedef uint32_t PalPlatformApiType;
  * @struct PalCPUInfo
  * @brief CPU information.
  *
+ * Filled in by @ref palGetCPUInfo().
+ *
  * @since Added in version 2.0
  * @ingroup pal_system
  */
 typedef struct PalCPUInfo {
     PalCpuFeatures features; /**< Supported CPU features (instruction sets). */
     PalCpuArch architecture; /**< CPU architecture. */
-    uint32_t numCores; /**< Number of physical CPU cores. */
+    uint32_t numCores; /**< Number of physical cores. */
     uint32_t cacheL1; /**< L1 cache size in KB. */
     uint32_t cacheL2; /**< L2 cache size in KB. */
     uint32_t cacheL3; /**< L3 cache size in KB. */
     uint32_t numLogicalProcessors; /**< Number of logical processors (hardware threads). */
-    char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name (null-terminated). */
-    char model[PAL_CPU_MODEL_NAME_SIZE]; /**< CPU model name (null-terminated). */
+    char vendor[PAL_CPU_VENDOR_NAME_SIZE]; /**< CPU vendor name (NULL-terminated). */
+    char model[PAL_CPU_MODEL_NAME_SIZE]; /**< CPU model name (NULL-terminated). */
 } PalCPUInfo;
 
 /**
  * @struct PalPlatformInfo
  * @brief Platform information.
+ *
+ * Filled in by @ref palGetPlatformInfo().
  *
  * @since Added in version 2.0
  * @ingroup pal_system
@@ -179,7 +187,7 @@ typedef struct PalPlatformInfo {
     uint32_t totalMemory; /**< Total disk size in GB. */
     uint32_t totalRAM; /**< Total system memory (RAM) in MB. */
     PalVersion version; /**< Platform (OS) version. */
-    char name[PAL_PLATFORM_NAME_SIZE]; /**< Platform name (null-terminated). */
+    char name[PAL_PLATFORM_NAME_SIZE]; /**< Platform name (NULL-terminated). */
 } PalPlatformInfo;
 
 /**
@@ -189,7 +197,7 @@ typedef struct PalPlatformInfo {
  * remain valid for the duration of this function.
  *
  * @param[in] allocator Allocator to use, or `nullptr` for the default.
- * @param[out] info Output struct to receive the CPU information. Must not be `nullptr`.
+ * @param[out] info Output struct to receive the CPU information.
  *
  * @Thread-safety `info` must be per thread.
  *
@@ -203,7 +211,7 @@ PAL_API void PAL_CALL palGetCPUInfo(
 /**
  * @brief Gets the platform information.
  *
- * @param[out] info Output struct to receive the platform information. Must not be `nullptr`.
+ * @param[out] info Output struct to receive the platform information.
  *
  * @Thread-safety `info` must be per thread.
  *
