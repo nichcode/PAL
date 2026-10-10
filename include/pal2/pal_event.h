@@ -1,8 +1,10 @@
 /**
  * @file pal_event.h
- * @brief header file for the PAL Event API.
+ * @brief Header file for the PAL Event API.
  *
- * Defines all the types, constants and functions of the event module.
+ * Defines the types, constants and functions of the event module. The module
+ * provides the event driver, which delivers events to an event callback or an
+ * event queue according to the dispatch mode of each event type.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -35,14 +37,14 @@
  * @{
  */
 
-#define PAL_DEFAULT_QUEUE_EVENT_COUNT 512 /**< Maximum number of events the default queue can hold at a time. */
+#define PAL_DEFAULT_QUEUE_EVENT_COUNT 512 /**< Number of events the default queue can hold at a time. */
 
 /**
  * @defgroup decoration_modes Window Decoration Modes
  * @{
  */
 #define PAL_DECORATION_MODE_CLIENT_SIDE 0 /**< Client (application) is responsible for drawing window decorations. */
-#define PAL_DECORATION_MODE_SERVER_SIDE 1 /**< Windowing system (server) is responsible for drawing window decorations. */
+#define PAL_DECORATION_MODE_SERVER_SIDE 1 /**< Windowing system (server) is responsible for drawing decorations. */
 #define PAL_DECORATION_MODE_COUNT 2 /**< Number of window decoration modes. */
 /** @} */
 
@@ -68,7 +70,7 @@
 #define PAL_EVENT_TYPE_MOUSE_MOVE 15 /**< Mouse was moved. */
 #define PAL_EVENT_TYPE_MOUSE_DELTA 16 /**< Mouse movement delta has changed. */
 #define PAL_EVENT_TYPE_MOUSE_WHEEL 17 /**< Mouse wheel delta has changed. */
-#define PAL_EVENT_TYPE_USER 18 /**< User event. */
+#define PAL_EVENT_TYPE_USER 18 /**< User-defined event. */
 #define PAL_EVENT_TYPE_KEYCHAR 19 /**< Character key has been pressed. */
 #define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20 /**< Window decoration mode has been selected or changed. */
 #define PAL_EVENT_TYPE_COUNT 21 /**< Number of event types. */
@@ -80,13 +82,15 @@
  */
 #define PAL_DISPATCH_MODE_NONE 0 /**< Event will be discarded. */
 #define PAL_DISPATCH_MODE_CALLBACK 1 /**< Event will be dispatched to the event callback. */
-#define PAL_DISPATCH_MODE_POLL 2 /**< Event will be dispatched to the event queue and retrieved with @ref palPollEvent(). */
+#define PAL_DISPATCH_MODE_POLL 2 /**< Event will be pushed to the event queue. */
 #define PAL_DISPATCH_MODE_COUNT 3 /**< Number of dispatch modes. */
 /** @} */
 
 /**
  * @typedef PalDecorationMode
  * @brief Window decoration mode.
+ *
+ * Identifies whether the application or the windowing system draws the window decorations.
  *
  * All values of this type follow the format `PAL_DECORATION_MODE_*` for API
  * consistency and ease of use.
@@ -99,6 +103,8 @@ typedef uint32_t PalDecorationMode;
  * @typedef PalEventType
  * @brief Event type.
  *
+ * Identifies the kind of an event.
+ *
  * All values of this type follow the format `PAL_EVENT_TYPE_*` for API
  * consistency and ease of use.
  *
@@ -109,6 +115,8 @@ typedef uint32_t PalEventType;
 /**
  * @typedef PalDispatchMode
  * @brief Event dispatch mode.
+ *
+ * Identifies where an event of a given type is delivered.
  *
  * All values of this type follow the format `PAL_DISPATCH_MODE_*` for API
  * consistency and ease of use.
@@ -134,13 +142,15 @@ typedef struct PalEventDriver PalEventDriver;
  * User events define how their payloads are packed.
  * See [Event Payload](@ref event_payload) for more information.
  *
+ * Filled in by @ref palPollEvent() or passed to the event callback.
+ *
  * @since Added in version 2.0
  * @ingroup pal_event
  */
 typedef struct PalEvent {
     uint64_t data; /**< Data payload. */
     uint64_t data2; /**< Additional data payload. */
-    uint32_t userId; /**< Id for user events. */
+    uint32_t userId; /**< Identifier for user events. */
     PalEventType type; /**< Event type. */
 } PalEvent;
 
@@ -158,7 +168,7 @@ typedef struct PalEvent {
  * void PAL_CALL eventCallback(void* userData, const PalEvent* event);
  * @endcode
  *
- * @param[in] userData User-defined data passed to the callback or `nullptr`.
+ * @param[in] userData User-defined data passed to the callback, or `nullptr`.
  * @param[in] event The event being dispatched.
  *
  * @since Added in version 2.0
@@ -184,7 +194,7 @@ typedef void(PAL_CALL* PalEventCallback)(
  * void PAL_CALL queuePush(void* userData, PalEvent* event);
  * @endcode
  *
- * @param[in] userData User-defined data passed to the function or `nullptr`.
+ * @param[in] userData User-defined data passed to the function, or `nullptr`.
  * @param[in] event Pointer to the event to push.
  *
  * @since Added in version 2.0
@@ -201,16 +211,18 @@ typedef void(PAL_CALL* PalPushFn)(
  * @brief Queue poll function.
  *
  * The function must get the next available event from the queue and return
- * `PAL_TRUE` if an event was found or `PAL_FALSE` if the queue is empty. This function must not block or wait for the queue to
- * process new events, it must return immediately.
+ * `PAL_TRUE` if an event was found or `PAL_FALSE` if the queue is empty. This
+ * function must not block or wait for the queue to process new events; it must
+ * return immediately.
  *
  * The function signature should look like this:
  * @code
  * PalBool PAL_CALL queuePoll(void* userData, PalEvent* event);
  * @endcode
  *
- * @param[in] userData User-defined data passed to the function or `nullptr`.
+ * @param[in] userData User-defined data passed to the function, or `nullptr`.
  * @param[out] event Output struct to receive the event.
+ * @return `PAL_TRUE` if an event was found or `PAL_FALSE` if the queue is empty.
  *
  * @since Added in version 2.0
  * @ingroup pal_event
@@ -241,7 +253,7 @@ typedef PalBool(PAL_CALL* PalPollFn)(
 typedef struct PalEventQueue {
     PalPushFn push; /**< Push function. */
     PalPollFn poll; /**< Poll function. */
-    void* userData; /**< User-defined data passed to the functions or `nullptr`. */
+    void* userData; /**< User-defined data passed to the functions, or `nullptr`. */
 } PalEventQueue;
 
 /**
@@ -257,10 +269,10 @@ typedef struct PalEventQueue {
  * @ingroup pal_event
  */
 typedef struct PalEventDriverCreateInfo {
-    const PalAllocator* allocator; /**< Allocator to use or `nullptr` for default. */
-    PalEventQueue* queue; /**< Event queue to use or `nullptr` for default. */
-    PalEventCallback callback; /**< Event callback or `nullptr`. */
-    void* userData; /**< User-defined data passed to the callback or `nullptr`. */
+    const PalAllocator* allocator; /**< Allocator to use, or `nullptr` for the default. */
+    PalEventQueue* queue; /**< Event queue to use, or `nullptr` for the default. */
+    PalEventCallback callback; /**< Event callback, or `nullptr` to discard callback events. */
+    void* userData; /**< User-defined data passed to the callback, or `nullptr`. */
 } PalEventDriverCreateInfo;
 
 /**
@@ -288,7 +300,7 @@ typedef struct PalEventDriverCreateInfo {
  * @Thread-safety `eventDriver` must be per thread.
  *
  * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
  *
  * @since Added in version 2.0
  * @ingroup pal_event
@@ -366,6 +378,9 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * the event will be dispatched to the event callback. The event will be
  * discarded if the event callback is `nullptr`. The event will not be copied
  * and must remain valid for the duration of the callback.
+ *
+ * If the dispatch mode of `event` is @ref PAL_DISPATCH_MODE_NONE, the event
+ * will be discarded.
  *
  * @param[in] eventDriver The event driver.
  * @param[in] event The event to push.
