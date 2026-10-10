@@ -1103,7 +1103,7 @@ PAL_API void PAL_CALL palGetCurrentMonitorMode(
  */
 PAL_API PalResult PAL_CALL palSetMonitorMode(
     PalMonitor* monitor,
-    PalMonitorMode* mode);
+    const PalMonitorMode* mode);
 
 /**
  * @brief Checks whether a display mode is valid on a monitor.
@@ -1129,7 +1129,7 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  */
 PAL_API PalResult PAL_CALL palValidateMonitorMode(
     PalMonitor* monitor,
-    PalMonitorMode* mode);
+    const PalMonitorMode* mode);
 
 /**
  * @brief Sets the orientation for a monitor.

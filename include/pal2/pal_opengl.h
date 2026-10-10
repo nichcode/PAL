@@ -466,7 +466,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  * @ingroup pal_opengl
  */
 PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
-    PalGLFBConfig* configs,
+    const PalGLFBConfig* configs,
     uint32_t count,
     const PalGLFBConfig* desired);
 
