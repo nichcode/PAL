@@ -213,17 +213,6 @@ body.design-one {
     background: var(--accent-hover);
 }
 
-.btn-secondary {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-}
-
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--accent-color);
-}
-
 body.light-mode {
     --bg-color: #ffffff;
     --card-bg: #fafafa;
