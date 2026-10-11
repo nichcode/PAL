@@ -23,5 +23,8 @@ Makefile
 # docs
 docs/html
 
+# website
+website/html
+
 # ppm files
 **.ppm
