@@ -13,7 +13,7 @@
     box-sizing: border-box;
 }
 
-body.design-one {
+body {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -24,7 +24,7 @@ body.design-one {
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.top-header {
+header {
     position: fixed;
     top: 0;
     left: 0;
@@ -42,7 +42,7 @@ body.design-one {
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.header-brand h1 {
+.logo h1 {
     font-size: 1.15rem;
     font-weight: 700;
     margin: 0;
@@ -50,12 +50,12 @@ body.design-one {
     letter-spacing: 0.02em;
 }
 
-.top-nav-links {
+.nav-links {
     display: flex;
     align-items: center;
 }
 
-.top-nav-links a {
+.nav-links a {
     color: var(--text-color);
     text-decoration: none;
     font-size: 0.9rem;
@@ -64,12 +64,13 @@ body.design-one {
     transition: opacity 0.2s ease, color 0.2s ease;
 }
 
-.top-nav-links a:hover {
+.nav-links a:hover {
     color: var(--accent-color);
     opacity: 1;
 }
 
-.theme-toggle-btn {
+/** Reset and style our raw data icon button container*/
+#theme-toggle {
     background: transparent;
     border: none;
     cursor: pointer;
@@ -83,18 +84,18 @@ body.design-one {
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.theme-toggle-btn:hover {
+#theme-toggle:hover {
     background-color: var(--border-color);
     color: var(--accent-color);
 }
 
-.main-container {
+main {
     max-width: 1240px;
     margin: 160px auto 80px auto;
     padding: 0 40px;
 }
 
-.landing-grid {
+.intro-grid {
     display: grid;
     grid-template-columns: 1.25fr 0.75fr;
     gap: 50px;
@@ -113,33 +114,13 @@ body.design-one {
     line-height: 1.65;
 }
 
-.glance-card {
+.modules-grid {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 0 0 25px 0;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.terminal-header {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    transition: border-color 0.15s ease;
-}
-
-.terminal-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border-color);
-    transition: background-color 0.15s ease;
 }
 
 .modules {
@@ -152,7 +133,7 @@ body.design-one {
     transition: color 0.15s ease;
 }
 
-.glance-list {
+.modules-list {
     list-style: none;
     padding: 0 25px;
     margin: 15px 0 0 0;
@@ -161,7 +142,7 @@ body.design-one {
     gap: 22px;
 }
 
-.glance-list li {
+.modules-list li {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -169,19 +150,19 @@ body.design-one {
     padding-bottom: 15px;
 }
 
-.glance-list li:last-child {
+.modules-list li:last-child {
     border-bottom: none;
     padding-bottom: 0;
 }
 
-.glance-label {
+.module-label {
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--heading-color);
     transition: color 0.15s ease;
 }
 
-.glance-value {
+.module-value {
     font-size: 0.85rem;
     line-height: 1.5;
     opacity: 0.65;
@@ -195,7 +176,9 @@ body.design-one {
     gap: 12px;
 }
 
-.btn {
+.button {
+    background: var(--accent-color);
+    color: #ffffff;
     padding: 10px 22px;
     border-radius: 4px;
     text-decoration: none;
@@ -204,12 +187,7 @@ body.design-one {
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.btn-primary {
-    background: var(--accent-color);
-    color: #ffffff;
-}
-
-.btn-primary:hover {
+.button:hover {
     background: var(--accent-hover);
 }
 
@@ -223,39 +201,36 @@ body.light-mode {
     --accent-hover: #1e40af;
 }
 
-body.light-mode .top-header {
+body.light-mode header {
     background-color: rgba(255, 255, 255, 0.85);
 }
 
-body.light-mode .glance-card {
+body.light-mode .modules-grid {
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
 }
 
-body.light-mode .glance-list li {
+body.light-mode .modules-list li {
     border-bottom: 1px solid rgba(0, 0, 0, 0.03);
 }
 
-body.light-mode .glance-list li:last-child {
+body.light-mode .modules-list li:last-child {
     border-bottom: none;
 }
 
 @media (max-width: 960px) {
-    .landing-grid {
+    .intro-grid {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 600px) {
-    .top-nav-links a {
+    .nav-links a {
         display: none; /* Safely collapses subpages links on micro screen views */
     }
-    .hero-main-title {
+    .logo {
         font-size: 2rem;
     }
-    .hero-actions {
-        flex-direction: column;
-    }
-    .btn {
+    .button {
         text-align: center;
     }
 }

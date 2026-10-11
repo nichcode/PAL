@@ -1,32 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Link to our design stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="design-one">
-    <header class="top-header">
-        <div class="header-brand">
-            <h1>Prime Abstraction Layer</h1>
-        </div>
-        <nav class="top-nav-links">
+<body>
+    <!-- Main navigation bar -->
+    <header>
+        <div class="logo"><h1>Prime Abstraction Layer</h1></div>
+        <nav class="nav-links">
             <a href="html/index.html">Documentation</a>
             <a href="https://github.com/nichcode/PAL">GitHub</a>
             
-            <!-- Dark/light mode toggle button -->
-            <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Theme" type="button">
-                <svg xmlns="http://w3.org" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
+            <!-- This button holds our empty container for raw SVG data -->
+            <button id="theme-toggle" aria-label="Toggle theme">
+                <span id="theme-icon-container"></span>
             </button>
         </nav>
     </header>
-    <main class="main-container">
-        <div class="landing-grid">
-            <section class="intro-block">                
+
+    <!-- Main page content section -->
+    <main>
+        <div class="intro-grid">
+            <section class="intro-block">
                 <div class="intro-description">
                     <strong>PAL</strong> is a thin, low-level, explicit, cross-platform abstraction layer in C
                         over graphics and platform APIs. PAL exposes capabilities allowing 
@@ -46,65 +44,74 @@
                         <a href="https://www.opensource.org/licenses/zlib-license.php"> zlib/libpng</a> license.</p>
                 </div>
                 <div class="intro-actions">
-                    <a href="https://github.com/nichcode/PAL/releases/tag/v2.1.0" class="btn btn-primary">Download PAL 2.1</a>
+                    <a href="https://github.com/nichcode/PAL/releases/tag/v2.1.0" class="button">Download PAL 2.1</a>
                 </div>
             </section>
-            <aside class="glance-card">
-                <div class="terminal-header">
-                    <span class="terminal-dot"></span>
-                    <span class="terminal-dot"></span>
-                    <span class="terminal-dot"></span>
-                </div>
+            <aside class="modules-grid">
                 <div class="modules">Modules</div>
-                <ul class="glance-list">
+                <ul class="modules-list">
                     <li>
-                        <span class="glance-label">Core</span>
-                        <span class="glance-value">Defines the types, constants and functions of the module.
+                        <span class="module-label">Core</span>
+                        <span class="module-value">
+                            Defines the types, constants and functions of the module.
                             The module provides result codes, memoryallocation, logging, timing, shared 
-                            library loading and value packing utilities.</span>
+                            library loading and value packing utilities.
+                        </span>
                     </li>
                     <li>
-                        <span class="glance-label">Event</span>
-                        <span class="glance-value">Defines the types, constants and functions of the event module.
+                        <span class="module-label">Event</span>
+                        <span class="module-value">
+                            Defines the types, constants and functions of the event module.
                             The module provides the event driver, which delivers events to an event callback or an
-                            event queue according to the dispatch mode of each event type.</span>
+                            event queue according to the dispatch mode of each event type.
+                        </span>
                     </li>
                     <li>
-                        <span class="glance-label">Video</span>
-                        <span class="glance-value">Defines the types, constants and functions of the video module.
+                        <span class="module-label">Video</span>
+                        <span class="module-value">
+                            Defines the types, constants and functions of the video module.
                             The module manages windows, monitors, cursors and icons, and reports keyboard and mouse
-                            input state.</span>
+                            input state.
+                        </span>
                     </li>
                     <li>
-                        <span class="glance-label">Graphics</span>
-                        <span class="glance-value">Defines the types, constants and functions of the graphics module.
+                        <span class="module-label">Graphics</span>
+                        <span class="module-value">
+                            Defines the types, constants and functions of the graphics module.
                             The module manages devices, swapchains, images, buffers, pipelines, descriptors,
-                            etc.</span>
+                            etc.
+                        </span>
                     </li>
                     <li>
-                        <span class="glance-label">OpenGL</span>
-                        <span class="glance-value">Defines the types, constants and functions of the OpenGL module.
+                        <span class="module-label">OpenGL</span>
+                        <span class="module-value">
+                            Defines the types, constants and functions of the OpenGL module.
                             The module creates and manages OpenGL contexts and framebuffer configurations for
-                            native windows. </span>
+                            native windows.
+                        </span>
                     </li>
-
                     <li>
-                        <span class="glance-label">Thread</span>
-                        <span class="glance-value">Defines the types, constants and functions of the thread module.
+                        <span class="module-label">Thread</span>
+                        <span class="module-value">
+                            Defines the types, constants and functions of the thread module.
                             The module provides threads, thread-local storage (TLS), mutexes and condition
-                            variables.</span>
+                            variables.
+                        </span>
                     </li>
-
                     <li>
-                        <span class="glance-label">System</span>
-                        <span class="glance-value">Defines the types, constants and functions of the system module.
+                        <span class="module-label">System</span>
+                        <span class="module-value">
+                            Defines the types, constants and functions of the system module.
                             The module provides information about the CPU and the platform the application
-                            runs on.</span>
+                            runs on.
+                        </span>
                     </li>
                 </ul>
             </aside>
         </div>
     </main>
-    <script type="text/javascript" src="theme.js"></script>
+
+    <!-- Link to our behavior logic script -->
+    <script type="text/javascript" src="main.js"></script>
 </body>
 </html>
