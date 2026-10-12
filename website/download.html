@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download | PAL</title>
+    <!-- Link to our design stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Shared main navigation bar -->
+    <header>
+        <div class="logo"><h1>Prime Abstraction Layer</h1></div>
+        <nav class="nav-links">
+            <a href="download.html">Download</a>
+            <a href="html/index.html">Documentation</a>
+            <a href="https://github.com/nichcode/PAL">GitHub</a>
+            
+            <!-- This button holds our empty container for raw SVG data -->
+            <button id="theme-toggle" aria-label="Toggle theme">
+                <span id="theme-icon-container"></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main page content section -->    
+    <main>
+        <div class="intro-grid">
+            <section class="intro-block">
+                <div class="intro-description">
+                    <strong><h1>Source</h1></strong>
+                    <p>
+                        This package contains the source code with the build files and available scripts, tools,
+                        tests, documentation and the website source files. This is the recommended
+                        download to use for all supported platforms and compilers. Any C99 that 
+                        conforms to the PAL ABI can be built with it.
+                    </p>
+                    
+                    <p>Prebuilt binaries are only available for windows. Linux and other platforms
+                        must build from source by downloading the source package.
+                    </p>
+                </div>
+                <div class="intro-actions">
+                    <a href="download.html" class="primary-button">Download source v2.1.0</a>
+                    <a href="html/index.html"" class="secondary-button">Documentation</a>
+                </div>
+            </section>
+            <aside class="modules-grid">
+                <div class="modules">Prebuilt Binaries</div>
+                <ul class="modules-list">
+                    <li>
+                        <span class="module-label">Windows</span>
+                        <span class="module-value">
+                            This package contains the headers documentation and release mode for static and
+                            shared libraries for Visual C++ 2022-2026 and MinGW-w64.
+                        </span>
+                        <div class="intro-actions" style="margin-top: 12px;">
+                            <a href="https://github.com" class="primary-button" style="padding: 6px 14px; 
+                            font-size: 0.8rem;">Download v2.1.0 (.zip)</a>
+                        </div>
+                    </li>
+                </ul>
+            </aside>
+        </div>
+    </main>
+
+    <<!-- Link to our behavior logic script -->
+    <script type="text/javascript" src="main.js"></script>
+</body>
+</html>

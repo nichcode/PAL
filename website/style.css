@@ -24,6 +24,12 @@ body {
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+h1, h2, h3, h4 {
+    font-weight: 700;       /* Makes the monospace character strokes thick and prominent */
+    letter-spacing: -0.02em; /* Tightens the uniform space between letters slightly for a premium feel */
+    color: var(--heading-color);
+}
+
 header {
     position: fixed;
     top: 0;
@@ -176,7 +182,7 @@ main {
     gap: 12px;
 }
 
-.button {
+.primary-button {
     background: var(--accent-color);
     color: #ffffff;
     padding: 10px 22px;
@@ -187,8 +193,25 @@ main {
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.button:hover {
+.primary-button:hover {
     background: var(--accent-hover);
+}
+
+.secondary-button {
+    padding: 10px 22px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.secondary-button:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--accent-color);
 }
 
 body.light-mode {
@@ -230,7 +253,198 @@ body.light-mode .modules-list li:last-child {
     .logo {
         font-size: 2rem;
     }
-    .button {
+    .primary-button {
+        text-align: center;
+    }
+
+    .secondary-button {
         text-align: center;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /* ==========================================================================
+   8. DEDICATED DOWNLOAD PORTAL LAYOUTS
+   ========================================================================== */
+.download-hero {
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto 60px auto;
+}
+
+.download-hero p {
+    font-size: 1.05rem;
+    opacity: 0.8;
+    margin-top: 16px;
+}
+
+.badge {
+    display: inline-block;
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-color);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+body.light-mode .badge {
+    background: rgba(29, 78, 216, 0.08);
+}
+
+.download-section {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border-color);
+}
+
+.section-header {
+    margin-bottom: 24px;
+}
+
+.section-header h3 {
+    font-size: 1.35rem;
+    margin-bottom: 6px;
+}
+
+.section-header p {
+    font-size: 0.9rem;
+    opacity: 0.65;
+}
+
+/* --- Amalgamated Source Layout Component --- */
+.source-card-large {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 30px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .source-card-large {
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+}
+
+.card-meta-icon {
+    font-size: 2.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.card-details h4 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+}
+
+.card-details p {
+    font-size: 0.9rem;
+    opacity: 0.75;
+    margin-bottom: 12px;
+    max-width: 600px;
+}
+
+.spec-list {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+/* --- Prebuilt Binary SDK Grid Components --- */
+.binary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.binary-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.platform-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.platform-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+.binary-desc {
+    font-size: 0.88rem;
+    opacity: 0.75;
+    margin-bottom: 16px;
+    min-height: 44px;
+}
+
+.binary-specs {
+    list-style: none;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.binary-specs li {
+    opacity: 0.85;
+}
+
+.archive-btn {
+    display: block;
+    text-align: center;
+    width: 100%;
+}
+
+/* --- Mobile Responsiveness Overrides --- */
+@media (max-width: 960px) {
+    .source-card-large {
+        grid-template-columns: 1fr;
+        text-align: center;
+        justify-items: center;
+    }
+    
+    .spec-list {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .binary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
