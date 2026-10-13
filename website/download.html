@@ -4,13 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download | PAL</title>
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+
     <!-- Link to our design stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Shared main navigation bar -->
     <header>
-        <div class="logo"><h1>Prime Abstraction Layer</h1></div>
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.svg" alt="" class="logo-img">
+            </a>
+            <h1>Prime Abstraction Layer</h1>
+        </div>
         <nav class="nav-links">
             <a href="download.html">Download</a>
             <a href="html/index.html">Documentation</a>
@@ -41,8 +50,8 @@
                     </p>
                 </div>
                 <div class="intro-actions">
-                    <a href="download.html" class="primary-button">Download source v2.1.0</a>
-                    <a href="html/index.html"" class="secondary-button">Documentation</a>
+                    <a href="download.html" class="primary-button">Download source v2.2.0</a>
+                    <a href="html/index.html" class="secondary-button">Documentation</a>
                 </div>
             </section>
             <aside class="modules-grid">
@@ -56,7 +65,7 @@
                         </span>
                         <div class="intro-actions" style="margin-top: 12px;">
                             <a href="https://github.com" class="primary-button" style="padding: 6px 14px; 
-                            font-size: 0.8rem;">Download v2.1.0 (.zip)</a>
+                            font-size: 0.8rem;">Download v2.2.0 (.zip)</a>
                         </div>
                     </li>
                 </ul>
@@ -64,7 +73,41 @@
         </div>
     </main>
 
-    <<!-- Link to our behavior logic script -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <img src="images/logo.svg" alt="" class="logo-img">
+                        <span class="footer-title">Prime Abstraction Layer</span>
+                    </div>
+                    <p class="footer-desc">
+                        A thin, low-level, explicit, cross-platform abstraction layer in C over graphics and platform APIs.
+                    </p>
+                </div>
+                <div class="footer-links-group">
+                    <div class="footer-col">
+                        <span class="footer-col-title">Development</span>
+                        <ul class="footer-links">
+                            <li><a href="html/index.html">Documentation</a></li>
+                            <li><a href="https://github.com/nichcode" target="_blank" rel="noopener">nichcode</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <span class="footer-col-title">About</span>
+                        <ul class="footer-links">
+                            <li><a href="https://www.opensource.org/licenses/zlib-license.php" target="_blank" rel="noopener">License</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Prime Abstraction Layer. Released under zlib/libpng.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Link to our behavior logic script -->
     <script type="text/javascript" src="main.js"></script>
 </body>
 </html>

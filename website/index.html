@@ -4,13 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Low-level abstraction layer over platform and graphics APIs | PAL</title>
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="images/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+
     <!-- Link to our design stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Main navigation bar -->
     <header>
-        <div class="logo"><h1>Prime Abstraction Layer</h1></div>
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.svg" alt="" class="logo-img">
+            </a>
+            <h1>Prime Abstraction Layer</h1>
+        </div>
         <nav class="nav-links">
             <a href="download.html">Download</a>
             <a href="html/index.html">Documentation</a>
@@ -28,6 +37,8 @@
         <div class="intro-grid">
             <section class="intro-block">
                 <div class="intro-description">
+                    <h1>Low-level abstraction layer over platform and graphics APIs</h1>
+
                     <strong>PAL</strong> is a thin, low-level, explicit, cross-platform abstraction layer in C
                         over graphics and platform APIs. PAL exposes capabilities allowing 
                         applications to choose drivers, adapters etc based on needs and usage.
@@ -43,12 +54,12 @@
                     </p>
                     <p>PAL supports Windows, Linux, Vulkan and D3D12. Both Wayland and X11 are supported on Linux.</p>
                     <p>PAL is released under the 
-                        <a href="https://www.opensource.org/licenses/zlib-license.php"> zlib/libpng</a> license.
+                        <a href="https://www.opensource.org/licenses/zlib-license.php" class="open-source"> zlib/libpng</a> license.
                     </p>
                 </div>
                 <div class="intro-actions">
                     <a href="download.html" class="primary-button">Download</a>
-                    <a href="html/index.html"" class="secondary-button">Documentation</a>
+                    <a href="html/index.html" class="secondary-button">Documentation</a>
                 </div>
             </section>
             <aside class="modules-grid">
@@ -114,6 +125,42 @@
             </aside>
         </div>
     </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <a href="index.html">
+                            <img src="images/logo.svg" alt="" class="logo-img">
+                        </a>
+                        <span class="footer-title">Prime Abstraction Layer</span>
+                    </div>
+                    <p class="footer-desc">
+                        A thin, low-level, explicit, cross-platform abstraction layer in C over graphics and platform APIs.
+                    </p>
+                </div>
+                <div class="footer-links-group">
+                    <div class="footer-col">
+                        <span class="footer-col-title">Development</span>
+                        <ul class="footer-links">
+                            <li><a href="html/index.html">Documentation</a></li>
+                            <li><a href="https://github.com/nichcode" target="_blank" rel="noopener">nichcode</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <span class="footer-col-title">About</span>
+                        <ul class="footer-links">
+                            <li><a href="https://www.opensource.org/licenses/zlib-license.php" target="_blank" rel="noopener">License</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Prime Abstraction Layer. Released under zlib/libpng.</p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Link to our behavior logic script -->
     <script type="text/javascript" src="main.js"></script>
