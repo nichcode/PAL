@@ -20,9 +20,6 @@ Makefile
 **.user
 **.vcxproj
 
-# docs
-docs/html
-
 # website
 website/html
 
