@@ -1,7 +1,7 @@
 
 :root {
     --bg-color: #141619;
-    --card-bg: #1c1e22;
+    --modules-grid-bg: #1c1e22;
     --border-color: #2c3036;
     --text-color: #c7cbd1;
     --heading-color: #f0f2f5;
@@ -143,7 +143,7 @@ main {
 }
 
 .modules-grid {
-    background-color: var(--card-bg);
+    background-color: var(--modules-grid-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 0 0 25px 0;
@@ -238,7 +238,7 @@ main {
 
 body.light-mode {
     --bg-color: #f7f8f9;
-    --card-bg: #ffffff;
+    --modules-grid-bg: #ffffff;
     --border-color: #dce0e5;
     --text-color: #383f47;
     --heading-color: #161a1f;
@@ -290,7 +290,7 @@ body.light-mode .modules-list li:last-child {
 
 footer {
     border-top: 1px solid var(--border-color);
-    background-color: var(--card-bg);
+    background-color: var(--modules-grid-bg);
     padding: 60px 40px 30px 40px;
     margin-top: 80px;
     transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -393,7 +393,7 @@ footer {
 }
 
 body.light-mode footer {
-    background-color: var(--card-bg);
+    background-color: var(--modules-grid-bg);
 }
 
 @media (max-width: 960px) {
@@ -415,3 +415,5 @@ body.light-mode footer {
         align-items: flex-start;
     }
 }
+
+/* Doxygen overrides */
