@@ -13,8 +13,11 @@ def main():
         print(f"Failed to find html/index.html: {base_path}")
         sys.exit(1)
 
-    dest_path = root_dir / "website/html"
-    shutil.copytree(docs_path, dest_path, dirs_exist_ok=True)
+    dest_path = root_dir / "website/docs"
+    if dest_path.exists():
+        shutil.rmtree(dest_path)
+
+    shutil.copytree(docs_path, dest_path)
     print(f"Documentation copied successfully")
 
 if __name__ == "__main__":
