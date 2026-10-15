@@ -4,9 +4,13 @@ import sys
 import os
 import subprocess
 from pathlib import Path
+
 import shutil
 import re
 from jinja2 import Environment, FileSystemLoader
+from collections import defaultdict
+
+from xml.etree import ElementTree as ET
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ASSETS_DIR = ROOT_DIR / "assets"
@@ -14,6 +18,7 @@ WEBSITE_DIR = ROOT_DIR / "website"
 HTML_DIR = ROOT_DIR / "website/html"
 BUILD_DIR = ROOT_DIR / "build"
 DOCS_DIR = ROOT_DIR / "docs"
+XML_DIR = BUILD_DIR / "xml"
 
 env = Environment(loader=FileSystemLoader(ASSETS_DIR))
 page_template = env.get_template("page.html")
@@ -101,21 +106,32 @@ def generate_doxygen():
         print(f"See {log_file} for the errors and fix them")
         sys.exit(1)
 
+def group_by_kind():
+    xml_base = ET.parse(XML_DIR / "index.xml").getroot()
+    kinds = defaultdict(list)
+    for cp in xml_base.iterfind("compound"):
+        kinds[cp.get("kind")].append((cp.get("refid"), cp.findtext("name")))
+
+    print("kinds found: ", list(kinds.keys()))
+    for refid, name in kinds["group"]:
+        print("group:", name, "->", refid)
+
 def main():
     os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     WEBSITE_DIR.mkdir(parents=True, exist_ok=True)
 
-    generate_doxygen()
+    # generate_doxygen()
 
-    # generate html pages from source
-    for file in ASSETS_DIR.glob("*.html"):
-        if file.name == "page.html":
-            continue
+    # # generate html pages from source
+    # for file in ASSETS_DIR.glob("*.html"):
+    #     if file.name == "page.html":
+    #         continue
 
-        write_html_page(file.name, read_html_page(file))
+    #     write_html_page(file.name, read_html_page(file))
 
-    copy_assets()
+    #copy_assets()
+    group_by_kind()
 
     print(f"")
     print(f"Documentation generated successfully")
