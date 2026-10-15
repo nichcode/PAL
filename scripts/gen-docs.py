@@ -139,6 +139,28 @@ def get_group_tree(kinds):
 
     return modules, children
 
+def read_inner(group_def, tag):
+    items = []
+    for element in group_def.findall(tag):
+        refid = element.get("refid")
+        name = element.text
+        items.append((refid, name))
+
+    return items
+
+def read_module(refid):
+    xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
+    group_def = xml_file.find("compounddef")
+
+    module = {}
+    module["refid"] = refid
+    module["name"] = group_def.findtext("compoundname")
+    module["title"] = group_def.findtext("title")
+    module["structs"] = read_inner(group_def, "innerclass")
+    module["subgroups"] = read_inner(group_def, "innergroup")
+
+    return module
+
 def main():
     os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
@@ -146,21 +168,23 @@ def main():
 
     # generate_doxygen()
 
-    # # generate html pages from source
+    kinds = group_by_kind()
+    modules, children = get_group_tree(kinds)
+
+    for refid in modules:
+        module = read_module(refid)
+        print("module: ", module["title"], "(" + module["name"] + ")")
+        print(" structs: ", module["structs"])
+        print(" subgroups: ", module["subgroups"])
+
+    # generate html pages from source
     # for file in ASSETS_DIR.glob("*.html"):
     #     if file.name == "page.html":
     #         continue
 
     #     write_html_page(file.name, read_html_page(file))
-
-    #copy_assets()
-    kinds = group_by_kind()
-    modules, children = get_group_tree(kinds)
-
-    for refid in modules:
-        print("module: ", refid)
-        for child in children[refid]:
-            print("  subgroup: ", child)
+    
+    # copy_assets()
 
     print(f"")
     print(f"Documentation generated successfully")
