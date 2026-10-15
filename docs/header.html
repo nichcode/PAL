@@ -26,8 +26,30 @@ $mathjax
 $darkmode
 <link href="$relpath^$stylesheet" rel="stylesheet" type="text/css" />
 $extrastylesheet
+<script src="$relpath^darkmode.js"></script>
 </head>
 <body>
+  <!-- Main navigation bar -->
+    <header>
+      <div class="logo">
+        <a href="../index.html">
+          <img src="$relpath^logo.svg" alt="" class="logo-img">
+        </a>
+          <h1>Prime Abstraction Layer</h1>
+        </div>
+        <nav class="nav-links">
+          <a href="../download.html">Download</a>
+          <a href="html/index.html">Documentation</a>
+          <a href="https://github.com/nichcode/PAL">GitHub</a>
+            
+          <!-- This button holds our empty container for raw SVG data -->
+          <button id="theme-toggle" aria-label="Toggle theme">
+            <span id="theme-icon-container"></span>
+          </button>
+        </nav>
+    </header>
+
+
 <!--BEGIN FULL_SIDEBAR-->
 <div id="side-nav" class="ui-resizable side-nav-resizable"><!-- do not remove this div, it is closed by doxygen! -->
 <!--END FULL_SIDEBAR-->
