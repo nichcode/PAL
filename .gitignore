@@ -21,7 +21,7 @@ Makefile
 **.vcxproj
 
 # website
-website/html
+/website/
 
 # ppm files
 **.ppm

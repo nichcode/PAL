@@ -10,7 +10,8 @@ from jinja2 import Environment, FileSystemLoader
 
 ROOT_DIR = root_dir = Path(__file__).resolve().parents[1]
 ASSETS_DIR = root_dir / "assets"
-OUTPUT_DIR = root_dir / "website/html"
+WEBSITE_DIR = root_dir / "website"
+HTML_DIR = root_dir / "website/html"
 
 env = Environment(loader=FileSystemLoader(ASSETS_DIR))
 page_template = env.get_template("page.html")
@@ -19,7 +20,7 @@ def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
 
     # check for the tile of the page
-    # this must be on the first line and in the format <!-- title: site tile -->
+    # this must be on the first line and in the format <!-- title: site title -->
     match_obj = re.match(r"\s*<!--\stitle:\s*(.*?)\s*-->", text)
     if match_obj:
         title = match_obj.group(1)
@@ -32,36 +33,42 @@ def read_html_page(filepath):
     return {"title": title, "content": content}
 
 def write_html_page(filename, page, sidebar=""):
+    base = HTML_DIR.relative_to(WEBSITE_DIR)
+    root = base.as_posix() + "/"
     html = page_template.render(
         title=page["title"],
         content=page["content"],
         sidebar=sidebar,
-        root=""
+        root=root
     )
-    file = OUTPUT_DIR / filename
+    file = WEBSITE_DIR / filename
     file.write_text(html, encoding="utf-8")
 
 def copy_assets():
-    if OUTPUT_DIR.exists():
-        shutil.rmtree(OUTPUT_DIR)
+    if HTML_DIR.exists():
+        shutil.rmtree(HTML_DIR)
 
-    OUTPUT_DIR.mkdir(parents=True)
+    HTML_DIR.mkdir(parents=True)
 
     # copy everything except page.html template file
     # this does not copy subfolders
     for item in ASSETS_DIR.iterdir():
-        if item.name == "page.html":
+        if item.suffix == ".html":
             continue
 
-        shutil.copy(item, OUTPUT_DIR / item.name)
+        shutil.copy(item, HTML_DIR / item.name)
 
     print(f"Assets copied successfully")
 
 def main():
-    page = read_html_page(ROOT_DIR / "website/tmp.html")
-    write_html_page("tmp.html", page)
+    # generate html pages from source
+    for file in ASSETS_DIR.glob("*.html"):
+        if file.name == "page.html":
+            continue
 
-    # copy_assets()
+        write_html_page(file.name, read_html_page(file))
+
+    copy_assets()
 
     # root_dir = Path(__file__).resolve().parents[1]
     # build_path = root_dir / "build"
