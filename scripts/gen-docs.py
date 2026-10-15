@@ -4,53 +4,77 @@ import sys
 import os
 import subprocess
 from pathlib import Path
+import shutil
+
+def copy_assets(root_dir, html_path):
+    assets_dir = root_dir / "assets"
+    
+    if html_path.exists():
+        shutil.rmtree(html_path)
+
+    html_path.mkdir(parents=True)
+
+    # copy everything except page.html template file
+    # this does not copy subfolders
+    for item in assets_dir.iterdir():
+        if item.name == "page.html":
+            continue
+
+        shutil.copy(item, html_path / item.name)
+
+    print(f"Assets copied successfully")
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]
-    build_path = root_dir / "build"
-    build_path.mkdir(parents=True, exist_ok=True)
+    html_path = root_dir / "website/html"
 
-    os.chdir(root_dir / "docs")
-    subprocess.run(["doxygen", "doxyfile"])
+    copy_assets(root_dir, html_path)
 
-    log_file = build_path / "doxygen.log"
-    with open(log_file, "r") as file:
-        if not file:
-            print(f"")
-            print(f"Failed to load doxygen.log: {log_file}")
-            sys.exit(1)
+    # root_dir = Path(__file__).resolve().parents[1]
+    # build_path = root_dir / "build"
+    # build_path.mkdir(parents=True, exist_ok=True)
 
-        # remove all macro warnings
-        file_contents = file.readlines()
-        warnings = []
-        tags = []
-        tags.append("(macro definition)")
-        tags.append("(variable) of struct PalGraphicsBackendVtable1")
-        tags.append("(variable) of struct PalGraphicsBackendVtable2")
+    # os.chdir(root_dir / "docs")
+    # subprocess.run(["doxygen", "doxyfile"])
 
-        for line in file_contents:
-            found = False
+    # log_file = build_path / "doxygen.log"
+    # with open(log_file, "r") as file:
+    #     if not file:
+    #         print(f"")
+    #         print(f"Failed to load doxygen.log: {log_file}")
+    #         sys.exit(1)
 
-            for tag in tags:
-                if tag in line:
-                    found = True
-                    break
+    #     # remove all macro warnings
+    #     file_contents = file.readlines()
+    #     warnings = []
+    #     tags = []
+    #     tags.append("(macro definition)")
+    #     tags.append("(variable) of struct PalGraphicsBackendVtable1")
+    #     tags.append("(variable) of struct PalGraphicsBackendVtable2")
 
-            if not found:
-                warnings.append(line)
+    #     for line in file_contents:
+    #         found = False
+
+    #         for tag in tags:
+    #             if tag in line:
+    #                 found = True
+    #                 break
+
+    #         if not found:
+    #             warnings.append(line)
     
-    # write the clean warnings to the file
-    with open(log_file, "w") as file:
-        file.writelines(warnings);
+    # # write the clean warnings to the file
+    # with open(log_file, "w") as file:
+    #     file.writelines(warnings);
     
-    if warnings:
-        print(f"")
-        print(f"There are errors with the documentation generation")
-        print(f"See {log_file} for the errors and fix them")
-        sys.exit(1)
+    # if warnings:
+    #     print(f"")
+    #     print(f"There are errors with the documentation generation")
+    #     print(f"See {log_file} for the errors and fix them")
+    #     sys.exit(1)
 
-    print(f"")
-    print(f"Documentation generated successfully")
+    # print(f"")
+    # print(f"Documentation generated successfully")
     return 0
 
 if __name__ == "__main__":
