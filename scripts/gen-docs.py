@@ -111,10 +111,33 @@ def group_by_kind():
     kinds = defaultdict(list)
     for cp in xml_base.iterfind("compound"):
         kinds[cp.get("kind")].append((cp.get("refid"), cp.findtext("name")))
+    
+    return kinds
 
-    print("kinds found: ", list(kinds.keys()))
-    for refid, name in kinds["group"]:
-        print("group:", name, "->", refid)
+def get_group_tree(kinds):
+    children = {}
+    groups_children = []
+
+    # open the group files and cache child groups
+    for refid, _ in kinds["group"]:
+        xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
+        group_def = xml_file.find("compounddef")
+
+        subgroups = []
+        for inner in group_def.findall("innergroup"):
+            subgroup_refid = inner.get("refid")
+            subgroups.append(subgroup_refid)
+            groups_children.append(subgroup_refid)
+
+        children[refid] = subgroups
+
+        # check if a group is a module
+        modules = []
+        for refid, _ in kinds["group"]:
+            if refid not in groups_children:
+                modules.append(refid)
+
+    return modules, children
 
 def main():
     os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
@@ -131,7 +154,13 @@ def main():
     #     write_html_page(file.name, read_html_page(file))
 
     #copy_assets()
-    group_by_kind()
+    kinds = group_by_kind()
+    modules, children = get_group_tree(kinds)
+
+    for refid in modules:
+        print("module: ", refid)
+        for child in children[refid]:
+            print("  subgroup: ", child)
 
     print(f"")
     print(f"Documentation generated successfully")
