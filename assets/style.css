@@ -1,4 +1,20 @@
 
+@font-face {
+    font-family: 'Liberation Mono';
+    src: url('LiberationMono-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap; /* prevents text from disappearing while loading */
+}
+
+@font-face {
+    font-family: 'Liberation Mono';
+    src: url('LiberationMono-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap; /* prevents text from disappearing while loading */
+}
+
 :root {
     --bg-color: #141619;
     --modules-grid-bg: #1c1e22;
@@ -14,7 +30,7 @@
 }
 
 body {
-    font-family: "Liberation Mono";
+    font-family: "Liberation Mono", monospace;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
