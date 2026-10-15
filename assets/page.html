@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title class="page-title">{{ title }} | PAL</title>
+
+    <link rel="icon" href="{{ root }}favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="{{ root }}favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="{{ root }}apple-touch-icon.png">
+
+    <link rel="stylesheet" href="{{ root }}style.css">
+</head>
+
+<body>
+    <!-- Main navigation bar -->
+    <header class="page-nav-bar">
+        <div class="page-nav-logo">
+            <a href="{{ root }}index.html">
+                <img src="{{ root }}logo.svg" alt="" class="pal-logo-img">
+            </a>
+            <h1 class="page-nav-bar-title">Prime Abstraction Layer</h1>
+        </div>
+        <nav class="nav-bar-links">
+            <a href="{{ root }}download.html">Download</a>
+            <a href="{{ root }}index.html">Documentation</a>
+            <a href="https://github.com/nichcode/PAL">GitHub</a>
+            
+            <!-- this button holds our empty container for raw SVG data -->
+            <button id="nav-bar-theme-toggle" aria-label="Toggle theme">
+                <span id="nav-bar-theme-icon-container"></span>
+            </button>
+        </nav>
+    </header>
+    <div class="layout">
+        <aside class="page-sidebar">{{ sidebar }}</aside>
+        <main class="page-contents">{{ content }}</main>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <a href="index.html">
+                            <img src="{{ root }}logo.svg" alt="" class="pal-logo-img">
+                        </a>
+                        <span class="footer-title">Prime Abstraction Layer</span>
+                    </div>
+                    <p class="footer-desc">
+                        A thin, low-level, explicit, cross-platform abstraction layer in C over graphics and platform APIs.
+                    </p>
+                </div>
+                <div class="footer-links-group">
+                    <div class="footer-col">
+                        <span class="footer-col-title">Development</span>
+                        <ul class="footer-links">
+                            <li><a href="{{ root }}index.html">Documentation</a></li>
+                            <li><a href="https://github.com/nichcode" target="_blank" rel="noopener">nichcode</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <span class="footer-col-title">About</span>
+                        <ul class="footer-links">
+                            <li><a href="https://www.opensource.org/licenses/zlib-license.php" target="_blank" rel="noopener">License</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Prime Abstraction Layer. Released under zlib/libpng.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Link to our behavior logic script -->
+    <script type="text/javascript" src="{{ root }}script.js"></script>
+</body>
+
+</html>

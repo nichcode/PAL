@@ -1,6 +1,6 @@
 
-const toggleBtn = document.getElementById('theme-toggle');
-const iconContainer = document.getElementById('theme-icon-container');
+const toggleBtn = document.getElementById('nav-bar-theme-toggle');
+const iconContainer = document.getElementById('nav-bar-theme-icon-container');
 const bodyElement = document.body;
 
 const moonSvg = '<svg xmlns="http://w3.org" width="16" height="16" viewBox="0 0 24 24" fill="none" \
@@ -20,24 +20,20 @@ const sunSvg = '<svg xmlns="http://w3.org" width="16" height="16" viewBox="0 0 2
 const savedTheme = localStorage.getItem('theme');
 const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-// Determine our initial theme string loop setting
+// determine our initial theme string loop setting
 const initialTheme = savedTheme || (systemPrefersDark ? 'dark-mode' : 'light-mode');
 function updateIcon(currentClass) {
     if (iconContainer) {
-        // If the body has the light-mode class, show the moon (to switch to dark)
         iconContainer.innerHTML = currentClass === 'light-mode' ? moonSvg : sunSvg;
     }
 }
 
-// Apply the layout state variables safely on boot setup
 bodyElement.classList.add(initialTheme);
 updateIcon(initialTheme);
 
 if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
-        // Check which class is currently active on the body node string
         if (bodyElement.classList.contains('light-mode')) {
-            // Swap classes cleanly
             bodyElement.classList.remove('light-mode');
             bodyElement.classList.add('dark-mode');
             
