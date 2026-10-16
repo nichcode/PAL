@@ -23,6 +23,7 @@ XML_DIR = BUILD_DIR / "xml"
 
 env = Environment(loader=FileSystemLoader(ASSETS_DIR))
 page_template = env.get_template("page.html")
+SIDEBAR = (ASSETS_DIR / "sidebar.html").read_text(encoding="utf-8")
 
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
@@ -46,18 +47,17 @@ def write_html_page(filename, page, sidebar=""):
         root = base.as_posix() + "/"
         file = OUTPUT_DIR / filename
     else:
-        base = ""
         root = ""
         file = filename
 
-    str = page_template.render(
+    html_page = page_template.render(
         title=page["title"],
         content=page["content"],
         sidebar=sidebar,
         root=root
     )
 
-    file.write_text(str, encoding="utf-8")
+    file.write_text(html_page, encoding="utf-8")
 
 def copy_assets():
     if HTML_DIR.exists():
@@ -113,6 +113,20 @@ def generate_doxygen():
         print(f"There are errors with the documentation generation")
         print(f"See {log_file} for the errors and fix them")
         sys.exit(1)
+
+def build_module_list(modules):
+    content = []
+
+    for refid in modules:
+        module = get_module(refid)
+        title = html.escape(module["title"])
+        link = module["refid"] + ".html"
+        content.append('<details class="sidebar-nav-module">')
+        content.append(f"<summary>{title}</summary>")
+        content.append(f'<a class="sidebar-nav-sub" href="{link}">Overview</a>')
+        content.append("<details>")
+
+    return "\n".join(content)
 
 def find_modules():
     children = []
@@ -170,41 +184,42 @@ def read_module(module):
 
     if module["structs"]:
         content.append("<h2>Structs</h2><ul>")
-        for refid, name in module["structs"]:
+        for _, name in module["structs"]:
             content.append(f"<li>{html.escape(name)}</li>")
         content.append("</ul>")
 
     if module["subgroups"]:
         content.append("<h2>Constant Groups</h2><ul>")
-        for refid, name in module["subgroups"]:
+        for _, name in module["subgroups"]:
             content.append(f"<li>{html.escape(name)}</li>")
         content.append("</ul>")
 
-    str = "".join(content)
-    return {"title": module["title"], "content": str}
+    content_str = "".join(content)
+    return {"title": module["title"], "content": content_str}
 
 def main():
-    BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    # change working directory so doxygen works as intended
+    os.chdir(DOCS_DIR)
     HTML_DIR.mkdir(parents=True, exist_ok=True)
-
-    os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
     generate_doxygen()
-    os.chdir(ROOT_DIR)
 
     modules = find_modules()
+    sidebar = SIDEBAR.replace("<!-- modules -->", build_module_list(modules))
+    copy_assets()
+
     for refid in modules:
         module = get_module(refid)
-        write_html_page(HTML_DIR / f"{module['name']}.html", read_module(module), "a")
+        write_html_page(HTML_DIR / f"{module['refid']}.html", read_module(module), sidebar)
 
     # generate html pages from source
     for file in ASSETS_DIR.glob("*.html"):
         if file.name == "page.html":
             continue
 
+        if file.name == "sidebar.html":
+            continue
+
         write_html_page(file.name, read_html_page(file))
-    
-    copy_assets()
 
     print(f"")
     print(f"Documentation generated successfully")
