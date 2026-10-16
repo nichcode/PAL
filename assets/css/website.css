@@ -127,27 +127,6 @@ body.light-mode footer {
     }
 }
 
-/* website styles */
-
-.nav-bar-links {
-    display: flex;
-    align-items: center;
-}
-
-.nav-bar-links a {
-    color: var(--text-color);
-    text-decoration: none;
-    font-size: 0.9rem;
-    margin-left: 25px;
-    opacity: 0.75;
-    transition: opacity 0.2s ease, color 0.2s ease;
-}
-
-.nav-bar-links a:hover {
-    color: var(--accent-color);
-    opacity: 1;
-}
-
 .page-contents {
     max-width: 1240px;
     margin: 160px auto 80px auto;

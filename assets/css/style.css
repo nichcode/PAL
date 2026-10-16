@@ -23,6 +23,7 @@
     --heading-color: #f0f2f5;
     --accent-color: #427a9e;
     --accent-hover: #356787;
+    --nav-bar-height: 65px;
 }
 
 * {
@@ -40,16 +41,12 @@ body {
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.page-nav-bar-title {
-    color: var(--heading-color);
-}
-
 .page-nav-bar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 65px;
+    height: var(--nav-bar-height);
     background-color: rgba(24, 26, 30, 0.88);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -60,6 +57,29 @@ body {
     padding: 0 40px;
     z-index: 1000;
     transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-bar-links {
+    display: flex;
+    align-items: center;
+}
+
+.nav-bar-links a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-left: 25px;
+    opacity: 0.75;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.nav-bar-links a:hover {
+    color: var(--accent-color);
+    opacity: 1;
+}
+
+.page-nav-bar-title {
+    color: var(--heading-color);
 }
 
 .page-nav-logo {
