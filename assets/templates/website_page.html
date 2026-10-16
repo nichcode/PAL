@@ -6,11 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title class="page-title">{{ title }} | PAL</title>
 
-    <link rel="icon" href="{{ root }}favicon.svg" type="image/svg+xml">
-    <link rel="icon" href="{{ root }}favicon.ico" sizes="any">
-    <link rel="apple-touch-icon" href="{{ root }}apple-touch-icon.png">
+    <link rel="icon" href="html/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="html/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="html/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="{{ root }}style.css">
+    <link rel="stylesheet" href="html/style.css">
+    <link rel="stylesheet" href="html/website.css">
 </head>
 
 <body>
@@ -18,13 +19,13 @@
     <header class="page-nav-bar">
         <div class="page-nav-logo">
             <a href="./index.html">
-                <img src="{{ root }}logo.svg" alt="" class="pal-logo-img">
+                <img src="html/logo.svg" alt="" class="pal-logo-img">
             </a>
             <h1 class="page-nav-bar-title">Prime Abstraction Layer</h1>
         </div>
         <nav class="nav-bar-links">
             <a href="./download.html">Download</a>
-            <a href="{{ root }}index.html">Documentation</a>
+            <a href="html/index.html">Documentation</a>
             <a href="https://github.com/nichcode/PAL">GitHub</a>
             
             <!-- this button holds our empty container for raw SVG data -->
@@ -33,8 +34,8 @@
             </button>
         </nav>
     </header>
+    
     <div class="layout">
-        <aside class="page-sidebar">{{ sidebar }}</aside>
         <main class="page-contents">{{ content }}</main>
     </div>
 
@@ -44,7 +45,7 @@
                 <div class="footer-brand">
                     <div class="footer-logo">
                         <a href="./index.html">
-                            <img src="{{ root }}logo.svg" alt="" class="pal-logo-img">
+                            <img src="html/logo.svg" alt="" class="pal-logo-img">
                         </a>
                         <span class="footer-title">Prime Abstraction Layer</span>
                     </div>
@@ -56,7 +57,7 @@
                     <div class="footer-col">
                         <span class="footer-col-title">Development</span>
                         <ul class="footer-links">
-                            <li><a href="{{ root }}index.html">Documentation</a></li>
+                            <li><a href="html/index.html">Documentation</a></li>
                             <li><a href="https://github.com/nichcode" target="_blank" rel="noopener">nichcode</a></li>
                         </ul>
                     </div>
@@ -75,7 +76,7 @@
     </footer>
 
     <!-- Link to our behavior logic script -->
-    <script type="text/javascript" src="{{ root }}script.js"></script>
+    <script type="text/javascript" src="html/script.js"></script>
 </body>
 
 </html>

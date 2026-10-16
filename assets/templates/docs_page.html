@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title class="page-title">{{ title }} | PAL</title>
+
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs.css">
+</head>
+
+<body>
+    <!-- Main navigation bar -->
+    <header class="page-nav-bar">
+        <div class="page-nav-logo">
+            <a href="./index.html">
+                <img src="logo.svg" alt="" class="pal-logo-img">
+            </a>
+            <h1 class="page-nav-bar-title">Prime Abstraction Layer</h1>
+        </div>
+        <nav class="nav-bar-links">
+            <a href="./download.html">Download</a>
+            <a href="index.html">Documentation</a>
+            <a href="https://github.com/nichcode/PAL">GitHub</a>
+
+            <!-- this button holds our empty container for raw SVG data -->
+            <button id="nav-bar-theme-toggle" aria-label="Toggle theme">
+                <span id="nav-bar-theme-icon-container"></span>
+            </button>
+        </nav>
+    </header>
+
+    <nav class="sidebar">
+        <div class="sidebar-entry">
+            <a href="introuction.html">Introduction</a>
+        </div>
+
+        <!-- Guides -->
+        <div class="sidebar-group">
+            <div class="sidebar-heading">
+                <button type="button" aria-expanded="false">
+                    <span class="sidebar-arrow"></span>
+                </button>
+                <a href="guides.html">Guides</a>
+            </div>
+
+            <ul class="sidebar-tree" hidden>
+                <li>
+                    <a href="tmp.html">Getting Started</a>
+                </li>
+
+                <li>
+                    <a href="tmp.html">Tmp</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- API reference -->
+        <div class="sidebar-group">
+            <div class="sidebar-heading">
+                <button type="button" aria-expanded="false">
+                    <span class="sidebar-arrow"></span>
+                </button>
+                <a href="guides.html">API Reference</a>
+            </div>
+
+            <ul class="sidebar-tree" hidden>
+                <li>
+                    <a href="tmp.html">Core</a>
+                </li>
+
+                <li>
+                    <a href="tmp.html">Event</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="layout">
+        <main class="page-contents">{{ content }}</main>
+    </div>
+
+    <!-- Link to our behavior logic script -->
+    <script type="text/javascript" src="script.js"></script>
+</body>
+
+</html>

@@ -21,9 +21,9 @@ OUTPUT_DIR = BUILD_DIR / "website"
 HTML_DIR = OUTPUT_DIR / "html"
 XML_DIR = BUILD_DIR / "xml"
 
-env = Environment(loader=FileSystemLoader(ASSETS_DIR))
-page_template = env.get_template("page.html")
-SIDEBAR = (ASSETS_DIR / "sidebar.html").read_text(encoding="utf-8")
+env = Environment(loader=FileSystemLoader(ASSETS_DIR / "templates"))
+website_page_template = env.get_template("website_page.html")
+docs_page_template = env.get_template("docs_page.html")
 
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
@@ -41,20 +41,20 @@ def read_html_page(filepath):
 
     return {"title": title, "content": content}
 
-def write_html_page(filename, page, sidebar=""):
-    if sidebar == "":
-        base = HTML_DIR.relative_to(OUTPUT_DIR)
-        root = base.as_posix() + "/"
-        file = OUTPUT_DIR / filename
-    else:
-        root = ""
-        file = filename
+def write_website_page(filename, page):
+    file = OUTPUT_DIR / filename
+    html_page = website_page_template.render(
+        title=page["title"],
+        content=page["content"]
+    )
 
-    html_page = page_template.render(
+    file.write_text(html_page, encoding="utf-8")
+
+def write_docs_page(filename, page):
+    file = HTML_DIR / filename
+    html_page = docs_page_template.render(
         title=page["title"],
         content=page["content"],
-        sidebar=sidebar,
-        root=root
     )
 
     file.write_text(html_page, encoding="utf-8")
@@ -65,13 +65,16 @@ def copy_assets():
 
     HTML_DIR.mkdir(parents=True)
 
-    # copy everything except page.html template file
-    # this does not copy subfolders
+    # copy everything except templates directory
     for item in ASSETS_DIR.iterdir():
-        if item.suffix == ".html":
+        if item.name == "templates":
             continue
 
-        shutil.copy(item, HTML_DIR / item.name)
+        if item.name == "pages":
+            continue
+
+        for file in item.iterdir():
+            shutil.copy(file, HTML_DIR / file.name)
 
     print(f"Assets copied successfully")
 
@@ -114,20 +117,6 @@ def generate_doxygen():
         print(f"See {log_file} for the errors and fix them")
         sys.exit(1)
 
-def build_module_list(modules):
-    content = []
-
-    for refid in modules:
-        module = get_module(refid)
-        title = html.escape(module["title"])
-        link = module["refid"] + ".html"
-        content.append('<details class="sidebar-nav-module">')
-        content.append(f"<summary>{title}</summary>")
-        content.append(f'<a class="sidebar-nav-sub" href="{link}">Overview</a>')
-        content.append("<details>")
-
-    return "\n".join(content)
-
 def find_modules():
     children = []
 
@@ -155,6 +144,21 @@ def find_modules():
                 modules.append(refid)
 
     return modules
+
+# TODO: update function
+def build_module_list(modules):
+    content = []
+
+    for refid in modules:
+        module = get_module(refid)
+        title = html.escape(module["title"])
+        link = module["refid"] + ".html"
+        content.append('<details class="sidebar-nav-module">')
+        content.append(f"<summary>{title}</summary>")
+        content.append(f'<a class="sidebar-nav-sub" href="{link}">Overview</a>')
+        content.append("<details>")
+
+    return "\n".join(content)
 
 def read_inner(group_def, tag):
     items = []
@@ -198,28 +202,21 @@ def read_module(module):
     return {"title": module["title"], "content": content_str}
 
 def main():
-    # change working directory so doxygen works as intended
-    os.chdir(DOCS_DIR)
+    os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
     HTML_DIR.mkdir(parents=True, exist_ok=True)
     generate_doxygen()
 
     modules = find_modules()
-    sidebar = SIDEBAR.replace("<!-- modules -->", build_module_list(modules))
     copy_assets()
 
     for refid in modules:
         module = get_module(refid)
-        write_html_page(HTML_DIR / f"{module['refid']}.html", read_module(module), sidebar)
+        write_docs_page(HTML_DIR / f"{module['refid']}.html", read_module(module))
 
     # generate html pages from source
-    for file in ASSETS_DIR.glob("*.html"):
-        if file.name == "page.html":
-            continue
-
-        if file.name == "sidebar.html":
-            continue
-
-        write_html_page(file.name, read_html_page(file))
+    pages_dir = ASSETS_DIR / "pages"
+    for file in pages_dir.iterdir():
+        write_website_page(file.name, read_html_page(file))
 
     print(f"")
     print(f"Documentation generated successfully")
