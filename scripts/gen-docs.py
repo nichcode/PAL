@@ -15,10 +15,10 @@ import html
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ASSETS_DIR = ROOT_DIR / "assets"
-WEBSITE_DIR = ROOT_DIR / "website"
-HTML_DIR = ROOT_DIR / "website/html"
-BUILD_DIR = ROOT_DIR / "build"
 DOCS_DIR = ROOT_DIR / "docs"
+BUILD_DIR = ROOT_DIR / "build"
+OUTPUT_DIR = BUILD_DIR / "website"
+HTML_DIR = OUTPUT_DIR / "html"
 XML_DIR = BUILD_DIR / "xml"
 
 env = Environment(loader=FileSystemLoader(ASSETS_DIR))
@@ -42,9 +42,9 @@ def read_html_page(filepath):
 
 def write_html_page(filename, page, sidebar=""):
     if sidebar == "":
-        base = HTML_DIR.relative_to(WEBSITE_DIR)
+        base = HTML_DIR.relative_to(OUTPUT_DIR)
         root = base.as_posix() + "/"
-        file = WEBSITE_DIR / filename
+        file = OUTPUT_DIR / filename
     else:
         base = ""
         root = ""
@@ -166,7 +166,7 @@ def get_module(refid):
 
 def read_module(module):
     content = []
-    content.append(f"<h1>{html.escape(module["title"])}</h1>")
+    content.append(f"<h1>{html.escape(module['title'])}</h1>")
 
     if module["structs"]:
         content.append("<h2>Structs</h2><ul>")
@@ -184,25 +184,27 @@ def read_module(module):
     return {"title": module["title"], "content": str}
 
 def main():
-    os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    WEBSITE_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    HTML_DIR.mkdir(parents=True, exist_ok=True)
 
-    # generate_doxygen()
+    os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
+    generate_doxygen()
+    os.chdir(ROOT_DIR)
 
     modules = find_modules()
     for refid in modules:
         module = get_module(refid)
-        write_html_page(HTML_DIR / f"{module["name"]}.html", read_module(module), "a")
+        write_html_page(HTML_DIR / f"{module['name']}.html", read_module(module), "a")
 
     # generate html pages from source
-    # for file in ASSETS_DIR.glob("*.html"):
-    #     if file.name == "page.html":
-    #         continue
+    for file in ASSETS_DIR.glob("*.html"):
+        if file.name == "page.html":
+            continue
 
-    #     write_html_page(file.name, read_html_page(file))
+        write_html_page(file.name, read_html_page(file))
     
-    # copy_assets()
+    copy_assets()
 
     print(f"")
     print(f"Documentation generated successfully")
