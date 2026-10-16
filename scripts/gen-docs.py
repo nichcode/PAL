@@ -11,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader
 from collections import defaultdict
 
 from xml.etree import ElementTree as ET
+import html
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ASSETS_DIR = ROOT_DIR / "assets"
@@ -40,16 +41,23 @@ def read_html_page(filepath):
     return {"title": title, "content": content}
 
 def write_html_page(filename, page, sidebar=""):
-    base = HTML_DIR.relative_to(WEBSITE_DIR)
-    root = base.as_posix() + "/"
-    html = page_template.render(
+    if sidebar == "":
+        base = HTML_DIR.relative_to(WEBSITE_DIR)
+        root = base.as_posix() + "/"
+        file = WEBSITE_DIR / filename
+    else:
+        base = ""
+        root = ""
+        file = filename
+
+    str = page_template.render(
         title=page["title"],
         content=page["content"],
         sidebar=sidebar,
         root=root
     )
-    file = WEBSITE_DIR / filename
-    file.write_text(html, encoding="utf-8")
+
+    file.write_text(str, encoding="utf-8")
 
 def copy_assets():
     if HTML_DIR.exists():
@@ -106,17 +114,14 @@ def generate_doxygen():
         print(f"See {log_file} for the errors and fix them")
         sys.exit(1)
 
-def group_by_kind():
-    xml_base = ET.parse(XML_DIR / "index.xml").getroot()
-    kinds = defaultdict(list)
-    for cp in xml_base.iterfind("compound"):
-        kinds[cp.get("kind")].append((cp.get("refid"), cp.findtext("name")))
-    
-    return kinds
+def find_modules():
+    children = []
 
-def get_group_tree(kinds):
-    children = {}
-    groups_children = []
+    # get xml.index and group by kind
+    root = ET.parse(XML_DIR / "index.xml").getroot()
+    kinds = defaultdict(list)
+    for cp in root.iterfind("compound"):
+        kinds[cp.get("kind")].append((cp.get("refid"), cp.findtext("name")))
 
     # open the group files and cache child groups
     for refid, _ in kinds["group"]:
@@ -127,17 +132,15 @@ def get_group_tree(kinds):
         for inner in group_def.findall("innergroup"):
             subgroup_refid = inner.get("refid")
             subgroups.append(subgroup_refid)
-            groups_children.append(subgroup_refid)
-
-        children[refid] = subgroups
+            children.append(subgroup_refid)
 
         # check if a group is a module
         modules = []
         for refid, _ in kinds["group"]:
-            if refid not in groups_children:
+            if refid not in children:
                 modules.append(refid)
 
-    return modules, children
+    return modules
 
 def read_inner(group_def, tag):
     items = []
@@ -148,7 +151,7 @@ def read_inner(group_def, tag):
 
     return items
 
-def read_module(refid):
+def get_module(refid):
     xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
     group_def = xml_file.find("compounddef")
 
@@ -161,6 +164,25 @@ def read_module(refid):
 
     return module
 
+def read_module(module):
+    content = []
+    content.append(f"<h1>{html.escape(module["title"])}</h1>")
+
+    if module["structs"]:
+        content.append("<h2>Structs</h2><ul>")
+        for refid, name in module["structs"]:
+            content.append(f"<li>{html.escape(name)}</li>")
+        content.append("</ul>")
+
+    if module["subgroups"]:
+        content.append("<h2>Constant Groups</h2><ul>")
+        for refid, name in module["subgroups"]:
+            content.append(f"<li>{html.escape(name)}</li>")
+        content.append("</ul>")
+
+    str = "".join(content)
+    return {"title": module["title"], "content": str}
+
 def main():
     os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
@@ -168,14 +190,10 @@ def main():
 
     # generate_doxygen()
 
-    kinds = group_by_kind()
-    modules, children = get_group_tree(kinds)
-
+    modules = find_modules()
     for refid in modules:
-        module = read_module(refid)
-        print("module: ", module["title"], "(" + module["name"] + ")")
-        print(" structs: ", module["structs"])
-        print(" subgroups: ", module["subgroups"])
+        module = get_module(refid)
+        write_html_page(HTML_DIR / f"{module["name"]}.html", read_module(module), "a")
 
     # generate html pages from source
     # for file in ASSETS_DIR.glob("*.html"):
