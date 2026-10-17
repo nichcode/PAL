@@ -25,6 +25,13 @@ env = Environment(loader=FileSystemLoader(ASSETS_DIR / "templates"))
 website_page_template = env.get_template("website_page.html")
 docs_page_template = env.get_template("docs_page.html")
 
+# static array of guides for all docs page
+GUIDES = []
+
+def build_guides_list():
+    # we will get the guides from the xml later
+    GUIDES.append('<li><a href="getting-started.html">Getting started</a></li>')
+
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
 
@@ -52,11 +59,13 @@ def write_website_page(filename, page):
 
 def write_docs_page(filename, page):
     file = HTML_DIR / filename
-    html_page = docs_page_template.render(
+    tmp = docs_page_template.render(
         title=page["title"],
         content=page["content"],
     )
 
+    guides_content = "\n".join(GUIDES)
+    html_page = tmp.replace("<!-- guides -->", guides_content)
     file.write_text(html_page, encoding="utf-8")
 
 def copy_assets():
@@ -145,21 +154,6 @@ def find_modules():
 
     return modules
 
-# TODO: update function
-def build_module_list(modules):
-    content = []
-
-    for refid in modules:
-        module = get_module(refid)
-        title = html.escape(module["title"])
-        link = module["refid"] + ".html"
-        content.append('<details class="sidebar-nav-module">')
-        content.append(f"<summary>{title}</summary>")
-        content.append(f'<a class="sidebar-nav-sub" href="{link}">Overview</a>')
-        content.append("<details>")
-
-    return "\n".join(content)
-
 def read_inner(group_def, tag):
     items = []
     for element in group_def.findall(tag):
@@ -206,6 +200,7 @@ def main():
     HTML_DIR.mkdir(parents=True, exist_ok=True)
     generate_doxygen()
 
+    build_guides_list()
     modules = find_modules()
     copy_assets()
 
