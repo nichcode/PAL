@@ -1,7 +1,7 @@
 
 @font-face {
     font-family: 'Liberation Mono';
-    src: url('../fonts/LiberationMono-Regular.ttf') format('truetype');
+    src: url('LiberationMono-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap; /* prevents text from disappearing while loading */
@@ -9,7 +9,7 @@
 
 @font-face {
     font-family: 'Liberation Mono';
-    src: url('../fonts/LiberationMono-Bold.ttf') format('truetype');
+    src: url('LiberationMono-Bold.ttf') format('truetype');
     font-weight: bold;
     font-style: normal;
     font-display: swap; /* prevents text from disappearing while loading */
