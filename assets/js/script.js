@@ -1,8 +1,4 @@
 
-const toggleBtn = document.getElementById('nav-bar-theme-toggle');
-const iconContainer = document.getElementById('nav-bar-theme-icon-container');
-const bodyElement = document.body;
-
 const moon = `
             <svg xmlns="www.http://w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
@@ -23,37 +19,36 @@ const sun = `
             <line x1="4.22" y1="19.22" x2="5.64" y2="17.78"></line>
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>`;
-     
+
+const button = document.getElementById('nav-bar-theme-toggle');
+const bodyElement = document.body;
 const savedTheme = localStorage.getItem('theme');
 const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 // determine our initial theme string loop setting
 const initialTheme = savedTheme || (systemPrefersDark ? 'dark-mode' : 'light-mode');
-function updateIcon(currentClass) {
-    if (iconContainer) {
-        iconContainer.innerHTML = currentClass === 'light-mode' ? moon : sun;
-    }
+function updateButton(currentClass) {
+    button.innerHTML = currentClass === 'light-mode' ? moon : sun;
 }
 
 bodyElement.classList.add(initialTheme);
-updateIcon(initialTheme);
+updateButton(initialTheme);
 
-if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-        if (bodyElement.classList.contains('light-mode')) {
-            bodyElement.classList.remove('light-mode');
-            bodyElement.classList.add('dark-mode');
-            
-            // Cache choices and refresh button layout states
-            localStorage.setItem('theme', 'dark-mode');
-            updateIcon('dark-mode');
-        } else {
-            // Swap back to light state parameters
-            bodyElement.classList.remove('dark-mode');
-            bodyElement.classList.add('light-mode');
-            
-            localStorage.setItem('theme', 'light-mode');
-            updateIcon('light-mode');
-        }
-    });
-}
+button.addEventListener('click', () => {
+    if (bodyElement.classList.contains('light-mode')) {
+        bodyElement.classList.remove('light-mode');
+        bodyElement.classList.add('dark-mode');
+        
+        // Cache choices and refresh button layout states
+        localStorage.setItem('theme', 'dark-mode');
+        updateButton('dark-mode');
+        
+    } else {
+        // Swap back to light state parameters
+        bodyElement.classList.remove('dark-mode');
+        bodyElement.classList.add('light-mode');
+        
+        localStorage.setItem('theme', 'light-mode');
+        updateButton('light-mode');
+    }
+});
