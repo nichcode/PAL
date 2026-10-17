@@ -226,7 +226,11 @@ body.light-mode footer {
 }
 
 .primary-button:hover {
-    background: var(--accent-hover);
+    background: #356787;
+}
+
+body.light-mode .primary-button:hover {
+    background: #1f4966
 }
 
 .secondary-button {

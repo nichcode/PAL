@@ -3,6 +3,8 @@
     --sidebar-width: 300px;
 }
 
+/* layout */
+
 .sidebar {
     position: fixed;
     top: var(--nav-bar-height);
@@ -23,79 +25,107 @@
     padding-top: 60px;
 }
 
-.sidebar-entry, .sidebar-group, .sidebar-group-items {
-    display: flex;
-    align-items: center;
-    padding-bottom: 10px;
+/* rows */
+
+.sidebar-entry,
+.sidebar-group {
+    display: block;
 }
 
-.sidebar-entry a, .sidebar-group a, .sidebar-group-items a {
+.sidebar > .sidebar-entry,
+.sidebar > .sidebar-group {
+    margin-bottom: 6px;
+}
+
+.sidebar-entry a,
+.sidebar-heading a,
+.sidebar-tree li > a {
+    display: block;
+    padding: 3px 0;
     color: var(--text-color);
     text-decoration: none;
     font-size: 0.9rem;
+    line-height: 24px;
     opacity: 0.75;
     transition: opacity 0.2s ease, color 0.2s ease;
 }
 
-.sidebar-entry a:hover, .sidebar-group a:hover, .sidebar-group-items a:hover {
+.sidebar-entry a:hover,
+.sidebar-heading a:hover,
+.sidebar-tree li > a:hover {
     color: var(--accent-color);
     opacity: 1;
 }
+
+.sidebar a[aria-current="page"] {
+    color: var(--accent-color);
+    opacity: 1;
+}
+
+/* plain links line up with the text of rows that have an arrow */
+.sidebar-entry a,
+.sidebar-tree li > a {
+    padding-left: 26px; /* (20px arrow + 6px gap) */
+}
+
+/* heading with arrow */
 
 .sidebar-heading {
     display: flex;
     align-items: center;
     gap: 6px;
-    min-height: 24px;
 }
 
 .sidebar-heading a {
-    display: inline-block;
-    line-height: 24px;
+    flex: 1;
 }
 
-.sidebar-heading button {
+.sidebar-arrow {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 20px;
     width: 20px;
     height: 24px;
     padding: 0;
     border: none;
     background: transparent;
-    color: inherit;
+    color: var(--text-color);
     cursor: pointer;
     opacity: 0.65;
-    flex: 0 0 20px;
 }
 
-.sidebar-arrow {
-    display: block;
-    width: 12px;
-    height: 12px;
-}
-
-.sidebar-heading button:hover {
+.sidebar-arrow:hover {
     opacity: 1;
     color: var(--accent-color);
 }
 
-.sidebar-heading button:focus-visible {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 2px;
+.sidebar-arrow svg {
+    transition: transform 0.15s ease;
 }
 
+.sidebar-arrow[aria-expanded="true"] svg {
+    transform: rotate(90deg);
+}
+
+/* sidebar tree */
+
 .sidebar-tree {
-    margin: 0;
-    padding: 0;
     list-style: none;
+    margin: 2px 0 4px 9px; /* guide line sits under the arrow's center */
+    padding: 0 0 0 11px;
+    border-left: 1px solid var(--border-color);
+}
+
+.sidebar-tree[hidden] {
+    display: none;
 }
 
 .sidebar-tree li {
-    margin-left: -120px;
-    padding: 20px 0 0 0;
+    margin: 0;
+    padding: 0;
 }
 
-.sidebar-tree a {
-    display: block;
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-arrow svg { transition: none; }
 }

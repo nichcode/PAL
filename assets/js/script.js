@@ -1,12 +1,12 @@
-
+(() => {
 const moon = `
-            <svg xmlns="www.http://w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" 
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
             class="feather-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>`;
 
 const sun = `
-            <svg xmlns="www.http://w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" 
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" 
             class="feather-icon">
             <circle cx="12" cy="12" r="5"></circle>
@@ -39,12 +39,12 @@ button.addEventListener('click', () => {
         bodyElement.classList.remove('light-mode');
         bodyElement.classList.add('dark-mode');
         
-        // Cache choices and refresh button layout states
+        // cache choices and refresh button layout states
         localStorage.setItem('theme', 'dark-mode');
         updateButton('dark-mode');
         
     } else {
-        // Swap back to light state parameters
+        // swap back to light state parameters
         bodyElement.classList.remove('dark-mode');
         bodyElement.classList.add('light-mode');
         
@@ -52,3 +52,4 @@ button.addEventListener('click', () => {
         updateButton('light-mode');
     }
 });
+})();

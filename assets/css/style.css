@@ -22,8 +22,11 @@
     --text-color: #c7cbd1;
     --heading-color: #f0f2f5;
     --accent-color: #427a9e;
-    --accent-hover: #356787;
     --nav-bar-height: 65px;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 :focus-visible {
@@ -138,8 +141,7 @@ body.light-mode {
     --border-color: #dce0e5;
     --text-color: #383f47;
     --heading-color: #161a1f;
-    --accent-color: #2d6185;
-    --accent-hover: #1f4966;
+    --accent-color: #1073b0;
 }
 
 body.light-mode .page-nav-bar {

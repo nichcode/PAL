@@ -15,7 +15,7 @@
 </head>
 
 <body>
-    <!-- Main navigation bar -->
+    <!-- main navigation bar -->
     <header class="page-nav-bar">
         <div class="page-nav-logo">
             <a href="./index.html">
@@ -29,40 +29,62 @@
             <a href="https://github.com/nichcode/PAL">GitHub</a>
 
             <!-- this button holds our empty container for raw SVG data -->
-            <button id="nav-bar-theme-toggle" aria-label="Toggle theme">
-                <span id="nav-bar-theme-icon-container"></span>
-            </button>
+            <button id="nav-bar-theme-toggle" aria-label="Toggle theme"></button>
         </nav>
     </header>
 
-    <nav class="sidebar">
+    <nav class="sidebar" aria-label="Documentation">
+        <!-- base item: a plain link, no children -->
         <div class="sidebar-entry">
-            <a href="introuction.html">Introduction</a>
+            <a href="introduction.html">Introduction</a>
         </div>
 
-        <!-- Guides -->
+        <!-- tree: Guides -->
         <div class="sidebar-group">
             <div class="sidebar-heading">
-                <button class="sidebar-arrow"></button>
+                <button class="sidebar-arrow" aria-label="Toggle Guides" aria-expanded="false"></button>
                 <a href="guides.html">Guides</a>
             </div>
 
             <ul class="sidebar-tree" hidden>
-                <!-- <li><a href="tmp.html">Getting Started</a></li>
-                <li><a href="tmp.html">Tmp</a></li> -->
+                <li><a href="getting-started.html">Getting started</a></li>
+                <li><a href="installation.html">Installation</a></li>
+
+                <!-- nested tree -->
+                <li class="sidebar-group">
+                    <div class="sidebar-heading">
+                        <button class="sidebar-arrow" aria-label="Toggle Platforms" aria-expanded="false"></button>
+                        <a href="platforms.html">Platforms</a>
+                    </div>
+                    <ul class="sidebar-tree" hidden>
+                        <li><a href="windows.html">Windows</a></li>
+                        <li><a href="linux.html">Linux</a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
 
-        <!-- API reference -->
+        <!-- tree: API reference -->
         <div class="sidebar-group">
             <div class="sidebar-heading">
-                <button class="sidebar-arrow"></button>
-                <a href="guides.html">API Reference</a>
+                <button class="sidebar-arrow" aria-label="Toggle API Reference" aria-expanded="false"></button>
+                <a href="api.html">API Reference</a>
             </div>
 
             <ul class="sidebar-tree" hidden>
-                <!-- <li><a href="tmp.html">Core</a></li> -->
-                <!-- <li><a href="tmp.html">Event</a></li> -->
+                <li><a href="core.html">Core</a></li>
+                <li><a href="event.html">Event</a></li>
+
+                <li class="sidebar-group">
+                    <div class="sidebar-heading">
+                        <button class="sidebar-arrow" aria-label="Toggle Graphics" aria-expanded="false"></button>
+                        <a href="graphics.html">Graphics</a>
+                    </div>
+                    <ul class="sidebar-tree" hidden>
+                        <li><a href="graphics-window.html">Window</a></li>
+                        <li><a href="graphics-context.html">Context</a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </nav>
@@ -71,7 +93,6 @@
         <main class="page-contents">{{ content }}</main>
     </div>
 
-    <!-- Link to our behavior logic script -->
     <script type="text/javascript" src="script.js"></script>
     <script type="text/javascript" src="sidebar.js"></script>
 </body>
