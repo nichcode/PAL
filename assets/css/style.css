@@ -26,8 +26,9 @@
     --nav-bar-height: 65px;
 }
 
-* {
-    box-sizing: border-box;
+:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
 }
 
 body {
@@ -119,7 +120,6 @@ body {
     cursor: pointer;
     padding: 8px;
     margin-left: 25px;
-    border-radius: 4px;
     color: var(--text-color);
     display: flex;
     align-items: center;
