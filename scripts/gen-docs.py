@@ -25,12 +25,12 @@ env = Environment(loader=FileSystemLoader(ASSETS_DIR / "templates"))
 website_page_template = env.get_template("website_page.html")
 docs_page_template = env.get_template("docs_page.html")
 
-# static array of guides for all docs page
-GUIDES = []
+GUIDES = [] # static array of guides for all docs page
 
 def build_guides_list():
-    # we will get the guides from the xml later
     GUIDES.append('<li><a href="getting-started.html">Getting started</a></li>')
+    GUIDES.append('<li><a href="testing1.html">Testing 1</a></li>')
+    GUIDES.append('<li><a href="testing2.html">Testing 2</a></li>')
 
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
