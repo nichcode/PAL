@@ -8,9 +8,8 @@ from pathlib import Path
 import shutil
 import re
 from jinja2 import Environment, FileSystemLoader
-from collections import defaultdict
-
 from xml.etree import ElementTree as ET
+
 import html
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -125,30 +124,44 @@ def generate_doxygen():
 def find_modules():
     children = []
 
-    # get xml.index and group by kind
     root = ET.parse(XML_DIR / "index.xml").getroot()
-    kinds = defaultdict(list)
+    groups = []
     for cp in root.iterfind("compound"):
-        kinds[cp.get("kind")].append((cp.get("refid"), cp.findtext("name")))
+        if cp.get("kind") == "group":
+            groups.append((cp.get("refid"), cp.findtext("name")))
 
     # open the group files and cache child groups
-    for refid, _ in kinds["group"]:
+    for refid, _ in groups:
         xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
         group_def = xml_file.find("compounddef")
 
-        subgroups = []
+        # find nested sub-groups
         for inner in group_def.findall("innergroup"):
             subgroup_refid = inner.get("refid")
-            subgroups.append(subgroup_refid)
             children.append(subgroup_refid)
 
-        # check if a group is a module
-        modules = []
-        for refid, _ in kinds["group"]:
-            if refid not in children:
-                modules.append(refid)
+    # filter modules
+    modules = []
+    for refid, _ in groups:
+        if refid not in children:
+            modules.append(refid)
 
     return modules
+
+def find_guides():
+    guides = []
+
+    root = ET.parse(XML_DIR / "index.xml").getroot()
+    for cp in root.iterfind("compound"):
+        if cp.get("kind") == "page":
+            refid = cp.get("refid")
+
+            if refid in ["indexpage", "api_reference", "guides"]:
+                continue
+
+            guides.append(refid)
+
+    return guides
 
 def read_group_inner(group_def, tag):
     items = []
@@ -182,6 +195,23 @@ def get_module(refid):
 
     return module
 
+def get_guide(refid):
+    xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
+    group_def = xml_file.find("compounddef")
+
+    guide = {}
+    guide["refid"] = refid
+    guide["name"] = group_def.findtext("compoundname")
+    guide["title"] = group_def.findtext("title")
+
+    desc = group_def.find("detaileddescription")
+    if desc is not None:
+        guide["content"] = "".join(desc.itertext()).strip()
+    else:
+        guide["content"] = ""
+
+    return guide
+
 def build_module_page(module):
     content = []
     content.append(f"<h1>{html.escape(module['title'])}</h1>")
@@ -206,7 +236,7 @@ def build_module_page(module):
 
     if module["subgroups"] or module["constants"]:
         content.append("<h2>Constants</h2><ul>")
-        
+
         for _, name in module["constants"]:
             content.append(f"<li>{html.escape(name)}</li>")
 
@@ -217,10 +247,11 @@ def build_module_page(module):
 
     return {"title": module["title"], "content": "\n".join(content)}
 
-def build_guides_list():
-    GUIDES.append('<li><a href="getting-started.html">Getting started</a></li>')
-    GUIDES.append('<li><a href="testing1.html">Testing 1</a></li>')
-    GUIDES.append('<li><a href="testing2.html">Testing 2</a></li>')
+def build_guides_list(guides):
+    for refid in guides:
+        guide = get_guide(refid)
+        link = f"{guide['refid']}.html"
+        GUIDES.append(f'<li><a href="{link}">{guide['title']}</a></li>')
 
 def build_modules_list(modules):
     for refid in modules:
@@ -302,10 +333,12 @@ def main():
     HTML_DIR.mkdir(parents=True, exist_ok=True)
     generate_doxygen()
 
-    build_guides_list()
+    guides = find_guides()
     modules = find_modules()
-    build_modules_list(modules)
     copy_assets()
+
+    build_guides_list(guides)
+    build_modules_list(modules)
 
     for refid in modules:
         module = get_module(refid)
