@@ -26,11 +26,7 @@ website_page_template = env.get_template("website_page.html")
 docs_page_template = env.get_template("docs_page.html")
 
 GUIDES = [] # static array of guides for all docs page
-
-def build_guides_list():
-    GUIDES.append('<li><a href="getting-started.html">Getting started</a></li>')
-    GUIDES.append('<li><a href="testing1.html">Testing 1</a></li>')
-    GUIDES.append('<li><a href="testing2.html">Testing 2</a></li>')
+MODULES = [] # static array of modules for all docs page
 
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
@@ -59,13 +55,13 @@ def write_website_page(filename, page):
 
 def write_docs_page(filename, page):
     file = HTML_DIR / filename
-    tmp = docs_page_template.render(
+    html_page = docs_page_template.render(
         title=page["title"],
         content=page["content"],
     )
 
-    guides_content = "\n".join(GUIDES)
-    html_page = tmp.replace("<!-- guides -->", guides_content)
+    html_page = html_page.replace("<!-- guides -->", "\n".join(GUIDES))
+    html_page = html_page.replace("<!-- modules -->", "\n".join(MODULES))
     file.write_text(html_page, encoding="utf-8")
 
 def copy_assets():
@@ -176,7 +172,7 @@ def get_module(refid):
 
     return module
 
-def read_module(module):
+def build_module_page(module):
     content = []
     content.append(f"<h1>{html.escape(module['title'])}</h1>")
 
@@ -192,8 +188,80 @@ def read_module(module):
             content.append(f"<li>{html.escape(name)}</li>")
         content.append("</ul>")
 
-    content_str = "".join(content)
-    return {"title": module["title"], "content": content_str}
+    return {"title": module["title"], "content": "\n".join(content)}
+
+def build_guides_list():
+    GUIDES.append('<li><a href="getting-started.html">Getting started</a></li>')
+    GUIDES.append('<li><a href="testing1.html">Testing 1</a></li>')
+    GUIDES.append('<li><a href="testing2.html">Testing 2</a></li>')
+
+def build_modules_list(modules):
+    for refid in modules:
+        module = get_module(refid)
+        link = f"{module['refid']}.html"
+        title = module['title']
+        tmp_link = "core-types.html"
+        tmp_item = "Item"
+
+        MODULES.append('<li class="sidebar-group">')
+
+        MODULES.append('<div class="sidebar-heading">')
+        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
+        MODULES.append(f'<a href="{link}">{title}</a>')
+        MODULES.append('</div>')
+        MODULES.append('<ul class="sidebar-tree" hidden>')
+
+        MODULES.append('<li class="sidebar-group">')
+        MODULES.append('<div class="sidebar-heading">')
+        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
+        MODULES.append(f'<a href="{tmp_link}">Functions</a>')
+        MODULES.append('</div>')
+
+        MODULES.append('<ul class="sidebar-tree" hidden>')
+        MODULES.append(f'<li><a href="{tmp_link}">{tmp_item}</a></li>')
+        MODULES.append(f'<li><a href="{tmp_link}">{tmp_item}</a></li>')
+        MODULES.append('</ul>')
+        MODULES.append('</li>')
+
+        MODULES.append('<li class="sidebar-group">')
+        MODULES.append('<div class="sidebar-heading">')
+        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
+        MODULES.append(f'<a href="{tmp_link}">Structs</a>')
+        MODULES.append('</div>')
+
+        MODULES.append('<ul class="sidebar-tree" hidden>')
+        if module["structs"]:
+            for _, name in module["structs"]:
+                MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
+        MODULES.append('</ul>')
+        MODULES.append('</li>')
+
+        MODULES.append('<li class="sidebar-group">')
+        MODULES.append('<div class="sidebar-heading">')
+        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
+        MODULES.append(f'<a href="{tmp_link}">Types</a>')
+        MODULES.append('</div>')
+
+        MODULES.append('<ul class="sidebar-tree" hidden>')
+        MODULES.append(f'<li><a href="{tmp_link}">{tmp_item}</a></li>')
+        MODULES.append(f'<li><a href="{tmp_link}">{tmp_item}</a></li>')
+        MODULES.append('</ul>')
+        MODULES.append('</li>')
+
+        MODULES.append('<li class="sidebar-group">')
+        MODULES.append('<div class="sidebar-heading">')
+        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
+        MODULES.append(f'<a href="{tmp_link}">Constants</a>')
+        MODULES.append('</div>')
+
+        MODULES.append('<ul class="sidebar-tree" hidden>')
+        if module["subgroups"]:
+            for _, name in module["subgroups"]:
+                MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
+        MODULES.append('</ul>')
+        MODULES.append('</li>')
+
+        MODULES.append('</li>')
 
 def main():
     os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
@@ -202,11 +270,12 @@ def main():
 
     build_guides_list()
     modules = find_modules()
+    build_modules_list(modules)
     copy_assets()
 
     for refid in modules:
         module = get_module(refid)
-        write_docs_page(HTML_DIR / f"{module['refid']}.html", read_module(module))
+        write_docs_page(HTML_DIR / f"{module['refid']}.html", build_module_page(module))
 
     # generate html pages from source
     pages_dir = ASSETS_DIR / "pages"
