@@ -27,6 +27,69 @@ docs_page_template = env.get_template("docs_page.html")
 GUIDES = [] # static array of guides for all docs page
 MODULES = [] # static array of modules for all docs page
 
+def parse_md_page_contents(md_page):
+    page = []
+    page.append(f"<h1>{html.escape(md_page['title'])}</h1>")
+
+    for element in md_page['content']:
+        if element.tag == "para":
+            # check if the para line contains a table
+            table = element.find("table")
+            if table is not None:
+                page.append("<table>")
+
+                for row in table.findall("row"):
+                    page.append("  <tr>")
+                    for entry in row.findall("entry"):
+                        # check whether this item is a table head
+                        tag = "td"
+                        if entry.get("thead") == "yes":
+                            tag = "th"
+                        
+                        cell_para = entry.find("para")
+                        cell_text = ""
+
+                        if cell_para is not None:
+                            if cell_para.text:
+                                cell_text += cell_para.text
+                            
+                            for child in cell_para:
+                                # cross-reference page links
+                                if child.tag == "ref":
+                                    ref_id = child.get("refid")
+                                    cell_text += f'<a href="{ref_id}.html">{child.text}</a>'
+
+                                if child.tail:
+                                    cell_text += child.tail
+                                    
+                        page.append(f"    <{tag}>{cell_text.strip()}</{tag}>")
+
+                    page.append("  </tr>")
+                page.append("</table>")
+
+            else:
+                # Handle plain paragraph strings normally
+                para_text = ""
+                if element.text:
+                    para_text = element.text
+
+                for child in element:
+                    if child.tag == "anchor":
+                        para_text += f'<span id="{child.get("id")}"></span>'
+
+                    elif child.tag == "computeroutput":
+                        para_text += f"<code>{child.text}</code>"
+
+                    elif child.tag == "ulink":
+                        para_text += f'<a href="{child.get("url")}">{child.text}</a>'
+
+                    if child.tail:
+                        para_text += child.tail
+
+                page.append(f"<p>{para_text.strip()}</p>")
+
+    return "\n".join(page)
+
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
 
@@ -148,20 +211,16 @@ def find_modules():
 
     return modules
 
-def find_guides():
-    guides = []
+def find_md_pages():
+    md_pages = []
 
     root = ET.parse(XML_DIR / "index.xml").getroot()
     for cp in root.iterfind("compound"):
         if cp.get("kind") == "page":
             refid = cp.get("refid")
+            md_pages.append(refid)
 
-            if refid in ["indexpage", "api_reference", "guides"]:
-                continue
-
-            guides.append(refid)
-
-    return guides
+    return md_pages
 
 def read_group_inner(group_def, tag):
     items = []
@@ -195,22 +254,17 @@ def get_module(refid):
 
     return module
 
-def get_guide(refid):
+def get_md_page(refid):
     xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
     group_def = xml_file.find("compounddef")
 
-    guide = {}
-    guide["refid"] = refid
-    guide["name"] = group_def.findtext("compoundname")
-    guide["title"] = group_def.findtext("title")
+    md_page = {}
+    md_page["refid"] = refid
+    md_page["name"] = group_def.findtext("compoundname")
+    md_page["title"] = group_def.findtext("title")
+    md_page["content"] = group_def.find("detaileddescription")
 
-    desc = group_def.find("detaileddescription")
-    if desc is not None:
-        guide["content"] = "".join(desc.itertext()).strip()
-    else:
-        guide["content"] = ""
-
-    return guide
+    return md_page
 
 def build_module_page(module):
     content = []
@@ -247,11 +301,17 @@ def build_module_page(module):
 
     return {"title": module["title"], "content": "\n".join(content)}
 
+def build_md_page(md_page):
+    return {"title": md_page["title"], "content": parse_md_page_contents(md_page)}
+
 def build_guides_list(guides):
     for refid in guides:
-        guide = get_guide(refid)
-        link = f"{guide['refid']}.html"
-        GUIDES.append(f'<li><a href="{link}">{guide['title']}</a></li>')
+        if refid in ["guides", "api_reference", "indexpage"]:
+            continue
+
+        md_page = get_md_page(refid)
+        link = f"{md_page['refid']}.html"
+        GUIDES.append(f'<li><a href="{link}">{md_page['title']}</a></li>')
 
 def build_modules_list(modules):
     for refid in modules:
@@ -333,16 +393,24 @@ def main():
     HTML_DIR.mkdir(parents=True, exist_ok=True)
     generate_doxygen()
 
-    guides = find_guides()
+    md_pages = find_md_pages()
     modules = find_modules()
     copy_assets()
 
-    build_guides_list(guides)
+    build_guides_list(md_pages)
     build_modules_list(modules)
 
     for refid in modules:
         module = get_module(refid)
         write_docs_page(HTML_DIR / f"{module['refid']}.html", build_module_page(module))
+
+    for refid in md_pages:
+        md_page = get_md_page(refid)
+        output_name = HTML_DIR / f"{md_page['refid']}.html"
+        if refid == "indexpage":
+            output_name = HTML_DIR / "index.html"
+            
+        write_docs_page(output_name, build_md_page(md_page))
 
     # generate html pages from source
     pages_dir = ASSETS_DIR / "pages"

@@ -23,6 +23,8 @@
     --heading-color: #f0f2f5;
     --accent-color: #427a9e;
     --nav-bar-height: 65px;
+    --code-bg-color: #23262b;
+    --code-border-color: #2c3036;
 }
 
 * {
@@ -142,6 +144,8 @@ body.light-mode {
     --text-color: #383f47;
     --heading-color: #161a1f;
     --accent-color: #1073b0;
+    --code-border-color: #dce0e5;
+    --code-bg-color: #eaecef;
 }
 
 body.light-mode .page-nav-bar {
@@ -156,4 +160,13 @@ body.light-mode .pal-logo-img {
     .logo {
         font-size: 2rem;
     }
+}
+
+.page-contents p code {
+    background-color: var(--code-bg-color);
+    border: 1px solid var(--code-border-color);
+    color: var(--heading-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
 }

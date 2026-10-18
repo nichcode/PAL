@@ -1,6 +1,8 @@
 
 :root {
     --sidebar-width: 350px;
+    --table-heading-bg-color: #212429;
+    --table-row-accent-color: #23262b;
 }
 
 /* layout */
@@ -132,4 +134,47 @@
 
 @media (prefers-reduced-motion: reduce) {
     .sidebar-arrow svg { transition: none; }
+}
+
+.page-contents table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    background-color: var(--modules-grid-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden; /* ensures background color doesn't bleed past corners */
+}
+
+.page-contents th {
+    background-color: var(--table-heading-bg-color);
+    color: var(--heading-color);
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--border-color);
+    text-align: left;
+}
+
+.page-contents td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.page-contents tr:hover {
+    background-color: var(--table-row-accent-color);
+}
+
+.page-contents td a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.page-contents td a:hover {
+    text-decoration: underline;
+}
+
+body.light-mode {
+    --table-heading-bg-color: #eaecef;
+    --table-row-accent-color: #f1f3f5;
 }
