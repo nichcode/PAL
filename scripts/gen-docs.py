@@ -150,7 +150,7 @@ def find_modules():
 
     return modules
 
-def read_inner(group_def, tag):
+def read_group_inner(group_def, tag):
     items = []
     for element in group_def.findall(tag):
         refid = element.get("refid")
@@ -159,16 +159,28 @@ def read_inner(group_def, tag):
 
     return items
 
+def read_section_inner(section_def):
+    items = []
+    for element in section_def.findall("memberdef"):
+        id = element.get("id")
+        name = element.find("name").text
+        items.append((id, name))
+
+    return items
+
 def get_module(refid):
     xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
     group_def = xml_file.find("compounddef")
+    section_def = group_def.find("sectiondef")
 
     module = {}
     module["refid"] = refid
     module["name"] = group_def.findtext("compoundname")
     module["title"] = group_def.findtext("title")
-    module["structs"] = read_inner(group_def, "innerclass")
-    module["subgroups"] = read_inner(group_def, "innergroup")
+
+    module["structs"] = read_group_inner(group_def, "innerclass")
+    module["types"] = read_section_inner(section_def)
+    module["subgroups"] = read_group_inner(group_def, "innergroup")
 
     return module
 
@@ -182,8 +194,14 @@ def build_module_page(module):
             content.append(f"<li>{html.escape(name)}</li>")
         content.append("</ul>")
 
+    if module["types"]:
+        content.append("<h2>Types</h2><ul>")
+        for _, name in module["types"]:
+            content.append(f"<li>{html.escape(name)}</li>")
+        content.append("</ul>")
+
     if module["subgroups"]:
-        content.append("<h2>Constant Groups</h2><ul>")
+        content.append("<h2>Constants</h2><ul>")
         for _, name in module["subgroups"]:
             content.append(f"<li>{html.escape(name)}</li>")
         content.append("</ul>")
@@ -243,8 +261,9 @@ def build_modules_list(modules):
         MODULES.append('</div>')
 
         MODULES.append('<ul class="sidebar-tree" hidden>')
-        MODULES.append(f'<li><a href="{tmp_link}">{tmp_item}</a></li>')
-        MODULES.append(f'<li><a href="{tmp_link}">{tmp_item}</a></li>')
+        if module["types"]:
+            for _, name in module["types"]:
+                MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
         MODULES.append('</ul>')
         MODULES.append('</li>')
 
