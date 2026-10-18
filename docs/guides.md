@@ -1,7 +1,7 @@
 
 #### Guides {#guides}
 
-| Guides | Description |
+| Guide | Description |
 |---|---|
 | @ref getting_started "Getting Started" | Create your first PAL application |
 | @ref event_payload "Event Payload" | See how to get the payload of an event |

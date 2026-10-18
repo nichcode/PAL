@@ -27,69 +27,6 @@ docs_page_template = env.get_template("docs_page.html")
 GUIDES = [] # static array of guides for all docs page
 MODULES = [] # static array of modules for all docs page
 
-def parse_md_page_contents(md_page):
-    page = []
-    page.append(f"<h1>{html.escape(md_page['title'])}</h1>")
-
-    for element in md_page['content']:
-        if element.tag == "para":
-            # check if the para line contains a table
-            table = element.find("table")
-            if table is not None:
-                page.append("<table>")
-
-                for row in table.findall("row"):
-                    page.append("  <tr>")
-                    for entry in row.findall("entry"):
-                        # check whether this item is a table head
-                        tag = "td"
-                        if entry.get("thead") == "yes":
-                            tag = "th"
-                        
-                        cell_para = entry.find("para")
-                        cell_text = ""
-
-                        if cell_para is not None:
-                            if cell_para.text:
-                                cell_text += cell_para.text
-                            
-                            for child in cell_para:
-                                # cross-reference page links
-                                if child.tag == "ref":
-                                    ref_id = child.get("refid")
-                                    cell_text += f'<a href="{ref_id}.html">{child.text}</a>'
-
-                                if child.tail:
-                                    cell_text += child.tail
-                                    
-                        page.append(f"    <{tag}>{cell_text.strip()}</{tag}>")
-
-                    page.append("  </tr>")
-                page.append("</table>")
-
-            else:
-                # Handle plain paragraph strings normally
-                para_text = ""
-                if element.text:
-                    para_text = element.text
-
-                for child in element:
-                    if child.tag == "anchor":
-                        para_text += f'<span id="{child.get("id")}"></span>'
-
-                    elif child.tag == "computeroutput":
-                        para_text += f"<code>{child.text}</code>"
-
-                    elif child.tag == "ulink":
-                        para_text += f'<a href="{child.get("url")}">{child.text}</a>'
-
-                    if child.tail:
-                        para_text += child.tail
-
-                page.append(f"<p>{para_text.strip()}</p>")
-
-    return "\n".join(page)
-
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
 
@@ -270,39 +207,111 @@ def build_module_page(module):
     content = []
     content.append(f"<h1>{html.escape(module['title'])}</h1>")
 
-    if module["functions"]:
-        content.append("<h2>Functions</h2><ul>")
-        for _, name in module["functions"]:
-            content.append(f"<li>{html.escape(name)}</li>")
-        content.append("</ul>")
+    titles = []
+    heads = []
+    kinds = []
+    brief = "Tmp brief"
 
-    if module["structs"]:
-        content.append("<h2>Structs</h2><ul>")
-        for _, name in module["structs"]:
-            content.append(f"<li>{html.escape(name)}</li>")
-        content.append("</ul>")
+    if module['functions']:
+        titles.append("<h3>Functions</h3>")
+        heads.append("Function")
+        kinds.append("functions")
 
-    if module["types"]:
-        content.append("<h2>Types</h2><ul>")
-        for _, name in module["types"]:
-            content.append(f"<li>{html.escape(name)}</li>")
-        content.append("</ul>")
+    if module['structs']:
+        titles.append("<h3>Structs</h3>")
+        heads.append("Struct")
+        kinds.append("structs")
 
-    if module["subgroups"] or module["constants"]:
-        content.append("<h2>Constants</h2><ul>")
+    if module['types']:
+        titles.append("<h3>Types</h3>")
+        heads.append("Type")
+        kinds.append("types")
 
-        for _, name in module["constants"]:
-            content.append(f"<li>{html.escape(name)}</li>")
+    if module['constants'] or module['subgroups']:
+        titles.append("<h3>Constants</h3>")
+        heads.append("Constant")
+        kinds.append("constants")
 
-        for _, name in module["subgroups"]:
-                content.append(f"<li>{html.escape(name)}</li>")
+    for index, head in enumerate(heads):
+        content.append(titles[index])
+        content.append("<table>")
+        content.append("<tr>")
+        content.append(f"<th>{head}</th>")
+        content.append("<th>Brief</th>")
+        content.append("</tr>")
 
-        content.append("</ul>")
+        for refid, name in module[kinds[index]]:
+            content.append("<tr>")
+            content.append(f'<td><a href="{refid}.html">{name}</a></td>')
+            content.append(f'<td>{brief}</td>')
+            content.append("</tr>")
+
+        content.append("</table>")
 
     return {"title": module["title"], "content": "\n".join(content)}
 
 def build_md_page(md_page):
-    return {"title": md_page["title"], "content": parse_md_page_contents(md_page)}
+    page = []
+    page.append(f"<h1>{html.escape(md_page['title'])}</h1>")
+
+    for element in md_page['content']:
+        if element.tag == "para":
+            # check if the para line contains a table
+            table = element.find("table")
+            if table is not None:
+                page.append("<table>")
+
+                for row in table.findall("row"):
+                    page.append("<tr>")
+                    for entry in row.findall("entry"):
+                        # check whether this item is a table head
+                        tag = "td"
+                        if entry.get("thead") == "yes":
+                            tag = "th"
+                        
+                        cell_para = entry.find("para")
+                        cell_text = ""
+
+                        if cell_para is not None:
+                            if cell_para.text:
+                                cell_text += cell_para.text
+                            
+                            for child in cell_para:
+                                # cross-reference page links
+                                if child.tag == "ref":
+                                    ref_id = child.get("refid")
+                                    cell_text += f'<a href="{ref_id}.html">{child.text}</a>'
+
+                                if child.tail:
+                                    cell_text += child.tail
+                                    
+                        page.append(f"<{tag}>{cell_text.strip()}</{tag}>")
+
+                    page.append("</tr>")
+                page.append("</table>")
+
+            else:
+                # Handle plain paragraph strings normally
+                para_text = ""
+                if element.text:
+                    para_text = element.text
+
+                for child in element:
+                    if child.tag == "anchor":
+                        para_text += f'<span id="{child.get("id")}"></span>'
+
+                    elif child.tag == "computeroutput":
+                        para_text += f"<code>{child.text}</code>"
+
+                    elif child.tag == "ulink":
+                        para_text += f'<a href="{child.get("url")}">{child.text}</a>'
+
+                    if child.tail:
+                        para_text += child.tail
+
+                page.append(f"<p>{para_text.strip()}</p>")
+
+    return {"title": md_page["title"], "content": "\n".join(page)}
 
 def build_guides_list(guides):
     for refid in guides:
@@ -316,77 +325,50 @@ def build_guides_list(guides):
 def build_modules_list(modules):
     for refid in modules:
         module = get_module(refid)
-        link = f"{module['refid']}.html"
-        title = module['title']
-        tmp_link = "core-types.html"
 
-        MODULES.append('<li class="sidebar-group">')
+        kinds = []
+        links = []
+        kinds.append("none")
+        links.append(f'<a href="{module['refid']}.html">{module['title']}</a>')
 
-        MODULES.append('<div class="sidebar-heading">')
-        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
-        MODULES.append(f'<a href="{link}">{title}</a>')
-        MODULES.append('</div>')
-        MODULES.append('<ul class="sidebar-tree" hidden>')
-
-        MODULES.append('<li class="sidebar-group">')
-        MODULES.append('<div class="sidebar-heading">')
-        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
-        MODULES.append(f'<a href="{tmp_link}">Functions</a>')
-        MODULES.append('</div>')
-
-        MODULES.append('<ul class="sidebar-tree" hidden>')
         if module["functions"]:
-            for _, name in module["functions"]:
-                MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
-        MODULES.append('</ul>')
-        MODULES.append('</li>')
+            kinds.append("functions")
+            links.append(f'<a href="{module['refid']}__functions.html">Functions</a>')
 
-        MODULES.append('<li class="sidebar-group">')
-        MODULES.append('<div class="sidebar-heading">')
-        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
-        MODULES.append(f'<a href="{tmp_link}">Structs</a>')
-        MODULES.append('</div>')
-
-        MODULES.append('<ul class="sidebar-tree" hidden>')
         if module["structs"]:
-            for _, name in module["structs"]:
-                MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
-        MODULES.append('</ul>')
-        MODULES.append('</li>')
+            kinds.append("structs")
+            links.append(f'<a href="{module['refid']}__structs.html">Structs</a>')
 
-        MODULES.append('<li class="sidebar-group">')
-        MODULES.append('<div class="sidebar-heading">')
-        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
-        MODULES.append(f'<a href="{tmp_link}">Types</a>')
-        MODULES.append('</div>')
-
-        MODULES.append('<ul class="sidebar-tree" hidden>')
         if module["types"]:
-            for _, name in module["types"]:
-                MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
-        MODULES.append('</ul>')
-        MODULES.append('</li>')
+            kinds.append("types")
+            links.append(f'<a href="{module['refid']}__types.html">Types</a>')
 
-        MODULES.append('<li class="sidebar-group">')
-        MODULES.append('<div class="sidebar-heading">')
-        MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
-        MODULES.append(f'<a href="{tmp_link}">Constants</a>')
-        MODULES.append('</div>')
+        if module["constants"] or module["subgroups"]:
+            kinds.append("constants")
+            links.append(f'<a href="{module['refid']}__constants.html">Constants</a>')
 
-        MODULES.append('<ul class="sidebar-tree" hidden>')
+        for index, kind in enumerate(kinds):
+            MODULES.append('<li class="sidebar-group">')
+            MODULES.append('<div class="sidebar-heading">')
+            MODULES.append('<button class="sidebar-arrow" aria-expanded="false"></button>')
+            MODULES.append(links[index])
+            MODULES.append('</div>')
+            MODULES.append('<ul class="sidebar-tree" hidden>')
 
-        if module["constants"]:
-            for _, name in module["constants"]:
-                MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
+            if kind == "none":
+                continue
 
-        if module["subgroups"]:
-                    for _, name in module["subgroups"]:
-                        MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
+            for refid, name in module[kind]:
+                MODULES.append(f'<li><a href="{refid}.html">{name}</a></li>')
 
-        MODULES.append('</ul>')
-        MODULES.append('</li>')
+            if kind == "constants":
+                for refid, name in module["subgroups"]:
+                    MODULES.append(f'<li><a href="{refid}.html">{name}</a></li>')
 
-        MODULES.append('</li>')
+            MODULES.append('</ul>')
+            MODULES.append('</li>')
+
+    MODULES.append('</li>')
 
 def main():
     os.chdir(DOCS_DIR) # change working directory so doxygen works as intended
