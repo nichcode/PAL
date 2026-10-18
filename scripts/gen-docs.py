@@ -177,6 +177,7 @@ def get_module(refid):
     module["functions"] = read_section_inner(group_def, "function")
     module["structs"] = read_group_inner(group_def, "innerclass")
     module["types"] = read_section_inner(group_def, "typedef")
+    module["constants"] = read_section_inner(group_def, "define")
     module["subgroups"] = read_group_inner(group_def, "innergroup")
 
     return module
@@ -203,10 +204,15 @@ def build_module_page(module):
             content.append(f"<li>{html.escape(name)}</li>")
         content.append("</ul>")
 
-    if module["subgroups"]:
+    if module["subgroups"] or module["constants"]:
         content.append("<h2>Constants</h2><ul>")
-        for _, name in module["subgroups"]:
+        
+        for _, name in module["constants"]:
             content.append(f"<li>{html.escape(name)}</li>")
+
+        for _, name in module["subgroups"]:
+                content.append(f"<li>{html.escape(name)}</li>")
+
         content.append("</ul>")
 
     return {"title": module["title"], "content": "\n".join(content)}
@@ -222,7 +228,6 @@ def build_modules_list(modules):
         link = f"{module['refid']}.html"
         title = module['title']
         tmp_link = "core-types.html"
-        tmp_item = "Item"
 
         MODULES.append('<li class="sidebar-group">')
 
@@ -278,9 +283,15 @@ def build_modules_list(modules):
         MODULES.append('</div>')
 
         MODULES.append('<ul class="sidebar-tree" hidden>')
-        if module["subgroups"]:
-            for _, name in module["subgroups"]:
+
+        if module["constants"]:
+            for _, name in module["constants"]:
                 MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
+
+        if module["subgroups"]:
+                    for _, name in module["subgroups"]:
+                        MODULES.append(f'<li><a href="{tmp_link}">{name}</a></li>')
+
         MODULES.append('</ul>')
         MODULES.append('</li>')
 
