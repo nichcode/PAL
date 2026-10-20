@@ -5,7 +5,7 @@ import os
 import subprocess
 from pathlib import Path
 
-def main():
+def main() -> None:
     root_dir = Path(__file__).resolve().parents[1]
     log_file = root_dir / "build/doxygen.log"
     os.chdir(root_dir / "docs")
@@ -36,6 +36,11 @@ def main():
     # write the clean warnings to the file
     with open(log_file, "w") as file:
         file.writelines(warnings)
+
+    if warnings:
+        print(f"There are errors with the documentation generation")
+        print(f"See {log_file} for the errors and fix them")
+        sys.exit(1)
 
     print("xml files generated successfully")
 

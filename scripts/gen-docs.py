@@ -82,33 +82,6 @@ def copy_assets():
 
     print(f"Assets copied successfully")
 
-def find_modules():
-    children = []
-
-    root = ET.parse(XML_DIR / "index.xml").getroot()
-    groups = []
-    for cp in root.iterfind("compound"):
-        if cp.get("kind") == "group":
-            groups.append((cp.get("refid"), cp.findtext("name")))
-
-    # open the group files and cache child groups
-    for refid, _ in groups:
-        xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
-        group_def = xml_file.find("compounddef")
-
-        # find nested sub-groups
-        for inner in group_def.findall("innergroup"):
-            subgroup_refid = inner.get("refid")
-            children.append(subgroup_refid)
-
-    # filter modules
-    modules = []
-    for refid, _ in groups:
-        if refid not in children:
-            modules.append(refid)
-
-    return modules
-
 def find_md_pages():
     md_pages = []
 

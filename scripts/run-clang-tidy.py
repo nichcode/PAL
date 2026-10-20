@@ -8,14 +8,14 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
-def worker(info):
+def worker(info) -> None:
     """Worker that runs clang tidy for a file"""
     file, buildpath = info
     cmd = ["clang-tidy", file, "-p", buildpath]
     subprocess.run(cmd, shell=False)
 
 
-def main():
+def main() -> None:
     root_dir = Path(__file__).resolve().parents[1]
     print(root_dir)
     path = root_dir / "build/compile_commands.json"
