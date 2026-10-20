@@ -7,11 +7,26 @@ import re
 from xml.etree import ElementTree as ET
 from dataclasses import dataclass
 
+
+@dataclass
+class Param:
+    type_str: str
+    name_str: str
+
+
+@dataclass
+class Function:
+    name: str
+    return_type: str
+    params: list[Param]
+
+
 @dataclass
 class Module:
     name: str
     brief: str
     detailed: str
+    functions: list[Function]
 
 
 class XMLParser:
@@ -39,11 +54,13 @@ class XMLParser:
             file_refid = f"{tmp}_8{ext}"
 
             data = self._parse_module_file(file_refid)
+            functions = self._parse_function(cpdef)
 
             module = Module(
                 name=cpdef.findtext("title"),
                 brief=data["brief"],
-                detailed=data["detailed"]
+                detailed=data["detailed"],
+                functions=functions
             )
 
             modules.append(module)
@@ -52,6 +69,7 @@ class XMLParser:
         return modules
 
     def _find_modules_refids(self) -> list:
+        """find all modules"""
         root = ET.parse(self.xml_dir / "index.xml").getroot()
         refids = []
         children = []
@@ -63,7 +81,7 @@ class XMLParser:
         for refid in refids:
             root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
             cpdef = root.find("compounddef")
-        
+
             # find nested sub-groups and cache them
             for inner in cpdef.findall("innergroup"):
                 group_refid = inner.get("refid")
@@ -74,7 +92,7 @@ class XMLParser:
         for refid in refids:
             if refid not in children:
                 modules.append(refid)
-        
+
         return modules
 
     def _parse_module_file(self, file_refid) -> dict:
@@ -93,11 +111,10 @@ class XMLParser:
 
     def _xml_tags_to_html(self, element: ET.Element | None) -> str:
         """converts XML tags into HTML"""
-
         html_out = ""
         if element is None:
             return ""
-    
+
         tag_map = {
             "para": ("<p>", "</p>"),
             "computeroutput": ("<code>", "</code>"),
@@ -105,12 +122,12 @@ class XMLParser:
             "programlisting": ("<pre><code>", "</code></pre>"),
             "codeline": ("", "\n"),
             "highlight": ("", ""),
-            
+
             "table": ("<table>", "</table>"),
             "row": ("<tr>", "</tr>"),
             "entry": ("<td>", "</td>"),
             "tablecols": ("", ""),
-            
+
             "itemizedlist": ("<ul>", "</ul>"),
             "orderedlist": ("<ol>", "</ol>"),
             "listitem": ("<li>", "</li>"),
@@ -122,25 +139,54 @@ class XMLParser:
             close_tag = "</a>"
         else:
             open_tag, close_tag = tag_map.get(element.tag, ("", ""))
-        
+
         if element.tag == "entry" and element.get("thead") == "yes":
             open_tag, close_tag = ("<th>", "</th>")
-            
+
         if element.tag == "simplesect":
             kind = element.get("kind", "note")
-            open_tag, close_tag = (f"<div class='doxygen-callout callout-{kind}'>", "</div>")
-        
+            open_tag, close_tag = (f"<div callout-{kind}'>", "</div>")
+
         html_out += open_tag
         if element.text:
             html_out += element.text
-        
+
         for child in element:
             html_out += self._xml_tags_to_html(child)
             if child.tail:
                 html_out += child.tail
-            
+
         html_out += close_tag
+
         return html_out
+
+    def _parse_function(self, cpdef) -> list:
+        """parses function"""
+        tmp = []
+        functions = []
+
+        for element in cpdef.findall(".//memberdef"):
+            if element.get("kind") == "function":
+                tmp.append(element.get("id"))
+
+        for refid in tmp:
+            memberdef = cpdef.find(f".//memberdef[@id='{refid}']")
+            params = []
+
+            for param in memberdef.findall("param"):
+                type = "".join(param.find("type").itertext()).strip()
+                name = param.findtext("declname", default="").strip()
+                params.append(Param(type_str=type, name_str=name))
+
+            function = Function(
+                name=memberdef.findtext("name", default=""),
+                return_type="".join(memberdef.find("type").itertext()).strip(),
+                params=params
+            )
+
+            functions.append(function)
+
+        return functions
 
 def main():
     parser = XMLParser()
@@ -148,8 +194,18 @@ def main():
 
     for module in modules:
         print(module.name)
-        print(f"  {module.brief}")
-        print(f"  {module.detailed}")
+
+        for func in module.functions:
+            argstring = "("
+            for index, param in enumerate(func.params):
+                if index > 0 and index < len(func.params):
+                    argstring += ", "
+
+                argstring += param.type_str + param.name_str
+                
+            argstring += ")"
+            print(f"  {func.return_type} {func.name}{argstring}")
+
 
 if __name__ == "__main__":
     main()

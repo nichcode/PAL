@@ -109,14 +109,6 @@ def read_section_inner(group_def, kind):
     return items
 
 def get_module(refid):
-    xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
-    group_def = xml_file.find("compounddef")
-
-    module = {}
-    module["refid"] = refid
-    module["name"] = group_def.findtext("compoundname")
-    module["title"] = group_def.findtext("title")
-
     module["functions"] = read_section_inner(group_def, "function")
     module["structs"] = read_group_inner(group_def, "innerclass")
     module["types"] = read_section_inner(group_def, "typedef")
@@ -183,69 +175,6 @@ def build_module_page(module):
         content.append("</table>")
 
     return {"title": module["title"], "content": "\n".join(content)}
-
-def build_md_page(md_page):
-    page = []
-    page.append(f"<h1>{html.escape(md_page['title'])}</h1>")
-
-    for element in md_page['content']:
-        if element.tag == "para":
-            # check if the para line contains a table
-            table = element.find("table")
-            if table is not None:
-                page.append("<table>")
-
-                for row in table.findall("row"):
-                    page.append("<tr>")
-                    for entry in row.findall("entry"):
-                        # check whether this item is a table head
-                        tag = "td"
-                        if entry.get("thead") == "yes":
-                            tag = "th"
-                        
-                        cell_para = entry.find("para")
-                        cell_text = ""
-
-                        if cell_para is not None:
-                            if cell_para.text:
-                                cell_text += cell_para.text
-                            
-                            for child in cell_para:
-                                # cross-reference page links
-                                if child.tag == "ref":
-                                    ref_id = child.get("refid")
-                                    cell_text += f'<a href="{ref_id}.html">{child.text}</a>'
-
-                                if child.tail:
-                                    cell_text += child.tail
-                                    
-                        page.append(f"<{tag}>{cell_text.strip()}</{tag}>")
-
-                    page.append("</tr>")
-                page.append("</table>")
-
-            else:
-                # Handle plain paragraph strings normally
-                para_text = ""
-                if element.text:
-                    para_text = element.text
-
-                for child in element:
-                    if child.tag == "anchor":
-                        para_text += f'<span id="{child.get("id")}"></span>'
-
-                    elif child.tag == "computeroutput":
-                        para_text += f"<code>{child.text}</code>"
-
-                    elif child.tag == "ulink":
-                        para_text += f'<a href="{child.get("url")}">{child.text}</a>'
-
-                    if child.tail:
-                        para_text += child.tail
-
-                page.append(f"<p>{para_text.strip()}</p>")
-
-    return {"title": md_page["title"], "content": "\n".join(page)}
 
 def build_guides_list(guides):
     for refid in guides:
