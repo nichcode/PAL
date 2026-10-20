@@ -82,45 +82,6 @@ def copy_assets():
 
     print(f"Assets copied successfully")
 
-def generate_doxygen():
-    subprocess.run(["doxygen", "doxyfile"])
-
-    log_file = BUILD_DIR / "doxygen.log"
-    with open(log_file, "r") as file:
-        if not file:
-            print(f"")
-            print(f"Failed to load doxygen.log: {log_file}")
-            sys.exit(1)
-
-        # remove all macro warnings
-        file_contents = file.readlines()
-        warnings = []
-        tags = []
-        tags.append("(macro definition)")
-        tags.append("(variable) of struct PalGraphicsBackendVtable1")
-        tags.append("(variable) of struct PalGraphicsBackendVtable2")
-
-        for line in file_contents:
-            found = False
-
-            for tag in tags:
-                if tag in line:
-                    found = True
-                    break
-
-            if not found:
-                warnings.append(line)
-    
-    # write the clean warnings to the file
-    with open(log_file, "w") as file:
-        file.writelines(warnings);
-    
-    if warnings:
-        print(f"")
-        print(f"There are errors with the documentation generation")
-        print(f"See {log_file} for the errors and fix them")
-        sys.exit(1)
-
 def find_modules():
     children = []
 
