@@ -7,10 +7,13 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+
 def worker(info):
+    """Worker that runs clang tidy for a file"""
     file, buildpath = info
     cmd = ["clang-tidy", file, "-p", buildpath]
     subprocess.run(cmd, shell=False)
+
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]
@@ -37,6 +40,7 @@ def main():
 
     with ThreadPoolExecutor() as pool:
         pool.map(worker, workers)
+
 
 if __name__ == "__main__":
     main()

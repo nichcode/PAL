@@ -4,16 +4,19 @@
 # somewhat difficult. This file fixes that by making the constants
 # behave like enums. This is only for gdb debugger
 
-import gdb # type: ignore
+import gdb  # type: ignore
 
 sets = {}
 bitmask = {}
 
+
 def add_set(name, values):
     sets[name] = values
 
+
 def add_bitmask(name, values):
     bitmask[name] = values
+
 
 class SetPrinter:
     def __init__(self, value, values):
@@ -23,7 +26,8 @@ class SetPrinter:
     def to_string(self):
         value = int(self.value)
         return self.values.get(value, str(value))
-    
+
+
 class BitmaskPrinter:
     def __init__(self, value, values):
         self.value = value
@@ -33,7 +37,7 @@ class BitmaskPrinter:
         value = int(self.value)
         if value == 0:
             return self.values.get(0, "0")
-        
+
         names = []
         unknowns = []
 
@@ -47,22 +51,24 @@ class BitmaskPrinter:
                 names.append(name)
             else:
                 unknowns.append(mask)
-        
+
         for bit in unknowns:
             names.append(f"0x{bit:x}")
 
         return " | ".join(names)
+
 
 def lookup(value):
     type_name = str(value.type)
 
     if type_name in sets:
         return SetPrinter(value, sets[type_name])
-    
+
     if type_name in bitmask:
         return BitmaskPrinter(value, bitmask[type_name])
-    
+
     return None
+
 
 # Core
 add_set("PalBool", {
