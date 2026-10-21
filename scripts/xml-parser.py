@@ -46,15 +46,10 @@ class XMLParser:
             root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
             cpdef = root.find("compounddef")
 
-            # get the first location element and find its filepath
-            location = cpdef.find(".//location")
-            filepath = location.get("file")
-            filename = Path(filepath).name
-
-            # compute the file id
-            base, ext = filename.rsplit('.', 1)
-            tmp = base.replace('_', '__').replace('.', '__')
-            file_refid = f"{tmp}_8{ext}"
+            # compute module file id
+            cpname = cpdef.find("compoundname")
+            tmp = cpname.text.replace('_', '__').replace('.', '__')
+            file_refid = f"{tmp}_8h"
 
             data = self._parse_module_file(file_refid)
             functions = self._parse_function(cpdef)
