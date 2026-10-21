@@ -18,6 +18,8 @@ class Param:
 class Function:
     name: str
     return_type: str
+    brief: str
+    detailed: str
     params: list[Param]
 
 
@@ -105,7 +107,7 @@ class XMLParser:
         data["brief"] = self._xml_tags_to_html(element)
 
         element = cpdef.find("detaileddescription")
-        data["detailed"] = self._xml_tags_to_html(element)
+        data["detailed"] = data["brief"] + self._xml_tags_to_html(element)
 
         return data
 
@@ -119,7 +121,6 @@ class XMLParser:
             "para": ("<p>", "</p>"),
             "computeroutput": ("<code>", "</code>"),
             "c": ("<code>", "</code>"),
-            "programlisting": ("<pre><code>", "</code></pre>"),
             "codeline": ("", "\n"),
             "highlight": ("", ""),
 
@@ -131,21 +132,45 @@ class XMLParser:
             "itemizedlist": ("<ul>", "</ul>"),
             "orderedlist": ("<ol>", "</ol>"),
             "listitem": ("<li>", "</li>"),
+
+            "parameterlist": ("<div><h4>Parameters</h4><dl>", "</dl></div>"),
+            "parameteritem": ("<div>", "</div>"),
+            "parameternamelist": ("", ""), 
+            "parameterdescription": ("<dd>", "</dd>"),
         }
 
-        if element.tag == "ulink":
+        open_tag, close_tag = tag_map.get(element.tag, ("", ""))
+        dir_badge = ""
+
+        if element.tag == "parametername":
+            direction = element.get("direction")
+            if direction:
+                dir_badge = f"<span>{direction}</span> "
+
+            open_tag = f"<dt>{dir_badge}<code>"
+            close_tag = "</code></dt>"
+
+        elif element.tag == "entry" and element.get("thead") == "yes":
+            open_tag, close_tag = ("<th>", "</th>")
+
+        elif element.tag == "simplesect":
+            kind = element.get("kind", "note")
+            if kind == "since":
+                open_tag, close_tag = ("<div><strong>Since:</strong> ", "</div>")
+            elif kind == "par":
+                open_tag, close_tag = ("<div>", "</div>")
+            else:
+                open_tag, close_tag = (f"<div callout-{kind}'>", "</div>")
+            
+        elif element.tag == "ulink":
             url = element.get("url", "#")
             open_tag = f'<a href="{url}" target="_blank" rel="noopener noreferrer">'
             close_tag = "</a>"
-        else:
-            open_tag, close_tag = tag_map.get(element.tag, ("", ""))
 
-        if element.tag == "entry" and element.get("thead") == "yes":
-            open_tag, close_tag = ("<th>", "</th>")
-
-        if element.tag == "simplesect":
-            kind = element.get("kind", "note")
-            open_tag, close_tag = (f"<div callout-{kind}'>", "</div>")
+        elif element.tag == "ref":
+            refid = element.get("refid", "#")
+            open_tag = f'<a" href="{refid}.html">'
+            close_tag = "</a>"
 
         html_out += open_tag
         if element.text:
@@ -171,16 +196,23 @@ class XMLParser:
 
         for refid in tmp:
             memberdef = cpdef.find(f".//memberdef[@id='{refid}']")
-            params = []
+            element = memberdef.find("briefdescription")
+            brief = self._xml_tags_to_html(element)
 
+            element = memberdef.find("detaileddescription")
+            detailed = brief + self._xml_tags_to_html(element)
+
+            params = []
             for param in memberdef.findall("param"):
-                type = "".join(param.find("type").itertext()).strip()
+                type = self._xml_tags_to_html(param)
                 name = param.findtext("declname", default="").strip()
                 params.append(Param(type_str=type, name_str=name))
 
             function = Function(
                 name=memberdef.findtext("name", default=""),
                 return_type="".join(memberdef.find("type").itertext()).strip(),
+                brief=brief,
+                detailed=detailed,
                 params=params
             )
 
@@ -192,19 +224,21 @@ def main():
     parser = XMLParser()
     modules = parser.parse_modules()
 
-    for module in modules:
-        print(module.name)
+    # for module in modules:
+    #     print(module.detailed)
 
-        for func in module.functions:
-            argstring = "("
-            for index, param in enumerate(func.params):
-                if index > 0 and index < len(func.params):
-                    argstring += ", "
+        # for func in module.functions:
+        #     #print(func.brief)
 
-                argstring += param.type_str + param.name_str
+            # argstring = "("
+            # for index, param in enumerate(func.params):
+            #     if index > 0 and index < len(func.params):
+            #         argstring += ", "
+
+            #     argstring += param.type_str + param.name_str
                 
-            argstring += ")"
-            print(f"  {func.return_type} {func.name}{argstring}")
+            # argstring += ")"
+            # print(f"  {func.return_type} {func.name}{argstring}")
 
 
 if __name__ == "__main__":
