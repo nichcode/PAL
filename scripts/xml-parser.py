@@ -52,12 +52,21 @@ class Struct:
 
 
 @dataclass
+class Typedef:
+    name: str
+    type: str
+    brief: str
+    detailed: str
+
+
+@dataclass
 class Module:
     name: str
     brief: str
     detailed: str
     functions: list[Function]
     structs: list[Struct]
+    typedefs: list[Typedef]
     constants: list[Constant]
     constant_groups: list[ConstantGroup]
 
@@ -84,8 +93,8 @@ class XMLParser:
             data = self._parse_module_file(file_refid)
             functions = self._parse_functions(cpdef)
             structs = self._parse_structs(cpdef)
+            typedefs = self._parse_typedefs(cpdef)
             constants = self._parse_constants(cpdef)
-
             constant_groups = self._parse_constant_groups(cpdef)
 
             module = Module(
@@ -94,6 +103,7 @@ class XMLParser:
                 detailed=data["detailed"],
                 functions=functions,
                 structs=structs,
+                typedefs=typedefs,
                 constants=constants,
                 constant_groups=constant_groups
             )
@@ -287,6 +297,29 @@ class XMLParser:
             structs.append(struct)
 
         return structs
+
+    def _parse_typedefs(self, cpdef) -> list:
+        """parses typedefs"""
+        typedefs = []
+
+        memberdefs = cpdef.findall(".//memberdef[@kind='typedef']")
+        for memberdef in memberdefs:
+            element = memberdef.find("briefdescription")
+            brief = self._xml_tags_to_html(element)
+
+            element = memberdef.find("detaileddescription")
+            detailed = brief + self._xml_tags_to_html(element)
+
+            typedef = Typedef(
+                name=memberdef.findtext("name"),
+                type=memberdef.findtext("type"),
+                brief=brief,
+                detailed=detailed
+            )
+
+            typedefs.append(typedef)
+
+        return typedefs
 
     def _parse_constants(self, cpdef) -> list:
         """parses constants"""
