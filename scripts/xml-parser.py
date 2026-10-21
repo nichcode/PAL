@@ -25,11 +25,29 @@ class Function:
 
 
 @dataclass
+class Field:
+    type_str: str
+    name_str: str
+    argsstring: str
+    desc: str
+
+
+@dataclass
+class Struct:
+    name: str
+    brief: str
+    detailed: str
+    file: str
+    fields: list[Param]
+
+
+@dataclass
 class Module:
     name: str
     brief: str
     detailed: str
     functions: list[Function]
+    structs: list[Struct]
 
 
 class XMLParser:
@@ -52,13 +70,15 @@ class XMLParser:
             file_refid = f"{tmp}_8h"
 
             data = self._parse_module_file(file_refid)
-            functions = self._parse_function(cpdef)
+            functions = self._parse_functions(cpdef)
+            structs = self._parse_structs(cpdef)
 
             module = Module(
                 name=cpdef.findtext("title"),
                 brief=data["brief"],
                 detailed=data["detailed"],
-                functions=functions
+                functions=functions,
+                structs=structs
             )
 
             modules.append(module)
@@ -181,17 +201,12 @@ class XMLParser:
 
         return html_out
 
-    def _parse_function(self, cpdef) -> list:
+    def _parse_functions(self, cpdef) -> list:
         """parses function"""
-        tmp = []
         functions = []
 
-        for element in cpdef.findall(".//memberdef"):
-            if element.get("kind") == "function":
-                tmp.append(element.get("id"))
-
-        for refid in tmp:
-            memberdef = cpdef.find(f".//memberdef[@id='{refid}']")
+        memberdefs = cpdef.findall(".//memberdef[@kind='function']")
+        for memberdef in memberdefs:
             element = memberdef.find("briefdescription")
             brief = self._xml_tags_to_html(element)
 
@@ -219,6 +234,44 @@ class XMLParser:
             functions.append(function)
 
         return functions
+
+    def _parse_structs(self, cpdef) -> list:
+        """parses structs"""
+        structs = []
+
+        memberdefs = cpdef.findall(".//innerclass")
+        for memberdef in memberdefs:
+            root = ET.parse(self.xml_dir / f"{memberdef.get("refid")}.xml").getroot()
+            cpdef = root.find("compounddef")
+            
+            element = cpdef.find("briefdescription")
+            brief = self._xml_tags_to_html(element)
+            
+            element = cpdef.find("detaileddescription")
+            detailed = brief + self._xml_tags_to_html(element)
+
+            fields = []
+            for field in cpdef.findall(".//memberdef"):
+                argsstring = field.find("argsstring").text
+                type = self._xml_tags_to_html(field.find("type"))
+                name = field.find("name").text
+
+                desc = self._xml_tags_to_html(field.find("detaileddescription"))
+                fields.append(Field(type_str=type, name_str=name, argsstring=argsstring, desc=desc))
+                print(desc)
+
+            struct = Struct(
+                name=cpdef.find("compoundname").text,
+                brief=brief,
+                detailed=detailed,
+                file=cpdef.find("includes").text,
+                fields=fields
+            )
+            
+            structs.append(struct)
+
+        return structs
+    
 
 def main():
     parser = XMLParser()
