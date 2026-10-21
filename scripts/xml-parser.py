@@ -20,6 +20,7 @@ class Function:
     return_type: str
     brief: str
     detailed: str
+    file: str
     params: list[Param]
 
 
@@ -202,6 +203,9 @@ class XMLParser:
             element = memberdef.find("detaileddescription")
             detailed = brief + self._xml_tags_to_html(element)
 
+            element = memberdef.find("location")
+            filepath = element.get("file")
+
             params = []
             for param in memberdef.findall("param"):
                 type = self._xml_tags_to_html(param)
@@ -213,6 +217,7 @@ class XMLParser:
                 return_type="".join(memberdef.find("type").itertext()).strip(),
                 brief=brief,
                 detailed=detailed,
+                file=Path(filepath).name,
                 params=params
             )
 
