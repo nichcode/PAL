@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 
-import sys
 from pathlib import Path
-import re
-
 from xml.etree import ElementTree as ET
 from dataclasses import dataclass
 
 
 @dataclass
+class Constant:
+    name: str
+    value: int
+    desc: str
+
+
+@dataclass
 class Param:
-    type_str: str
-    name_str: str
+    type: str
+    name: str
 
 
 @dataclass
@@ -26,8 +30,8 @@ class Function:
 
 @dataclass
 class Field:
-    type_str: str
-    name_str: str
+    type: str
+    name: str
     argsstring: str
     desc: str
 
@@ -48,6 +52,7 @@ class Module:
     detailed: str
     functions: list[Function]
     structs: list[Struct]
+    constants: list[Constant]
 
 
 class XMLParser:
@@ -72,13 +77,15 @@ class XMLParser:
             data = self._parse_module_file(file_refid)
             functions = self._parse_functions(cpdef)
             structs = self._parse_structs(cpdef)
+            constants = self._parse_constants(cpdef)
 
             module = Module(
                 name=cpdef.findtext("title"),
                 brief=data["brief"],
                 detailed=data["detailed"],
                 functions=functions,
-                structs=structs
+                structs=structs,
+                constants=constants
             )
 
             modules.append(module)
@@ -220,7 +227,7 @@ class XMLParser:
             for param in memberdef.findall("param"):
                 type = self._xml_tags_to_html(param)
                 name = param.findtext("declname", default="").strip()
-                params.append(Param(type_str=type, name_str=name))
+                params.append(Param(type=type, name=name))
 
             function = Function(
                 name=memberdef.findtext("name", default=""),
@@ -257,8 +264,7 @@ class XMLParser:
                 name = field.find("name").text
 
                 desc = self._xml_tags_to_html(field.find("detaileddescription"))
-                fields.append(Field(type_str=type, name_str=name, argsstring=argsstring, desc=desc))
-                print(desc)
+                fields.append(Field(type=type, name=name, argsstring=argsstring, desc=desc))
 
             struct = Struct(
                 name=cpdef.find("compoundname").text,
@@ -271,6 +277,21 @@ class XMLParser:
             structs.append(struct)
 
         return structs
+
+    def _parse_constants(self, cpdef) -> list:
+        """parses constants"""
+        constants = []
+
+        memberdefs = cpdef.findall(".//memberdef[@kind='define']")
+        for memberdef in memberdefs:
+            name = memberdef.find("name").text
+            value = memberdef.find("initializer").text
+
+            element = memberdef.find("detaileddescription")
+            desc = self._xml_tags_to_html(element)
+            constants.append(Constant(name=name, value=value, desc=desc))
+
+        return constants
     
 
 def main():
@@ -288,7 +309,7 @@ def main():
             #     if index > 0 and index < len(func.params):
             #         argstring += ", "
 
-            #     argstring += param.type_str + param.name_str
+            #     argstring += param.type + param.name
                 
             # argstring += ")"
             # print(f"  {func.return_type} {func.name}{argstring}")
