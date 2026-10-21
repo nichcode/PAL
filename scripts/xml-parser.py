@@ -86,8 +86,8 @@ class XMLParser:
             cpdef = root.find("compounddef")
 
             # compute module file id
-            cpname = cpdef.find("compoundname")
-            tmp = cpname.text.replace('_', '__').replace('.', '__')
+            cpname = cpdef.findtext("compoundname")
+            tmp = cpname.replace('_', '__').replace('.', '__')
             file_refid = f"{tmp}_8h"
 
             data = self._parse_module_file(file_refid)
@@ -245,7 +245,9 @@ class XMLParser:
 
             params = []
             for param in memberdef.findall("param"):
-                type = self._xml_tags_to_html(param)
+                element = param.find("type")
+                type = self._xml_tags_to_html(element)
+
                 name = param.findtext("declname", default="").strip()
                 params.append(Param(type=type, name=name))
 
@@ -279,18 +281,18 @@ class XMLParser:
 
             fields = []
             for field in cpdef.findall(".//memberdef"):
-                argsstring = field.find("argsstring").text
+                argsstring = field.findtext("argsstring")
                 type = self._xml_tags_to_html(field.find("type"))
-                name = field.find("name").text
+                name = field.findtext("name")
 
                 desc = self._xml_tags_to_html(field.find("detaileddescription"))
                 fields.append(Field(type=type, name=name, argsstring=argsstring, desc=desc))
 
             struct = Struct(
-                name=cpdef.find("compoundname").text,
+                name=cpdef.findtext("compoundname"),
                 brief=brief,
                 detailed=detailed,
-                file=cpdef.find("includes").text,
+                file=cpdef.findtext("includes"),
                 fields=fields
             )
             
@@ -327,8 +329,8 @@ class XMLParser:
 
         memberdefs = cpdef.findall(".//memberdef[@kind='define']")
         for memberdef in memberdefs:
-            name = memberdef.find("name").text
-            value = memberdef.find("initializer").text
+            name = memberdef.findtext("name")
+            value = memberdef.findtext("initializer")
 
             element = memberdef.find("detaileddescription")
             desc = self._xml_tags_to_html(element)
@@ -347,7 +349,7 @@ class XMLParser:
 
             name = tmp_cpdef.findtext("title")
             constants = self._parse_constants(tmp_cpdef)
-            constants.append(ConstantGroup(name=name, constants=constants))
+            constant_groups.append(ConstantGroup(name=name, constants=constants))
 
         return constant_groups
     
@@ -356,21 +358,31 @@ def main():
     parser = XMLParser()
     modules = parser.parse_modules()
 
-    # for module in modules:
-    #     print(module.detailed)
+    for module in modules:
+        print(module.name)
 
-        # for func in module.functions:
-        #     #print(func.brief)
+        for func in module.functions:
+            argstring = "("
+            for index, param in enumerate(func.params):
+                if index > 0 and index < len(func.params):
+                    argstring += ", "
 
-            # argstring = "("
-            # for index, param in enumerate(func.params):
-            #     if index > 0 and index < len(func.params):
-            #         argstring += ", "
-
-            #     argstring += param.type + param.name
+                argstring += param.type + param.name
                 
-            # argstring += ")"
-            # print(f"  {func.return_type} {func.name}{argstring}")
+            argstring += ")"
+            print(f"  {func.return_type} {func.name}{argstring}")
+
+        for struct in module.structs:
+            print(f"  {struct.name}")
+
+            for field in struct.fields:
+                print(f"      {field.type} {field.name}")
+
+        for constant in module.constants:
+            print(f"  {constant.name} {constant.value}")
+
+        for constant_group in module.constant_groups:
+            print(f"  {constant_group.name}")
 
 
 if __name__ == "__main__":
