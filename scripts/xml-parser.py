@@ -13,6 +13,12 @@ class Constant:
 
 
 @dataclass
+class ConstantGroup:
+    name: str
+    constants: list[Constant]
+
+
+@dataclass
 class Param:
     type: str
     name: str
@@ -53,6 +59,7 @@ class Module:
     functions: list[Function]
     structs: list[Struct]
     constants: list[Constant]
+    constant_groups: list[ConstantGroup]
 
 
 class XMLParser:
@@ -79,13 +86,16 @@ class XMLParser:
             structs = self._parse_structs(cpdef)
             constants = self._parse_constants(cpdef)
 
+            constant_groups = self._parse_constant_groups(cpdef)
+
             module = Module(
                 name=cpdef.findtext("title"),
                 brief=data["brief"],
                 detailed=data["detailed"],
                 functions=functions,
                 structs=structs,
-                constants=constants
+                constants=constants,
+                constant_groups=constant_groups
             )
 
             modules.append(module)
@@ -292,6 +302,21 @@ class XMLParser:
             constants.append(Constant(name=name, value=value, desc=desc))
 
         return constants
+
+    def _parse_constant_groups(self, cpdef) -> list:
+        """parses constant groups"""
+        constant_groups = []
+
+        memberdefs = cpdef.findall(".//innergroup")
+        for memberdef in memberdefs:
+            root = ET.parse(self.xml_dir / f"{memberdef.get("refid")}.xml").getroot()
+            tmp_cpdef = root.find("compounddef")
+
+            name = tmp_cpdef.findtext("title")
+            constants = self._parse_constants(tmp_cpdef)
+            constants.append(ConstantGroup(name=name, constants=constants))
+
+        return constant_groups
     
 
 def main():
