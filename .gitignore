@@ -28,3 +28,6 @@ Makefile
 
 # pickle files
 **.pkl
+
+# python cache files
+**.pyc
