@@ -25,3 +25,6 @@ Makefile
 
 # ppm files
 **.ppm
+
+# pickle files
+**.pkl

@@ -3,6 +3,7 @@
 from pathlib import Path
 from xml.etree import ElementTree as ET
 from dataclasses import dataclass
+import pickle
 
 
 @dataclass
@@ -72,9 +73,8 @@ class Module:
 
 
 class XMLParser:
-    def __init__(self) -> None:
-        self.root_dir = Path(__file__).resolve().parents[1]
-        self.xml_dir = self.root_dir / "build/xml"
+    def __init__(self, root_dir) -> None:
+        self.xml_dir = root_dir / "build/xml"
 
     def parse_modules(self) -> list[Module]:
         """parses modules"""
@@ -355,35 +355,15 @@ class XMLParser:
     
 
 def main():
-    parser = XMLParser()
+    root_dir = Path(__file__).resolve().parents[1]
+    parser = XMLParser(root_dir)
     modules = parser.parse_modules()
 
-    for module in modules:
-        print(module.name)
+    filepath = root_dir / "build/modules.pkl"
+    with open(filepath, "wb") as file:
+        pickle.dump(modules, file, protocol=pickle.HIGHEST_PROTOCOL)
 
-        for func in module.functions:
-            argstring = "("
-            for index, param in enumerate(func.params):
-                if index > 0 and index < len(func.params):
-                    argstring += ", "
-
-                argstring += param.type + param.name
-                
-            argstring += ")"
-            print(f"  {func.return_type} {func.name}{argstring}")
-
-        for struct in module.structs:
-            print(f"  {struct.name}")
-
-            for field in struct.fields:
-                print(f"      {field.type} {field.name}")
-
-        for constant in module.constants:
-            print(f"  {constant.name} {constant.value}")
-
-        for constant_group in module.constant_groups:
-            print(f"  {constant_group.name}")
-
+    print(f"modules cached successfully to {filepath}")
 
 if __name__ == "__main__":
     main()
