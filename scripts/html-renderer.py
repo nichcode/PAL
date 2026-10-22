@@ -5,19 +5,22 @@ import pickle
 import sys
 import shutil
 
-import re
 from jinja2 import Environment, FileSystemLoader
 from models import *
 
 
 class HTMLRenderer:
-    def __init__(self, root_dir, modules) -> None:
+    def __init__(self, root_dir, modules, pages) -> None:
         self.root_dir = root_dir
         self.modules: list[Module] = modules
+        self.pages: list[Page] = pages
 
         self.env = Environment(loader=FileSystemLoader(root_dir / "assets/templates"))
         self.website_page_template = self.env.get_template("website_page.html")
         self.docs_page_template = self.env.get_template("docs_page.html")
+
+        self.modules_list = self._build_modules_list()
+        self.guides_list = self._build_guides_list()
 
     def copy_assets(self):
         """Copies assets into output HTML directory"""
@@ -40,7 +43,7 @@ class HTMLRenderer:
         print(f"assets copied successfully")
 
     def generate_website_pages(self):
-        """Copies pages with sources from assets/pages directory"""
+        """Generates pages with sources from assets/pages directory"""
         pages_dir = self.root_dir / "assets/pages"
         output_dir = self.root_dir / "build/website"
 
@@ -49,16 +52,51 @@ class HTMLRenderer:
             title, body = text.split("\n", 1)
             output_file = output_dir / file.name
 
-            page = self.website_page_template.render(title=title, content=body)
-            output_file.write_text(page, encoding="utf-8")
+            html_page = self.website_page_template.render(title=title, content=body)
+            output_file.write_text(html_page, encoding="utf-8")
 
         print("website pages generated successfully")
+
+    def generate_pages(self):
+        """Generates markdown pages"""
+        output_dir = self.root_dir / "build/website/html"
+
+        for page in self.pages:
+            output_file = output_dir / page.link
+            if page.link == "indexpage.html":
+                output_file = output_dir / "index.html"
+
+            html_page = self.docs_page_template.render(title=page.name, content=page.body)
+            html_page = html_page.replace("<!-- guides -->", self.guides_list)
+            html_page = html_page.replace("<!-- modules -->", self.modules_list)
+            output_file.write_text(html_page, encoding="utf-8")
+
+        print("markdown pages generated successfully")
+
+    def _build_modules_list(self):
+        """Build modules sidebar list"""
+
+        return ""
+        
+    def _build_guides_list(self):
+        """Build guides sidebar list"""
+        guides = []
+
+        # make getting started always first
+        self.pages.sort(key=lambda page: (page.link != "getting_started.html", page.link))
+        for page in self.pages:
+            if page.link in ["guides.html", "api_reference.html", "indexpage.html"]:
+                continue
+
+            guides.append(f'<li><a href="{page.link}">{page.name}</a></li>')
+
+        return "\n".join(guides)
 
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]
-    filepath = root_dir / "build/modules.pkl"
 
+    filepath = root_dir / "build/modules.pkl"
     try:
         with open(filepath, "rb") as file:
             modules: list[Module] = pickle.load(file)
@@ -67,9 +105,19 @@ def main():
         print(f"modules cache is corrupted or out of date: {e}.")
         sys.exit(1)
 
-    renderer = HTMLRenderer(root_dir, modules)
+    filepath = root_dir / "build/pages.pkl"
+    try:
+        with open(filepath, "rb") as file:
+            pages: list[Page] = pickle.load(file)
+
+    except (pickle.PickleError, EOFError, AttributeError) as e:
+        print(f"pages cache is corrupted or out of date: {e}.")
+        sys.exit(1)
+
+    renderer = HTMLRenderer(root_dir, modules, pages)
     renderer.copy_assets()
     renderer.generate_website_pages()
+    renderer.generate_pages()
 
 if __name__ == "__main__":
     main()

@@ -27,96 +27,6 @@ docs_page_template = env.get_template("docs_page.html")
 GUIDES = [] # static array of guides for all docs page
 MODULES = [] # static array of modules for all docs page
 
-def read_html_page(filepath):
-    text = Path(filepath).read_text(encoding="utf-8")
-    title, body = text.split("\n", 1)
-
-def write_website_page(filename, page):
-    file = OUTPUT_DIR / filename
-    html_page = website_page_template.render(
-        title=page["title"],
-        content=page["content"]
-    )
-
-    file.write_text(html_page, encoding="utf-8")
-
-def write_docs_page(filename, page):
-    file = HTML_DIR / filename
-    html_page = docs_page_template.render(
-        title=page["title"],
-        content=page["content"],
-    )
-
-    html_page = html_page.replace("<!-- guides -->", "\n".join(GUIDES))
-    html_page = html_page.replace("<!-- modules -->", "\n".join(MODULES))
-    file.write_text(html_page, encoding="utf-8")
-
-def copy_assets():
-    if HTML_DIR.exists():
-        shutil.rmtree(HTML_DIR)
-
-    HTML_DIR.mkdir(parents=True)
-
-    # copy everything except templates directory
-    for item in ASSETS_DIR.iterdir():
-        if item.name == "templates":
-            continue
-
-        if item.name == "pages":
-            continue
-
-        for file in item.iterdir():
-            shutil.copy(file, HTML_DIR / file.name)
-
-    print(f"Assets copied successfully")
-
-def find_md_pages():
-    md_pages = []
-
-    root = ET.parse(XML_DIR / "index.xml").getroot()
-    for cp in root.iterfind("compound"):
-        if cp.get("kind") == "page":
-            refid = cp.get("refid")
-            md_pages.append(refid)
-
-    return md_pages
-
-def read_group_inner(group_def, tag):
-    items = []
-    for element in group_def.findall(tag):
-        items.append((element.get("refid"), element.text))
-
-    return items
-
-def read_section_inner(group_def, kind):
-    items = []
-    for element in group_def.findall(".//memberdef"):
-        if element.get("kind") == kind:
-            items.append((element.get("id"), element.find("name").text))
-
-    return items
-
-def get_module(refid):
-    module["functions"] = read_section_inner(group_def, "function")
-    module["structs"] = read_group_inner(group_def, "innerclass")
-    module["types"] = read_section_inner(group_def, "typedef")
-    module["constants"] = read_section_inner(group_def, "define")
-    module["subgroups"] = read_group_inner(group_def, "innergroup")
-
-    return module
-
-def get_md_page(refid):
-    xml_file = ET.parse(XML_DIR / f"{refid}.xml").getroot()
-    group_def = xml_file.find("compounddef")
-
-    md_page = {}
-    md_page["refid"] = refid
-    md_page["name"] = group_def.findtext("compoundname")
-    md_page["title"] = group_def.findtext("title")
-    md_page["content"] = group_def.find("detaileddescription")
-
-    return md_page
-
 def build_module_page(module):
     content = []
     content.append(f"<h1>{html.escape(module['title'])}</h1>")
@@ -236,22 +146,6 @@ def main():
     for refid in modules:
         module = get_module(refid)
         write_docs_page(HTML_DIR / f"{module['refid']}.html", build_module_page(module))
-
-    for refid in md_pages:
-        md_page = get_md_page(refid)
-        output_name = HTML_DIR / f"{md_page['refid']}.html"
-        if refid == "indexpage":
-            output_name = HTML_DIR / "index.html"
-            
-        write_docs_page(output_name, build_md_page(md_page))
-
-    # generate html pages from source
-    pages_dir = ASSETS_DIR / "pages"
-    for file in pages_dir.iterdir():
-        write_website_page(file.name, read_html_page(file))
-
-    print(f"")
-    print(f"Documentation generated successfully")
 
     return 0
 

@@ -35,6 +35,7 @@ class XMLParser:
                 name=cpdef.findtext("title"),
                 brief=data["brief"],
                 detailed=data["detailed"],
+                link=f"{refid}.html",
                 functions=functions,
                 structs=structs,
                 typedefs=typedefs,
@@ -46,6 +47,27 @@ class XMLParser:
 
         print("modules parsed successfully")
         return modules
+    
+    def parse_pages(self) -> list[Page]:
+        """parses pages"""
+        refids = []
+        pages = []
+
+        root = ET.parse(self.xml_dir / "index.xml").getroot()
+        for cp in root.iterfind("compound"):
+            if cp.get("kind") == "page":
+                refids.append(cp.get("refid"))
+
+        for refid in refids:
+            root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
+            cpdef = root.find("compounddef")
+            name = cpdef.findtext("title")
+            
+            element = cpdef.find("detaileddescription")
+            body = self._xml_tags_to_html(element)
+            pages.append(Page(name=name, body=body, link=f"{refid}.html"))
+
+        return pages
 
     def _find_modules_refids(self) -> list:
         """find all modules"""
@@ -292,12 +314,19 @@ def main():
     root_dir = Path(__file__).resolve().parents[1]
     parser = XMLParser(root_dir)
     modules = parser.parse_modules()
+    pages = parser.parse_pages()
 
     filepath = root_dir / "build/modules.pkl"
     with open(filepath, "wb") as file:
         pickle.dump(modules, file, protocol=pickle.HIGHEST_PROTOCOL)
 
     print(f"modules cached successfully to {filepath}")
+
+    filepath = root_dir / "build/pages.pkl"
+    with open(filepath, "wb") as file:
+        pickle.dump(pages, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print(f"pages cached successfully to {filepath}")
 
 if __name__ == "__main__":
     main()

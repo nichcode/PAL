@@ -61,9 +61,17 @@ class Module:
     name: str
     brief: str
     detailed: str
+    link: str
     functions: list[Function]
     structs: list[Struct]
     typedefs: list[Typedef]
     constants: list[Constant]
     constant_groups: list[ConstantGroup]
+
+
+@dataclass
+class Page:
+    name: str
+    body: str
+    link: str
 
