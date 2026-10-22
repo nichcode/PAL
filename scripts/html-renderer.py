@@ -66,7 +66,11 @@ class HTMLRenderer:
             if page.link == "indexpage.html":
                 output_file = output_dir / "index.html"
 
-            html_page = self.docs_page_template.render(title=page.name, content=page.body)
+            html_page = self.docs_page_template.render(
+                title=page.name,
+                page_content_title=page.name,
+                content=page.body)
+
             html_page = html_page.replace("<!-- guides -->", self.guides_list)
             html_page = html_page.replace("<!-- modules -->", self.modules_list)
             output_file.write_text(html_page, encoding="utf-8")

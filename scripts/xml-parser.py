@@ -5,6 +5,8 @@ from xml.etree import ElementTree as ET
 import pickle
 from models import *
 
+import html
+
 
 class XMLParser:
     def __init__(self, root_dir) -> None:
@@ -144,7 +146,7 @@ class XMLParser:
         if element.tag == "parametername":
             direction = element.get("direction")
             if direction:
-                dir_badge = f"<span>{direction}</span> "
+                dir_badge = f"<span>{html.escape(direction)}</span> "
 
             open_tag = f"<dt>{dir_badge}<code>"
             close_tag = "</code></dt>"
@@ -159,26 +161,27 @@ class XMLParser:
             elif kind == "par":
                 open_tag, close_tag = ("<div>", "</div>")
             else:
-                open_tag, close_tag = (f"<div callout-{kind}'>", "</div>")
+                open_tag, close_tag = (f'<div-{html.escape(kind)}">', "</div>")
             
         elif element.tag == "ulink":
             url = element.get("url", "#")
-            open_tag = f'<a href="{url}" target="_blank" rel="noopener noreferrer">'
+            open_tag = f'<a href="{html.escape(url)}" target="_blank" rel="noopener noreferrer">'
             close_tag = "</a>"
 
         elif element.tag == "ref":
             refid = element.get("refid", "#")
-            open_tag = f'<a" href="{refid}.html">'
+            open_tag = f'<a href="{html.escape(refid)}.html">'
             close_tag = "</a>"
 
         html_out += open_tag
+
         if element.text:
-            html_out += element.text
+            html_out += html.escape(element.text)
 
         for child in element:
             html_out += self._xml_tags_to_html(child)
             if child.tail:
-                html_out += child.tail
+                html_out += html.escape(child.tail)
 
         html_out += close_tag
 
