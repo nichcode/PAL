@@ -29,19 +29,7 @@ MODULES = [] # static array of modules for all docs page
 
 def read_html_page(filepath):
     text = Path(filepath).read_text(encoding="utf-8")
-
-    # check for the tile of the page
-    # this must be on the first line and in the format <!-- title: site title -->
-    match_obj = re.match(r"\s*<!--\stitle:\s*(.*?)\s*-->", text)
-    if match_obj:
-        title = match_obj.group(1)
-        content = text[match_obj.end():]
-    else:
-        # use the filename as the title
-        title = Path(filepath).stem
-        content = text
-
-    return {"title": title, "content": content}
+    title, body = text.split("\n", 1)
 
 def write_website_page(filename, page):
     file = OUTPUT_DIR / filename

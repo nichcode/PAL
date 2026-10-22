@@ -4,6 +4,9 @@ from pathlib import Path
 import pickle
 import sys
 import shutil
+
+import re
+from jinja2 import Environment, FileSystemLoader
 from models import *
 
 
@@ -12,7 +15,12 @@ class HTMLRenderer:
         self.root_dir = root_dir
         self.modules: list[Module] = modules
 
+        self.env = Environment(loader=FileSystemLoader(root_dir / "assets/templates"))
+        self.website_page_template = self.env.get_template("website_page.html")
+        self.docs_page_template = self.env.get_template("docs_page.html")
+
     def copy_assets(self):
+        """Copies assets into output HTML directory"""
         assets_dir = self.root_dir / "assets"
         output_dir = self.root_dir / "build/website/html"
 
@@ -31,8 +39,20 @@ class HTMLRenderer:
 
         print(f"assets copied successfully")
 
-    def generate_html_pages(self):
-        print("a")
+    def generate_website_pages(self):
+        """Copies pages with sources from assets/pages directory"""
+        pages_dir = self.root_dir / "assets/pages"
+        output_dir = self.root_dir / "build/website"
+
+        for file in pages_dir.iterdir():
+            text = Path(file).read_text(encoding="utf-8")
+            title, body = text.split("\n", 1)
+            output_file = output_dir / file.name
+
+            page = self.website_page_template.render(title=title, content=body)
+            output_file.write_text(page, encoding="utf-8")
+
+        print("website pages generated successfully")
 
 
 def main():
@@ -49,7 +69,7 @@ def main():
 
     renderer = HTMLRenderer(root_dir, modules)
     renderer.copy_assets()
-    renderer.generate_html_pages()
+    renderer.generate_website_pages()
 
 if __name__ == "__main__":
     main()
