@@ -204,7 +204,7 @@ class XMLParser:
 
         memberdefs = cpdef.findall(".//innerclass")
         for memberdef in memberdefs:
-            root = ET.parse(self.xml_dir / f"{memberdef.get("refid")}.xml").getroot()
+            root = ET.parse(self.xml_dir / f"{memberdef.get('refid')}.xml").getroot()
             cpdef = root.find("compounddef")
             
             element = cpdef.find("briefdescription")
@@ -278,7 +278,7 @@ class XMLParser:
 
         memberdefs = cpdef.findall(".//innergroup")
         for memberdef in memberdefs:
-            root = ET.parse(self.xml_dir / f"{memberdef.get("refid")}.xml").getroot()
+            root = ET.parse(self.xml_dir / f"{memberdef.get('refid')}.xml").getroot()
             tmp_cpdef = root.find("compounddef")
 
             name = tmp_cpdef.findtext("title")
