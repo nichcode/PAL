@@ -1,6 +1,8 @@
 
 #### Event Payload {#event_payload}
 
+@brief See how to get the payload of an event
+
 `Data` and `Data2` fields are in the format (bits 0-31, bits 32-63).  
 Unused is used if both low and high bits are unused.
 | Event | Data | Data2

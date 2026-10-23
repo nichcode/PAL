@@ -159,7 +159,7 @@
 }
 
 .list li + li {
-    border-top: 1px solid var(--border-color);
+    border-top: 2px solid var(--border-color);
 }
 
 .list a {
@@ -167,10 +167,6 @@
     padding: 16px 0;
     text-decoration: none;
     color: var(--accent-color);
-}
-
-.list a:focus-visible {
-    outline-color: var(--accent-color);
 }
 
 .list-item a:hover {
@@ -191,4 +187,6 @@
     color: var(--text-color);
     opacity: 0.75;
     line-height: 1.5;
+    text-decoration: none;
+    transition: opacity 0.2s ease, color 0.2s ease;
 }

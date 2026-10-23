@@ -65,9 +65,12 @@ class XMLParser:
             cpdef = root.find("compounddef")
             name = cpdef.findtext("title")
             
+            element = cpdef.find("briefdescription")
+            desc = "".join(element.itertext()).strip()
+
             element = cpdef.find("detaileddescription")
             body = self._xml_tags_to_html(element)
-            pages.append(Page(name=name, body=body, refid=refid))
+            pages.append(Page(name=name, body=body, refid=refid, desc=desc))
 
         return pages
 

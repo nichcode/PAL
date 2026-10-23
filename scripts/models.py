@@ -74,4 +74,5 @@ class Page:
     name: str
     body: str
     refid: str
+    desc: str
 

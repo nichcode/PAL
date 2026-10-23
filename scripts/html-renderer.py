@@ -81,12 +81,8 @@ class HTMLRenderer:
         """Generates guides.html"""
         output_dir = self.root_dir / "build/website/html"
         name = "Guides"
-        desc = "Create your first PAL application"
 
-        content = [
-            '<ul class="list">'
-        ]
-
+        content = ['<ul class="list">']
         for page in self.pages:
             if page.refid in ["indexpage"]:
                 continue
@@ -94,14 +90,12 @@ class HTMLRenderer:
             content.extend([
                 '<li class="list-item">',
                 f'<a href="{page.refid}.html">{page.name}</a>',
-                f'<p class="list-item-desc">{desc}</p>',
+                f'<p class="list-item-desc">{page.desc}</p>',
                 '</li>'
             ])
         
-        content.extend([
-            '</ul>',
-        ])
-
+        content.append('</ul>')
+        
         html_page = self.docs_page_template.render(
             title=name,
             page_content_title=name,
