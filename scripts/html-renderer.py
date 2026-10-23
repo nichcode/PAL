@@ -109,6 +109,35 @@ class HTMLRenderer:
 
         print("guides.html generated successfully")
 
+    def generate_api_reference_page(self):
+        """Generates api_reference.html"""
+        output_dir = self.root_dir / "build/website/html"
+        name = "API Reference"
+
+        content = ['<ul class="list">']
+        for module in self.modules:
+            content.extend([
+                '<li class="list-item">',
+                f'<a href="{module.refid}.html">{module.name}</a>',
+                f'<p class="list-item-desc">{module.brief}</p>',
+                '</li>'
+            ])
+        
+        content.append('</ul>')
+        
+        html_page = self.docs_page_template.render(
+            title=name,
+            page_content_title=name,
+            content="\n".join(content))
+
+        html_page = html_page.replace("<!-- guides -->", self.guides_list)
+        html_page = html_page.replace("<!-- modules -->", self.modules_list)
+
+        output_file = output_dir / "api_reference.html"
+        output_file.write_text(html_page, encoding="utf-8")
+
+        print("api_reference.html generated successfully")
+
     def _build_modules_list(self):
         """Build modules sidebar list"""
         modules = []
@@ -183,6 +212,7 @@ def main():
     renderer.generate_website_pages()
     renderer.generate_pages()
     renderer.generate_guides_page()
+    renderer.generate_api_reference_page()
 
 if __name__ == "__main__":
     main()
