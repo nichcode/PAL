@@ -1,8 +1,6 @@
 
 :root {
     --sidebar-width: 350px;
-    --table-heading-bg-color: #212429;
-    --table-row-accent-color: #23262b;
 }
 
 /* layout */
@@ -135,52 +133,9 @@
     .sidebar-arrow svg { transition: none; }
 }
 
-.page-contents table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 24px 0;
-    background-color: var(--modules-grid-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    overflow: hidden; /* ensures background color doesn't bleed past corners */
-}
-
-.page-contents th {
-    background-color: var(--table-heading-bg-color);
-    color: var(--heading-color);
-    font-weight: 600;
-    padding: 0px 16px;
-    border-bottom: 2px solid var(--border-color);
-    text-align: left;
-}
-
-.page-contents td {
-    padding: 0px 16px;
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-color);
-}
-
-.page-contents tr:hover {
-    background-color: var(--table-row-accent-color);
-}
-
-.page-contents td a {
-    color: var(--accent-color);
-    text-decoration: none;
-}
-
-.page-contents td a:hover {
-    text-decoration: underline;
-}
-
-body.light-mode {
-    --table-heading-bg-color: #eaecef;
-    --table-row-accent-color: #f1f3f5;
-}
-
 .page-contents-title {
     display: block;
-    margin-left: 350px;
+    margin-left: var(--sidebar-width);
     margin-top: var(--nav-bar-height);
     padding-left: 40px;
     padding-right: 40px;
@@ -195,4 +150,45 @@ body.light-mode {
     font-size: 1.85rem;
     font-weight: 600;
     line-height: 1.2;
+}
+  
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.list li + li {
+    border-top: 1px solid var(--border-color);
+}
+
+.list a {
+    display: block;
+    padding: 16px 0;
+    text-decoration: none;
+    color: var(--accent-color);
+}
+
+.list a:focus-visible {
+    outline-color: var(--accent-color);
+}
+
+.list-item a:hover {
+    text-decoration: underline;
+}
+
+.list-item {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+.list-item-desc {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.75;
+    line-height: 1.5;
 }

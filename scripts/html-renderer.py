@@ -77,6 +77,44 @@ class HTMLRenderer:
 
         print("markdown pages generated successfully")
 
+    def generate_guides_page(self):
+        """Generates guides.html"""
+        output_dir = self.root_dir / "build/website/html"
+        name = "Guides"
+        desc = "Create your first PAL application"
+
+        content = [
+            '<ul class="list">'
+        ]
+
+        for page in self.pages:
+            if page.refid in ["indexpage"]:
+                continue
+
+            content.extend([
+                '<li class="list-item">',
+                f'<a href="{page.refid}.html">{page.name}</a>',
+                f'<p class="list-item-desc">{desc}</p>',
+                '</li>'
+            ])
+        
+        content.extend([
+            '</ul>',
+        ])
+
+        html_page = self.docs_page_template.render(
+            title=name,
+            page_content_title=name,
+            content="\n".join(content))
+
+        html_page = html_page.replace("<!-- guides -->", self.guides_list)
+        html_page = html_page.replace("<!-- modules -->", self.modules_list)
+
+        output_file = output_dir / "guides.html"
+        output_file.write_text(html_page, encoding="utf-8")
+
+        print("guides.html generated successfully")
+
     def _build_modules_list(self):
         """Build modules sidebar list"""
         modules = []
@@ -117,7 +155,7 @@ class HTMLRenderer:
         # make getting started always first
         self.pages.sort(key=lambda page: (page.refid != "getting_started", page.refid))
         for page in self.pages:
-            if page.refid in ["guides", "api_reference", "indexpage"]:
+            if page.refid in ["indexpage"]:
                 continue
 
             guides.append(f'<li><a href="{page.refid}.html">{page.name}</a></li>')
@@ -150,6 +188,7 @@ def main():
     renderer.copy_assets()
     renderer.generate_website_pages()
     renderer.generate_pages()
+    renderer.generate_guides_page()
 
 if __name__ == "__main__":
     main()
