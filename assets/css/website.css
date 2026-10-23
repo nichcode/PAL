@@ -1,14 +1,13 @@
-
 footer {
     border-top: 1px solid var(--border-color);
     background-color: var(--modules-grid-bg);
-    padding: 60px 40px 30px 40px;
+    padding: 60px var(--layout-padding) 30px var(--layout-padding);
     margin-top: 80px;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .footer-container {
-    max-width: 1240px;
+    max-width: var(--container-max-width);
     margin: 0 auto;
 }
 
@@ -16,7 +15,7 @@ footer {
     display: grid;
     grid-template-columns: 1.25fr 0.75fr;
     gap: 50px;
-    padding-bottom: 40px;
+    padding-bottom: var(--layout-padding);
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -27,7 +26,7 @@ footer {
 .footer-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--spacing-medium);
     margin-bottom: 16px;
 }
 
@@ -68,7 +67,7 @@ footer {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--spacing-medium);
 }
 
 .footer-links a {
@@ -79,7 +78,7 @@ footer {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    transition: color 0.2s ease, opacity 0.2s ease;
+    transition: color var(--transition-normal), opacity var(--transition-normal);
 }
 
 .footer-links a:hover, a:hover {
@@ -96,7 +95,7 @@ footer {
     color: var(--text-color);
     opacity: 0.65;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: var(--spacing-medium);
 }
 
 .footer-bottom p {
@@ -115,7 +114,7 @@ body.light-mode footer {
 
 @media (max-width: 600px) {
     footer {
-        padding: 40px 20px 20px 20px;
+        padding: var(--layout-padding) var(--spacing-large) var(--spacing-large) var(--spacing-large);
     }
     .footer-links-group {
         grid-template-columns: 1fr 1fr;
@@ -128,9 +127,9 @@ body.light-mode footer {
 }
 
 .page-contents {
-    max-width: 1240px;
+    max-width: var(--container-max-width);
     margin: 160px auto 80px auto;
-    padding: 0 40px;
+    padding: 0 var(--layout-padding);
 }
 
 .intro-grid {
@@ -156,24 +155,24 @@ body.light-mode footer {
     background-color: var(--modules-grid-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 0 0 25px 0;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    padding: 0 0 var(--spacing-extra-large) 0;
+    box-shadow: var(--shadow-heavy);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .modules {
-    padding: 20px 25px 5px 25px;
+    padding: var(--spacing-large) var(--spacing-extra-large) 5px var(--spacing-extra-large);
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: 700;
     color: var(--accent-color);
-    transition: color 0.15s ease;
+    transition: color var(--transition-fast);
 }
 
 .modules-list {
     list-style: none;
-    padding: 0 25px;
+    padding: 0 var(--spacing-extra-large);
     margin: 15px 0 0 0;
     display: flex;
     flex-direction: column;
@@ -183,7 +182,7 @@ body.light-mode footer {
 .modules-list li {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--spacing-small);
     border-bottom: 1px solid rgba(255, 255, 255, 0.02);
     padding-bottom: 15px;
 }
@@ -197,7 +196,7 @@ body.light-mode footer {
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--heading-color);
-    transition: color 0.15s ease;
+    transition: color var(--transition-fast);
 }
 
 .module-value {
@@ -205,13 +204,13 @@ body.light-mode footer {
     line-height: 1.5;
     opacity: 0.65;
     color: var(--text-color);
-    transition: color 0.15s ease;
+    transition: color var(--transition-fast);
 }
 
 .intro-actions {
-    margin-top: 40px;
+    margin-top: var(--layout-padding);
     display: flex;
-    gap: 12px;
+    gap: var(--spacing-medium);
 }
 
 .primary-button {
@@ -222,7 +221,7 @@ body.light-mode footer {
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9rem;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
 }
 
 .primary-button:hover {
@@ -239,7 +238,7 @@ body.light-mode .primary-button:hover {
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9rem;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
     color: var(--text-color);
