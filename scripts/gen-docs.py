@@ -74,15 +74,6 @@ def build_module_page(module):
 
     return {"title": module["title"], "content": "\n".join(content)}
 
-def build_guides_list(guides):
-    for refid in guides:
-        if refid in ["guides", "api_reference", "indexpage"]:
-            continue
-
-        md_page = get_md_page(refid)
-        link = f"{md_page['refid']}.html"
-        GUIDES.append(f'<li><a href="{link}">{md_page['title']}</a></li>')
-
 def build_modules_list(modules):
     for refid in modules:
         module = get_module(refid)

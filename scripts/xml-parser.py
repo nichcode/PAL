@@ -37,7 +37,7 @@ class XMLParser:
                 name=cpdef.findtext("title"),
                 brief=data["brief"],
                 detailed=data["detailed"],
-                link=f"{refid}.html",
+                refid=refid,
                 functions=functions,
                 structs=structs,
                 typedefs=typedefs,
@@ -67,7 +67,7 @@ class XMLParser:
             
             element = cpdef.find("detaileddescription")
             body = self._xml_tags_to_html(element)
-            pages.append(Page(name=name, body=body, link=f"{refid}.html"))
+            pages.append(Page(name=name, body=body, refid=refid))
 
         return pages
 

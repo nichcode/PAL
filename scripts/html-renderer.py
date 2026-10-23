@@ -62,8 +62,8 @@ class HTMLRenderer:
         output_dir = self.root_dir / "build/website/html"
 
         for page in self.pages:
-            output_file = output_dir / page.link
-            if page.link == "indexpage.html":
+            output_file = output_dir / page.refid
+            if page.refid == "indexpage":
                 output_file = output_dir / "index.html"
 
             html_page = self.docs_page_template.render(
@@ -79,20 +79,48 @@ class HTMLRenderer:
 
     def _build_modules_list(self):
         """Build modules sidebar list"""
+        modules = []
 
-        return ""
+        for module in self.modules:
+            modules.extend([
+                '<li class="sidebar-group">',
+                '<div class="sidebar-heading">',
+                '<button class="sidebar-arrow" aria-expanded="false"></button>',
+                f'<a href="{module.refid}.html">{module.name}</a>',
+                '</div>',
+                '<ul class="sidebar-tree" hidden>'
+            ])
+
+            if module.functions:
+                modules.append(f'<li><a href="{module.refid}__functions.html">Functions</a></li>')
+
+            if module.structs:
+                modules.append(f'<li><a href="{module.refid}__structs.html">Structs</a></li>')
+
+            if module.typedefs:
+                modules.append(f'<li><a href="{module.refid}__typedefs.html">Typedefs</a></li>')
+
+            if module.constants or module.constant_groups:
+                modules.append(f'<li><a href="{module.refid}__constants.html">Constants</a></li>')
+
+            modules.extend([
+                '</ul>',
+                '</li>'
+            ])
+
+        return "\n".join(modules)
         
     def _build_guides_list(self):
         """Build guides sidebar list"""
         guides = []
 
         # make getting started always first
-        self.pages.sort(key=lambda page: (page.link != "getting_started.html", page.link))
+        self.pages.sort(key=lambda page: (page.refid != "getting_started", page.refid))
         for page in self.pages:
-            if page.link in ["guides.html", "api_reference.html", "indexpage.html"]:
+            if page.refid in ["guides", "api_reference", "indexpage"]:
                 continue
 
-            guides.append(f'<li><a href="{page.link}">{page.name}</a></li>')
+            guides.append(f'<li><a href="{page}.html">{page.name}</a></li>')
 
         return "\n".join(guides)
 

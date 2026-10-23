@@ -61,7 +61,7 @@ class Module:
     name: str
     brief: str
     detailed: str
-    link: str
+    refid: str
     functions: list[Function]
     structs: list[Struct]
     typedefs: list[Typedef]
@@ -73,5 +73,5 @@ class Module:
 class Page:
     name: str
     body: str
-    link: str
+    refid: str
 
