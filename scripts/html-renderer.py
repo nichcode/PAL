@@ -62,7 +62,7 @@ class HTMLRenderer:
         output_dir = self.root_dir / "build/website/html"
 
         for page in self.pages:
-            output_file = output_dir / page.refid
+            output_file = output_dir / f"{page.refid}.html"
             if page.refid == "indexpage":
                 output_file = output_dir / "index.html"
 
@@ -120,7 +120,7 @@ class HTMLRenderer:
             if page.refid in ["guides", "api_reference", "indexpage"]:
                 continue
 
-            guides.append(f'<li><a href="{page}.html">{page.name}</a></li>')
+            guides.append(f'<li><a href="{page.refid}.html">{page.name}</a></li>')
 
         return "\n".join(guides)
 
