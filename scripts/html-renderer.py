@@ -5,6 +5,7 @@ import pickle
 import sys
 import shutil
 
+import re
 from jinja2 import Environment, FileSystemLoader
 from models import *
 
@@ -49,7 +50,12 @@ class HTMLRenderer:
 
         for file in pages_dir.iterdir():
             text = Path(file).read_text(encoding="utf-8")
-            title, body = text.split("\n", 1)
+
+            match = re.match(r"\s*<!--\stitle:\s*(.*?)\s*-->", text)
+            if match:
+                title = match.group(1)
+                body = text[match.end():]
+
             output_file = output_dir / file.name
 
             html_page = self.website_page_template.render(title=title, content=body)
