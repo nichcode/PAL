@@ -1,3 +1,4 @@
+
 :root {
     --sidebar-width: 350px;
 }
@@ -19,6 +20,7 @@
 }
 
 .page-contents {
+    margin-top: 0;
     margin-left: var(--sidebar-width);
     padding-left: var(--layout-padding);
     padding-right: var(--layout-padding);
@@ -39,8 +41,8 @@
 .sidebar-entry a,
 .sidebar-heading a,
 .sidebar-tree li > a {
-    display: block;
-    padding: 3px 0;
+    display: inline;
+    padding: 0;
     color: var(--text-color);
     text-decoration: none;
     font-size: 0.9rem;
@@ -49,7 +51,7 @@
     transition: opacity var(--transition-normal), color var(--transition-normal);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* append ... when text runs out of space */
+    text-overflow: ellipsis; 
 }
 
 .sidebar-entry a:hover,
@@ -70,16 +72,28 @@
     padding-left: 26px; /* (20px arrow + 6px gap) */
 }
 
+.sidebar-entry,
+.sidebar-tree li {
+    display: block;
+    padding: 3px 0;
+    padding-left: 26px;
+}
+
+.sidebar-entry {
+    padding-left: 0;
+}
+
 /* heading with arrow */
 
 .sidebar-heading {
     display: flex;
     align-items: center;
     gap: var(--spacing-small);
+    padding: 3px 0;
 }
 
 .sidebar-heading a {
-    flex: 1;
+    flex: initial;
 }
 
 .sidebar-arrow {
@@ -114,7 +128,7 @@
 
 .sidebar-tree {
     list-style: none;
-    margin: 2px 0 var(--spacing-extra-small) 9px; /* guide line sits under the arrow's center */
+    margin: 2px 0 var(--spacing-extra-small) 9px;
     padding: 0 0 0 11px;
     border-left: 1px solid var(--border-color);
 }
@@ -138,7 +152,7 @@
     margin-top: var(--nav-bar-height);
     padding-left: var(--layout-padding);
     padding-right: var(--layout-padding);
-    padding-top: 24px;
+    padding-top: 40px;    
     padding-bottom: var(--spacing-large);
 }
 
@@ -158,12 +172,13 @@
 }
 
 .list li + li {
-    border-top: 2px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+    margin-top: 16px;
 }
 
 .list a {
-    display: block;
-    padding: 16px 0;
+    display: inline-block;
+    padding: 0;
     text-decoration: none;
     color: var(--accent-color);
 }
@@ -177,22 +192,17 @@
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--heading-color);
+    padding-top: 16px;
 }
 
-.list-item-desc, .list-item-desc p {
+.list-item-desc {
     display: block;
-    margin-top: var(--spacing-extra-small);
+    margin-top: 16px;
+    padding-bottom: 16px;
     font-size: 0.9rem;
     color: var(--text-color);
     opacity: 0.75;
-    line-height: 1.5;
+    line-height: 1.6;
     text-decoration: none;
     transition: opacity var(--transition-normal), color var(--transition-normal);
-}
-
-.list-item-desc p {
-    margin: 0;
-    font-size: inherit;
-    color: inherit;
-    line-height: inherit;
 }
