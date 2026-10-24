@@ -1,10 +1,6 @@
 /**
  * @file pal_system.h
- * @brief Header file for the PAL System API.
- *
- * Defines the types, constants and functions of the system module. The module
- * provides information about the CPU and the platform the application runs on.
- *
+ * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -33,6 +29,10 @@
 
 /**
  * @defgroup pal_system System Module
+ * @brief Defines the types, constants and functions of the system module. 
+ * 
+ * The module provides information about the CPU and the platform 
+ * the application runs on.
  * @{
  */
 

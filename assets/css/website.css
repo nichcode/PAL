@@ -127,7 +127,7 @@ body.light-mode footer {
 }
 
 .page-contents {
-    max-width: var(--container-max-width);
+    max-width: 1240px;
     margin: 160px auto 80px auto;
     padding: 0 var(--layout-padding);
 }

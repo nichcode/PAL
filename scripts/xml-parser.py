@@ -21,12 +21,16 @@ class XMLParser:
             root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
             cpdef = root.find("compounddef")
 
+            brief="".join(cpdef.find("briefdescription").itertext()).strip()
+            detailed="".join(cpdef.find("detaileddescription").itertext()).strip()
+            desc = brief + " " + detailed
+
             # compute module file id
             cpname = cpdef.findtext("compoundname")
             tmp = cpname.replace('_', '__').replace('.', '__')
             file_refid = f"{tmp}_8h"
 
-            data = self._parse_module_file(file_refid)
+            license = self._parse_module_file(file_refid)
             functions = self._parse_functions(cpdef)
             structs = self._parse_structs(cpdef)
             typedefs = self._parse_typedefs(cpdef)
@@ -35,8 +39,8 @@ class XMLParser:
 
             module = Module(
                 name=cpdef.findtext("title"),
-                brief=data["brief"],
-                detailed=data["detailed"],
+                desc=desc,
+                license=license,
                 refid=refid,
                 functions=functions,
                 structs=structs,
@@ -101,19 +105,13 @@ class XMLParser:
 
         return modules
 
-    def _parse_module_file(self, file_refid) -> dict:
-        """parses module file"""
+    def _parse_module_file(self, file_refid) -> str:
+        """parses module file and get license"""
         root = ET.parse(self.xml_dir / f"{file_refid}.xml").getroot()
         cpdef = root.find("compounddef")
 
-        data = {}
-        element = cpdef.find("briefdescription")
-        data["brief"] = self._xml_tags_to_html(element)
-
         element = cpdef.find("detaileddescription")
-        data["detailed"] = data["brief"] + self._xml_tags_to_html(element)
-
-        return data
+        return self._xml_tags_to_html(element)
 
     def _xml_tags_to_html(self, element: ET.Element | None) -> str:
         """converts XML tags into HTML"""

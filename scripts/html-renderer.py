@@ -125,7 +125,7 @@ class HTMLRenderer:
             content.extend([
                 '<li class="list-item">',
                 f'<a href="{module.refid}.html">{module.name}</a>',
-                f'<p class="list-item-desc">{module.brief}</p>',
+                f'<p class="list-item-desc">{module.desc}</p>',
                 '</li>'
             ])
         
@@ -143,6 +143,27 @@ class HTMLRenderer:
         output_file.write_text(html_page, encoding="utf-8")
 
         print("api_reference.html generated successfully")
+
+    def generate_module_pages(self):
+        """Generates base and subsequent pages for modules"""
+        output_dir = self.root_dir / "build/website/html"
+        filename = "pal_system.h"
+
+        for module in self.modules:
+            content = [f'<code>#include &lt;{filename}&gt;</code>']
+
+            html_page = self.docs_page_template.render(
+                title=module.name,
+                page_content_title=module.name,
+                content="\n".join(content))
+    
+            html_page = html_page.replace("<!-- guides -->", self.guides_list)
+            html_page = html_page.replace("<!-- modules -->", self.modules_list)
+    
+            output_file = output_dir / f"{module.refid}.html"
+            output_file.write_text(html_page, encoding="utf-8")
+
+        print("module pages generated successfully")
 
     def _build_modules_list(self):
         """Build modules sidebar list"""
@@ -219,6 +240,7 @@ def main():
     renderer.generate_pages()
     renderer.generate_guides_page()
     renderer.generate_api_reference_page()
+    renderer.generate_module_pages()
 
 if __name__ == "__main__":
     main()

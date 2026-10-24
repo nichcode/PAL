@@ -59,8 +59,8 @@ class Typedef:
 @dataclass
 class Module:
     name: str
-    brief: str
-    detailed: str
+    desc: str
+    license: str
     refid: str
     functions: list[Function]
     structs: list[Struct]
