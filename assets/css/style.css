@@ -24,12 +24,10 @@
     --nav-bar-height: 65px;
     --code-bg-color: #23262b;
     --code-border-color: #2c3036;
-
     --transition-fast: 0.15s ease;
     --transition-normal: 0.2s ease;
     --layout-padding: 40px;
     --shadow-heavy: 0 10px 30px rgba(0, 0, 0, 0.3);
-    
     --spacing-extra-small: 4px;
     --spacing-small: 6px;
     --spacing-medium: 12px;
@@ -75,7 +73,8 @@ body {
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.nav-bar-links {
+.nav-bar-links,
+.page-nav-logo {
     display: flex;
     align-items: center;
 }
@@ -94,13 +93,12 @@ body {
     opacity: 1;
 }
 
-.page-nav-bar-title {
+.page-nav-bar-title,
+.page-nav-logo h1 {
     color: var(--heading-color);
 }
 
 .page-nav-logo {
-    display: flex;
-    align-items: center;
     gap: var(--spacing-medium);
 }
 
@@ -124,11 +122,9 @@ body {
     font-size: 1.15rem;
     font-weight: 700;
     margin: 0;
-    color: var(--heading-color);
     letter-spacing: 0.02em;
 }
 
-/** Reset and style our raw data icon button container*/
 #nav-bar-theme-toggle {
     background: transparent;
     border: none;
@@ -172,7 +168,8 @@ body.light-mode .pal-logo-img {
     }
 }
 
-.page-contents p code, .page-contents code {
+.page-contents p code,
+.page-contents code {
     background-color: var(--code-bg-color);
     border: 1px solid var(--code-border-color);
     color: var(--heading-color);
