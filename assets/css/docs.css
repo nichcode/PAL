@@ -1,7 +1,9 @@
 
 :root {
     --sidebar-width: 350px;
-    --container-width: 800px
+    --container-width: 800px;
+    --seperator-margin: 16px;
+    --module-license-text-color: #636c77;
 }
 
 /* layout */
@@ -157,6 +159,8 @@
     padding-right: var(--layout-padding);
     padding-top: 40px;    
     padding-bottom: var(--spacing-large);
+    max-width: var(--container-width);
+    width: 100%;
 }
 
 .page-contents-title h1 {
@@ -166,6 +170,9 @@
     font-size: 1.85rem;
     font-weight: 600;
     line-height: 1.2;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--seperator-margin);
+    margin-bottom: var(--seperator-margin);
 }
   
 .list {
@@ -210,4 +217,66 @@
     line-height: 1.6;
     text-decoration: none;
     transition: opacity var(--transition-normal), color var(--transition-normal);
+}
+
+.module-desc {
+    padding-bottom: var(--seperator-margin);
+    margin-bottom: var(--seperator-margin);
+    border-bottom: 1px solid var(--border-color);
+    max-width: var(--container-width);
+    width: 100%;
+}
+
+.module-section-title {
+    font-size: 1.25rem;
+    color: var(--heading-color);
+    font-weight: 600;
+    margin-top: 28px;
+    margin-bottom: 12px;
+}
+
+.module-section-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: 800px;
+    width: 100%;
+}
+
+.module-section-list li {
+    padding: 6px 0;
+}
+
+.module-section-list a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s ease;      /* Smooth color transition when hovering */
+}
+
+.module-section-list a:hover {
+    text-decoration: underline;
+}
+
+.module-license {
+    color: var(--module-license-text-color);
+    margin-top: 24px;
+    margin-bottom: 16px;
+    line-height: 1.4;
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--seperator-margin);
+    margin-top: var(--seperator-margin);
+}
+
+.module-license a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.module-license a:hover {
+    text-decoration: underline;
+}
+
+body.light-mode {
+    --module-license-text-color: #838b95;
 }

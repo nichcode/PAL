@@ -150,8 +150,49 @@ class HTMLRenderer:
         filename = "pal_system.h"
 
         for module in self.modules:
-            content = [f'<code>#include &lt;{filename}&gt;</code>']
+            content = [
+                f'<code>#include &lt;{filename}&gt;</code>',
+                f'<p class="module-desc">{module.desc}</p>',
+                '<h2 class="module-section-title">Reference</h2>', 
+                '<ul class="module-section-list">'
+            ]
 
+            if module.functions:
+                content.extend([
+                    '<li>',
+                    f'<a href="{module.refid}__functions.html">Functions</a>',
+                    '</li>'
+                ])
+
+            if module.structs:
+                content.extend([
+                    '<li>',
+                    f'<a href="{module.refid}__structs.html">Structs</a>',
+                    '</li>'
+                ])
+
+            if module.typedefs:
+                content.extend([
+                    '<li>',
+                    f'<a href="{module.refid}__typedefs.html">Typedefs</a>',
+                    '</li>'
+                ])
+
+            if module.constants or module.constant_groups:
+                content.extend([
+                    '<li>',
+                    f'<a href="{module.refid}__constants.html">Constants</a>',
+                    '</li>'
+                ])
+
+            content.append('</ul>')
+
+            content.extend([
+                '<footer class="module-license">',
+                f'{module.license}',
+                '</footer>'
+            ])
+            
             html_page = self.docs_page_template.render(
                 title=module.name,
                 page_content_title=module.name,
