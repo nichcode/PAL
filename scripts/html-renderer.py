@@ -13,6 +13,7 @@ from models import *
 class HTMLRenderer:
     def __init__(self, root_dir, modules, pages) -> None:
         self.root_dir = root_dir
+        self.output_dir = root_dir / "build/website/html"
         self.modules: list[Module] = modules
         self.pages: list[Page] = pages
 
@@ -26,12 +27,11 @@ class HTMLRenderer:
     def copy_assets(self):
         """Copies assets into output HTML directory"""
         assets_dir = self.root_dir / "assets"
-        output_dir = self.root_dir / "build/website/html"
 
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
+        if self.output_dir.exists():
+            shutil.rmtree(self.output_dir)
 
-        output_dir.mkdir(parents=True)
+        self.output_dir.mkdir(parents=True)
         for item in assets_dir.iterdir():
             if item.name == "templates":
                 continue
@@ -39,7 +39,7 @@ class HTMLRenderer:
                 continue
 
             for file in item.iterdir():
-                shutil.copy(file, output_dir / file.name)
+                shutil.copy(file, self.output_dir / file.name)
 
         print(f"assets copied successfully")
 
@@ -65,12 +65,11 @@ class HTMLRenderer:
 
     def generate_pages(self):
         """Generates markdown pages"""
-        output_dir = self.root_dir / "build/website/html"
 
         for page in self.pages:
-            output_file = output_dir / f"{page.refid}.html"
+            output_file = self.output_dir / f"{page.refid}.html"
             if page.refid == "indexpage":
-                output_file = output_dir / "index.html"
+                output_file = self.output_dir / "index.html"
 
             html_page = self.docs_page_template.render(
                 title=page.name,
@@ -85,7 +84,6 @@ class HTMLRenderer:
 
     def generate_guides_page(self):
         """Generates guides.html"""
-        output_dir = self.root_dir / "build/website/html"
         name = "Guides"
 
         content = ['<ul class="list">']
@@ -110,14 +108,13 @@ class HTMLRenderer:
         html_page = html_page.replace("<!-- guides -->", self.guides_list)
         html_page = html_page.replace("<!-- modules -->", self.modules_list)
 
-        output_file = output_dir / "guides.html"
+        output_file = self.output_dir / "guides.html"
         output_file.write_text(html_page, encoding="utf-8")
 
         print("guides.html generated successfully")
 
     def generate_api_reference_page(self):
         """Generates api_reference.html"""
-        output_dir = self.root_dir / "build/website/html"
         name = "API Reference"
 
         content = ['<ul class="list">']
@@ -139,19 +136,17 @@ class HTMLRenderer:
         html_page = html_page.replace("<!-- guides -->", self.guides_list)
         html_page = html_page.replace("<!-- modules -->", self.modules_list)
 
-        output_file = output_dir / "api_reference.html"
+        output_file = self.output_dir / "api_reference.html"
         output_file.write_text(html_page, encoding="utf-8")
 
         print("api_reference.html generated successfully")
 
     def generate_module_pages(self):
         """Generates base and subsequent pages for modules"""
-        output_dir = self.root_dir / "build/website/html"
-        filename = "pal_system.h"
 
         for module in self.modules:
             content = [
-                f'<code>#include &lt;{filename}&gt;</code>',
+                f'<code>#include &lt;{module.file}&gt;</code>',
                 f'<p class="module-desc">{module.desc}</p>',
                 '<h2 class="module-section-title">Reference</h2>', 
                 '<ul class="module-section-list">'
@@ -192,6 +187,8 @@ class HTMLRenderer:
                 f'{module.license}',
                 '</footer>'
             ])
+
+            self._generation_functions_page(module)
             
             html_page = self.docs_page_template.render(
                 title=module.name,
@@ -201,7 +198,7 @@ class HTMLRenderer:
             html_page = html_page.replace("<!-- guides -->", self.guides_list)
             html_page = html_page.replace("<!-- modules -->", self.modules_list)
     
-            output_file = output_dir / f"{module.refid}.html"
+            output_file = self.output_dir / f"{module.refid}.html"
             output_file.write_text(html_page, encoding="utf-8")
 
         print("module pages generated successfully")
@@ -253,6 +250,36 @@ class HTMLRenderer:
 
         return "\n".join(guides)
 
+    def _generation_functions_page(self, module:Module):
+        """Generate module function page"""
+        name = f"{module.name} Functions"
+        content = ['<ul class="function-list">']
+
+        for func in module.functions:
+            content.extend([
+                '<li class="function-list-item">',
+                f'<a href="function_{func.name}.html">{func.name}</a>',
+                f'<p class="function-list-item-desc">{func.brief}</p>',
+                '</li>'
+            ])
+
+        content.extend([
+            '</ul>',
+            '<footer class="module-license">2026 Prime Abstraction Layer. Released under zlib/libpng.</footer>'
+        ])
+
+        html_page = self.docs_page_template.render(
+            title=name,
+            page_content_title=name,
+            content="\n".join(content))
+            
+        html_page = html_page.replace("<!-- guides -->", self.guides_list)
+        html_page = html_page.replace("<!-- modules -->", self.modules_list)
+
+        output_file = self.output_dir / f"{module.refid}__functions.html"
+        output_file.write_text(html_page, encoding="utf-8")
+        
+        print("module function page generated successfully")
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]

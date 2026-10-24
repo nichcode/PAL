@@ -164,7 +164,8 @@
 }
 
 .list,
-.module-section-list {
+.module-section-list, 
+.function-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -236,6 +237,7 @@
 
 .module-section-list li {
     padding: 6px 0;
+    padding-left: 20px;
 }
 
 .module-section-list a {
@@ -262,4 +264,25 @@
 
 body.light-mode {
     --module-license-text-color: #838b95;
+}
+
+.function-list-item {
+    padding-bottom: 20px;
+}
+
+.function-list-item a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.15rem;
+}
+
+.function-list-item a:hover {
+    text-decoration: underline;
+}
+
+.function-list-item-desc {
+    margin-top: 4px;
+    margin-bottom: 0;
+    line-height: 1.5;
 }

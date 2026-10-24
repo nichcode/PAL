@@ -42,6 +42,7 @@ class XMLParser:
                 desc=desc,
                 license=license,
                 refid=refid,
+                file=f"{cpname}.h",
                 functions=functions,
                 structs=structs,
                 typedefs=typedefs,

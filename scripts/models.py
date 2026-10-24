@@ -62,6 +62,7 @@ class Module:
     desc: str
     license: str
     refid: str
+    file: str
     functions: list[Function]
     structs: list[Struct]
     typedefs: list[Typedef]
