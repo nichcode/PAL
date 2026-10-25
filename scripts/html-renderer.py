@@ -187,8 +187,6 @@ class HTMLRenderer:
                 f'{module.license}',
                 '</footer>'
             ])
-
-            self._generation_functions_page(module)
             
             html_page = self.docs_page_template.render(
                 title=module.name,
@@ -217,17 +215,18 @@ class HTMLRenderer:
                 '<ul class="sidebar-tree" hidden>'
             ])
 
-            if module.functions:
-                modules.append(f'<li><a href="{module.refid}__functions.html">Functions</a></li>')
+            for func in module.functions:
+                modules.append(f'<li><a href="function__{func.name}.html">{func.name}</a></li>')
 
-            if module.structs:
-                modules.append(f'<li><a href="{module.refid}__structs.html">Structs</a></li>')
+            for struct in module.structs:
+                modules.append(f'<li><a href="struct__{struct.name}.html">{struct.name}</a></li>')
 
-            if module.typedefs:
-                modules.append(f'<li><a href="{module.refid}__typedefs.html">Typedefs</a></li>')
+            for constant in module.constants:
+                link = f"{module.refid}__constants.html"
+                modules.append(f'<li><a href="{link}#{constant.refid}">{constant.name}</a></li>')
 
-            if module.constants or module.constant_groups:
-                modules.append(f'<li><a href="{module.refid}__constants.html">Constants</a></li>')
+            for group in module.constant_groups:
+                modules.append(f'<li><a href="constant_group__{group.refid}.html">{group.name}</a></li>')
 
             modules.extend([
                 '</ul>',
@@ -249,37 +248,6 @@ class HTMLRenderer:
             guides.append(f'<li><a href="{page.refid}.html">{page.name}</a></li>')
 
         return "\n".join(guides)
-
-    def _generation_functions_page(self, module:Module):
-        """Generate module function page"""
-        name = f"{module.name} Functions"
-        content = ['<ul class="function-list">']
-
-        for func in module.functions:
-            content.extend([
-                '<li class="function-list-item">',
-                f'<a href="function_{func.name}.html">{func.name}</a>',
-                f'<p class="function-list-item-desc">{func.brief}</p>',
-                '</li>'
-            ])
-
-        content.extend([
-            '</ul>',
-            '<footer class="module-license">2026 Prime Abstraction Layer. Released under zlib/libpng.</footer>'
-        ])
-
-        html_page = self.docs_page_template.render(
-            title=name,
-            page_content_title=name,
-            content="\n".join(content))
-            
-        html_page = html_page.replace("<!-- guides -->", self.guides_list)
-        html_page = html_page.replace("<!-- modules -->", self.modules_list)
-
-        output_file = self.output_dir / f"{module.refid}__functions.html"
-        output_file.write_text(html_page, encoding="utf-8")
-        
-        print("module function page generated successfully")
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]

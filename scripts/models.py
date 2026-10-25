@@ -7,11 +7,13 @@ class Constant:
     name: str
     value: int
     desc: str
+    refid: str
 
 
 @dataclass
 class ConstantGroup:
     name: str
+    refid: str
     constants: list[Constant]
 
 

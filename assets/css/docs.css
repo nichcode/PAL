@@ -41,7 +41,7 @@
 .sidebar-entry a,
 .sidebar-heading a,
 .sidebar-tree li>a {
-    display: inline;
+    display: block;
     padding: 0;
     color: var(--text-color);
     text-decoration: none;
@@ -264,25 +264,4 @@
 
 body.light-mode {
     --module-license-text-color: #838b95;
-}
-
-.function-list-item {
-    padding-bottom: 20px;
-}
-
-.function-list-item a {
-    color: var(--accent-color);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1.15rem;
-}
-
-.function-list-item a:hover {
-    text-decoration: underline;
-}
-
-.function-list-item-desc {
-    margin-top: 4px;
-    margin-bottom: 0;
-    line-height: 1.5;
 }
