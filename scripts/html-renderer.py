@@ -23,6 +23,7 @@ class HTMLRenderer:
 
         self.modules_list = self._build_modules_list()
         self.guides_list = self._build_guides_list()
+        self.toc_list = self._build_toc_list()
 
     def copy_assets(self):
         """Copies assets into output HTML directory"""
@@ -68,16 +69,25 @@ class HTMLRenderer:
 
         for page in self.pages:
             output_file = self.output_dir / f"{page.refid}.html"
+            toc = self.toc_list
+            page_type = "default"
+
             if page.refid == "indexpage":
                 output_file = self.output_dir / "index.html"
+                toc = ""
+                page_type = "intro"
 
             html_page = self.docs_page_template.render(
+                title_page_type=page_type,
                 title=page.name,
+                guides=self.guides_list,
+                modules=self.modules_list,
                 page_content_title=page.name,
-                content=page.body)
+                page_type=page_type,
+                content=page.body,
+                toc_page_type=page_type,
+                toc=toc)
 
-            html_page = html_page.replace("<!-- guides -->", self.guides_list)
-            html_page = html_page.replace("<!-- modules -->", self.modules_list)
             output_file.write_text(html_page, encoding="utf-8")
 
         print("markdown pages generated successfully")
@@ -85,6 +95,7 @@ class HTMLRenderer:
     def generate_guides_page(self):
         """Generates guides.html"""
         name = "Guides"
+        page_type = "intro"
 
         content = ['<ul class="list">']
         for page in self.pages:
@@ -101,12 +112,15 @@ class HTMLRenderer:
         content.append('</ul>')
         
         html_page = self.docs_page_template.render(
+            title_page_type=page_type,
             title=name,
+            guides=self.guides_list,
+            modules=self.modules_list,
             page_content_title=name,
-            content="\n".join(content))
-
-        html_page = html_page.replace("<!-- guides -->", self.guides_list)
-        html_page = html_page.replace("<!-- modules -->", self.modules_list)
+            page_type=page_type,
+            content="\n".join(content),
+            toc_page_type=page_type,
+            toc=self.toc_list)
 
         output_file = self.output_dir / "guides.html"
         output_file.write_text(html_page, encoding="utf-8")
@@ -116,6 +130,7 @@ class HTMLRenderer:
     def generate_api_reference_page(self):
         """Generates api_reference.html"""
         name = "API Reference"
+        page_type = "intro"
 
         content = ['<ul class="list">']
         for module in self.modules:
@@ -129,12 +144,15 @@ class HTMLRenderer:
         content.append('</ul>')
         
         html_page = self.docs_page_template.render(
+            title_page_type=page_type,
             title=name,
+            guides=self.guides_list,
+            modules=self.modules_list,
             page_content_title=name,
-            content="\n".join(content))
-
-        html_page = html_page.replace("<!-- guides -->", self.guides_list)
-        html_page = html_page.replace("<!-- modules -->", self.modules_list)
+            page_type=page_type,
+            content="\n".join(content),
+            toc_page_type=page_type,
+            toc=self.toc_list)
 
         output_file = self.output_dir / "api_reference.html"
         output_file.write_text(html_page, encoding="utf-8")
@@ -143,6 +161,7 @@ class HTMLRenderer:
 
     def generate_module_pages(self):
         """Generates base and subsequent pages for modules"""
+        page_type = "default"
 
         for module in self.modules:
             content = [
@@ -189,12 +208,15 @@ class HTMLRenderer:
             ])
             
             html_page = self.docs_page_template.render(
+                title_page_type=page_type,
                 title=module.name,
+                guides=self.guides_list,
+                modules=self.modules_list,
                 page_content_title=module.name,
-                content="\n".join(content))
-    
-            html_page = html_page.replace("<!-- guides -->", self.guides_list)
-            html_page = html_page.replace("<!-- modules -->", self.modules_list)
+                page_type=page_type,
+                content="\n".join(content),
+                toc_page_type=page_type,
+                toc=self.toc_list)
     
             output_file = self.output_dir / f"{module.refid}.html"
             output_file.write_text(html_page, encoding="utf-8")
@@ -248,6 +270,13 @@ class HTMLRenderer:
             guides.append(f'<li><a href="{page.refid}.html">{page.name}</a></li>')
 
         return "\n".join(guides)
+
+    def _build_toc_list(self):
+        """Build toc list"""
+        # toc = ['<h3 class="toc-title">On This Page</h3>']
+        toc = []
+
+        return "\n".join(toc)
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]

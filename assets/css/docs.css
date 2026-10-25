@@ -1,6 +1,7 @@
 :root {
     --sidebar-width: 350px;
-    --container-width: 800px;
+    --toc-width: 240px;
+    --content-width: calc(100% - var(--sidebar-width) - var(--toc-width));
     --seperator-margin: 16px;
     --module-license-text-color: #636c77;
 }
@@ -19,9 +20,8 @@
     padding: var(--spacing-large);
 }
 
-.page-contents {
-    max-width: var(--container-width);
-    width: 100%;
+.page-content {
+    max-width: var(--content-width);
     margin-top: 0;
     margin-left: var(--sidebar-width);
     padding-left: var(--layout-padding);
@@ -139,7 +139,7 @@
     }
 }
 
-.page-contents-title {
+.page-content-title {
     display: block;
     margin-left: var(--sidebar-width);
     margin-top: var(--nav-bar-height);
@@ -147,11 +147,10 @@
     padding-right: var(--layout-padding);
     padding-top: 40px;
     padding-bottom: var(--spacing-large);
-    max-width: var(--container-width);
-    width: 100%;
+    max-width: var(--content-width);
 }
 
-.page-contents-title h1 {
+.page-content-title h1 {
     margin: 0;
     padding: 0;
     color: var(--heading-color);
@@ -169,11 +168,6 @@
     list-style: none;
     margin: 0;
     padding: 0;
-}
-
-.list {
-    max-width: var(--container-width);
-    width: 100%;
 }
 
 .list li+li {
@@ -218,8 +212,6 @@
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
     border-bottom: 1px solid var(--border-color);
-    max-width: var(--container-width);
-    width: 100%;
 }
 
 .module-section-title {
@@ -228,11 +220,6 @@
     font-weight: 600;
     margin-top: 28px;
     margin-bottom: 12px;
-}
-
-.module-section-list {
-    max-width: 800px;
-    width: 100%;
 }
 
 .module-section-list li {
@@ -265,3 +252,35 @@
 body.light-mode {
     --module-license-text-color: #838b95;
 }
+
+div.page-content[page-type="intro"] {
+    max-width: calc(100% - 100px - var(--sidebar-width)) !important;
+    padding-right: 0 !important;
+}
+
+div.page-content[page-type="intro"] p {
+    max-width: 800px;
+    line-height: 1.6;
+}
+
+div.page-content-title[page-type="intro"] {
+    max-width: calc(100% - 100px - var(--sidebar-width)) !important;
+    padding-right: 0 !important;
+}
+
+div.toc[page-type="default"] {
+    position: fixed;
+    top: var(--nav-bar-height);
+    right: 0;
+    width: var(--toc-width);
+    height: calc(100vh - var(--nav-bar-height));
+    background-color: var(--modules-grid-bg);
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-shadow: var(--shadow-heavy);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* .toc-title {
+
+} */

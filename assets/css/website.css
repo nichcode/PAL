@@ -159,7 +159,7 @@ body.light-mode footer,
     }
 }
 
-.page-contents {
+.page-content {
     max-width: 1240px;
     margin: 160px auto 80px auto;
     padding: 0 var(--layout-padding);

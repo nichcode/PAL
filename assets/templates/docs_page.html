@@ -45,7 +45,7 @@
             </div>
 
             <ul class="sidebar-tree" hidden>
-                <!-- guides -->
+                {{ guides }}
             </ul>
         </div>
 
@@ -56,13 +56,14 @@
             </div>
 
             <ul class="sidebar-tree" hidden>
-                <!-- modules -->                
+                {{ modules }}
             </ul>
         </div>
     </nav>
 
-    <div class="page-contents-title"><h1>{{ page_content_title }}</h1></div>
-    <div class="page-contents">{{ content }}</div>
+    <div class="page-content-title" page-type="{{ title_page_type }}"><h1>{{ page_content_title }}</h1></div>
+    <div class="page-content" page-type="{{ page_type }}">{{ content }}</div>
+    <div class="toc" page-type="{{ toc_page_type }}">{{ toc }}</div>
 
     <script type="text/javascript" src="script.js"></script>
     <script type="text/javascript" src="sidebar.js"></script>

@@ -168,8 +168,8 @@ body.light-mode .pal-logo-img {
     }
 }
 
-.page-contents p code,
-.page-contents code {
+.page-content p code,
+.page-content code {
     background-color: var(--code-bg-color);
     border: 1px solid var(--code-border-color);
     color: var(--heading-color);
