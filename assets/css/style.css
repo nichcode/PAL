@@ -20,7 +20,7 @@
     --border-color: #2c3036;
     --text-color: #c7cbd1;
     --heading-color: #f0f2f5;
-    --accent-color: #427a9e;
+    --accent-color: #38bdf8;
     --nav-bar-height: 65px;
     --code-bg-color: #23262b;
     --code-border-color: #2c3036;
@@ -149,7 +149,7 @@ body.light-mode {
     --border-color: #dce0e5;
     --text-color: #383f47;
     --heading-color: #161a1f;
-    --accent-color: #1073b0;
+    --accent-color: #0066cc;
     --code-border-color: #dce0e5;
     --code-bg-color: #eaecef;
 }

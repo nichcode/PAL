@@ -5,6 +5,9 @@
     --seperator-margin: 16px;
     --seperator: 1px solid var(--border-color);
     --module-license-text-color: #636c77;
+    --table-heading-bg-color: #212429;
+    --table-row-accent-color: #23262b;
+    --table-padding: 10px 16px;
 }
 
 .sidebar {
@@ -122,7 +125,7 @@
     list-style: none;
     margin: 2px 0 var(--spacing-extra-small) 9px;
     padding: 0 0 0 11px;
-    border-left: 1px solid var(--border-color);
+    border-left: var(--seperator);
 }
 
 .sidebar-tree[hidden] {
@@ -147,7 +150,7 @@
     padding-left: var(--layout-padding);
     padding-right: var(--layout-padding);
     padding-top: 40px;
-    padding-bottom: var(--spacing-large);
+    padding-bottom: var(--spacing-extra-small);
     max-width: var(--content-width);
 }
 
@@ -155,7 +158,7 @@
     margin: 0;
     padding: 0;
     color: var(--heading-color);
-    font-size: 1.85rem;
+    font-size: 200%;
     font-weight: 600;
     line-height: 1.2;
     border-bottom: var(--seperator);
@@ -163,44 +166,109 @@
     margin-bottom: var(--seperator-margin);
 }
 
-.list,
-.module-section-list, 
-.function-list {
+body.light-mode {
+    --table-heading-bg-color: #eaecef;
+    --table-row-accent-color: #f1f3f5;
+}
+
+.guides-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 24px 0;
+    background-color: var(--modules-grid-bg);
+    border: var(--seperator);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.guides-table-header {
+    background-color: var(--table-heading-bg-color);
+    color: var(--heading-color);
+    font-weight: 600;
+    padding: var(--table-padding);
+    border-bottom: 2px solid var(--border-color);
+    text-align: left;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+.guides-table-data {
+    padding: var(--table-padding);
+    border-bottom: var(--seperator);
+    color: var(--text-color);
+    vertical-align: middle;
+}
+
+.guides-table-row:last-child .guides-table-data {
+    border-bottom: none;
+}
+
+.guides-table-row {
+    transition: background-color var(--transition-fast);
+}
+
+.guides-table-row:hover {
+    background-color: var(--table-row-accent-color);
+}
+
+.guides-table-data a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+.guides-table-row:hover .guides-table-data a {
+    text-decoration: underline;
+}
+
+.api-list {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.list li+li {
-    border-top: 1px solid var(--border-color);
-    margin-top: 16px;
+.api-list li {
+    border-bottom: var(--seperator);
+    padding: 20px 0;
 }
 
-.list a {
+.api-list li:last-child {
+    border-bottom: none;
+}
+
+.api-list li+li {
+    border-top: none;
+    margin-top: 0;
+}
+
+.api-list a {
     display: inline-block;
     padding: 0;
     text-decoration: none;
     color: var(--accent-color);
 }
 
-.list-item a:hover,
-.module-section-list a:hover,
+.api-list-item a:hover,
 .module-license a:hover {
     text-decoration: underline;
 }
 
-.list-item {
+.api-list-item {
     display: block;
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--heading-color);
-    padding-top: 16px;
+    margin: 0;
 }
 
-.list-item-desc {
+.api-list-item-desc {
     display: block;
-    margin-top: 16px;
-    padding-bottom: 16px;
+    margin-top: 8px; 
+    padding-bottom: 0;
     font-size: 0.9rem;
     color: var(--text-color);
     opacity: 0.75;
@@ -213,26 +281,6 @@
     border-bottom: var(--seperator);
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
-}
-
-.module-section-title {
-    font-size: 1.25rem;
-    color: var(--heading-color);
-    font-weight: 600;
-    margin-top: 28px;
-    margin-bottom: 12px;
-}
-
-.module-section-list li {
-    padding: 6px 0;
-    padding-left: 20px;
-}
-
-.module-section-list a {
-    color: var(--accent-color);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.15s ease;
 }
 
 .module-license {
@@ -260,7 +308,6 @@ div.page-content[page-type="intro"] {
 }
 
 div.page-content[page-type="intro"] p {
-    max-width: 800px;
     line-height: 1.6;
 }
 
@@ -281,7 +328,3 @@ div.toc[page-type="default"] {
     box-shadow: var(--shadow-heavy);
     transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
-
-/* .toc-title {
-
-} */

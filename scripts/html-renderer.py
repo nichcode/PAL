@@ -97,19 +97,28 @@ class HTMLRenderer:
         name = "Guides"
         page_type = "intro"
 
-        content = ['<ul class="list">']
+        content = [
+            '<table class="guides-table">',
+            '<thead>',
+            '<tr class="guides-table-row">',
+            '<th class="guides-table-header">Guide</th>',
+            '<th class="guides-table-header">Description</th>',
+            '</tr>',
+            '</thead>'
+        ]
+
         for page in self.pages:
             if page.refid in ["indexpage"]:
                 continue
 
             content.extend([
-                '<li class="list-item">',
-                f'<a href="{page.refid}.html">{page.name}</a>',
-                f'<p class="list-item-desc">{page.desc}</p>',
-                '</li>'
+                '<tr class="guides-table-row">',
+                f'<td class="guides-table-data"><a href="{page.refid}.html">{page.name}</a></td>',
+                f'<td class="guides-table-data">{page.desc}</td>',
+                '</tr>'
             ])
         
-        content.append('</ul>')
+        content.append('</table>')
         
         html_page = self.docs_page_template.render(
             title_page_type=page_type,
@@ -132,12 +141,12 @@ class HTMLRenderer:
         name = "API Reference"
         page_type = "intro"
 
-        content = ['<ul class="list">']
+        content = ['<ul class="api-list">']
         for module in self.modules:
             content.extend([
-                '<li class="list-item">',
+                '<li class="api-list-item">',
                 f'<a href="{module.refid}.html">{module.name}</a>',
-                f'<p class="list-item-desc">{module.desc}</p>',
+                f'<p class="api-list-item-desc">{module.desc}</p>',
                 '</li>'
             ])
         
