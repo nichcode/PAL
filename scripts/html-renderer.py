@@ -178,6 +178,22 @@ class HTMLRenderer:
                 f'<p class="module-desc">{module.desc}</p>'
             ]
 
+            if module.functions:
+                content.extend([
+                    '<p class="module-sub-title">Functions</p>',
+                    f'<ul class="module-sub-list">'
+                ])
+
+                for func in module.functions:
+                    content.extend([
+                        '<li class="module-sub-list-item">',
+                        f'<a href="function__{func.name}.html">{func.name}</a>',
+                        f'<p class="module-sub-list-item-desc">{func.brief}</p>',
+                        '</li>'
+                    ])
+
+                content.append('</ul>')
+
             content.extend([
                 '<footer class="module-license">',
                 f'{module.license}',

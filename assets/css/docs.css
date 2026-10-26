@@ -286,7 +286,7 @@ body.light-mode {
 .module-license {
     color: var(--module-license-text-color);
     margin-top: 24px;
-    margin-bottom: 16px;
+    margin-bottom: var(--seperator-margin);
     line-height: 1.4;
     border-top: var(--seperator);
     padding-top: var(--seperator-margin);
@@ -296,6 +296,15 @@ body.light-mode {
 .module-license a {
     color: var(--accent-color);
     text-decoration: none;
+}
+
+.module-sub-title {
+    margin-bottom: var(--seperator-margin);
+    line-height: 1.0;
+    border-bottom: var(--seperator);
+    padding-bottom: var(--seperator-margin);
+    margin-bottom: var(--seperator-margin);
+    font-weight: 400;
 }
 
 body.light-mode {
