@@ -173,7 +173,7 @@ body.light-mode .pal-logo-img {
     background-color: var(--code-bg-color);
     border: 1px solid var(--code-border-color);
     color: var(--heading-color);
-    padding: 2px 6px;
+    padding: 4px 6px;
     border-radius: 4px;
     font-size: 0.9rem;
 }

@@ -210,6 +210,22 @@ class HTMLRenderer:
 
                 content.append('</ul>')
 
+            if module.typedefs:
+                content.extend([
+                    '<p class="module-sub-title">Typedefs</p>',
+                    f'<ul class="module-sub-list">'
+                ])
+
+                for typedef in module.typedefs:
+                    content.extend([
+                        '<li class="module-sub-list-item">',
+                        f'<a href="typedef__{typedef.name}.html">{typedef.name}</a>',
+                        f'<p class="module-sub-list-item-desc">{typedef.brief}</p>',
+                        '</li>'
+                    ])
+
+                content.append('</ul>')
+
             if module.functions or module.constant_groups:
                 content.extend([
                     '<p class="module-sub-title">Constants</p>',
@@ -275,6 +291,9 @@ class HTMLRenderer:
 
             for struct in module.structs:
                 modules.append(f'<li><a href="struct__{struct.name}.html">{struct.name}</a></li>')
+
+            for typedef in module.typedefs:
+                modules.append(f'<li><a href="typedef__{typedef.name}.html">{typedef.name}</a></li>')
 
             for constant in module.constants:
                 link = f"{module.refid}__constants.html"

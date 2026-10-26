@@ -221,11 +221,11 @@ body.light-mode {
     transition: color var(--transition-fast);
 }
 
-.guides-table-row:hover .guides-table-data a {
+.guides-table-data a:hover {
     text-decoration: underline;
 }
 
-.api-list {
+.api-list, .module-sub-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -245,7 +245,7 @@ body.light-mode {
     margin-top: 0;
 }
 
-.api-list a {
+.api-list a, .module-sub-list a {
     display: inline-block;
     padding: 0;
     text-decoration: none;
@@ -253,11 +253,12 @@ body.light-mode {
 }
 
 .api-list-item a:hover,
-.module-license a:hover {
+.module-license a:hover, 
+.module-sub-list-item a:hover {
     text-decoration: underline;
 }
 
-.api-list-item {
+.api-list-item, .module-sub-list-item {
     display: block;
     font-size: 1.05rem;
     font-weight: 600;
@@ -267,7 +268,7 @@ body.light-mode {
 
 .api-list-item-desc {
     display: block;
-    margin-top: 8px; 
+    margin-top: 6px; 
     padding-bottom: 0;
     font-size: 0.9rem;
     color: var(--text-color);
@@ -277,8 +278,23 @@ body.light-mode {
     transition: opacity var(--transition-normal), color var(--transition-normal);
 }
 
+.module-sub-list-item p {
+    display: block;
+    margin-top: 0;
+    padding-bottom: 0;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.75;
+    line-height: 1.6;
+    text-decoration: none;
+    transition: opacity var(--transition-normal), color var(--transition-normal);
+}
+
+.module-sub-list-item:last-child {
+    padding-bottom: 4px;
+}
+
 .module-desc {
-    border-bottom: var(--seperator);
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
 }
@@ -304,7 +320,8 @@ body.light-mode {
     border-bottom: var(--seperator);
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
-    font-weight: 400;
+    font-weight: 500;
+    font-size: 120%;
 }
 
 body.light-mode {
