@@ -194,6 +194,46 @@ class HTMLRenderer:
 
                 content.append('</ul>')
 
+            if module.structs:
+                content.extend([
+                    '<p class="module-sub-title">Structs</p>',
+                    f'<ul class="module-sub-list">'
+                ])
+
+                for struct in module.structs:
+                    content.extend([
+                        '<li class="module-sub-list-item">',
+                        f'<a href="struct__{struct.name}.html">{struct.name}</a>',
+                        f'<p class="module-sub-list-item-desc">{struct.brief}</p>',
+                        '</li>'
+                    ])
+
+                content.append('</ul>')
+
+            if module.functions or module.constant_groups:
+                content.extend([
+                    '<p class="module-sub-title">Constants</p>',
+                    f'<ul class="module-sub-list">'
+                ])
+
+                for constant in module.constants:
+                    link = f"{module.refid}__constants.html"
+                    content.extend([
+                        '<li class="module-sub-list-item">',
+                        f'<a href="{link}#{constant.refid}">{constant.name}</a>',
+                        f'<p class="module-sub-list-item-desc">{constant.desc}</p>',
+                        '</li>'
+                    ])
+
+                for group in module.constant_groups:
+                    content.extend([
+                        '<li class="module-sub-list-item">',
+                        f'<a href="constant_group__{group.refid}.html">{group.name}</a>'
+                        '</li>'
+                    ])
+
+                content.append('</ul>')
+
             content.extend([
                 '<footer class="module-license">',
                 f'{module.license}',
