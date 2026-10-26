@@ -175,40 +175,8 @@ class HTMLRenderer:
         for module in self.modules:
             content = [
                 f'<code>#include &lt;{module.file}&gt;</code>',
-                f'<p class="module-desc">{module.desc}</p>',
-                '<h2 class="module-section-title">Reference</h2>', 
-                '<ul class="module-section-list">'
+                f'<p class="module-desc">{module.desc}</p>'
             ]
-
-            if module.functions:
-                content.extend([
-                    '<li>',
-                    f'<a href="{module.refid}__functions.html">Functions</a>',
-                    '</li>'
-                ])
-
-            if module.structs:
-                content.extend([
-                    '<li>',
-                    f'<a href="{module.refid}__structs.html">Structs</a>',
-                    '</li>'
-                ])
-
-            if module.typedefs:
-                content.extend([
-                    '<li>',
-                    f'<a href="{module.refid}__typedefs.html">Typedefs</a>',
-                    '</li>'
-                ])
-
-            if module.constants or module.constant_groups:
-                content.extend([
-                    '<li>',
-                    f'<a href="{module.refid}__constants.html">Constants</a>',
-                    '</li>'
-                ])
-
-            content.append('</ul>')
 
             content.extend([
                 '<footer class="module-license">',

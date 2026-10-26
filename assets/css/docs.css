@@ -288,7 +288,7 @@ body.light-mode {
     margin-top: 24px;
     margin-bottom: 16px;
     line-height: 1.4;
-    border-bottom: var(--seperator);
+    border-top: var(--seperator);
     padding-top: var(--seperator-margin);
     margin-top: var(--seperator-margin);
 }
