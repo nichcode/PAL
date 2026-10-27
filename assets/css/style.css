@@ -177,3 +177,16 @@ body.light-mode .pal-logo-img {
     border-radius: 4px;
     font-size: 0.9rem;
 }
+
+.page-content a, 
+.page-content p a {
+    display: inline-block;
+    padding: 0;
+    text-decoration: none;
+    color: var(--accent-color);
+}
+
+.page-content a:hover,
+.page-content p a:hover {
+    text-decoration: underline;
+}
