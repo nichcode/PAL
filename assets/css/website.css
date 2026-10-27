@@ -280,3 +280,14 @@ body.light-mode .modules-grid {
 body.light-mode .modules-list li {
     border-bottom: 1px solid rgba(0, 0, 0, 0.03);
 }
+
+.zlib-license {
+    display: inline-block;
+    padding: 0;
+    text-decoration: none;
+    color: var(--accent-color);
+}
+
+.zlib-license:hover {
+    text-decoration: underline;
+}

@@ -188,7 +188,7 @@ class HTMLRenderer:
                     content.extend([
                         '<li class="module-sub-list-item">',
                         f'<a href="function__{func.name}.html">{func.name}</a>',
-                        f'<p class="module-sub-list-item-desc">{func.brief}</p>',
+                        f'<span class="module-sub-list-item-desc">{func.brief}</span>',
                         '</li>'
                     ])
 
@@ -204,7 +204,7 @@ class HTMLRenderer:
                     content.extend([
                         '<li class="module-sub-list-item">',
                         f'<a href="struct__{struct.name}.html">{struct.name}</a>',
-                        f'<p class="module-sub-list-item-desc">{struct.brief}</p>',
+                        f'<span class="module-sub-list-item-desc">{struct.brief}</span>',
                         '</li>'
                     ])
 
@@ -220,7 +220,7 @@ class HTMLRenderer:
                     content.extend([
                         '<li class="module-sub-list-item">',
                         f'<a href="typedef__{typedef.name}.html">{typedef.name}</a>',
-                        f'<p class="module-sub-list-item-desc">{typedef.brief}</p>',
+                        f'<span class="module-sub-list-item-desc">{typedef.brief}</span>',
                         '</li>'
                     ])
 
@@ -237,7 +237,7 @@ class HTMLRenderer:
                     content.extend([
                         '<li class="module-sub-list-item">',
                         f'<a href="{link}#{constant.refid}">{constant.name}</a>',
-                        f'<p class="module-sub-list-item-desc">{constant.desc}</p>',
+                        f'<span class="module-sub-list-item-desc">{constant.desc}</span>',
                         '</li>'
                     ])
 
@@ -245,7 +245,7 @@ class HTMLRenderer:
                     content.extend([
                         '<li class="module-sub-list-item">',
                         f'<a href="constant_group__{group.refid}.html">{group.name}</a>'
-                        f'<p class="module-sub-list-item-desc">{group.desc}</p>',
+                        f'<span class="module-sub-list-item-desc">{group.desc}</span>',
                         '</li>'
                     ])
 

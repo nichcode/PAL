@@ -26,7 +26,7 @@
 
 .page-content {
     max-width: var(--content-width);
-    margin-top: 0;
+    margin-top: 20px;
     margin-left: var(--sidebar-width);
     padding-left: var(--layout-padding);
     padding-right: var(--layout-padding);
@@ -255,7 +255,7 @@ body.light-mode {
     text-decoration: underline;
 }
 
-.api-list-item, .module-sub-list-item {
+.api-list-item {
     display: block;
     font-size: 1.2rem;
     font-weight: 600;
@@ -263,7 +263,16 @@ body.light-mode {
     margin: 0;
 }
 
-.api-list-item-desc {
+.module-sub-list-item {
+    display: block;
+    font-size: 1.0rem;
+    font-weight: 400;
+    color: var(--heading-color);
+    margin: 0;
+}
+
+.api-list-item-desc,
+.module-sub-list-item-desc {
     display: block;
     margin-top: 6px; 
     padding-bottom: 0;
@@ -271,18 +280,6 @@ body.light-mode {
     font-weight: normal;
     color: var(--text-color);
     opacity: 1;
-    line-height: 1.6;
-    text-decoration: none;
-    transition: opacity var(--transition-normal), color var(--transition-normal);
-}
-
-.module-sub-list-item p {
-    display: block;
-    margin-top: 0;
-    padding-bottom: 0;
-    font-size: 0.9rem;
-    color: var(--text-color);
-    opacity: 0.75;
     line-height: 1.6;
     text-decoration: none;
     transition: opacity var(--transition-normal), color var(--transition-normal);
@@ -318,8 +315,9 @@ body.light-mode {
     border-bottom: var(--seperator);
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
-    font-weight: 500;
-    font-size: 120%;
+    font-weight: 400;
+    font-size: 140%;
+    color: var(--heading-color);
 }
 
 body.light-mode {
@@ -329,6 +327,7 @@ body.light-mode {
 div.page-content[page-type="intro"] {
     max-width: calc(100% - 100px - var(--sidebar-width)) !important;
     padding-right: 0 !important;
+    margin-top: 0 !important;
 }
 
 div.page-content[page-type="intro"] p {
@@ -351,4 +350,15 @@ div.toc[page-type="default"] {
     overflow-y: auto;
     box-shadow: var(--shadow-heavy);
     transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.page-content p a {
+    display: inline-block;
+    padding: 0;
+    text-decoration: none;
+    color: var(--accent-color);
+}
+
+.page-content p a:hover {
+    text-decoration: underline;
 }
