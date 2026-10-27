@@ -954,10 +954,14 @@ WARN_LOGFILE           = ../build/doxygen.log
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
+INPUT                  = ../include/pal2/pal_core.h \
 INPUT                  = ../include/pal2/pal_system.h \
-                          homepage.md \
-                          guides \
-                          ../include/pal2/pal_core.h
+                         guides/getting_started.md \
+                         guides/event_payload.md \
+                         guides/custom_gfx_backend.md \
+                         guides/migrating_vulkan.md \
+                         guides/migrating_d3d12.md \
+                         homepage.md
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1003,7 +1007,7 @@ FILE_PATTERNS          = *.h *.md
 # be searched for input files as well.
 # The default value is: NO.
 
-RECURSIVE              = YES
+RECURSIVE              = NO
 
 # The EXCLUDE tag can be used to specify files and/or directories that should be
 # excluded from the INPUT source files. This way you can easily exclude a

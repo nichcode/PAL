@@ -313,8 +313,6 @@ class HTMLRenderer:
         """Build guides sidebar list"""
         guides = []
 
-        # make getting started always first
-        self.pages.sort(key=lambda page: (page.refid != "getting_started", page.refid))
         for page in self.pages:
             if page.refid in ["indexpage"]:
                 continue
