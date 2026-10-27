@@ -1,10 +1,6 @@
 
 /**
  * @file pal_core.h
- * @brief Header file for the PAL Core API.
- *
- * Defines the types, constants and functions of the module. The core module provides result codes, memory
- * allocation, logging, timing, shared library loading and value packing utilities.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -29,6 +25,10 @@
 
 /**
  * @defgroup pal_core Core Module
+ * @brief Defines the types, constants and functions of the module.
+ * 
+ * The core module provides result codes, memory allocation, logging, timing,
+ * shared library loading and value packing utilities.
  * @{
  */
 
@@ -39,78 +39,80 @@
 #include <string.h>
 
 #ifdef __cplusplus
-#define PAL_EXTERN_C extern "C" /**< Applies C linkage when compiled as C++. */
+#define PAL_EXTERN_C extern "C" /**< C linkage when compiled as C++ */
 #else
-#define PAL_EXTERN_C /**< Empty when compiled as C. */
+#define PAL_EXTERN_C /**< empty when compiled as C */
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ <= 201710L
-#define nullptr ((void*)0) /**< Null pointer constant (`NULL`). */
+#define nullptr ((void*)0) /**< `NULL` pointer constant */
 #endif // __STDC_VERSION__
 #endif // __cplusplus
 
 #ifdef _WIN32
-#define PAL_CALL __stdcall /**< Calling convention of PAL functions and callbacks. */
+#define PAL_CALL __stdcall /**< calling convention of PAL functions and callbacks */
 #ifdef _PAL_EXPORT
-#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllexport) /**< Exports symbols when building the PAL shared library. */
+#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllexport) /**< exports symbols when building the PAL shared library */
 #else
-#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport) /**< Imports symbols from the PAL shared library. */
+#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport) /**< imports symbols from the PAL shared library */
 #endif // _PAL_EXPORT
 #else
-#define PAL_CALL /**< Calling convention of PAL functions (empty on non-Windows platforms). */
+#define PAL_CALL /**< calling convention of PAL functions and callbacks */
 #ifdef _PAL_EXPORT
-#define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default"))) /**< Exports with default visibility. */
+#define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default"))) /**< exports with default visibility */
 #else
-#define PAL_DECLSPEC PAL_EXTERN_C /**< C linkage with no special visibility attributes. */
+#define PAL_DECLSPEC PAL_EXTERN_C /**< C linkage with no special visibility attributes */
 #endif // _PAL_EXPORT
 #endif // _WIN32
 
 #ifdef _PAL_BUILD_DLL
-#define PAL_API PAL_EXTERN_C PAL_DECLSPEC /**< Marks a function as part of the PAL shared library API. */
+#define PAL_API PAL_EXTERN_C PAL_DECLSPEC /**< marks a function as part of the PAL API */
 #else
-#define PAL_API PAL_EXTERN_C /**< Marks a function as part of the PAL API. */
+#define PAL_API PAL_EXTERN_C /**< marks a function as part of the PAL API */
 #endif // _PAL_BUILD_DLL
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define PAL_BIG_ENDIAN 1 /**< `1` if the target platform is big-endian. */
+#define PAL_BIG_ENDIAN 1 /**< `1` if the target platform is big-endian */
 #else
-#define PAL_BIG_ENDIAN 0 /**< `0` if the target platform is little-endian. */
+#define PAL_BIG_ENDIAN 0 /**< `0` if the target platform is little-endian */
 #endif // __ORDER_BIG_ENDIAN__
 
-#define PAL_INFINITE UINT32_MAX /**< Infinite time or number. */
-#define PAL_LOG_MSG_SIZE 4096 /**< Maximum size of the log message buffer in bytes. */
+#define PAL_INFINITE UINT32_MAX /**< infinite time or number */
+#define PAL_LOG_MSG_SIZE 4096 /**< maximum size of the log message buffer in bytes */
 
-#define PAL_TRUE 1 /**< Boolean true (`1`). */
-#define PAL_FALSE 0 /**< Boolean false (`0`). */
-#define PAL_RESULT_SUCCESS 0 /**< Function completed successfully. */
+#define PAL_TRUE 1 /**< boolean true (`1`) */
+#define PAL_FALSE 0 /**< boolean false (`0`) */
+#define PAL_RESULT_SUCCESS 0 /**< function completed successfully */
 
 /**
  * @defgroup result_codes Result Codes
+ * @brief Defines result codes of a result value.
  * @{
  */
-#define PAL_RESULT_CODE_NONE 0 /**< No result code. */
-#define PAL_RESULT_CODE_INVALID_ARGUMENT 1 /**< Invalid argument was passed. */
-#define PAL_RESULT_CODE_OUT_OF_MEMORY 2 /**< Memory allocation failed. */
-#define PAL_RESULT_CODE_PLATFORM_FAILURE 3 /**< Platform-specific error not known to PAL. */
-#define PAL_RESULT_CODE_TIMEOUT 4 /**< Timeout occurred. */
-#define PAL_RESULT_CODE_INVALID_HANDLE 5 /**< Invalid handle was passed. */
-#define PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED 6 /**< Unsupported feature was used. */
-#define PAL_RESULT_CODE_INVALID_OPERATION 7 /**< Invalid operation was performed. */
-#define PAL_RESULT_CODE_DEVICE_LOST 8 /**< Device was lost. */
-#define PAL_RESULT_CODE_OUT_OF_DATE 9 /**< Handle is out of date. */
-#define PAL_RESULT_CODE_COUNT 10 /**< Number of result codes. */
+#define PAL_RESULT_CODE_NONE 0 /**< no result code */
+#define PAL_RESULT_CODE_INVALID_ARGUMENT 1 /**< invalid argument was passed */
+#define PAL_RESULT_CODE_OUT_OF_MEMORY 2 /**< memory allocation failed */
+#define PAL_RESULT_CODE_PLATFORM_FAILURE 3 /**< platform-specific error not known to PAL */
+#define PAL_RESULT_CODE_TIMEOUT 4 /**< timeout occurred */
+#define PAL_RESULT_CODE_INVALID_HANDLE 5 /**< invalid handle was passed */
+#define PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED 6 /**< unsupported feature was used */
+#define PAL_RESULT_CODE_INVALID_OPERATION 7 /**< invalid operation was performed */
+#define PAL_RESULT_CODE_DEVICE_LOST 8 /**< device was lost */
+#define PAL_RESULT_CODE_OUT_OF_DATE 9 /**< handle is out of date */
+#define PAL_RESULT_CODE_COUNT 10 /**< number of result codes */
 /** @} */
 
 /**
  * @defgroup result_sources Result Sources
+ * @brief Defines result sources of a result value.
  * @{
  */
-#define PAL_RESULT_SOURCE_NONE 0 /**< No result source. */
-#define PAL_RESULT_SOURCE_WIN32 1 /**< Win32 `GetLastError()` code. */
-#define PAL_RESULT_SOURCE_POSIX 2 /**< POSIX `errno` code. */
-#define PAL_RESULT_SOURCE_EGL 3 /**< EGL `eglGetError()` code. */
-#define PAL_RESULT_SOURCE_VULKAN 4 /**< Vulkan `VkResult` code. */
-#define PAL_RESULT_SOURCE_D3D12 5 /**< Direct3D 12 `HRESULT` code. */
-#define PAL_RESULT_SOURCE_METAL 6 /**< Metal `NSError` code. */
-#define PAL_RESULT_SOURCE_COUNT 7 /**< Number of result sources. */
+#define PAL_RESULT_SOURCE_NONE 0 /**< no result source */
+#define PAL_RESULT_SOURCE_WIN32 1 /**< Win32 `GetLastError()` code */
+#define PAL_RESULT_SOURCE_POSIX 2 /**< POSIX `errno` code */
+#define PAL_RESULT_SOURCE_EGL 3 /**< EGL `eglGetError()` code */
+#define PAL_RESULT_SOURCE_VULKAN 4 /**< Vulkan `VkResult` code */
+#define PAL_RESULT_SOURCE_D3D12 5 /**< Direct3D 12 `HRESULT` code */
+#define PAL_RESULT_SOURCE_METAL 6 /**< Metal `NSError` code */
+#define PAL_RESULT_SOURCE_COUNT 7 /**< number of result sources */
 /** @} */
 
 /**
@@ -263,9 +265,9 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @ingroup pal_core
  */
 typedef struct PalVersion {
-    uint32_t major; /**< Major version. */
-    uint32_t minor; /**< Minor version. */
-    uint32_t build; /**< Build (patch) version. */
+    uint32_t major; /**< major version */
+    uint32_t minor; /**< minor version */
+    uint32_t build; /**< build (patch) version */
 } PalVersion;
 
 /**
@@ -285,9 +287,9 @@ typedef struct PalVersion {
  * @ingroup pal_core
  */
 typedef struct PalAllocator {
-    PalAllocateFn allocate; /**< Memory allocation function. */
-    PalFreeFn free; /**< Memory deallocation function. */
-    void* userData; /**< User-defined data passed to callbacks or `nullptr`. */
+    PalAllocateFn allocate; /**< memory allocation function */
+    PalFreeFn free; /**< memory deallocation function */
+    void* userData; /**< user-defined data passed to callbacks or `nullptr` */
 } PalAllocator;
 
 /**
@@ -304,8 +306,8 @@ typedef struct PalAllocator {
  * @ingroup pal_core
  */
 typedef struct PalLogger {
-    PalLogCallback callback; /**< Log callback. */
-    void* userData; /**< User-defined data passed to callback or `nullptr`. */
+    PalLogCallback callback; /**< log callback */
+    void* userData; /**< user-defined data passed to callback or `nullptr` */
 } PalLogger;
 
 /**
