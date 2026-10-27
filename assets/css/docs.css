@@ -150,7 +150,7 @@
     padding-left: var(--layout-padding);
     padding-right: var(--layout-padding);
     padding-top: 40px;
-    padding-bottom: var(--spacing-extra-small);
+    padding-bottom: var(--spacing-small);
     max-width: var(--content-width);
 }
 
@@ -161,9 +161,6 @@
     font-size: 200%;
     font-weight: 600;
     line-height: 1.2;
-    border-bottom: var(--seperator);
-    padding-bottom: var(--seperator-margin);
-    margin-bottom: var(--seperator-margin);
 }
 
 body.light-mode {
