@@ -257,7 +257,7 @@ body.light-mode {
 
 .api-list-item, .module-sub-list-item {
     display: block;
-    font-size: 1.05rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: var(--heading-color);
     margin: 0;
@@ -267,9 +267,10 @@ body.light-mode {
     display: block;
     margin-top: 6px; 
     padding-bottom: 0;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-weight: normal;
     color: var(--text-color);
-    opacity: 0.75;
+    opacity: 1;
     line-height: 1.6;
     text-decoration: none;
     transition: opacity var(--transition-normal), color var(--transition-normal);
