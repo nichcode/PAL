@@ -13,6 +13,7 @@ class Constant:
 @dataclass
 class ConstantGroup:
     name: str
+    desc: str
     refid: str
     constants: list[Constant]
 

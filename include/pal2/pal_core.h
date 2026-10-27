@@ -27,7 +27,7 @@
  * @defgroup pal_core Core Module
  * @brief Defines the types, constants and functions of the module.
  * 
- * The core module provides result codes, memory allocation, logging, timing,
+ * The module provides result codes, memory allocation, logging, timing,
  * shared library loading and value packing utilities.
  * @{
  */

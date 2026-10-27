@@ -294,8 +294,12 @@ class XMLParser:
             value = memberdef.findtext("initializer")
             refid = memberdef.get("id")
 
+            element = memberdef.find("briefdescription")
+            brief = self._xml_tags_to_html(element)
+
             element = memberdef.find("detaileddescription")
-            desc = self._xml_tags_to_html(element)
+            desc = brief + self._xml_tags_to_html(element)
+
             constants.append(Constant(name=name, value=value, desc=desc, refid=refid))
 
         return constants
@@ -310,9 +314,16 @@ class XMLParser:
             root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
             tmp_cpdef = root.find("compounddef")
 
+            element = tmp_cpdef.find("briefdescription")
+            brief = self._xml_tags_to_html(element)
+
+            element = tmp_cpdef.find("detaileddescription")
+            desc = brief + self._xml_tags_to_html(element)
+
             name = tmp_cpdef.findtext("title")
             constants = self._parse_constants(tmp_cpdef)
-            constant_groups.append(ConstantGroup(name=name, refid=refid, constants=constants))
+
+            constant_groups.append(ConstantGroup(name=name, desc=desc, refid=refid, constants=constants))
 
         return constant_groups
     

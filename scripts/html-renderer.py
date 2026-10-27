@@ -245,6 +245,7 @@ class HTMLRenderer:
                     content.extend([
                         '<li class="module-sub-list-item">',
                         f'<a href="constant_group__{group.refid}.html">{group.name}</a>'
+                        f'<p class="module-sub-list-item-desc">{group.desc}</p>',
                         '</li>'
                     ])
 
