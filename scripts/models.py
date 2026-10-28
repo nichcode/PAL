@@ -10,6 +10,7 @@ class Constant:
     brief: str
     detailed: str
     refid: str
+    file: str
     value: int
 
 
@@ -64,6 +65,7 @@ class Typedef:
     brief: str
     detailed: str
     refid: str
+    file: str
     type: str
 
 
