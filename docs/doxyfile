@@ -955,7 +955,7 @@ WARN_LOGFILE           = ../build/doxygen.log
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = ../include/pal2/pal_core.h \
-INPUT                  = ../include/pal2/pal_system.h \
+                         ../include/pal2/pal_system.h \
                          guides/getting_started.md \
                          guides/event_payload.md \
                          guides/custom_gfx_backend.md \

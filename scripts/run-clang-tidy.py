@@ -10,6 +10,7 @@ from pathlib import Path
 
 def worker(info) -> None:
     """Worker that runs clang tidy for a file"""
+    
     file, buildpath = info
     cmd = ["clang-tidy", file, "-p", buildpath]
     subprocess.run(cmd, shell=False)

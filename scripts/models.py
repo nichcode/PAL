@@ -1,4 +1,6 @@
 
+import pickle
+from pathlib import Path
 from dataclasses import dataclass
 
 
@@ -86,3 +88,17 @@ class Page:
     brief: str
     detailed: str
     refid: str
+
+
+def save_cache(filepath: Path, data):
+    """Saves objects to disk"""
+
+    with open(filepath, "wb") as file:
+        pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def load_cache(filepath: Path):
+    """loads objects to disk"""
+
+    with open(filepath, "rb") as file:
+        return pickle.load(file)
