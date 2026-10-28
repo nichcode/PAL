@@ -5,15 +5,17 @@ from dataclasses import dataclass
 @dataclass
 class Constant:
     name: str
-    value: int
-    desc: str
+    brief: str
+    detailed: str
     refid: str
+    value: int
 
 
 @dataclass
 class ConstantGroup:
     name: str
-    desc: str
+    brief: str
+    detailed: str
     refid: str
     constants: list[Constant]
 
@@ -27,19 +29,21 @@ class Param:
 @dataclass
 class Function:
     name: str
-    return_type: str
     brief: str
     detailed: str
+    refid: str
     file: str
+    return_type: str
     params: list[Param]
 
 
 @dataclass
 class Field:
-    type: str
     name: str
+    brief: str
+    detailed: str
+    type: str
     argsstring: str
-    desc: str
 
 
 @dataclass
@@ -47,6 +51,7 @@ class Struct:
     name: str
     brief: str
     detailed: str
+    refid: str
     file: str
     fields: list[Param]
 
@@ -54,15 +59,17 @@ class Struct:
 @dataclass
 class Typedef:
     name: str
-    type: str
     brief: str
     detailed: str
+    refid: str
+    type: str
 
 
 @dataclass
 class Module:
     name: str
-    desc: str
+    brief: str
+    detailed: str
     license: str
     refid: str
     file: str
@@ -76,7 +83,6 @@ class Module:
 @dataclass
 class Page:
     name: str
-    body: str
+    brief: str
+    detailed: str
     refid: str
-    desc: str
-

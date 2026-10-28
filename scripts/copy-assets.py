@@ -3,6 +3,7 @@
 from pathlib import Path
 import shutil
 
+
 def main():
     root_dir = Path(__file__).resolve().parents[1]
     assets_dir = root_dir / "assets"
