@@ -3,7 +3,6 @@
 from pathlib import Path
 import pickle
 import sys
-import shutil
 
 import re
 from jinja2 import Environment, FileSystemLoader
@@ -23,26 +22,7 @@ class HTMLRenderer:
 
         self.modules_list = self._build_modules_list()
         self.guides_list = self._build_guides_list()
-        self.toc_list = self._build_toc_list()
-
-    def copy_assets(self):
-        """Copies assets into output HTML directory"""
-        assets_dir = self.root_dir / "assets"
-
-        if self.output_dir.exists():
-            shutil.rmtree(self.output_dir)
-
-        self.output_dir.mkdir(parents=True)
-        for item in assets_dir.iterdir():
-            if item.name == "templates":
-                continue
-            elif item.name == "pages":
-                continue
-
-            for file in item.iterdir():
-                shutil.copy(file, self.output_dir / file.name)
-
-        print(f"assets copied successfully")
+        self.toc_list = self._build_toc_list()    
 
     def generate_website_pages(self):
         """Generates pages with sources from assets/pages directory"""
