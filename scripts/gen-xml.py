@@ -5,6 +5,7 @@ import os
 import subprocess
 from pathlib import Path
 
+
 def main() -> None:
     root_dir = Path(__file__).resolve().parents[1]
     log_file = root_dir / "build/doxygen.log"
@@ -32,7 +33,7 @@ def main() -> None:
 
             if not found:
                 warnings.append(line)
-    
+
     # write the clean warnings to the file
     with open(log_file, "w") as file:
         file.writelines(warnings)
@@ -43,6 +44,7 @@ def main() -> None:
         sys.exit(1)
 
     print("xml files generated successfully")
+
 
 if __name__ == "__main__":
     main()
