@@ -106,7 +106,7 @@ class XMLParser:
                 cpdef = root.find("compounddef")
 
                 name = cpdef.findtext("title")
-                brief = self._xml_tags_to_html(cpdef.find("briefdescription"))
+                brief = "".join(cpdef.find("briefdescription").itertext()).strip()
                 detailed = brief + \
                     self._xml_tags_to_html(cpdef.find("detaileddescription"))
 
