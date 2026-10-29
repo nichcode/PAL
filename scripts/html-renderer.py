@@ -40,6 +40,8 @@ class HTMLRenderer:
         self._generate_pages()
         self._generate_guides_page()
         self._generate_api_reference_page()
+        self._generate_modules_page()
+        self._generate_function_pages()
 
     def _write_page(self, page: HtmlPage):
         """Generates html page"""
@@ -177,8 +179,38 @@ class HTMLRenderer:
 
         self._write_page(html_page)
 
+    def _generate_modules_page(self):
+        """Generates module pages"""
+
+        for module in self.modules:
+            module.file
+            body = [
+                f'<code>#include &lt;{module.file}&gt;</code>'
+                f'<p class="module-desc">{module.detailed}</p>']
+            
+            body.extend(self._write_module_functions(module))
+
+            body.extend([
+                '</ul>'
+                '<footer class="module-license">'
+                f'{module.license}'
+                '</footer>'
+            ])
+
+            html_page = HtmlPage(
+                module.name,
+                "\n".join(body),
+                "default",
+                f"{module.refid}.html",
+                self.guides_sidebar,
+                self.modules_sidebar,
+                self.toc_sidebar,
+                False)
+
+            self._write_page(html_page)
+
     def _build_modules_sidebar(self):
-        """Build modules sidebar"""
+        """Builds modules sidebar"""
 
         body = []
         for module in self.modules:
@@ -192,7 +224,7 @@ class HTMLRenderer:
 
             for func in module.functions:
                 body.append(
-                    f'<li><a href="f{func.refid}.html">{func.name}</a></li>')
+                    f'<li><a href="{func.refid}.html">{func.name}</a></li>')
 
             for struct in module.structs:
                 body.append(
@@ -218,7 +250,7 @@ class HTMLRenderer:
         return "\n".join(body)
 
     def _build_guides_sidebar(self):
-        """Build guides sidebar"""
+        """Builds guides sidebar"""
 
         body = []
         for page in self.pages:
@@ -231,10 +263,65 @@ class HTMLRenderer:
         return "\n".join(body)
 
     def _build_toc_sidebar(self):
-        """Build toc sidebar"""
+        """Builds toc sidebar"""
 
         return ""
+    
+    def _write_module_functions(self, module: Module):
+        """Writes the functions section of a module page"""
 
+        body = []
+        if module.functions:
+            body.extend([
+                '<p class="module-sub-title">Functions</p>'
+                '<ul class="module-sub-list">'])
+            
+        for func in module.functions:
+            body.extend([
+                '<li class="module-sub-list-item">'
+                '<div class="func-head">'
+                f'<span class="func-ret">{func.return_type}</span>'
+                '<span class="func-signature">'
+                f'<a href="{func.refid}.html">{func.name}</a>'
+                '('])
+
+            for param in func.params:
+                body.append(f"{param.type} {param.name}")
+
+            body.extend([
+                ')'
+                '</span>'
+                '</div>'
+                '<span class="module-sub-list-item-desc">'
+                f'<p>{func.brief}</p>'
+                '</span>'
+                '</li>'])
+
+        return body
+    
+    def _generate_function_pages(self):
+        """Generates function page"""
+        
+        for module in self.modules:
+            for func in module.functions:
+                body = [
+                    '<nav class="breadcrumbs">'
+                    '<a href="api_reference.html">API Reference</a>'
+                    '<span class="breadcrumb-seperator" aria-hidden="true">/</span>'
+                    f'<a href="{module.refid}.html">{module.name}</a>'
+                    '</nav>']
+
+                html_page = HtmlPage(
+                    func.name,
+                    "\n".join(body),
+                    "default",
+                    f"{func.refid}.html",
+                    self.guides_sidebar,
+                    self.modules_sidebar,
+                    self.toc_sidebar,
+                    False)
+
+                self._write_page(html_page)
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]

@@ -124,6 +124,7 @@ class XMLParser:
         for refid in refids:
             root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
             cpdef = root.find("compounddef")
+            name = cpdef.findtext("title")
 
             brief = self._xml_tags_to_html(cpdef.find("briefdescription"))
             detailed = brief + \
@@ -145,7 +146,7 @@ class XMLParser:
                 cpdef.find("detaileddescription"))
 
             module = Module(
-                cpdef.findtext("title"),
+                name,
                 brief,
                 detailed,
                 license_str,
