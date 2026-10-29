@@ -309,7 +309,23 @@ class HTMLRenderer:
                     '<a href="api_reference.html">API Reference</a>'
                     '<span class="breadcrumb-seperator" aria-hidden="true">/</span>'
                     f'<a href="{module.refid}.html">{module.name}</a>'
-                    '</nav>']
+                    '</nav>',
+
+                    '<div class="func-head">'
+                    f'<span class="func-ret">{func.return_type}</span>'
+                    f'<span class="func-signature">{func.name}'
+                    '('
+                ]
+
+                for param in func.params:
+                    body.append(f"{param.type} {param.name}")
+
+                body.extend([
+                    ')'
+                    '</span>'
+                    '</div>'
+                    f'<p>{func.detailed}</p>'
+                ])
 
                 html_page = HtmlPage(
                     func.name,

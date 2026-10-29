@@ -65,7 +65,7 @@ class XMLParser:
             kind = element.get("kind", "note")
             if kind == "since":
                 open_tag, close_tag = (
-                    "<div><strong>Since:</strong> ", "</div>")
+                    "<div><strong>Since</strong> ", "</div>")
             elif kind == "par":
                 open_tag, close_tag = ("<div>", "</div>")
             else:
