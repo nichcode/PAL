@@ -72,8 +72,7 @@ class Typedef:
 @dataclass
 class Module:
     name: str
-    brief: str
-    detailed: str
+    desc: str
     license: str
     refid: str
     file: str

@@ -161,7 +161,7 @@ class HTMLRenderer:
             body.extend([
                 '<li class="api-list-item">',
                 f'<a href="{module.refid}.html">{module.name}</a>',
-                f'<p class="api-list-item-desc">{module.detailed}</p>',
+                f'<p class="api-list-item-desc">{module.desc}</p>',
                 '</li>'
             ])
 
@@ -186,7 +186,7 @@ class HTMLRenderer:
             module.file
             body = [
                 f'<code>#include &lt;{module.file}&gt;</code>'
-                f'<p class="module-desc">{module.detailed}</p>']
+                f'<p class="module-desc">{module.desc}</p>']
             
             body.extend(self._write_module_functions(module))
 

@@ -126,9 +126,8 @@ class XMLParser:
             cpdef = root.find("compounddef")
             name = cpdef.findtext("title")
 
-            brief = self._xml_tags_to_html(cpdef.find("briefdescription"))
-            detailed = brief + \
-                self._xml_tags_to_html(cpdef.find("detaileddescription"))
+            brief = "".join(cpdef.find("briefdescription").itertext()).strip()
+            desc = brief + " ".join(cpdef.find("detaileddescription").itertext()).strip()
 
             functions = self._parse_functions(cpdef)
             structs = self._parse_structs(cpdef)
@@ -147,8 +146,7 @@ class XMLParser:
 
             module = Module(
                 name,
-                brief,
-                detailed,
+                desc,
                 license_str,
                 refid,
                 f"{cpname}.h",
