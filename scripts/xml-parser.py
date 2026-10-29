@@ -43,7 +43,7 @@ class XMLParser:
 
             "parameterlist": ("<div><h4>Parameters</h4><dl>", "</dl></div>"),
             "parameteritem": ("<div>", "</div>"),
-            "parameternamelist": ("", ""), 
+            "parameternamelist": ("", ""),
             "parameterdescription": ("<dd>", "</dd>"),
         }
 
@@ -64,12 +64,13 @@ class XMLParser:
         elif element.tag == "simplesect":
             kind = element.get("kind", "note")
             if kind == "since":
-                open_tag, close_tag = ("<div><strong>Since:</strong> ", "</div>")
+                open_tag, close_tag = (
+                    "<div><strong>Since:</strong> ", "</div>")
             elif kind == "par":
                 open_tag, close_tag = ("<div>", "</div>")
             else:
                 open_tag, close_tag = (f'<div-{html.escape(kind)}">', "</div>")
-            
+
         elif element.tag == "ulink":
             url = element.get("url", "#")
             open_tag = f'<a href="{html.escape(url)}" target="_blank" rel="noopener noreferrer">'
@@ -103,10 +104,11 @@ class XMLParser:
                 refid = cp.get("refid")
                 root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
                 cpdef = root.find("compounddef")
-                        
+
                 name = cpdef.findtext("title")
                 brief = self._xml_tags_to_html(cpdef.find("briefdescription"))
-                detailed = brief + self._xml_tags_to_html(cpdef.find("detaileddescription"))
+                detailed = brief + \
+                    self._xml_tags_to_html(cpdef.find("detaileddescription"))
 
                 page = Page(name, brief, detailed, refid)
                 pages.append(page)
@@ -115,7 +117,7 @@ class XMLParser:
 
     def _parse_modules(self):
         """Parses XML modules"""
-        
+
         modules = []
         refids = self._find_modules()
 
@@ -124,7 +126,8 @@ class XMLParser:
             cpdef = root.find("compounddef")
 
             brief = self._xml_tags_to_html(cpdef.find("briefdescription"))
-            detailed = brief + self._xml_tags_to_html(cpdef.find("detaileddescription"))
+            detailed = brief + \
+                self._xml_tags_to_html(cpdef.find("detaileddescription"))
 
             functions = self._parse_functions(cpdef)
             structs = self._parse_structs(cpdef)
@@ -138,7 +141,8 @@ class XMLParser:
 
             root = ET.parse(self.xml_dir / f"{tmp}_8h.xml").getroot()
             cpdef = root.find("compounddef")
-            license_str = self._xml_tags_to_html(cpdef.find("detaileddescription"))
+            license_str = self._xml_tags_to_html(
+                cpdef.find("detaileddescription"))
 
             module = Module(
                 cpdef.findtext("title"),
@@ -172,11 +176,11 @@ class XMLParser:
                 for inner in cpdef.findall("innergroup"):
                     group_refid = inner.get("refid")
                     children.append(group_refid)
-        
+
                 # filter modules
                 if refid not in children:
                     modules.append(refid)
-        
+
         return modules
 
     def _parse_functions(self, cpdef) -> list:
@@ -187,7 +191,8 @@ class XMLParser:
 
         for memberdef in memberdefs:
             brief = self._xml_tags_to_html(memberdef.find("briefdescription"))
-            detailed = brief + self._xml_tags_to_html(memberdef.find("detaileddescription"))
+            detailed = brief + \
+                self._xml_tags_to_html(memberdef.find("detaileddescription"))
             file = memberdef.find("location").get("file")
 
             params = []
@@ -223,7 +228,8 @@ class XMLParser:
             tmp_cpdef = root.find("compounddef")
 
             brief = self._xml_tags_to_html(tmp_cpdef.find("briefdescription"))
-            detailed = brief + self._xml_tags_to_html(tmp_cpdef.find("detaileddescription"))
+            detailed = brief + \
+                self._xml_tags_to_html(tmp_cpdef.find("detaileddescription"))
 
             fields = []
             for f in tmp_cpdef.findall(".//memberdef"):
@@ -232,7 +238,8 @@ class XMLParser:
                 argsstring = f.findtext("argsstring")
 
                 fbrief = self._xml_tags_to_html(f.find("briefdescription"))
-                fdetailed = fbrief + self._xml_tags_to_html(f.find("detaileddescription"))
+                fdetailed = fbrief + \
+                    self._xml_tags_to_html(f.find("detaileddescription"))
 
                 field = Field(name, fbrief, fdetailed, type, argsstring)
                 fields.append(field)
@@ -257,7 +264,8 @@ class XMLParser:
 
         for memberdef in memberdefs:
             brief = self._xml_tags_to_html(memberdef.find("briefdescription"))
-            detailed = brief + self._xml_tags_to_html(memberdef.find("detaileddescription"))
+            detailed = brief + \
+                self._xml_tags_to_html(memberdef.find("detaileddescription"))
             file = memberdef.find("location").get("file")
 
             typedef = Typedef(
@@ -280,7 +288,8 @@ class XMLParser:
         memberdefs = cpdef.findall(".//memberdef[@kind='define']")
         for memberdef in memberdefs:
             brief = self._xml_tags_to_html(memberdef.find("briefdescription"))
-            detailed = brief + self._xml_tags_to_html(memberdef.find("detaileddescription"))
+            detailed = brief + \
+                self._xml_tags_to_html(memberdef.find("detaileddescription"))
             file = memberdef.find("location").get("file")
 
             constant = Constant(
@@ -290,7 +299,7 @@ class XMLParser:
                 memberdef.get("id"),
                 Path(file).name,
                 memberdef.findtext("initializer"))
-            
+
             constants.append(constant)
 
         return constants
@@ -307,7 +316,8 @@ class XMLParser:
             tmp_cpdef = root.find("compounddef")
 
             brief = self._xml_tags_to_html(tmp_cpdef.find("briefdescription"))
-            detailed = brief + self._xml_tags_to_html(tmp_cpdef.find("detaileddescription"))
+            detailed = brief + \
+                self._xml_tags_to_html(tmp_cpdef.find("detaileddescription"))
             constants = self._parse_constants(tmp_cpdef)
 
             group = ConstantGroup(
@@ -321,12 +331,14 @@ class XMLParser:
 
         return group
 
+
 def main():
     root_dir = Path(__file__).resolve().parents[1]
     parser = XMLParser(root_dir)
     parser.parse()
 
     print(f"xml files parsed successfully")
+
 
 if __name__ == "__main__":
     main()
