@@ -329,7 +329,7 @@ class XMLParser:
 
             groups.append(group)
 
-        return group
+        return groups
 
 
 def main():

@@ -1,11 +1,11 @@
 (() => {
-const moon = `
+    const moon = `
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
             class="feather-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>`;
 
-const sun = `
+    const sun = `
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" 
             class="feather-icon">
@@ -20,36 +20,52 @@ const sun = `
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>`;
 
-const button = document.getElementById('nav-bar-theme-toggle');
-const bodyElement = document.body;
-const savedTheme = localStorage.getItem('theme');
-const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const root = document.documentElement;
 
-// determine our initial theme string loop setting
-const initialTheme = savedTheme || (systemPrefersDark ? 'dark-mode' : 'light-mode');
-function updateButton(currentClass) {
-    button.innerHTML = currentClass === 'light-mode' ? moon : sun;
-}
+    let savedTheme = null;
+    try {
+        savedTheme = localStorage.getItem('theme');
 
-bodyElement.classList.add(initialTheme);
-updateButton(initialTheme);
-
-button.addEventListener('click', () => {
-    if (bodyElement.classList.contains('light-mode')) {
-        bodyElement.classList.remove('light-mode');
-        bodyElement.classList.add('dark-mode');
-        
-        // cache choices and refresh button layout states
-        localStorage.setItem('theme', 'dark-mode');
-        updateButton('dark-mode');
-        
-    } else {
-        // swap back to light state parameters
-        bodyElement.classList.remove('dark-mode');
-        bodyElement.classList.add('light-mode');
-        
-        localStorage.setItem('theme', 'light-mode');
-        updateButton('light-mode');
+    } catch (e) {
+        // ignore
     }
-});
+
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (systemPrefersDark ? 'dark-mode' : 'light-mode');
+
+    function applyTheme(theme) {
+        root.classList.remove('light-mode', 'dark-mode');
+        root.classList.add(theme);
+    }
+
+    applyTheme(initialTheme);
+
+    // The button does not exist yet while <head> is parsing, so wire it up later.
+    function setupButton() {
+        const button = document.getElementById('nav-bar-theme-toggle');
+        if (!button) return;
+
+        const updateButton = (theme) => {
+            button.innerHTML = theme === 'light-mode' ? moon : sun;
+        };
+
+        updateButton(initialTheme);
+
+        button.addEventListener('click', () => {
+            const next = root.classList.contains('light-mode') ? 'dark-mode' : 'light-mode';
+            applyTheme(next);
+            try {
+                localStorage.setItem('theme', next);
+            } catch (e) {
+                // ignore
+            }
+            updateButton(next);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupButton);
+    } else {
+        setupButton();
+    }
 })();

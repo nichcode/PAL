@@ -1,69 +1,143 @@
+/* ==========================================================================
+   PAL shared styles: tokens, base typography, navigation bar, inline code.
+   Loaded by every page (website and docs).
+============================================================================= */
+
 @font-face {
-    font-family: 'Liberation Mono';
-    src: url('LiberationMono-Regular.ttf') format('truetype');
+    font-family: 'DejaVu Sans Mono';
+    src: local('DejaVu Sans Mono'), local('DejaVuSansMono'),
+         url('DejaVuSansMono-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Liberation Mono';
-    src: url('LiberationMono-Bold.ttf') format('truetype');
+    font-family: 'DejaVu Sans Mono';
+    src: local('DejaVu Sans Mono Bold'), local('DejaVuSansMono-Bold'),
+         url('DejaVuSansMono-Bold.ttf') format('truetype');
     font-weight: bold;
     font-style: normal;
     font-display: swap;
 }
 
 :root {
-    --bg-color: #141619;
-    --modules-grid-bg: #1c1e22;
-    --border-color: #2c3036;
-    --text-color: #c7cbd1;
-    --heading-color: #f0f2f5;
-    --accent-color: #38bdf8;
-    --nav-bar-height: 65px;
-    --code-bg-color: #23262b;
-    --code-border-color: #2c3036;
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.2s ease;
+    /* surfaces */
+    --bg-color: #0d1014;
+    --modules-grid-bg: #13171d;
+    --code-bg-color: #171c23;
+    --nav-bg-color: rgba(13, 16, 20, 0.86);
+    --border-color: #232a33;
+    --code-border-color: #232a33;
+    --border-strong-color: #313a46;
+
+    /* text */
+    --text-color: #aab3bf;
+    --muted-color: #7b8694;
+    --heading-color: #edf0f4;
+
+    /* accent */
+    --accent-color: #5eaaff;
+    --accent-hover-color: #8cc2ff;
+    --accent-soft-color: rgba(94, 170, 255, 0.12);
+    --on-accent-color: #08111f;
+
+    /* elevation */
+    --shadow-heavy: none;
+
+    /* metrics */
+    --nav-bar-height: 64px;
     --layout-padding: 40px;
-    --shadow-heavy: 0 10px 30px rgba(0, 0, 0, 0.3);
+    --radius-small: 4px;
+    --radius-medium: 8px;
     --spacing-extra-small: 4px;
     --spacing-small: 6px;
     --spacing-medium: 12px;
     --spacing-large: 20px;
     --spacing-extra-large: 25px;
+
+    /* motion */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.2s ease;
+
+    /* font */
+    --font-mono: "DejaVu Sans Mono", monospace;
+
+    color-scheme: dark;
+}
+
+html.light-mode {
+    --bg-color: #f8f9fb;
+    --modules-grid-bg: #ffffff;
+    --code-bg-color: #f0f2f5;
+    --nav-bg-color: rgba(248, 249, 251, 0.88);
+    --border-color: #e0e4ea;
+    --code-border-color: #e0e4ea;
+    --border-strong-color: #cbd2db;
+
+    --text-color: #3b4552;
+    --muted-color: #667282;
+    --heading-color: #10151c;
+
+    --accent-color: #0b5fc7;
+    --accent-hover-color: #084a9c;
+    --accent-soft-color: rgba(11, 95, 199, 0.08);
+    --on-accent-color: #ffffff;
+
+    color-scheme: light;
 }
 
 * {
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 :focus-visible {
     outline: 2px solid var(--accent-color);
     outline-offset: 2px;
+    border-radius: 2px;
+}
+
+::selection {
+    background: var(--accent-soft-color);
+    color: var(--heading-color);
 }
 
 body {
-    font-family: "Liberation Mono", monospace;
+    font-family: var(--font-mono);
+    font-size: 15px;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
     padding: 0;
-    line-height: 1.6;
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.page-nav-bar {
+a {
+    color: var(--accent-color);
+    text-underline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   navigation bar
+---------------------------------------------------------------------------- */
+
+.nav-bar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     height: var(--nav-bar-height);
-    background-color: rgba(24, 26, 30, 0.88);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: var(--nav-bg-color);
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
@@ -74,106 +148,121 @@ body {
 }
 
 .nav-bar-links,
-.page-nav-logo {
+.nav-logo {
     display: flex;
     align-items: center;
+}
+
+.nav-logo {
+    gap: var(--spacing-medium);
+}
+
+.nav-logo a {
+    display: flex;
+    line-height: 0;
+}
+
+.nav-bar-title,
+.nav-logo h1 {
+    color: var(--heading-color);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-logo {
+    min-width: 0;
+}
+
+.nav-bar-links {
+    gap: 4px;
 }
 
 .nav-bar-links a {
     color: var(--text-color);
     text-decoration: none;
-    font-size: 0.9rem;
-    margin-left: var(--spacing-extra-large);
-    opacity: 0.75;
-    transition: opacity var(--transition-normal), color var(--transition-normal);
+    font-size: 0.875rem;
+    padding: 6px 12px;
+    border-radius: var(--radius-small);
+    transition: color var(--transition-normal), background-color var(--transition-normal);
 }
 
 .nav-bar-links a:hover {
-    color: var(--accent-color);
-    opacity: 1;
-}
-
-.page-nav-bar-title,
-.page-nav-logo h1 {
     color: var(--heading-color);
+    background-color: var(--accent-soft-color);
 }
 
-.page-nav-logo {
-    gap: var(--spacing-medium);
-}
-
-.pal-logo-img {
+.logo-img {
     display: block;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     object-fit: cover;
     border-radius: 7px;
     clip-path: inset(3.5% round 22%);
     mix-blend-mode: screen;
     flex-shrink: 0;
-    transition: transform var(--transition-normal);
 }
 
-.pal-logo-img:hover {
-    transform: scale(1.2);
-}
-
-.page-nav-logo h1 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: 0.02em;
+html.light-mode .logo-img {
+    mix-blend-mode: normal;
 }
 
 #nav-bar-theme-toggle {
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-small);
     cursor: pointer;
-    padding: 8px;
-    margin-left: var(--spacing-extra-large);
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    margin-left: var(--spacing-small);
     color: var(--text-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
 #nav-bar-theme-toggle:hover {
-    background-color: var(--border-color);
-    color: var(--accent-color);
+    background-color: var(--accent-soft-color);
+    border-color: var(--border-color);
+    color: var(--heading-color);
 }
 
-body.light-mode {
-    --bg-color: #f7f8f9;
-    --modules-grid-bg: #ffffff;
-    --border-color: #dce0e5;
-    --text-color: #383f47;
-    --heading-color: #161a1f;
-    --accent-color: #0066cc;
-    --code-border-color: #dce0e5;
-    --code-bg-color: #eaecef;
-}
-
-body.light-mode .page-nav-bar {
-    background-color: rgba(247, 248, 249, 0.9);
-}
-
-body.light-mode .pal-logo-img {
-    mix-blend-mode: normal;
-}
-
-@media (max-width: 600px) {
-    .logo {
-        font-size: 2rem;
-    }
-}
+/* --------------------------------------------------------------------------
+   inline code
+---------------------------------------------------------------------------- */
 
 .page-content p code,
+.page-content li code,
+.page-content td code,
 .page-content code {
     background-color: var(--code-bg-color);
     border: 1px solid var(--code-border-color);
     color: var(--heading-color);
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+    padding: 1px 6px;
+    border-radius: var(--radius-small);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+@media (max-width: 600px) {
+    :root {
+        --layout-padding: 20px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    * {
+        transition: none !important;
+    }
 }
