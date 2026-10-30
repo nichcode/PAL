@@ -1,340 +1,324 @@
 #!/usr/bin/env python3
 
-import html
+import sys
+import pickle
 from pathlib import Path
-from xml.etree import ElementTree as ET
+import xml.etree.cElementTree as ET
+
+from typing import Optional
 from models import *
 
 
 class XMLParser:
-    def __init__(self, root_dir):
-        self.build_dir = root_dir / "build"
-        self.xml_dir = self.build_dir / "xml"
-        self.root = ET.parse(self.xml_dir / "index.xml").getroot()
+    def __init__(self, root_dir: str):
+        self.xml_dir = root_dir / "build/xml"
 
-    def parse(self):
-        """Parses pages and modules"""
-
-        self._parse_pages()
-        self._parse_modules()
-
-    def _xml_tags_to_html(self, element: ET.Element | None) -> str:
-        """converts XML tags into HTML"""
-
-        html_out = ""
+    def convert_to_tokens(self, element: Optional[ET.Element]) -> str:
+        """Recursively converts Doxygen XML elements into tokens"""
         if element is None:
             return ""
 
-        tag_map = {
-            "para": ("<p>", "</p>"),
-            "computeroutput": ("<code>", "</code>"),
-            "c": ("<code>", "</code>"),
-            "codeline": ("", "\n"),
-            "highlight": ("", ""),
-
-            "table": ("<table>", "</table>"),
-            "row": ("<tr>", "</tr>"),
-            "entry": ("<td>", "</td>"),
-            "tablecols": ("", ""),
-
-            "itemizedlist": ("<ul>", "</ul>"),
-            "orderedlist": ("<ol>", "</ol>"),
-            "listitem": ("<li>", "</li>"),
-
-            "parameterlist": ("<div><h4>Parameters</h4><dl>", "</dl></div>"),
-            "parameteritem": ("<div>", "</div>"),
-            "parameternamelist": ("", ""),
-            "parameterdescription": ("<dd>", "</dd>"),
+        doxygen_tokens: Dict[str, dict] = {
+            "computeroutput":     "code",
+            "bold":               "bold",
+            "ref":                "ref",
+            "programlisting":     "codeblock",
+            "simplesect":         "callout",
+            "table":              "table",
+            "row":                "row",
+            "entry":              "cell"
         }
 
-        open_tag, close_tag = tag_map.get(element.tag, ("", ""))
-        dir_badge = ""
-
-        if element.tag == "parametername":
-            direction = element.get("direction")
-            if direction:
-                dir_badge = f"<span>{html.escape(direction)}</span> "
-
-            open_tag = f"<dt>{dir_badge}<code>"
-            close_tag = "</code></dt>"
-
-        elif element.tag == "entry" and element.get("thead") == "yes":
-            open_tag, close_tag = ("<th>", "</th>")
-
-        elif element.tag == "simplesect":
-            kind = element.get("kind", "note")
-            if kind == "since":
-                open_tag, close_tag = (
-                    "<div><strong>Since</strong> ", "</div>")
-            elif kind == "par":
-                open_tag, close_tag = ("<div>", "</div>")
-            else:
-                open_tag, close_tag = (f'<div-{html.escape(kind)}">', "</div>")
-
-        elif element.tag == "ulink":
-            url = element.get("url", "#")
-            open_tag = f'<a href="{html.escape(url)}" target="_blank" rel="noopener noreferrer">'
-            close_tag = "</a>"
-
-        elif element.tag == "ref":
-            refid = element.get("refid", "#")
-            open_tag = f'<a href="{html.escape(refid)}.html">'
-            close_tag = "</a>"
-
-        html_out += open_tag
-
+        parts = []
         if element.text:
-            html_out += html.escape(element.text)
+            parts.append(element.text)
 
         for child in element:
-            html_out += self._xml_tags_to_html(child)
+            tag = child.tag
+
+            if tag in doxygen_tokens:
+                token = doxygen_tokens[tag]
+                content = self.convert_to_tokens(child)
+                template = TOKENS[token]
+
+                if token == "ref":
+                    id = child.attrib.get("refid", "")
+                    formatted = template.format(target_id=id, content=content)
+                elif token == "callout":
+                    callout_type = child.attrib.get("kind", "note")
+                    formatted = template.format(
+                        type=callout_type, content=content)
+                else:
+                    formatted = template.format(content=content)
+
+                parts.append(formatted)
+            else:
+                parts.append(self.convert_to_tokens(child))
+
             if child.tail:
-                html_out += html.escape(child.tail)
+                parts.append(child.tail)
 
-        html_out += close_tag
+        return "".join(parts).strip()
 
-        return html_out
+    def parse_function(self, memberdef: ET.Element) -> Function:
+        """Parses a Doxygen function into data object"""
+        id = memberdef.attrib.get("id", "")
+        name = memberdef.findtext("name")
+        type_element = memberdef.find("type")
+        return_type = self.convert_to_tokens(type_element)
 
-    def _parse_pages(self):
-        """Parses XML pages"""
+        brief_element = memberdef.find("briefdescription")
+        brief = self.convert_to_tokens(brief_element)
 
-        pages = []
-        for cp in self.root.iterfind("compound"):
-            if cp.get("kind") == "page":
-                refid = cp.get("refid")
-                root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
-                cpdef = root.find("compounddef")
+        detailed_element = memberdef.find("detaileddescription")
+        description = self.convert_to_tokens(detailed_element)
 
-                name = cpdef.findtext("title")
-                brief = "".join(cpdef.find("briefdescription").itertext()).strip()
-                detailed = brief + \
-                    self._xml_tags_to_html(cpdef.find("detaileddescription"))
+        params = []
+        args_list = []
 
-                page = Page(name, brief, detailed, refid)
-                pages.append(page)
+        for param in memberdef.findall("param"):
+            param_type_element = param.find("type")
+            param_type = self.convert_to_tokens(param_type_element)
+            param_name_element = param.find("declname")
+            param_name = param_name_element.text if param_name_element is not None else ""
 
-        save_cache(self.build_dir / "pages.pkl", pages)
+            direction = param.attrib.get("direction", "in")
+            params.append(Param(param_name, param_type, direction, brief))
 
-    def _parse_modules(self):
-        """Parses XML modules"""
+            if param_name:
+                args_list.append(f"{param_type} {param_name}")
+            else:
+                args_list.append(param_type)
 
-        modules = []
-        refids = self._find_modules()
+        signature = f"{return_type} {name}({", ".join(args_list)})"
 
-        for refid in refids:
-            root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
-            cpdef = root.find("compounddef")
-            name = cpdef.findtext("title")
+        return Function(
+            id,
+            name,
+            return_type,
+            signature,
+            brief,
+            description,
+            params)
 
-            brief = "".join(cpdef.find("briefdescription").itertext()).strip()
-            desc = brief + " ".join(cpdef.find("detaileddescription").itertext()).strip()
+    def parse_struct(self, inner_class: ET.Element) -> Struct:
+        """Parses a Doxygen struct into data object"""
+        refid = inner_class.get('refid')
+        root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
+        compounddef = root.find("compounddef")
+        name = compounddef.findtext("compoundname"),
 
-            functions = self._parse_functions(cpdef)
-            structs = self._parse_structs(cpdef)
-            typedefs = self._parse_typedefs(cpdef)
-            constants = self._parse_constants(cpdef)
-            constant_groups = self._parse_constant_groups(cpdef)
+        brief_element = compounddef.find("briefdescription")
+        brief = self.convert_to_tokens(brief_element)
 
-            # compute file refid
-            cpname = cpdef.findtext("compoundname")
-            tmp = cpname.replace('_', '__').replace('.', '__')
+        detailed_element = compounddef.find("detaileddescription")
+        description = self.convert_to_tokens(detailed_element)
 
-            root = ET.parse(self.xml_dir / f"{tmp}_8h.xml").getroot()
-            cpdef = root.find("compounddef")
-            license_str = self._xml_tags_to_html(
-                cpdef.find("detaileddescription"))
+        fields = []
+        for field in compounddef.findall(".//memberdef"):
+            field_name = field.findtext("name")
+            type_element = field.find("type")
+            field_type = self.convert_to_tokens(type_element)
+            argsstring = field.findtext("argsstring")
 
-            module = Module(
-                name,
-                desc,
-                license_str,
-                refid,
-                f"{cpname}.h",
-                functions,
-                structs,
-                typedefs,
-                constants,
-                constant_groups)
+            field_detailed_element = field.find("detaileddescription")
+            field_description = self.convert_to_tokens(field_detailed_element)
 
-            modules.append(module)
-            save_cache(self.build_dir / "modules.pkl", modules)
+            fields.append(Field(field_name, field_type,
+                          field_description, argsstring))
 
-    def _find_modules(self):
-        """Find modules"""
+        return Struct(
+            refid,
+            name,
+            brief,
+            description,
+            fields)
 
-        modules = []
-        children = []
+    def parse_typedef(self, memberdef: ET.Element) -> Typedef:
+        """Parses a Doxygen typedef into data object"""
+        id = memberdef.attrib.get("id", "")
+        name = memberdef.findtext("name")
+        type_element = memberdef.find("type")
+        type_ = self.convert_to_tokens(type_element)
 
-        for cp in self.root.iterfind("compound"):
-            if cp.get("kind") == "group":
-                refid = cp.get("refid")
-                root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
-                cpdef = root.find("compounddef")
+        brief_element = memberdef.find("briefdescription")
+        brief = self.convert_to_tokens(brief_element)
 
-                # find nested sub-groups
-                for inner in cpdef.findall("innergroup"):
-                    group_refid = inner.get("refid")
-                    children.append(group_refid)
+        detailed_element = memberdef.find("detaileddescription")
+        description = self.convert_to_tokens(detailed_element)
 
-                # filter modules
-                if refid not in children:
-                    modules.append(refid)
+        return Typedef(
+            id,
+            name,
+            type_,
+            brief,
+            description)
 
-        return modules
+    def parse_constant(self, memberdef: ET.Element) -> Constant:
+        """Parses a Doxygen constant into data object"""
+        id = memberdef.attrib.get("id", "")
+        name = memberdef.findtext("name")
+        value = memberdef.findtext("initializer")
 
-    def _parse_functions(self, cpdef) -> list:
-        """Parses module functions"""
+        detailed_element = memberdef.find("detaileddescription")
+        description = self.convert_to_tokens(detailed_element)
 
-        functions = []
-        memberdefs = cpdef.findall(".//memberdef[@kind='function']")
+        return Constant(
+            id,
+            name,
+            value,
+            description)
 
-        for memberdef in memberdefs:
-            brief = self._xml_tags_to_html(memberdef.find("briefdescription"))
-            detailed = brief + \
-                self._xml_tags_to_html(memberdef.find("detaileddescription"))
-            file = memberdef.find("location").get("file")
+    def parse_constant_group(self, inner_group: ET.Element) -> ConstantGroup:
+        """Parses a Doxygen group/constant group into data object"""
+        refid = inner_group.get('refid')
+        root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
+        compounddef = root.find("compounddef")
+        name = compounddef.findtext("title")
 
-            params = []
-            for param in memberdef.findall("param"):
-                type = self._xml_tags_to_html(param.find("type"))
-                name = param.findtext("declname", default="").strip()
+        brief_element = compounddef.find("briefdescription")
+        brief = self.convert_to_tokens(brief_element)
 
-                parameter = Param(type, name)
-                params.append(parameter)
-
-            function = Function(
-                memberdef.findtext("name", default=""),
-                brief,
-                detailed,
-                memberdef.get("id"),
-                Path(file).name,
-                "".join(memberdef.find("type").itertext()).strip(),
-                params)
-
-            functions.append(function)
-
-        return functions
-
-    def _parse_structs(self, cpdef) -> list:
-        """Parses module structs"""
-
-        structs = []
-        memberdefs = cpdef.findall(".//innerclass")
-
-        for memberdef in memberdefs:
-            refid = memberdef.get('refid')
-            root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
-            tmp_cpdef = root.find("compounddef")
-
-            brief = self._xml_tags_to_html(tmp_cpdef.find("briefdescription"))
-            detailed = brief + \
-                self._xml_tags_to_html(tmp_cpdef.find("detaileddescription"))
-
-            fields = []
-            for f in tmp_cpdef.findall(".//memberdef"):
-                name = f.findtext("name")
-                type = self._xml_tags_to_html(f.find("type"))
-                argsstring = f.findtext("argsstring")
-
-                fbrief = self._xml_tags_to_html(f.find("briefdescription"))
-                fdetailed = fbrief + \
-                    self._xml_tags_to_html(f.find("detaileddescription"))
-
-                field = Field(name, fbrief, fdetailed, type, argsstring)
-                fields.append(field)
-
-            struct = Struct(
-                tmp_cpdef.findtext("compoundname"),
-                brief,
-                detailed,
-                refid,
-                tmp_cpdef.findtext("includes"),
-                fields)
-
-            structs.append(struct)
-
-        return structs
-
-    def _parse_typedefs(self, cpdef) -> list:
-        """Parses module typedefs"""
-
-        typedefs = []
-        memberdefs = cpdef.findall(".//memberdef[@kind='typedef']")
-
-        for memberdef in memberdefs:
-            brief = self._xml_tags_to_html(memberdef.find("briefdescription"))
-            detailed = brief + \
-                self._xml_tags_to_html(memberdef.find("detaileddescription"))
-            file = memberdef.find("location").get("file")
-
-            typedef = Typedef(
-                memberdef.findtext("name"),
-                brief,
-                detailed,
-                memberdef.get("id"),
-                Path(file).name,
-                memberdef.findtext("type"))
-
-            typedefs.append(typedef)
-
-        return typedefs
-
-    def _parse_constants(self, cpdef) -> list:
-        """Parses module constants"""
+        detailed_element = compounddef.find("detaileddescription")
+        description = self.convert_to_tokens(detailed_element)
 
         constants = []
+        for memberdef in compounddef.findall(".//memberdef"):
+            kind = memberdef.attrib.get("kind", "")
 
-        memberdefs = cpdef.findall(".//memberdef[@kind='define']")
-        for memberdef in memberdefs:
-            brief = self._xml_tags_to_html(memberdef.find("briefdescription"))
-            detailed = brief + \
-                self._xml_tags_to_html(memberdef.find("detaileddescription"))
-            file = memberdef.find("location").get("file")
+            if kind == "define":
+                constants.append(self.parse_constant(memberdef))
 
-            constant = Constant(
-                memberdef.findtext("name"),
-                brief,
-                detailed,
-                memberdef.get("id"),
-                Path(file).name,
-                memberdef.findtext("initializer"))
+        return ConstantGroup(
+            refid,
+            name,
+            brief,
+            description,
+            constants)
 
-            constants.append(constant)
+    def parse_module(self, refid: str) -> Module:
+        """Parses a Doxygen group/module into Module data object"""
+        root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
+        compounddef = root.find("compounddef")
 
-        return constants
+        if compounddef is None:
+            print(f"Invalid Doxygen XML: missing <compounddef> in {refid}")
+            sys.exit(1)
 
-    def _parse_constant_groups(self, cpdef) -> list:
-        """Parses module constants groups"""
+        title = compounddef.findtext("title")
+        brief_element = compounddef.find("briefdescription")
+        brief = self.convert_to_tokens(brief_element)
 
-        groups = []
-        memberdefs = cpdef.findall(".//innergroup")
+        detailed_element = compounddef.find("detaileddescription")
+        description = self.convert_to_tokens(detailed_element)
 
-        for memberdef in memberdefs:
-            refid = memberdef.get('refid')
-            root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
-            tmp_cpdef = root.find("compounddef")
+        functions = []
+        structs = []
+        typedefs = []
+        constants = []
+        constant_groups = []
 
-            brief = self._xml_tags_to_html(tmp_cpdef.find("briefdescription"))
-            detailed = brief + \
-                self._xml_tags_to_html(tmp_cpdef.find("detaileddescription"))
-            constants = self._parse_constants(tmp_cpdef)
+        for memberdef in compounddef.findall(".//memberdef"):
+            kind = memberdef.attrib.get("kind", "")
 
-            group = ConstantGroup(
-                tmp_cpdef.findtext("title"),
-                brief,
-                detailed,
-                refid,
-                constants)
+            if kind == "function":
+                functions.append(self.parse_function(memberdef))
+            elif kind == "typedef":
+                typedefs.append(self.parse_typedef(memberdef))
+            elif kind == "define":
+                constants.append(self.parse_constant(memberdef))
 
-            groups.append(group)
+        for inner_class in compounddef.findall(".//innerclass"):
+            structs.append(self.parse_struct(inner_class))
 
-        return groups
+        for inner_group in compounddef.findall(".//innergroup"):
+            constant_groups.append(self.parse_constant_group(inner_group))
+
+        return Module(
+            refid,
+            title,
+            brief,
+            description,
+            functions,
+            structs,
+            typedefs,
+            constants,
+            constant_groups)
+
+    def parse_page(self, refid: str) -> Page:
+        """Parses a Doxygen page into Page data object"""
+        root = ET.parse(self.xml_dir / f"{refid}.xml").getroot()
+        compounddef = root.find("compounddef")
+        title = compounddef.findtext("title")
+        brief = compounddef.findtext("briefdescription/para")
+
+        detailed_element = compounddef.find("detaileddescription")
+        description = self.convert_to_tokens(detailed_element)
+
+        return Page(refid, title, brief, description)
+
+
+def find_modules(root_dir) -> List[str]:
+    """Finds Dxoygen modules from sub groups"""
+    xml_file = root_dir / "build/xml/index.xml"
+    root = ET.parse(xml_file).getroot()
+
+    modules = []
+    children = []
+
+    for compound in root.iterfind("compound"):
+        if compound.get("kind") == "group":
+            refid = compound.get("refid")
+            root = ET.parse(root_dir / f"build/xml/{refid}.xml").getroot()
+            compounddef = root.find("compounddef")
+
+            # find nested sub-groups
+            for inner in compounddef.findall("innergroup"):
+                group_refid = inner.get("refid")
+                children.append(group_refid)
+
+            # filter modules
+            if refid not in children:
+                modules.append(refid)
+
+    return modules
+
+
+def find_pages(root_dir) -> List[str]:
+    """Finds Dxoygen modules from sub groups"""
+    xml_file = root_dir / "build/xml/index.xml"
+    root = ET.parse(xml_file).getroot()
+
+    pages = []
+    for compound in root.iterfind("compound"):
+        if compound.get("kind") == "page":
+            pages.append(compound.get("refid"))
+
+    return pages
+
+
+def save_cache(filepath: Path, data):
+    """Saves data objects to disk using pickle"""
+    with open(filepath, "wb") as file:
+        pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]
+    module_refids = find_modules(root_dir)
+    pages = find_pages(root_dir)
     parser = XMLParser(root_dir)
-    parser.parse()
+
+    module_objects = []
+    for refid in module_refids:
+        module_objects.append(parser.parse_module(refid))
+
+    page_objects = []
+    for refid in pages:
+        page_objects.append(parser.parse_page(refid))
+
+    save_cache(root_dir / "build/modules.pkl", module_objects)
+    save_cache(root_dir / "build/pages.pkl", page_objects)
 
     print(f"xml files parsed successfully")
 

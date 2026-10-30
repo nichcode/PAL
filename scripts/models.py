@@ -1,105 +1,97 @@
 
-import pickle
-from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Dict
+
+TOKENS: Dict[str, str] = {
+    "code": "{{code:{content}}}",
+    "bold": "{{bold:{content}}}",
+    "ref": "{{ref:{target_id}:{content}}}",
+    "codeblock": "{{codeblock:{content}}}",
+    "callout": "{{callout:{type}:{content}}}",
+    "table": "{{table:{content}}}",
+    "row": "{{row:{content}}}",
+    "cell": "{{cell:{content}}}",
+}
 
 
 @dataclass
 class Constant:
+    id: str
     name: str
-    brief: str
-    detailed: str
-    refid: str
-    file: str
-    value: int
+    value: str
+    description: str = ""
 
 
 @dataclass
 class ConstantGroup:
+    id: str
     name: str
-    brief: str
-    detailed: str
-    refid: str
-    constants: list[Constant]
+    brief: str = ""
+    description: str = ""
+    constants: List[Constant] = field(default_factory=list)
 
 
 @dataclass
 class Param:
+    name: str
     type: str
-    name: str
-
-
-@dataclass
-class Function:
-    name: str
-    brief: str
-    detailed: str
-    refid: str
-    file: str
-    return_type: str
-    params: list[Param]
+    direction: str = "in"
+    brief: str = ""
 
 
 @dataclass
 class Field:
     name: str
-    brief: str
-    detailed: str
     type: str
-    argsstring: str
+    description: str = ""
+    argsstring: str = ""
+
+
+@dataclass
+class Function:
+    id: str
+    name: str
+    return_type: str
+    signature: str
+    brief: str = ""
+    description: str = ""
+    params: List[Param] = field(default_factory=list)
 
 
 @dataclass
 class Struct:
+    id: str
     name: str
     brief: str
-    detailed: str
-    refid: str
-    file: str
-    fields: list[Param]
+    description: str
+    fields: List[Field] = field(default_factory=list)
 
 
 @dataclass
 class Typedef:
+    id: str
     name: str
-    brief: str
-    detailed: str
-    refid: str
-    file: str
     type: str
+    brief: str = ""
+    description: str = ""
 
 
 @dataclass
 class Module:
-    name: str
-    desc: str
-    license: str
-    refid: str
-    file: str
-    functions: list[Function]
-    structs: list[Struct]
-    typedefs: list[Typedef]
-    constants: list[Constant]
-    constant_groups: list[ConstantGroup]
+    id: str
+    title: str
+    brief: str = ""
+    description: str = ""
+    functions: List[Function] = field(default_factory=list)
+    structs: List[Struct] = field(default_factory=list)
+    typedefs: List[Typedef] = field(default_factory=list)
+    constants: List[Constant] = field(default_factory=list)
+    constant_groups: List[ConstantGroup] = field(default_factory=list)
 
 
 @dataclass
 class Page:
-    name: str
+    id: str
+    title: str
     brief: str
-    detailed: str
-    refid: str
-
-
-def save_cache(filepath: Path, data):
-    """Saves objects to disk"""
-
-    with open(filepath, "wb") as file:
-        pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def load_cache(filepath: Path):
-    """loads objects to disk"""
-
-    with open(filepath, "rb") as file:
-        return pickle.load(file)
+    description: str

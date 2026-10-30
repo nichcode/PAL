@@ -8,9 +8,8 @@ def main():
     root_dir = Path(__file__).resolve().parents[1]
     assets_dir = root_dir / "assets"
     output_dir = root_dir / "build/website/html"
-
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     for item in assets_dir.iterdir():
         if item.name == "templates":
             continue

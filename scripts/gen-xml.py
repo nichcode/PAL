@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 
-def main() -> None:
+def main():
     root_dir = Path(__file__).resolve().parents[1]
     log_file = root_dir / "build/doxygen.log"
     os.chdir(root_dir / "docs")

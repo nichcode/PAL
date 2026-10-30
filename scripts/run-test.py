@@ -10,7 +10,7 @@ from pathlib import Path
 
 def worker(info: tuple) -> tuple:
     """Worker that runs a test application"""
-    
+
     program, name = info
     result = subprocess.run([str(program)])
     return name, result.returncode
