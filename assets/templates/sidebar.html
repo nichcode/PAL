@@ -1,0 +1,59 @@
+<nav class="sidebar" aria-label="Documentation">
+    <div class="sidebar-entry">
+        <a href="index.html">Introduction</a>
+    </div>
+
+    <!-- Guides Group -->
+    <div class="sidebar-group">
+        <div class="sidebar-heading">
+            <button class="sidebar-arrow" aria-label="Toggle Guides" aria-expanded="false"></button>
+            <a href="guides.html">Guides</a>
+        </div>
+        <ul class="sidebar-tree" hidden>
+        {%- for page in guides %}
+            <li>
+                <a href="{{ page.id }}.html">{{ page.title }}</a>
+            </li>
+        {%- endfor %}
+        </ul>
+    </div>
+
+    <!-- API Reference Group -->
+    <div class="sidebar-group">
+        <div class="sidebar-heading">
+            <button class="sidebar-arrow" aria-label="Toggle API Reference" aria-expanded="false"></button>
+            <a href="api_reference.html">API Reference</a>
+        </div>
+        <ul class="sidebar-tree" hidden>
+        {%- for module in modules %}
+        <li class="sidebar-group">
+            <div class="sidebar-heading">
+                <button class="sidebar-arrow" aria-expanded="false"></button>
+                <a href="{{ module.refid }}.html">{{ module.name }}</a>
+            </div>
+
+            <ul class="sidebar-tree" hidden>
+                {%- for func in module.functions %}
+                <li><a href="{{ func.id }}.html">{{ func.name }}</a></li>
+                {%- endfor %}
+
+                {%- for struct in module.structs %}
+                <li><a href="{{ struct.id }}.html">{{ struct.name }}</a></li>
+                {%- endfor %}
+
+                {%- for typedef in module.typedefs %}
+                <li><a href="{{ typedef.id }}.html">{{ typedef.name }}</a></li>
+                {%- endfor %}
+
+                {%- for constant in module.constants %}
+                <li><a href="{{ module.id }}__constants.html#{{ constant.refid }}">{{ constant.name }}</a></li>
+                {%- endfor %}
+
+                {%- for group in module.constant_groups %}
+                <li><a href="{{ group.id }}.html">{{ group.name }}</a></li>
+                {%- endfor %}
+            </ul>
+        </li>
+        {%- endfor %}
+    </div>
+</nav>

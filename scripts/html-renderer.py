@@ -36,22 +36,17 @@ PATTERNS = {
 
 
 class HTMLRenderer:
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, modules, pages: list[Page]):
         self.root_dir = root_dir
         loader = FileSystemLoader(root_dir / "assets/templates")
         self.env = Environment(loader=loader, autoescape=False)
 
-        self.website_page_template = self.env.get_template(
-            "website_page.html"
-        )
-
-        self.docs_page_template = self.env.get_template(
-            "docs_page.html"
-        )
-
-        self.modules_list = ""
-        self.guides_list = ""
+        self.website_page_template = self.env.get_template("website_page.html")
+        self.docs_page_template = self.env.get_template("docs_page.html")
         self.combined_pattern = self._build_combined_pattern()
+
+        self.modules = modules
+        self.guides = [p for p in pages if p.id != "indexpage"]
 
     def render_module(self, module: Module) -> str:
         """Renders a module using the documentation page template."""
@@ -61,8 +56,8 @@ class HTMLRenderer:
         return self.docs_page_template.render(
             title_page_type=page_type,
             title=rendered_module.name,
-            guides=self.guides_list,
-            modules=self.modules_list,
+            guides=self.guides,
+            modules=self.modules,
             page_content_title=rendered_module.name,
             page_type=page_type,
             content=module.description,
@@ -79,14 +74,15 @@ class HTMLRenderer:
             return self.docs_page_template.render(
                 title_page_type=page_type,
                 title=rendered_page.title,
-                guides=self.guides_list,
-                modules=self.modules_list,
+                guides=self.guides,
+                modules=self.modules,
                 page_content_title=rendered_page.title,
                 page_type=page_type,
                 content=rendered_page.description,
                 toc_page_type=page_type,
                 toc=""
             )
+        
         else:
             return self.website_page_template.render(
                 title=page.title,
@@ -179,7 +175,6 @@ class HTMLRenderer:
 
         return value
 
-
 def load_cache(filepath: Path):
     """Loads data objects from disk"""
     with open(filepath, "rb") as file:
@@ -194,7 +189,7 @@ def main():
 
     modules: list[Module] = load_cache(root_dir / "build/modules.pkl")
     pages: list[Page] = load_cache(root_dir / "build/pages.pkl")
-    renderer = HTMLRenderer(root_dir)
+    renderer = HTMLRenderer(root_dir, modules, pages)
 
     for module in modules:
         rendered = renderer.render_module(module)
