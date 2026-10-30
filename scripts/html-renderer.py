@@ -43,8 +43,10 @@ class HTMLRenderer:
 
         self.website_page_template = self.env.get_template("website_page.html")
         self.docs_page_template = self.env.get_template("docs_page.html")
-        self.combined_pattern = self._build_combined_pattern()
+        self.docs_index_page_template = self.env.get_template(
+            "docs_index_list.html")
 
+        self.combined_pattern = self._build_combined_pattern()
         self.modules = modules
         self.guides = [p for p in pages if p.id != "indexpage"]
 
@@ -82,12 +84,35 @@ class HTMLRenderer:
                 toc_page_type=page_type,
                 toc=""
             )
-        
+
         else:
             return self.website_page_template.render(
                 title=page.title,
                 content=page.description
             )
+
+    def render_docs_index_pages(self) -> dict[str, str]:
+        """Generates docs index pages"""
+        rendered_modules: list[Module] = []
+        rendered_guides: list[Page] = []
+
+        # convert the tokens to html tags and add brief to description
+        for module in self.modules:
+            tmp: Module = self._render_values(module)
+            tmp.description = tmp.brief + tmp.description
+            rendered_modules.append(tmp)
+
+        for guide in self.guides:
+            rendered_guides.append(self._render_values(guide))
+
+        pages = {}
+        pages["API_Reference"] = self.docs_index_page_template.render(
+            items=rendered_modules)
+        
+        pages["Guides"] = self.docs_index_page_template.render(
+            items=rendered_guides)
+
+        return pages
 
     def _build_combined_pattern(self):
         """Builds one regex that can locate any token in a single scan."""
@@ -175,6 +200,7 @@ class HTMLRenderer:
 
         return value
 
+
 def load_cache(filepath: Path):
     """Loads data objects from disk"""
     with open(filepath, "rb") as file:
@@ -213,6 +239,15 @@ def main():
 
         rendered = renderer.render_page(page, False)
         file = website_dir / f.name
+        file.write_text(rendered, encoding="utf-8")
+
+    # generate docs index pages
+    docs_index_pages = renderer.render_docs_index_pages()
+    for key, value in docs_index_pages.items():
+        page = Page("", key, "", value)
+
+        rendered = renderer.render_page(page, False)
+        file = html_dir / f"{key.lower()}.html"
         file.write_text(rendered, encoding="utf-8")
 
     print(f"html files generated successfully")
