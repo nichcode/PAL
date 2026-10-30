@@ -1,84 +1,171 @@
 #!/usr/bin/env python3
 
-import re
+import html
 import pickle
+import re
+from dataclasses import is_dataclass, fields
 from pathlib import Path
+
 from jinja2 import Environment, FileSystemLoader
-from models import *
+from models import TOKENS, Module, Page, token_pattern, unesc
+
+# Token key -> HTML
+HTML_TEMPLATES = {
+    "code": "<code>{content}</code>",
+    "bold": "<strong>{content}</strong>",
+    "ref": '<a href="{target_id}.html">{content}</a>',
+    "codeblock": "<pre><code>{content}</code></pre>",
+    "callout": (
+        '<div class="callout {type}">'
+        '<strong class="callout-title">{type}</strong>{content}</div>'
+    ),
+    "table": "<table>{content}</table>",
+    "row": "<tr>{content}</tr>",
+    "cell": "<td>{content}</td>",
+    "para": '<div class="para">{content}</div>'
+}
+
+assert HTML_TEMPLATES.keys() == TOKENS.keys(), (
+    "renderer is missing a token"
+)
+
+PATTERNS = {
+    key: token_pattern(key)
+    for key in TOKENS
+}
 
 
 class HTMLRenderer:
     def __init__(self, root_dir):
         self.root_dir = root_dir
         loader = FileSystemLoader(root_dir / "assets/templates")
-        env = Environment(loader=loader)
+        self.env = Environment(loader=loader, autoescape=False)
 
-        self.website_page_template = env.get_template("website_page.html")
-        self.docs_page_template = env.get_template("docs_page.html")
-        self.patterns: Dict[str, re.Pattern] = {}
+        self.website_page_template = self.env.get_template(
+            "website_page.html"
+        )
 
-        # compile expressions from TOKENS
-        for token in TOKENS:
-            if token == "ref":
-                self.patterns[token] = re.compile(r"\{\{ref:(.*?):(.*?)\}\}")
-            elif token == "callout":
-                self.patterns[token] = re.compile(
-                    r"\{\{callout:(.*?):(.*?)\}\}")
-            else:
-                self.patterns[token] = re.compile(
-                    rf"\{{{{ {token}:(.*?)\}}}}", re.DOTALL)
+        self.docs_page_template = self.env.get_template(
+            "docs_page.html"
+        )
 
-    def repl_ref(self, match: re.Match):
-        """Cross reference links"""
-        target_id = match.group(1)
-        content = match.group(2)
-        return f'<a href="{target_id}.html">{content}</a>'
+        self.modules_list = ""
+        self.guides_list = ""
+        self.combined_pattern = self._build_combined_pattern()
 
-    def repl_callout(self, match: re.Match):
-        """Notes, warnings, ...)"""
-        callout_type = match.group(1)
-        content = match.group(2)
-        return f'<div class="callout {callout_type}"><strong>{callout_type.capitalize()}</strong>{content}</div>'
+    def render_module(self, module: Module) -> str:
+        """Renders a module using the documentation page template."""
+        rendered_module: Module = self._render_values(module)
+        page_type = "intro"
 
-    def convert_to_html(self, text: str) -> str:
-        """Converts tokens into html tags"""
+        return self.docs_page_template.render(
+            title_page_type=page_type,
+            title=rendered_module.name,
+            guides=self.guides_list,
+            modules=self.modules_list,
+            page_content_title=rendered_module.name,
+            page_type=page_type,
+            content=module.description,
+            toc_page_type=page_type,
+            toc=""
+        )
+
+    def render_page(self, page: Page) -> str:
+        """Renders a guide/page using the website page template."""
+        # page_data = self._render_values(asdict(page))
+
+        # return self.website_page_template.render(
+        #     page=page_data,
+        #     title=page_data["title"],
+        #     brief=page_data["brief"],
+        #     description=page_data["description"],
+        # )
+
+    def _build_combined_pattern(self):
+        """Builds one regex that can locate any token in a single scan."""
+        alternatives = []
+
+        for key, pattern in PATTERNS.items():
+            # Each individual pattern uses named field groups. They become
+            # ordinary groups here so alternatives can share field names.
+            unnamed_pattern = re.sub(
+                r"\(\?P<\w+>",
+                "(",
+                pattern.pattern,
+            )
+            alternatives.append(
+                f"(?P<TOKEN_{key}>{unnamed_pattern})"
+            )
+
+        return re.compile("|".join(alternatives), re.S)
+
+    def _replace_token(self, match: re.Match):
+        key = match.lastgroup.removeprefix("TOKEN_")
+        token_text = match.group(f"TOKEN_{key}")
+        fields = PATTERNS[key].fullmatch(token_text).groupdict()
+
+        # These fields are used in HTML attributes as well as text.
+        # Decode the earlier text-context escaping, then escape for
+        # attribute context. Text-context escaping is safe in both.
+        if key == "ref":
+            fields["target_id"] = html.escape(
+                html.unescape(fields["target_id"]),
+                quote=True,
+            )
+        elif key == "callout":
+            fields["type"] = html.escape(
+                html.unescape(fields["type"]),
+                quote=True,
+            )
+
+        return HTML_TEMPLATES[key].format(**fields)
+
+    def _convert_to_html(self, text: str) -> str:
+        """Converts tokens into HTML, rendering nested tokens inside-out."""
         if not text:
             return ""
 
-        rendered = text
-        tag_map = {
-            "code": ("<code>", "</code>"),
-            "strong": ("<strong>", "</strong>"),
-            "codeblock": ("<pre><code>", "</code></pre>"),
-            "table": ("<table>", "</table>"),
-            "row": ("<tr>", "</tr>"),
-            "cell": ("<td>", "</td>"),
-        }
+        # Escape raw text first; token syntax survives HTML escaping.
+        rendered = html.escape(text, quote=False)
+        while True:
+            rendered, count = self.combined_pattern.subn(
+                self._replace_token, rendered)
+            if count == 0:
+                break
 
-        if "ref" in self.patterns:
-            rendered = self.patterns["ref"].sub(self.repl_ref, rendered)
+        if "{{" in rendered:
+            raise ValueError(
+                f"unrendered token in: {rendered[:200]}"
+            )
 
-        if "callout" in self.patterns:
-            rendered = self.patterns["callout"].sub(
-                self.repl_callout, rendered)
+        return unesc(rendered)
 
-        for name, pattern in self.patterns.items():
-            if name in ("ref", "callout"):
-                continue
+    def _render_values(self, value, key=None):
+        """Converts model text to HTML while preserving identifiers."""
+        if isinstance(value, str):
+            return value if key == "id" else self._convert_to_html(value)
 
-            if name in tag_map:
-                open_tag, close_tag = tag_map[name]
-                rendered = pattern.sub(rf"{open_tag}\1{close_tag}", rendered)
+        if isinstance(value, list):
+            return [self._render_values(item) for item in value]
 
-        return rendered
+        if isinstance(value, dict):
+            return {
+                name: self._render_values(item, name)
+                for name, item in value.items()
+            }
 
-    def render_module(self, module: Module) -> str:
-        """Renders a module data object"""
-        title = self.convert_to_html(module.title)
-        brief = self.convert_to_html(module.brief)
-        description = self.convert_to_html(module.description)
+        if is_dataclass(value) and not isinstance(value, type):
+            rendered_fields = {
+                field.name: self._render_values(
+                    getattr(value, field.name),
+                    field.name,
+                )
+                for field in fields(value)
+                if field.init
+            }
+            return type(value)(**rendered_fields)
 
-        return ""
+        return value
 
 
 def load_cache(filepath: Path):
@@ -89,12 +176,21 @@ def load_cache(filepath: Path):
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]
-    modules = load_cache(root_dir / "build/modules.pkl")
-    pages = load_cache(root_dir / "build/pages.pkl")
+    website_dir = root_dir / "build/website"
+    html_dir = website_dir / "html"
+    html_dir.mkdir(parents=True, exist_ok=True)
+
+    modules: list[Module] = load_cache(root_dir / "build/modules.pkl")
+    pages: list[Page] = load_cache(root_dir / "build/pages.pkl")
     renderer = HTMLRenderer(root_dir)
 
     for module in modules:
-        renderer.render_module(module)
+        rendered = renderer.render_module(module)
+        file = html_dir / f"{module.id}.html"
+        file.write_text(rendered, encoding="utf-8")
+
+    for page in pages:
+        renderer.render_page(page)
 
     print(f"html files generated successfully")
 
