@@ -70,16 +70,28 @@ class HTMLRenderer:
             toc=""
         )
 
-    def render_page(self, page: Page) -> str:
-        """Renders a guide/page using the website page template."""
-        # page_data = self._render_values(asdict(page))
+    def render_page(self, page: Page, is_docs_page: bool = True) -> str:
+        """Renders a page using the website or docs page template."""
+        if is_docs_page:
+            rendered_page: Page = self._render_values(page)
+            page_type = "intro"
 
-        # return self.website_page_template.render(
-        #     page=page_data,
-        #     title=page_data["title"],
-        #     brief=page_data["brief"],
-        #     description=page_data["description"],
-        # )
+            return self.docs_page_template.render(
+                title_page_type=page_type,
+                title=rendered_page.title,
+                guides=self.guides_list,
+                modules=self.modules_list,
+                page_content_title=rendered_page.title,
+                page_type=page_type,
+                content=rendered_page.description,
+                toc_page_type=page_type,
+                toc=""
+            )
+        else:
+            return self.website_page_template.render(
+                title=page.title,
+                content=page.description
+            )
 
     def _build_combined_pattern(self):
         """Builds one regex that can locate any token in a single scan."""
@@ -190,7 +202,23 @@ def main():
         file.write_text(rendered, encoding="utf-8")
 
     for page in pages:
-        renderer.render_page(page)
+        rendered = renderer.render_page(page)
+        file = html_dir / f"{page.id}.html"
+        if page.id == "indexpage":
+            file = html_dir / "index.html"
+
+        file.write_text(rendered, encoding="utf-8")
+
+    # generates page from pages directory
+    pages_dir = root_dir / "assets/pages"
+    for f in pages_dir.iterdir():
+        text = Path(f).read_text(encoding="utf-8")
+        match = re.match(r"\s*<!--\stitle:\s*(.*?)\s*-->", text)
+        page = Page("", match.group(1), "", text[match.end():])
+
+        rendered = renderer.render_page(page, False)
+        file = website_dir / f.name
+        file.write_text(rendered, encoding="utf-8")
 
     print(f"html files generated successfully")
 
