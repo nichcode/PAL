@@ -77,11 +77,11 @@ class HTMLRenderer:
 
         if is_docs_page:
             return self.docs_page_template.render(
-                title=rendered_page.name,
+                title=rendered_page.title,
                 guides=self.guides,
                 modules=self.modules,
                 page_type="intro",
-                content_title=rendered_page.name,
+                content_title=rendered_page.title,
                 content=desc,
                 toc=""
             )
