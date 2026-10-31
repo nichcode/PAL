@@ -1,0 +1,17 @@
+
+<code>#include &lt;{{ module.file }}&gt;</code>
+<p class="module-desc">{{ description }}</p>
+
+<div class="module-sub-section-heading">Functions</div>
+{%- for func in functions %}
+<div class="module-sub-section-entry"">
+    <div class="sub-section-func-signature">
+        <pre>
+            <span class="sub-section-func-type">{{ func.return_type }}</span> <a href="{{ func.id }}.html" class="func-link">{{ func.name }}</a> ({{ func.args }})
+        </pre>
+    </div>
+    <div class="sub-section-func-brief">
+        {{ func.brief }}
+    </div>
+</div>
+{% endfor %}

@@ -46,6 +46,8 @@ class HTMLRenderer:
         self.docs_index_page_template = self.env.get_template(
             "docs_index_list.html")
 
+        self.module_page_template = self.env.get_template("module_page.html")
+
         self.combined_pattern = self._build_combined_pattern()
         self.modules = modules
         self.guides = [p for p in pages if p.id != "indexpage"]
@@ -54,11 +56,12 @@ class HTMLRenderer:
         """Renders a module using the documentation page template."""
         rendered_module: Module = self._render_values(module)
         page_type = "intro"
+        description = rendered_module.brief + rendered_module.description
 
-        content = [
-            f'<code>#include &lt;{module.file}&gt;</code>',
-            f'<p class="module-desc">{module.description}</p>'
-        ]
+        content = self.module_page_template.render(
+            module=rendered_module,
+            description=description
+        )
 
         return self.docs_page_template.render(
             title_page_type=page_type,
@@ -67,7 +70,7 @@ class HTMLRenderer:
             modules=self.modules,
             page_content_title=rendered_module.name,
             page_type=page_type,
-            content="\n".join(content),
+            content=content,
             toc_page_type=page_type,
             toc=""
         )
