@@ -67,10 +67,15 @@ class HTMLRenderer:
             toc=""
         )
 
-    def render_page(self, page: Page, is_docs_page: bool = True) -> str:
+    def render_page(self, page: Page, keep: bool = False, is_docs_page: bool = True) -> str:
         """Renders a page using the website or docs page template."""
-        if is_docs_page:
-            rendered_page: Page = self._render_values(page)
+        rendered_page: Page = self._render_values(page)
+        if keep:
+            description = page.description
+        else:
+            description = rendered_page.description
+
+        if is_docs_page:            
             page_type = "intro"
 
             return self.docs_page_template.render(
@@ -80,7 +85,7 @@ class HTMLRenderer:
                 modules=self.modules,
                 page_content_title=rendered_page.title,
                 page_type=page_type,
-                content=rendered_page.description,
+                content=description,
                 toc_page_type=page_type,
                 toc=""
             )
@@ -108,7 +113,7 @@ class HTMLRenderer:
         pages = {}
         pages["API_Reference"] = self.docs_index_page_template.render(
             items=rendered_modules)
-        
+
         pages["Guides"] = self.docs_index_page_template.render(
             items=rendered_guides)
 
@@ -158,7 +163,6 @@ class HTMLRenderer:
         if not text:
             return ""
 
-        # Escape raw text first; token syntax survives HTML escaping.
         rendered = html.escape(text, quote=False)
         while True:
             rendered, count = self.combined_pattern.subn(
@@ -191,7 +195,7 @@ class HTMLRenderer:
             rendered_fields = {
                 field.name: self._render_values(
                     getattr(value, field.name),
-                    field.name,
+                    field.name
                 )
                 for field in fields(value)
                 if field.init
@@ -246,7 +250,7 @@ def main():
     for key, value in docs_index_pages.items():
         page = Page("", key, "", value)
 
-        rendered = renderer.render_page(page, False)
+        rendered = renderer.render_page(page, keep=True)
         file = html_dir / f"{key.lower()}.html"
         file.write_text(rendered, encoding="utf-8")
 
