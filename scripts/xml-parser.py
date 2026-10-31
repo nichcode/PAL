@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import pickle
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -51,15 +52,16 @@ class XMLParser:
         """Parses a Doxygen function into a data object."""
         refid = memberdef.attrib.get("id", "")
         name = memberdef.findtext("name")
-        return_type = self.convert_to_tokens(memberdef.find("type"))
+        return_type = self._convert_to_tokens(memberdef.find("type"))
+        filepath = self._get_filepath(memberdef)
 
-        brief = self.convert_to_tokens(memberdef.find("briefdescription"))
-        description = self.convert_to_tokens(
+        brief = self._convert_to_tokens(memberdef.find("briefdescription"))
+        description = self._convert_to_tokens(
             memberdef.find("detaileddescription"))
 
         param_docs = {}
         for item in memberdef.findall(".//parameteritem"):
-            doc = self.convert_to_tokens(item.find("parameterdescription"))
+            doc = self._convert_to_tokens(item.find("parameterdescription"))
 
             for pname in item.findall("parameternamelist/parametername"):
                 if pname.text:
@@ -72,7 +74,7 @@ class XMLParser:
         args_list = []
 
         for param in memberdef.findall("param"):
-            param_type = self.convert_to_tokens(param.find("type"))
+            param_type = self._convert_to_tokens(param.find("type"))
             param_name = param.findtext("declname") or ""
 
             direction, param_brief = param_docs.get(
@@ -95,6 +97,7 @@ class XMLParser:
             signature,
             brief,
             description,
+            filepath,
             params,
         )
 
@@ -103,9 +106,10 @@ class XMLParser:
         refid = inner_class.get("refid")
         compounddef = self._load_compound(refid)
         name = compounddef.findtext("compoundname")
+        filepath = self._get_filepath(compounddef)
 
-        brief = self.convert_to_tokens(compounddef.find("briefdescription"))
-        description = self.convert_to_tokens(
+        brief = self._convert_to_tokens(compounddef.find("briefdescription"))
+        description = self._convert_to_tokens(
             compounddef.find("detaileddescription")
         )
 
@@ -114,10 +118,10 @@ class XMLParser:
             ".//memberdef[@kind='variable']"
         ):
             field_name = field.findtext("name")
-            field_type = self.convert_to_tokens(field.find("type"))
+            field_type = self._convert_to_tokens(field.find("type"))
             argsstring = field.findtext("argsstring") or ""
 
-            field_description = self.convert_to_tokens(
+            field_description = self._convert_to_tokens(
                 field.find("detaileddescription")
             )
 
@@ -133,6 +137,7 @@ class XMLParser:
             name,
             brief,
             description,
+            filepath,
             fields,
         )
 
@@ -140,26 +145,28 @@ class XMLParser:
         """Parses a Doxygen typedef into a data object."""
         refid = memberdef.attrib.get("id", "")
         name = memberdef.findtext("name")
-        type_ = self.convert_to_tokens(memberdef.find("type"))
+        type_ = self._convert_to_tokens(memberdef.find("type"))
+        filepath = self._get_filepath(memberdef)
 
-        brief = self.convert_to_tokens(memberdef.find("briefdescription"))
-        description = self.convert_to_tokens(
+        brief = self._convert_to_tokens(memberdef.find("briefdescription"))
+        description = self._convert_to_tokens(
             memberdef.find("detaileddescription")
         )
 
-        return Typedef(refid, name, type_, brief, description)
+        return Typedef(refid, name, type_, brief, description, filepath)
 
     def parse_constant(self, memberdef: ET.Element) -> Constant:
         """Parses a Doxygen constant into a data object."""
         refid = memberdef.attrib.get("id", "")
         name = memberdef.findtext("name")
         value = memberdef.findtext("initializer") or ""
+        filepath = self._get_filepath(memberdef)
 
-        description = self.convert_to_tokens(
+        description = self._convert_to_tokens(
             memberdef.find("detaileddescription")
         )
 
-        return Constant(refid, name, value, description)
+        return Constant(refid, name, value, description, filepath)
 
     def parse_constant_group(self, inner_group: ET.Element) -> ConstantGroup:
         """Parses a Doxygen group/constant group into a data object."""
@@ -167,12 +174,12 @@ class XMLParser:
         compounddef = self._load_compound(refid)
         name = compounddef.findtext("title")
 
-        brief = self.convert_to_tokens(compounddef.find("briefdescription"))
-        description = self.convert_to_tokens(
+        brief = self._convert_to_tokens(compounddef.find("briefdescription"))
+        description = self._convert_to_tokens(
             compounddef.find("detaileddescription")
         )
 
-        constants = []
+        constants: list[Constant] = []
         for memberdef in compounddef.findall(".//memberdef"):
             if memberdef.get("kind") == "define":
                 constants.append(self.parse_constant(memberdef))
@@ -182,6 +189,7 @@ class XMLParser:
             name,
             brief,
             description,
+            constants[0].file,
             constants,
         )
 
@@ -189,9 +197,10 @@ class XMLParser:
         """Parses a Doxygen group/module into a Module data object."""
         compounddef = self._load_compound(refid)
 
+        filepath = f"pal2/{compounddef.findtext("compoundname")}.h"
         name = compounddef.findtext("title")
-        brief = self.convert_to_tokens(compounddef.find("briefdescription"))
-        description = self.convert_to_tokens(
+        brief = self._convert_to_tokens(compounddef.find("briefdescription"))
+        description = self._convert_to_tokens(
             compounddef.find("detaileddescription")
         )
 
@@ -224,6 +233,7 @@ class XMLParser:
             name,
             brief,
             description,
+            filepath,
             functions,
             structs,
             typedefs,
@@ -235,11 +245,11 @@ class XMLParser:
         """Parses a Doxygen page into a Page data object."""
         compounddef = self._load_compound(refid)
         title = compounddef.findtext("title")
-        brief = self.convert_to_tokens(
+        brief = self._convert_to_tokens(
             compounddef.find("briefdescription")
         )
 
-        description = self.convert_to_tokens(
+        description = self._convert_to_tokens(
             compounddef.find("detaileddescription")
         )
 
@@ -258,7 +268,7 @@ class XMLParser:
         """Returns the compound definition for a Doxygen XML document."""
         return self._load_xml(refid).find("compounddef")
 
-    def convert_to_tokens(self, element: Optional[ET.Element], strip: bool = True) -> str:
+    def _convert_to_tokens(self, element: Optional[ET.Element], strip: bool = True) -> str:
         """Recursively converts Doxygen XML elements into tokens, optionally trimming outer whitespace.."""
         if element is None:
             return ""
@@ -275,7 +285,7 @@ class XMLParser:
             elif tag not in DOXYGEN_SKIP:
                 if tag in DOXYGEN_TOKENS:
                     token = DOXYGEN_TOKENS[tag]
-                    content = self.convert_to_tokens(child, False)
+                    content = self._convert_to_tokens(child, False)
 
                     if token == "ref":
                         parts.append(make_token(
@@ -292,7 +302,7 @@ class XMLParser:
                     else:
                         parts.append(make_token(token, content=content))
                 else:
-                    parts.append(self.convert_to_tokens(child, False))
+                    parts.append(self._convert_to_tokens(child, False))
 
             if child.tail:
                 parts.append(esc(child.tail))
@@ -302,6 +312,19 @@ class XMLParser:
             return parts_string.strip()
         else:
             return parts_string
+
+    def _get_filepath(self, element: ET.Element) -> str:
+        filepath = element.find("location").attrib.get("file")
+        base = os.path.normpath(filepath)
+        filename = os.path.basename(base)
+        parent_dir = os.path.dirname(base)
+        last_folder = os.path.basename(parent_dir)
+
+        # make relative path for sub module files
+        if last_folder:
+            return f"{last_folder}/{filename}"
+
+        return filename
 
 
 def find_compounds(parser: XMLParser):

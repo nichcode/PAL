@@ -30,6 +30,7 @@ class Constant:
     name: str
     value: str
     description: str = ""
+    file: str = ""
 
 
 @dataclass(slots=True)
@@ -38,6 +39,7 @@ class ConstantGroup:
     name: str
     brief: str = ""
     description: str = ""
+    file: str = ""
     constants: List[Constant] = field(default_factory=list)
 
 
@@ -65,6 +67,7 @@ class Function:
     signature: str
     brief: str = ""
     description: str = ""
+    file: str = ""
     params: List[Param] = field(default_factory=list)
 
 
@@ -74,6 +77,7 @@ class Struct:
     name: str
     brief: str = ""
     description: str = ""
+    file: str = ""
     fields: List[Field] = field(default_factory=list)
 
 
@@ -84,6 +88,7 @@ class Typedef:
     type: str
     brief: str = ""
     description: str = ""
+    file: str = ""
 
 
 @dataclass(slots=True)
@@ -92,6 +97,7 @@ class Module:
     name: str
     brief: str = ""
     description: str = ""
+    file: str = ""
     functions: List[Function] = field(default_factory=list)
     structs: List[Struct] = field(default_factory=list)
     typedefs: List[Typedef] = field(default_factory=list)

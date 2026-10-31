@@ -55,6 +55,11 @@ class HTMLRenderer:
         rendered_module: Module = self._render_values(module)
         page_type = "intro"
 
+        content = [
+            f'<code>#include &lt;{module.file}&gt;</code>',
+            f'<p class="module-desc">{module.description}</p>'
+        ]
+
         return self.docs_page_template.render(
             title_page_type=page_type,
             title=rendered_module.name,
@@ -62,7 +67,7 @@ class HTMLRenderer:
             modules=self.modules,
             page_content_title=rendered_module.name,
             page_type=page_type,
-            content=module.description,
+            content="\n".join(content),
             toc_page_type=page_type,
             toc=""
         )
