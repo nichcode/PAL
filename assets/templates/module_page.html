@@ -1,17 +1,18 @@
 
-<code>#include &lt;{{ module.file }}&gt;</code>
-<p class="module-desc">{{ description }}</p>
+<div class="module">
+    <code>#include &lt;{{ module.file }}&gt;</code>
+    <p class="desc">{{ desc }}</p>
 
-<div class="module-sub-section-heading">Functions</div>
-{%- for func in functions %}
-<div class="module-sub-section-entry"">
-    <div class="sub-section-func-signature">
-        <pre>
-            <span class="sub-section-func-type">{{ func.return_type }}</span> <a href="{{ func.id }}.html" class="func-link">{{ func.name }}</a> ({{ func.args }})
-        </pre>
+    <div class="section-heading">Functions</div>
+    {%- for func in functions %}
+    <div class="section-entry">
+        <div class="entry-signature">
+            <pre><span class="type-keyword">{{ func.return_type }}</span> <a href="{{ func.id }}.html">{{ func.name }}</a> ({{ func.args }})</pre>
+        </div>
+        <div class="entry-brief">
+            {{ func.brief }}
+        </div>
     </div>
-    <div class="sub-section-func-brief">
-        {{ func.brief }}
-    </div>
+    {%- endfor %}
 </div>
-{% endfor %}
+

@@ -14,15 +14,12 @@ HTML_TEMPLATES = {
     "code": "<code>{content}</code>",
     "bold": "<strong>{content}</strong>",
     "ref": '<a href="{target_id}.html">{content}</a>',
-    "codeblock": "<pre><code>{content}</code></pre>",
-    "callout": (
-        '<div class="callout {type}">'
-        '<strong class="callout-title">{type}</strong>{content}</div>'
-    ),
+    "codeblock": "<pre>{content}</pre>",
+    "callout": '<div class="callout" type="{type}"><strong>{type}</strong>{content}</div>',
     "table": "<table>{content}</table>",
     "row": "<tr>{content}</tr>",
     "cell": "<td>{content}</td>",
-    "para": '<div class="para">{content}</div>'
+    "para": "<p>{content}</p>"
 }
 
 assert HTML_TEMPLATES.keys() == TOKENS.keys(), (
@@ -43,9 +40,7 @@ class HTMLRenderer:
 
         self.website_page_template = self.env.get_template("website_page.html")
         self.docs_page_template = self.env.get_template("docs_page.html")
-        self.docs_index_page_template = self.env.get_template(
-            "docs_index_list.html")
-
+        self.index_page_template = self.env.get_template("index_list.html")
         self.module_page_template = self.env.get_template("module_page.html")
 
         self.combined_pattern = self._build_combined_pattern()
@@ -55,23 +50,20 @@ class HTMLRenderer:
     def render_module(self, module: Module) -> str:
         """Renders a module using the documentation page template."""
         rendered_module: Module = self._render_values(module)
-        page_type = "intro"
-        description = rendered_module.brief + rendered_module.description
+        desc = rendered_module.brief + rendered_module.description
 
         content = self.module_page_template.render(
             module=rendered_module,
-            description=description
+            desc=desc
         )
 
         return self.docs_page_template.render(
-            title_page_type=page_type,
             title=rendered_module.name,
             guides=self.guides,
             modules=self.modules,
-            page_content_title=rendered_module.name,
-            page_type=page_type,
+            page_type="intro",
+            content_title=rendered_module.name,
             content=content,
-            toc_page_type=page_type,
             toc=""
         )
 
@@ -79,22 +71,18 @@ class HTMLRenderer:
         """Renders a page using the website or docs page template."""
         rendered_page: Page = self._render_values(page)
         if keep:
-            description = page.description
+            desc = page.description
         else:
-            description = rendered_page.description
+            desc = rendered_page.description
 
-        if is_docs_page:            
-            page_type = "intro"
-
+        if is_docs_page:
             return self.docs_page_template.render(
-                title_page_type=page_type,
-                title=rendered_page.title,
+                title=rendered_page.name,
                 guides=self.guides,
                 modules=self.modules,
-                page_content_title=rendered_page.title,
-                page_type=page_type,
-                content=description,
-                toc_page_type=page_type,
+                page_type="intro",
+                content_title=rendered_page.name,
+                content=desc,
                 toc=""
             )
 
@@ -119,10 +107,10 @@ class HTMLRenderer:
             rendered_guides.append(self._render_values(guide))
 
         pages = {}
-        pages["API_Reference"] = self.docs_index_page_template.render(
+        pages["API_Reference"] = self.index_page_template.render(
             items=rendered_modules)
 
-        pages["Guides"] = self.docs_index_page_template.render(
+        pages["Guides"] = self.index_page_template.render(
             items=rendered_guides)
 
         return pages

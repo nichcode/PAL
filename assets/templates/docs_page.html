@@ -3,34 +3,35 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title class="page-title">{{ title }} | PAL</title>
+    <title>{{ title }} | PAL</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="docs.css">
     <script type="text/javascript" src="script.js"></script>
 </head>
+
 <body>
-    <!-- Main Navigation Bar -->
     <header class="nav-bar">
         <div class="nav-logo">
-            <a href="./index.html"><img src="logo.svg" alt="" class="logo-img"></a>
-            <h1 class="nav-bar-title">Prime Abstraction Layer</h1>
+            <a href="./index.html"><img src="logo.svg" alt="PAL Logo"></a>
+            <h1 class="title">Prime Abstraction Layer</h1>
         </div>
-        <nav class="nav-bar-links">
+        <nav class="links">
             <a href="./download.html">Download</a>
             <a href="index.html">Documentation</a>
             <a href="https://github.com">GitHub</a>
-            <button id="nav-bar-theme-toggle"></button>
+            <button id="theme-toggle"></button>
         </nav>
     </header>
 
-    <!-- sidebar -->
     {% include 'sidebar.html' %}
 
-    <div class="page-content-title" page-type="{{ title_page_type }}"><h1>{{ page_content_title }}</h1></div>
-    <div class="page-content" page-type="{{ page_type }}">{{ content }}</div>
-    <div class="toc" page-type="{{ toc_page_type }}">{{ toc }}</div>
+    <div class="content-container" page-type="{{ page_type }}">
+        <h1 class="content-title">{{ content_title }}</h1>
+        <div class="content">{{ content }}</div>
+        <div class="toc">{{ toc }}</div>
+    </div>
 
-    <footer class ="docs-footer">
+    <footer>
         <p>&copy; 2026 Prime Abstraction Layer. Released under zlib/libpng.</p>
     </footer>
 

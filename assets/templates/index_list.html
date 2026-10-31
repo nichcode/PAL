@@ -1,0 +1,8 @@
+<ul class="index-list">
+    {%- for item in items %}
+    <li class="item">
+        <a href="{{ item.id }}.html">{{ item.name }}</a>
+        <p class="desc">{{ item.description }}</p>
+    </li>
+    {%- endfor %}
+</ul>
