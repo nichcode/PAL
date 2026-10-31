@@ -246,7 +246,7 @@ def main():
         match = re.match(r"\s*<!--\stitle:\s*(.*?)\s*-->", text)
         page = Page("", match.group(1), "", text[match.end():])
 
-        rendered = renderer.render_page(page, False)
+        rendered = renderer.render_page(page, True, False)
         file = website_dir / f.name
         file.write_text(rendered, encoding="utf-8")
 
