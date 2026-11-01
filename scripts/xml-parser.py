@@ -50,55 +50,50 @@ class XMLParser:
 
     def parse_function(self, memberdef: ET.Element) -> Function:
         """Parses a Doxygen function into a data object."""
-        refid = memberdef.attrib.get("id", "")
-        name = memberdef.findtext("name")
+        refid = memberdef.get("id", "")
+        name = memberdef.findtext("name") or ""
         return_type = self._convert_to_tokens(memberdef.find("type"))
         filepath = self._get_filepath(memberdef)
 
         brief = self._convert_to_tokens(memberdef.find("briefdescription"))
-        description = self._convert_to_tokens(
-            memberdef.find("detaileddescription"))
+        description = self._convert_to_tokens(memberdef.find("detaileddescription"))
 
+        # Extract parameter documentation mapping
         param_docs = {}
         for item in memberdef.findall(".//parameteritem"):
             doc = self._convert_to_tokens(item.find("parameterdescription"))
-
             for pname in item.findall("parameternamelist/parametername"):
-                if pname.text:
-                    param_docs[pname.text] = (
-                        pname.attrib.get("direction", "in"),
-                        doc,
-                    )
+                name_text = pname.text.strip() if pname.text else ""
+                if name_text:
+                    param_docs[name_text] = (pname.get("direction", "in"), doc)
 
         params = []
         args_list = []
 
         for param in memberdef.findall("param"):
             param_type = self._convert_to_tokens(param.find("type"))
-            param_name = param.findtext("declname") or ""
+            param_name = (param.findtext("declname") or "").strip()
 
-            direction, param_brief = param_docs.get(
-                param_name, ("in", "")
-            )
-            params.append(
-                Param(param_name, param_type, direction, param_brief))
+            direction, param_brief = param_docs.get(param_name, ("in", ""))
+            params.append(Param(param_name, param_type, direction, param_brief))
 
             if param_name:
-                args_list.append(f"{param_type} {param_name}")
+                full_arg = f"{param_type} {param_name}".replace(" *", "* ").replace("  ", " ")
+                args_list.append(full_arg)
             else:
                 args_list.append(param_type)
 
-        signature = f"{return_type} {name}({', '.join(args_list)})"
+        args_string = ", ".join(args_list)
 
         return Function(
             refid,
             name,
             return_type,
-            signature,
+            args_string,
             brief,
             description,
             filepath,
-            params,
+            params
         )
 
     def parse_struct(self, inner_class: ET.Element) -> Struct:
@@ -143,7 +138,7 @@ class XMLParser:
 
     def parse_typedef(self, memberdef: ET.Element) -> Typedef:
         """Parses a Doxygen typedef into a data object."""
-        refid = memberdef.attrib.get("id", "")
+        refid = memberdef.get("id")
         name = memberdef.findtext("name")
         type_ = self._convert_to_tokens(memberdef.find("type"))
         filepath = self._get_filepath(memberdef)
@@ -157,7 +152,7 @@ class XMLParser:
 
     def parse_constant(self, memberdef: ET.Element) -> Constant:
         """Parses a Doxygen constant into a data object."""
-        refid = memberdef.attrib.get("id", "")
+        refid = memberdef.get("id")
         name = memberdef.findtext("name")
         value = memberdef.findtext("initializer") or ""
         filepath = self._get_filepath(memberdef)
@@ -290,13 +285,13 @@ class XMLParser:
                     if token == "ref":
                         parts.append(make_token(
                             "ref",
-                            target_id=child.attrib.get("refid", ""),
+                            target_id=child.get("refid"),
                             content=content))
 
                     elif token == "callout":
                         parts.append(make_token(
                             "callout",
-                            type=child.attrib.get("kind", "note"),
+                            type=child.get("kind", "note"),
                             content=content))
 
                     else:
@@ -314,7 +309,7 @@ class XMLParser:
             return parts_string
 
     def _get_filepath(self, element: ET.Element) -> str:
-        filepath = element.find("location").attrib.get("file")
+        filepath = element.find("location").get("file")
         base = os.path.normpath(filepath)
         filename = os.path.basename(base)
         parent_dir = os.path.dirname(base)

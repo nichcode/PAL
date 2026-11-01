@@ -64,7 +64,7 @@ class Function:
     id: str
     name: str
     return_type: str
-    signature: str
+    args: str
     brief: str = ""
     description: str = ""
     file: str = ""
