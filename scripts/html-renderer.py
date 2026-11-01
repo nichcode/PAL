@@ -150,7 +150,7 @@ class HTMLRenderer:
         )
 
     def render_function(self, function: Function) -> str:
-        """Renders a module using the documentation page template."""
+        """Renders a function using the documentation page template."""
         content = self.type_template.render(entry=function)
 
         return self.docs_page_template.render(
@@ -159,6 +159,20 @@ class HTMLRenderer:
             modules=self.modules,
             page_type="intro",
             content_title=function.name,
+            content=content,
+            toc=""
+        )
+
+    def render_struct(self, struct: Struct) -> str:
+        """Renders a struct using the documentation page template."""
+        content = self.type_template.render(entry=struct)
+    
+        return self.docs_page_template.render(
+            title=struct.name,
+            guides=self.guides,
+            modules=self.modules,
+            page_type="intro",
+            content_title=struct.name,
             content=content,
             toc=""
         )
@@ -265,6 +279,12 @@ def main():
         for func in clean_module.functions:
             rendered = renderer.render_function(func)
             file = html_dir / f"{func.id}.html"
+            file.write_text(rendered, encoding="utf-8")
+
+        # generate struct pages
+        for struct in clean_module.structs:
+            rendered = renderer.render_function(struct)
+            file = html_dir / f"{struct.id}.html"
             file.write_text(rendered, encoding="utf-8")
 
     # generate markdown pages

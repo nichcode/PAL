@@ -4,13 +4,10 @@
         {%- if entry.args is defined -%}
             <span class="type-keyword">{{ entry.return_type }}</span> {{ entry.name }} ({{ entry.args }})
 
-        {%- elif entry.fields is defined -%}
-            <span class="type-keyword">struct</span> {{ entry.name }}
-
         {%- elif entry.type is defined -%}
             <span class="type-keyword">typedef</span> {{ entry.type }} {{ entry.name }}
 
-        {%- else -%}
+        {%- elif entry.constants is defined -%}
             <span class="type-keyword">#define</span> {{ entry.name }} {{ entry.value }}
         {%- endif -%}
         </pre>
@@ -21,13 +18,13 @@
         {%- endif -%}
 
         {%- if entry.params is defined and entry.params -%}
-        <div class="sub-heading">Parameters</div>
+        <div class="sub-heading"><strong>Parameters</strong></div>
         <div class="entry-list">
             {%- for param in entry.params -%}
             <div class="row">
                 <span class="direction">[{{ param.direction }}]</span>
                 <code class="name">{{ param.name }}</code>
-                <span class="desc">{{ param.description }}</span>
+                <span class="desc">{{ param.brief }}</span>
             </div>
             {%- endfor -%}
         </div>
@@ -35,12 +32,12 @@
 
 
         {%- if entry.fields is defined and entry.fields -%}
-        <div class="sub-heading">Fields</div>
+        <div class="sub-heading"><strong>Fields</strong></div>
         <div class="entry-list">
             {%- for field in entry.fields -%}
             <div class="row">
-                <code class="name">{{ field.name }}</code>
-                <span class="desc"><strong>{{ field.type }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%}</strong> — {{ field.description }}</span>
+                <code class="name">{{ field.type }}</code>
+                <span class="desc">{{ field.name }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%} {{ field.description }}</span>
             </div>
             {%- endfor -%}
         </div>
@@ -56,7 +53,7 @@
 
 
         {%- if entry.constant_groups is defined and entry.constant_groups -%}
-        <div class="sub-heading">Constants</div>
+        <div class="sub-heading"><strong>Constants</strong></div>
         <div class="entry-list">
             {%- for item in entry.constant_groups -%}
             <pre><span class="type-keyword">#define</span>{{ item.name }} {{ item.value }}</pre>
