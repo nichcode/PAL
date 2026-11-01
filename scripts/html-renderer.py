@@ -40,8 +40,10 @@ class HTMLRenderer:
 
         self.website_page_template = self.env.get_template("website_page.html")
         self.docs_page_template = self.env.get_template("docs_page.html")
-        self.index_page_template = self.env.get_template("index_list.html")
-        self.module_page_template = self.env.get_template("module_page.html")
+
+        self.index_list_template = self.env.get_template("index_list.html")
+        self.module_template = self.env.get_template("module.html")
+        self.function_template = self.env.get_template("function.html")
 
         self.combined_pattern = self._build_combined_pattern()
         self.modules = modules
@@ -52,7 +54,7 @@ class HTMLRenderer:
         rendered_module: Module = self._render_values(module)
         desc = rendered_module.brief + rendered_module.description
 
-        content = self.module_page_template.render(
+        content = self.module_template.render(
             module=rendered_module,
             desc=desc
         )
@@ -107,10 +109,10 @@ class HTMLRenderer:
             rendered_guides.append(self._render_values(guide))
 
         pages = {}
-        pages["API_Reference"] = self.index_page_template.render(
+        pages["API_Reference"] = self.index_list_template.render(
             items=rendered_modules)
 
-        pages["Guides"] = self.index_page_template.render(
+        pages["Guides"] = self.index_list_template.render(
             items=rendered_guides)
 
         return pages
