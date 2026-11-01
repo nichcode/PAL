@@ -149,30 +149,17 @@ class HTMLRenderer:
             toc=""
         )
 
-    def render_function(self, function: Function) -> str:
-        """Renders a function using the documentation page template."""
-        content = self.type_template.render(entry=function)
+    def render_type(self, data, kind: str) -> str:
+        """Renders a type using the documentation page template."""
+        _data: Function | Struct | Typedef | Constant | ConstantGroup = data
+        content = self.type_template.render(entry=_data)
 
         return self.docs_page_template.render(
-            title=function.name,
+            title=_data.name,
             guides=self.guides,
             modules=self.modules,
             page_type="intro",
-            content_title=function.name,
-            content=content,
-            toc=""
-        )
-
-    def render_struct(self, struct: Struct) -> str:
-        """Renders a struct using the documentation page template."""
-        content = self.type_template.render(entry=struct)
-    
-        return self.docs_page_template.render(
-            title=struct.name,
-            guides=self.guides,
-            modules=self.modules,
-            page_type="intro",
-            content_title=struct.name,
+            content_title=_data.name,
             content=content,
             toc=""
         )
@@ -277,14 +264,20 @@ def main():
 
         # generate function pages
         for func in clean_module.functions:
-            rendered = renderer.render_function(func)
+            rendered = renderer.render_type(func, "function")
             file = html_dir / f"{func.id}.html"
             file.write_text(rendered, encoding="utf-8")
 
         # generate struct pages
         for struct in clean_module.structs:
-            rendered = renderer.render_function(struct)
+            rendered = renderer.render_type(struct, "struct")
             file = html_dir / f"{struct.id}.html"
+            file.write_text(rendered, encoding="utf-8")
+
+        # generate typedef pages
+        for typedef in clean_module.typedefs:
+            rendered = renderer.render_type(typedef, "typedef")
+            file = html_dir / f"{typedef.id}.html"
             file.write_text(rendered, encoding="utf-8")
 
     # generate markdown pages
