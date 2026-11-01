@@ -3,11 +3,22 @@
 import html
 import pickle
 import re
-from dataclasses import is_dataclass, fields
+from dataclasses import is_dataclass, fields, replace
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
-from models import TOKENS, Module, Page, token_pattern, unesc
+from models import (
+    Constant,
+    ConstantGroup,
+    Function,
+    Module,
+    Page,
+    Struct,
+    Typedef,
+    token_pattern,
+    unesc,
+    TOKENS
+)
 
 # Token key -> HTML
 HTML_TEMPLATES = {
@@ -43,79 +54,88 @@ class HTMLRenderer:
 
         self.index_list_template = self.env.get_template("index_list.html")
         self.module_template = self.env.get_template("module.html")
-        self.function_template = self.env.get_template("function.html")
+        self.type_template = self.env.get_template("type.html")
 
         self.combined_pattern = self._build_combined_pattern()
         self.modules = modules
         self.guides = [p for p in pages if p.id != "indexpage"]
 
+    def render_values(self, value, key=None):
+        """Converts token text to HTML while preserving identifiers."""
+        if isinstance(value, str):
+            return value if key == "id" else self._convert_to_html(value)
+
+        if isinstance(value, list):
+            return [self.render_values(item) for item in value]
+
+        if isinstance(value, dict):
+            return {
+                name: self.render_values(item, name)
+                for name, item in value.items()
+            }
+
+        if is_dataclass(value) and not isinstance(value, type):
+            rendered_fields = {
+                field.name: self.render_values(
+                    getattr(value, field.name),
+                    field.name
+                )
+                for field in fields(value)
+                if field.init
+            }
+            return type(value)(**rendered_fields)
+
+        return value
+
     def render_module(self, module: Module) -> str:
         """Renders a module using the documentation page template."""
-        rendered_module: Module = self._render_values(module)
-        desc = rendered_module.brief + rendered_module.description
+        desc = module.brief + module.description
 
         content = self.module_template.render(
-            module=rendered_module,
+            module=module,
             desc=desc
         )
 
         return self.docs_page_template.render(
-            title=rendered_module.name,
+            title=module.name,
             guides=self.guides,
             modules=self.modules,
             page_type="intro",
-            content_title=rendered_module.name,
+            content_title=module.name,
             content=content,
             toc=""
         )
 
-    def render_page(self, page: Page, keep: bool = False, is_docs_page: bool = True) -> str:
+    def render_page(self, page: Page, is_docs_page: bool = True) -> str:
         """Renders a page using the website or docs page template."""
-        rendered_page: Page = self._render_values(page)
-        if keep:
-            desc = page.description
-        else:
-            desc = rendered_page.description
-
         if is_docs_page:
             return self.docs_page_template.render(
-                title=rendered_page.title,
+                title=page.name,
                 guides=self.guides,
                 modules=self.modules,
                 page_type="intro",
-                content_title=rendered_page.title,
-                content=desc,
+                content_title=page.name,
+                content=page.description,
                 toc=""
             )
 
         else:
             return self.website_page_template.render(
-                title=page.title,
+                title=page.name,
                 content=page.description
             )
 
-    def render_docs_index_pages(self) -> dict[str, str]:
-        """Generates docs index pages"""
-        rendered_modules: list[Module] = []
-        rendered_guides: list[Page] = []
+    def render_index_list(self, items) -> str:
+        """Renders a page using the index list template"""
+        return self.index_list_template.render(items=items)
 
-        # convert the tokens to html tags and add brief to description
-        for module in self.modules:
-            tmp: Module = self._render_values(module)
-            tmp.description = tmp.brief + tmp.description
-            rendered_modules.append(tmp)
+    # def render_function(self, function: Function) -> str:
+    #     """Renders a module using the documentation page template."""
+    #     rendered_func: Function = self.render_values(function)
 
-        for guide in self.guides:
-            rendered_guides.append(self._render_values(guide))
+    #     print(rendered_func.description)
 
-        pages = {}
-        pages["API_Reference"] = self.index_list_template.render(
-            items=rendered_modules)
-
-        pages["Guides"] = self.index_list_template.render(
-            items=rendered_guides)
-
-        return pages
+    #     return ""
 
     def _build_combined_pattern(self):
         """Builds one regex that can locate any token in a single scan."""
@@ -175,38 +195,30 @@ class HTMLRenderer:
 
         return unesc(rendered)
 
-    def _render_values(self, value, key=None):
-        """Converts model text to HTML while preserving identifiers."""
-        if isinstance(value, str):
-            return value if key == "id" else self._convert_to_html(value)
-
-        if isinstance(value, list):
-            return [self._render_values(item) for item in value]
-
-        if isinstance(value, dict):
-            return {
-                name: self._render_values(item, name)
-                for name, item in value.items()
-            }
-
-        if is_dataclass(value) and not isinstance(value, type):
-            rendered_fields = {
-                field.name: self._render_values(
-                    getattr(value, field.name),
-                    field.name
-                )
-                for field in fields(value)
-                if field.init
-            }
-            return type(value)(**rendered_fields)
-
-        return value
-
 
 def load_cache(filepath: Path):
     """Loads data objects from disk"""
     with open(filepath, "rb") as file:
         return pickle.load(file)
+
+
+def write_index_html_page(renderer: HTMLRenderer, html_dir: Path, items: list[Module | Page], name: str):
+    """Writes an html file using index list and docs templates"""
+    tmp_items: list[Module | Page] = []
+
+    for item in items:
+        if name == "Guides":
+            copied_item = replace(item, description=item.brief)
+        else:
+            copied_item = replace(item, description=item.brief + item.description)
+        tmp_items.append(copied_item)
+
+    rendered_index_list = renderer.render_index_list(tmp_items)
+    page = Page("", name, "", rendered_index_list)
+
+    rendered = renderer.render_page(page)
+    file = html_dir / f"{name.lower()}.html"
+    file.write_text(rendered, encoding="utf-8")
 
 
 def main():
@@ -219,38 +231,48 @@ def main():
     pages: list[Page] = load_cache(root_dir / "build/pages.pkl")
     renderer = HTMLRenderer(root_dir, modules, pages)
 
+    clean_modules: list[Module] = []
+    clean_guides: list[Page] = []
+
+    # generate module pages
     for module in modules:
-        rendered = renderer.render_module(module)
+        clean_module: Module = renderer.render_values(module)
+        rendered = renderer.render_module(clean_module)
+        clean_modules.append(clean_module)
+
         file = html_dir / f"{module.id}.html"
         file.write_text(rendered, encoding="utf-8")
 
+        # generate function pages
+        # for func in clean_module.functions:
+        #     rendered = renderer.render_function(func)
+
+    # generate markdown pages
     for page in pages:
-        rendered = renderer.render_page(page)
+        clean_page: Page = renderer.render_values(page)
+        rendered = renderer.render_page(clean_page)
+
         file = html_dir / f"{page.id}.html"
         if page.id == "indexpage":
             file = html_dir / "index.html"
+        else:
+            clean_guides.append(clean_page)
 
         file.write_text(rendered, encoding="utf-8")
 
-    # generates page from pages directory
+    # generates website pages
     pages_dir = root_dir / "assets/pages"
     for f in pages_dir.iterdir():
         text = Path(f).read_text(encoding="utf-8")
         match = re.match(r"\s*<!--\stitle:\s*(.*?)\s*-->", text)
         page = Page("", match.group(1), "", text[match.end():])
 
-        rendered = renderer.render_page(page, True, False)
+        rendered = renderer.render_page(page, False)
         file = website_dir / f.name
         file.write_text(rendered, encoding="utf-8")
 
-    # generate docs index pages
-    docs_index_pages = renderer.render_docs_index_pages()
-    for key, value in docs_index_pages.items():
-        page = Page("", key, "", value)
-
-        rendered = renderer.render_page(page, keep=True)
-        file = html_dir / f"{key.lower()}.html"
-        file.write_text(rendered, encoding="utf-8")
+    write_index_html_page(renderer, html_dir, clean_modules, "API_Reference")
+    write_index_html_page(renderer, html_dir, clean_guides, "Guides")
 
     print(f"html files generated successfully")
 

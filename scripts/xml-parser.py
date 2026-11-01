@@ -239,7 +239,7 @@ class XMLParser:
     def parse_page(self, refid: str) -> Page:
         """Parses a Doxygen page into a Page data object."""
         compounddef = self._load_compound(refid)
-        title = compounddef.findtext("title")
+        name = compounddef.findtext("title")
         brief = self._convert_to_tokens(
             compounddef.find("briefdescription")
         )
@@ -248,7 +248,7 @@ class XMLParser:
             compounddef.find("detaileddescription")
         )
 
-        return Page(refid, title, brief, description)
+        return Page(refid, name, brief, description)
 
     def _load_xml(self, refid: str) -> ET.Element:
         """Loads and caches a Doxygen compound XML document."""

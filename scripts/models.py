@@ -108,7 +108,7 @@ class Module:
 @dataclass(slots=True)
 class Page:
     id: str
-    title: str
+    name: str
     brief: str = ""
     description: str = ""
 
