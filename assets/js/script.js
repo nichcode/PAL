@@ -42,7 +42,7 @@
 
     // The button does not exist yet while <head> is parsing, so wire it up later.
     function setupButton() {
-        const button = document.getElementById('nav-bar-theme-toggle');
+        const button = document.getElementById('theme-toggle');
         if (!button) return;
 
         const updateButton = (theme) => {

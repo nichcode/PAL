@@ -1,53 +1,53 @@
 
-<nav class="sidebar" aria-label="Documentation">
-    <div class="item single">
+<nav class="sidebar">
+    <div class="sidebar-entry">
         <a href="index.html">Introduction</a>
     </div>
 
-    <div class="group">
-        <div class="heading">
-            <button class="arrow" aria-label="Toggle Guides" aria-expanded="false"></button>
+    <div class="sidebar-group">
+        <div class="group-heading">
+            <button class="group-arrow" aria-label="Toggle Guides" aria-expanded="false"></button>
             <a href="guides.html">Guides</a>
         </div>
-        <div class="tree" hidden>
+        <div class="tree-container" hidden>
         {%- for page in guides -%}
-            <div class="item"><a href="{{ page.id }}.html">{{ page.title }}</a></div>
+            <div class="tree-item"><a href="{{ page.id }}.html">{{ page.title }}</a></div>
         {%- endfor -%}
         </div>
     </div>
 
-    <div class="group">
-        <div class="heading">
-            <button class="arrow" aria-label="Toggle API Reference" aria-expanded="false"></button>
+    <div class="sidebar-group">
+        <div class="group-heading">
+            <button class="group-arrow" aria-label="Toggle API Reference" aria-expanded="false"></button>
             <a href="api_reference.html">API Reference</a>
         </div>
-        <div class="tree" hidden>
+        <div class="tree-container" hidden>
         {%- for module in modules -%}
-            <div class="group sub">
-                <div class="heading">
-                    <button class="arrow" aria-expanded="false"></button>
+            <div class="sidebar-group">
+                <div class="group-heading">
+                    <button class="group-arrow" aria-expanded="false"></button>
                     <a href="{{ module.id }}.html">{{ module.name }}</a>
                 </div>
 
-                <div class="tree" hidden>
+                <div class="tree-container" hidden>
                     {%- for func in module.functions -%}
-                    <div class="item"><a href="{{ func.id }}.html">{{ func.name }}</a></div>
+                    <div class="tree-item"><a href="{{ func.id }}.html">{{ func.name }}</a></div>
                     {%- endfor -%}
 
                     {%- for struct in module.structs -%}
-                    <div class="item"><a href="{{ struct.id }}.html">{{ struct.name }}</a></div>
+                    <div class="tree-item"><a href="{{ struct.id }}.html">{{ struct.name }}</a></div>
                     {%- endfor -%}
 
                     {%- for typedef in module.typedefs -%}
-                    <div class="item"><a href="{{ typedef.id }}.html">{{ typedef.name }}</a></div>
+                    <div class="tree-item"><a href="{{ typedef.id }}.html">{{ typedef.name }}</a></div>
                     {%- endfor -%}
 
                     {%- for constant in module.constants -%}
-                    <div class="item"><a href="{{ module.id }}__constants.html#{{ constant.refid }}">{{ constant.name }}</a></div>
+                    <div class="tree-item"><a href="{{ module.id }}__constants.html#{{ constant.refid }}">{{ constant.name }}</a></div>
                     {%- endfor -%}
 
                     {%- for group in module.constant_groups -%}
-                    <div class="item"><a href="{{ group.id }}.html">{{ group.name }}</a></div>
+                    <div class="tree-item"><a href="{{ group.id }}.html">{{ group.name }}</a></div>
                     {%- endfor -%}
                 </div>
             </div>

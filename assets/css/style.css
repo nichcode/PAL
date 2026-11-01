@@ -101,11 +101,6 @@ html {
     border-radius: 2px;
 }
 
-::selection {
-    background: var(--accent-soft-color);
-    color: var(--heading-color);
-}
-
 body {
     font-family: var(--font-mono);
     font-size: 15px;
@@ -122,14 +117,13 @@ body {
 
 a {
     color: var(--accent-color);
-    text-underline-offset: 3px;
 }
 
-/* --------------------------------------------------------------------------
-   navigation bar
----------------------------------------------------------------------------- */
+/* =========================================================================
+   Navigation bar
+============================================================================ */
 
-.nav-bar {
+.navbar {
     position: fixed;
     top: 0;
     left: 0;
@@ -147,23 +141,23 @@ a {
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.nav-bar-links,
-.nav-logo {
+.navbar-links,
+.navbar-logo {
     display: flex;
     align-items: center;
 }
 
-.nav-logo {
+.navbar-logo {
     gap: var(--spacing-medium);
+    min-width: 0;
 }
 
-.nav-logo a {
+.navbar-logo a {
     display: flex;
     line-height: 0;
 }
 
-.nav-bar-title,
-.nav-logo h1 {
+.navbar-logo h1 {
     color: var(--heading-color);
     font-size: 1rem;
     font-weight: 700;
@@ -175,15 +169,11 @@ a {
     text-overflow: ellipsis;
 }
 
-.nav-logo {
-    min-width: 0;
-}
-
-.nav-bar-links {
+.navbar-links {
     gap: 4px;
 }
 
-.nav-bar-links a {
+.navbar-links a {
     color: var(--text-color);
     text-decoration: none;
     font-size: 0.875rem;
@@ -192,7 +182,7 @@ a {
     transition: color var(--transition-normal), background-color var(--transition-normal);
 }
 
-.nav-bar-links a:hover {
+.navbar-links a:hover {
     color: var(--heading-color);
     background-color: var(--accent-soft-color);
 }
@@ -212,7 +202,7 @@ html.light-mode .logo-img {
     mix-blend-mode: normal;
 }
 
-#nav-bar-theme-toggle {
+#theme-toggle {
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-small);
@@ -228,15 +218,15 @@ html.light-mode .logo-img {
     transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
-#nav-bar-theme-toggle:hover {
+#theme-toggle:hover {
     background-color: var(--accent-soft-color);
     border-color: var(--border-color);
     color: var(--heading-color);
 }
 
-/* --------------------------------------------------------------------------
-   inline code
----------------------------------------------------------------------------- */
+/* =====================================================================
+   Inline code
+========================================================================= */
 
 .page-content p code,
 .page-content li code,

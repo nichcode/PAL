@@ -1,9 +1,9 @@
 
-<ul class="index-list">
+<ul class="indexlist">
     {%- for item in items -%}
-    <li class="item">
+    <li class="indexlist-item">
         <a href="{{ item.id }}.html">{{ item.name }}</a>
-        <span class="desc">{{ item.description }}</span>
+        <span class="indexlist-desc">{{ item.description }}</span>
     </li>
     {%- endfor -%}
 </ul>

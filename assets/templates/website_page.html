@@ -18,14 +18,14 @@
 </head>
 
 <body>
-    <header class="nav-bar">
-        <div class="nav-logo">
+    <header class="navbar">
+        <div class="navbar-logo">
             <a href="./index.html">
-                <img src="html/logo.svg" alt="PAL Logo">
+                <img src="html/logo.svg" class="logo-img" alt="PAL Logo">
             </a>
-            <h1 class="title">Prime Abstraction Layer</h1>
+            <h1>Prime Abstraction Layer</h1>
         </div>
-        <nav class="links">
+        <nav class="navbar-links">
             <a href="./download.html">Download</a>
             <a href="html/index.html">Documentation</a>
             <a href="https://github.com/nichcode/PAL">GitHub</a>
@@ -37,38 +37,37 @@
     <div class="page-content">{{ content }}</div>
 
     <footer>
-        <!-- Main structural split -->
-        <div class="top">
-            <div class="brand">
-                <div class="logo">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="footer-logo">
                     <a href="./index.html">
-                        <img src="html/logo.svg" alt="PAL Logo">
+                        <img src="html/logo.svg" class="logo-img" alt="PAL Logo">
                     </a>
-                    <span class="title">Prime Abstraction Layer</span>
+                    <span class="footer-title">Prime Abstraction Layer</span>
                 </div>
-                <p class="desc">
+                <p class="footer-desc">
                     A thin, low-level, explicit, cross-platform abstraction layer in C over graphics and platform APIs.
                 </p>
             </div>
             
-            <div class="links-group">
-                <div class="col">
-                    <span class="col-title">Development</span>
-                    <ul class="links">
+            <div class="footer-links">
+                <div>
+                    <span class="column-title">Development</span>
+                    <ul class="column-links">
                         <li><a href="html/index.html">Documentation</a></li>
                         <li><a href="https://github.com" target="_blank" rel="noopener">nichcode</a></li>
                     </ul>
                 </div>
-                <div class="col">
-                    <span class="col-title">About</span>
-                    <ul class="links">
+                <div>
+                    <span class="column-title">About</span>
+                    <ul class="column-links">
                         <li><a href="https://opensource.org" target="_blank" rel="noopener">License</a></li>
                     </ul>
                 </div>
             </div>
         </div>
         
-        <div class="bottom">
+        <div class="footer-bottom">
             <p>&copy; 2026 Prime Abstraction Layer. Released under zlib/libpng.</p>
         </div>
     </footer>

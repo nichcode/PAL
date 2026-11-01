@@ -20,11 +20,11 @@
     max-width: 720px;
 }
 
-/* --------------------------------------------------------------------------
-   introduction
------------------------------------------------------------------------------ */
+/* ============================================================================
+   Introduction
+=============================================================================== */
 
-.intro-description h1 {
+.intro-desc h1 {
     margin: 0 0 28px 0;
     color: var(--heading-color);
     font-size: clamp(1.9rem, 3.6vw, 2.75rem);
@@ -33,7 +33,7 @@
     line-height: 1.15;
 }
 
-.intro-description p {
+.intro-desc p {
     margin: 0 0 22px 0;
     max-width: 68ch;
     font-size: 0.9375rem;
@@ -41,11 +41,19 @@
     color: var(--text-color);
 }
 
-.intro-description p strong {
+.intro-desc p a {
+    text-decoration: none;
+}
+
+.intro-desc p a:hover {
+    text-decoration: underline;
+}
+
+.intro-desc p strong {
     color: var(--heading-color);
 }
 
-.intro-description p.intro-lead {
+.intro-desc .intro-lead {
     font-size: 1.0625rem;
     line-height: 1.7;
     color: var(--heading-color);
@@ -59,8 +67,7 @@
     margin: 32px 0 48px 0;
 }
 
-.primary-button,
-.secondary-button {
+.button {
     display: inline-block;
     padding: 10px 22px;
     border-radius: var(--radius-small);
@@ -72,56 +79,38 @@
     transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
 }
 
-.primary-button {
+.button.is-primary {
     background: var(--accent-color);
     color: var(--on-accent-color);
 }
 
-.primary-button:hover {
+.button.is-primary:hover {
     background: var(--accent-hover-color);
     color: var(--on-accent-color);
 }
 
-.secondary-button {
+.button.is-secondary {
     background: transparent;
     border-color: var(--border-strong-color);
     color: var(--heading-color);
 }
 
-.secondary-button:hover {
+.button.is-secondary:hover {
     background: var(--accent-soft-color);
     border-color: var(--accent-color);
     color: var(--heading-color);
 }
 
-.button-small {
+.button.is-small {
     padding: 6px 14px;
     font-size: 0.8125rem;
 }
 
-.module-actions {
-    margin-top: 12px;
-}
+/* ============================================================================
+   Right grid panel
+=============================================================================== */
 
-.zlib-license {
-    display: inline;
-    padding: 0;
-    text-decoration: none;
-    color: var(--accent-color);
-    border-bottom: 1px solid transparent;
-    transition: color var(--transition-fast), border-color var(--transition-fast);
-}
-
-.zlib-license:hover {
-    color: var(--accent-hover-color);
-    border-bottom-color: currentColor;
-}
-
-/* --------------------------------------------------------------------------
-   modules panel
------------------------------------------------------------------------------ */
-
-.modules-grid {
+.sidegrid {
     background-color: var(--modules-grid-bg);
     border: 1px solid var(--border-color);
     border-radius: 10px;
@@ -129,7 +118,7 @@
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.modules {
+.sidegrid-title {
     padding: 18px 28px;
     font-size: 0.9375rem;
     font-weight: 700;
@@ -137,7 +126,7 @@
     border-bottom: 1px solid var(--border-color);
 }
 
-.modules-list {
+.sidegrid-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -145,7 +134,7 @@
     flex-direction: column;
 }
 
-.modules-list li {
+.sidegrid-list li {
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -155,42 +144,39 @@
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.modules-list li:last-child {
+.sidegrid-list li:last-child {
     border-bottom: none;
 }
 
-.modules-list li:hover {
+.sidegrid-list li:hover {
     background-color: var(--accent-soft-color);
     border-left-color: var(--accent-color);
 }
 
-.module-label {
+.sidegrid-label {
     font-size: 0.9375rem;
     font-weight: 700;
     color: var(--accent-color);
 }
 
-.module-value {
+.sidegrid-value {
     font-size: 0.8125rem;
     line-height: 1.65;
     color: var(--text-color);
 }
 
-/* --------------------------------------------------------------------------
+/* ==========================================================================
    footer
------------------------------------------------------------------------------ */
+============================================================================= */
 
 footer {
     border-top: 1px solid var(--border-color);
     background-color: var(--modules-grid-bg);
     padding: 56px var(--layout-padding) 28px var(--layout-padding);
-    margin-top: 80px;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast);
-}
-
-.footer-container {
-    max-width: 1160px;
     margin: 0 auto;
+    margin-top: 80px;
+    max-width: 1160px;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .footer-top {
@@ -231,13 +217,13 @@ footer {
     color: var(--muted-color);
 }
 
-.footer-links-group {
+.footer-links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 32px;
 }
 
-.footer-col-title {
+.column-title {
     display: block;
     margin-bottom: 14px;
     font-size: 0.875rem;
@@ -245,7 +231,7 @@ footer {
     color: var(--heading-color);
 }
 
-.footer-links {
+.column-links {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -254,14 +240,14 @@ footer {
     gap: 10px;
 }
 
-.footer-links a {
+.column-links a {
     color: var(--text-color);
     text-decoration: none;
     font-size: 0.8125rem;
     transition: color var(--transition-normal);
 }
 
-.footer-links a:hover {
+.column-links a:hover {
     color: var(--accent-color);
 }
 
@@ -280,9 +266,9 @@ footer {
     margin: 0;
 }
 
-/* --------------------------------------------------------------------------
+/* ==========================================================================
    Responsive
-   -------------------------------------------------------------------------- */
+============================================================================= */
 
 @media (max-width: 960px) {
 
@@ -303,26 +289,26 @@ footer {
     }
 
     /* Keep the documentation link; hide the rest to fit the bar */
-    .nav-bar-links a:not([href$="index.html"]) {
+    .navbar-links a:not([href$="index.html"]) {
         display: none;
     }
 
-    .nav-bar-title {
+    .navbar-title {
         font-size: 0.9rem;
     }
 
-    .modules,
-    .modules-list li {
+    .sidegrid-title,
+    .sidegrid-list li {
         padding-left: 20px;
         padding-right: 20px;
     }
 
-    .modules-list li {
+    .sidegrid-list li {
         padding-left: 17px;
     }
 
-    .primary-button,
-    .secondary-button {
+    .button.is-primary,
+    .button.is-secondary {
         text-align: center;
         flex: 1 1 auto;
     }

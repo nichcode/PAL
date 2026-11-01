@@ -1,75 +1,73 @@
 
-<div class="module">
-    <code>#include &lt;{{ module.file }}&gt;</code>
-    <p class="desc">{{ desc }}</p>
+<code>#include &lt;{{ module.file }}&gt;</code>
+<span class="module-desc">{{ desc }}</span>
 
-    {%- if module.functions -%}
-    <div class="section-heading">Functions</div>
-    {%- for func in module.functions -%}
-    <div class="section-entry">
-        <div class="entry-signature">
-            <pre><span class="type-keyword">{{ func.return_type }}</span> <a href="{{ func.id }}.html">{{ func.name }}</a> ({{ func.args }})</pre>
-        </div>
-        <div class="entry-brief">
-            {{ func.brief }}
-        </div>
+{%- if module.functions -%}
+<div class="section-heading">Functions</div>
+{%- for func in module.functions -%}
+<div class="section-entry">
+    <div class="entry-signature">
+        <pre><span class="type-keyword">{{ func.return_type }}</span> <a href="{{ func.id }}.html">{{ func.name }}</a> ({{ func.args }})</pre>
     </div>
-    {%- endfor -%}
-    {%- endif -%}
-
-    {%- if module.structs -%}
-    <div class="section-heading">Structs</div>
-    {%- for struct in module.structs -%}
-    <div class="section-entry">
-        <div class="entry-signature">
-            <pre><span class="type-keyword">struct</span> <a href="{{ struct.id }}.html">{{ struct.name }}</a></pre>
-        </div>
-        <div class="entry-brief">
-            {{ struct.brief }}
-        </div>
+    <div class="entry-brief">
+        {{ func.brief }}
     </div>
-    {%- endfor -%}
-    {%- endif -%}
-
-    {%- if module.typedefs -%}
-    <div class="section-heading">Typedefs</div>
-    {%- for typedef in module.typedefs -%}
-    <div class="section-entry">
-        <div class="entry-signature">
-            <pre><span class="type-keyword">typedef</span> {{ typedef.type }} <a href="{{ typedef.id }}.html">{{ typedef.name }}</a></pre>
-        </div>
-        <div class="entry-brief">
-            {{ typedef.brief }}
-        </div>
-    </div>
-    {%- endfor -%}
-    {%- endif -%}
-
-    {%- if module.constants or module.constant_groups -%}
-    <div class="section-heading">Constants</div>
-
-    {%- for constant in module.constants -%}
-    <div class="section-entry">
-        <div class="entry-signature">
-            <pre><span class="type-keyword">#define</span> {{ constant.name }} {{ constant.value }}</pre>
-        </div>
-        <div class="entry-brief">
-            {{ constant.description }}
-        </div>
-    </div>
-    {%- endfor -%}
-
-    {%- for group in module.constant_groups -%}
-    <div class="section-entry">
-        <div class="entry-signature">
-            <pre><a href="{{ group.id }}.html">{{ group.name }}</a></pre>
-        </div>
-        <div class="entry-brief">
-            {{ group.brief }}
-        </div>
-    </div>
-    {%- endfor -%}
-
-    {%- endif -%}
 </div>
+{%- endfor -%}
+{%- endif -%}
+
+{%- if module.structs -%}
+<div class="section-heading">Structs</div>
+{%- for struct in module.structs -%}
+<div class="section-entry">
+    <div class="entry-signature">
+        <pre><span class="type-keyword">struct</span> <a href="{{ struct.id }}.html">{{ struct.name }}</a></pre>
+    </div>
+    <div class="entry-brief">
+        {{ struct.brief }}
+    </div>
+</div>
+{%- endfor -%}
+{%- endif -%}
+
+{%- if module.typedefs -%}
+<div class="section-heading">Typedefs</div>
+{%- for typedef in module.typedefs -%}
+<div class="section-entry">
+    <div class="entry-signature">
+        <pre><span class="type-keyword">typedef</span> {{ typedef.type }} <a href="{{ typedef.id }}.html">{{ typedef.name }}</a></pre>
+    </div>
+    <div class="entry-brief">
+        {{ typedef.brief }}
+    </div>
+</div>
+{%- endfor -%}
+{%- endif -%}
+
+{%- if module.constants or module.constant_groups -%}
+<div class="section-heading">Constants</div>
+
+{%- for constant in module.constants -%}
+<div class="section-entry">
+    <div class="entry-signature">
+        <pre><span class="type-keyword">#define</span> {{ constant.name }} {{ constant.value }}</pre>
+    </div>
+    <div class="entry-brief">
+        {{ constant.description }}
+    </div>
+</div>
+{%- endfor -%}
+
+{%- for group in module.constant_groups -%}
+<div class="section-entry">
+    <div class="entry-signature">
+        <pre><a href="{{ group.id }}.html">{{ group.name }}</a></pre>
+    </div>
+    <div class="entry-brief">
+        {{ group.brief }}
+    </div>
+</div>
+{%- endfor -%}
+
+{%- endif -%}
 

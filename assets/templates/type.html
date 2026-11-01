@@ -1,4 +1,4 @@
-<div class="detailed-page" id="{{ entry.id }}">
+<div class="types-page" id="{{ entry.id }}">
     <div class="entry-signature">
         <pre>
         {%- if entry.args is defined -%}
@@ -9,19 +9,19 @@
         {%- endif -%}
         </pre>
     </div>
-    <div class="detailed-body">
+    <div class="types-body">
         {%- if entry.brief -%}
-        <p class="desc"> {{ entry.brief }}</p>
+        <p class="entry-brief"> {{ entry.brief }}</p>
         {%- endif -%}
 
         {%- if entry.params is defined and entry.params -%}
         <div class="sub-heading"><strong>Parameters</strong></div>
         <div class="entry-list">
             {%- for param in entry.params -%}
-            <div class="row">
-                <span class="direction">[{{ param.direction }}]</span>
-                <code class="name">{{ param.name }}</code>
-                <span class="desc">{{ param.brief }}</span>
+            <div class="entry-row">
+                <span class="row-direction">[{{ param.direction }}]</span>
+                <code class="row-name">{{ param.name }}</code>
+                <span class="row-desc">{{ param.brief }}</span>
             </div>
             {%- endfor -%}
         </div>
@@ -32,9 +32,9 @@
         <div class="sub-heading"><strong>Fields</strong></div>
         <div class="entry-list">
             {%- for field in entry.fields -%}
-            <div class="row">
-                <code class="name">{{ field.type }}</code>
-                <span class="desc">{{ field.name }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%} {{ field.description }}</span>
+            <div class="entry-row">
+                <code class="row-name">{{ field.type }}</code>
+                <span class="row-desc">{{ field.name }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%} {{ field.description }}</span>
             </div>
             {%- endfor -%}
         </div>
@@ -44,13 +44,13 @@
         <div class="entry-list">
             {%- for item in entry.constants -%}
             <pre><span class="type-keyword">#define</span> {{ item.name }} {{ item.value }}</pre>
-            <p class="desc"> {{ item.description }}</p>
+            <p class="row-desc"> {{ item.description }}</p>
             {%- endfor -%}
         </div>
         {%- endif -%}
 
         {%- if entry.description -%}
-        <div class="desc">
+        <div class="entry-desc">
             {{ entry.description | safe }}
         </div>
         {%- endif -%}
