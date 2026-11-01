@@ -10,9 +10,9 @@
             <a href="guides.html">Guides</a>
         </div>
         <div class="tree" hidden>
-        {%- for page in guides %}
+        {%- for page in guides -%}
             <div class="item"><a href="{{ page.id }}.html">{{ page.title }}</a></div>
-        {%- endfor %}
+        {%- endfor -%}
         </div>
     </div>
 
@@ -22,7 +22,7 @@
             <a href="api_reference.html">API Reference</a>
         </div>
         <div class="tree" hidden>
-        {%- for module in modules %}
+        {%- for module in modules -%}
             <div class="group sub">
                 <div class="heading">
                     <button class="arrow" aria-expanded="false"></button>
@@ -30,28 +30,28 @@
                 </div>
 
                 <div class="tree" hidden>
-                    {%- for func in module.functions %}
+                    {%- for func in module.functions -%}
                     <div class="item"><a href="{{ func.id }}.html">{{ func.name }}</a></div>
-                    {%- endfor %}
+                    {%- endfor -%}
 
-                    {%- for struct in module.structs %}
+                    {%- for struct in module.structs -%}
                     <div class="item"><a href="{{ struct.id }}.html">{{ struct.name }}</a></div>
-                    {%- endfor %}
+                    {%- endfor -%}
 
-                    {%- for typedef in module.typedefs %}
+                    {%- for typedef in module.typedefs -%}
                     <div class="item"><a href="{{ typedef.id }}.html">{{ typedef.name }}</a></div>
-                    {%- endfor %}
+                    {%- endfor -%}
 
-                    {%- for constant in module.constants %}
+                    {%- for constant in module.constants -%}
                     <div class="item"><a href="{{ module.id }}__constants.html#{{ constant.refid }}">{{ constant.name }}</a></div>
-                    {%- endfor %}
+                    {%- endfor -%}
 
-                    {%- for group in module.constant_groups %}
+                    {%- for group in module.constant_groups -%}
                     <div class="item"><a href="{{ group.id }}.html">{{ group.name }}</a></div>
-                    {%- endfor %}
+                    {%- endfor -%}
                 </div>
             </div>
-        {%- endfor %}
+        {%- endfor -%}
         </div>
     </div>
 </nav>

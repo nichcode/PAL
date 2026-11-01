@@ -1,8 +1,4 @@
 <div class="detailed-page" id="{{ entry.id }}">
-    <div class="head">
-        <h2 class="title">{{ entry.name }}</h2>
-    </div>
-
     <div class="entry-signature">
         <pre>
         {%- if entry.args is defined -%}
@@ -19,62 +15,60 @@
         {%- endif -%}
         </pre>
     </div>
-
-
     <div class="detailed-body">
-        {% if entry.brief %}
+        {%- if entry.brief -%}
         <p class="desc"> {{ entry.brief }}</p>
-        {% endif %}
+        {%- endif -%}
 
-        {% if entry.params is defined and entry.params %}
+        {%- if entry.params is defined and entry.params -%}
         <div class="sub-heading">Parameters</div>
         <div class="entry-list">
-            {% for param in entry.params %}
+            {%- for param in entry.params -%}
             <div class="row">
                 <span class="direction">[{{ param.direction }}]</span>
                 <code class="name">{{ param.name }}</code>
                 <span class="desc">{{ param.description }}</span>
             </div>
-            {% endfor %}
+            {%- endfor -%}
         </div>
-        {% endif %}
+        {%- endif -%}
 
 
-        {% if entry.fields is defined and entry.fields %}
+        {%- if entry.fields is defined and entry.fields -%}
         <div class="sub-heading">Fields</div>
         <div class="entry-list">
-            {% for field in entry.fields %}
+            {%- for field in entry.fields -%}
             <div class="row">
                 <code class="name">{{ field.name }}</code>
-                <span class="desc"><strong>{{ field.type }}{% if field.argsstring %}[{{ field.argsstring }}]{% endif %}</strong> — {{ field.description }}</span>
+                <span class="desc"><strong>{{ field.type }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%}</strong> — {{ field.description }}</span>
             </div>
-            {% endfor %}
+            {%- endfor -%}
         </div>
-        {% endif %}
+        {%- endif -%}
 
-        {% if entry.constants is defined and entry.constants %}
+        {%- if entry.constants is defined and entry.constants -%}
         <div class="entry-list">
-            {% for item in entry.constants %}
+            {%- for item in entry.constants -%}
             <pre><span class="type-keyword">#define</span>{{ item.name }} {{ item.value }}</pre>
-            {% endfor %}
+            {%- endfor -%}
         </div>
-        {% endif %}
+        {%- endif -%}
 
 
-        {% if entry.constant_groups is defined and entry.constant_groups %}
+        {%- if entry.constant_groups is defined and entry.constant_groups -%}
         <div class="sub-heading">Constants</div>
         <div class="entry-list">
-            {% for item in entry.constant_groups %}
+            {%- for item in entry.constant_groups -%}
             <pre><span class="type-keyword">#define</span>{{ item.name }} {{ item.value }}</pre>
-            {% endfor %}
+            {%- endfor -%}
         </div>
-        {% endif %}
+        {%- endif -%}
 
-        {% if entry.description %}
+        {%- if entry.description -%}
         <div class="desc">
             {{ entry.description | safe }}
         </div>
-        {% endif %}
+        {%- endif -%}
 
     </div>
 </div>

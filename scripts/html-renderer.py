@@ -26,7 +26,7 @@ HTML_TEMPLATES = {
     "bold": "<strong>{content}</strong>",
     "ref": '<a href="{target_id}.html">{content}</a>',
     "codeblock": "<pre>{content}</pre>",
-    "callout": '<div class="callout" type="{type}"><strong>{type}</strong>{content}</div>',
+    "callout": '<div class="callout" type="{type}">{prefix}{content}</div>',
     "table": "<table>{content}</table>",
     "row": "<tr>{content}</tr>",
     "cell": "<td>{content}</td>",
@@ -125,17 +125,43 @@ class HTMLRenderer:
                 content=page.description
             )
 
-    def render_index_list(self, items) -> str:
+    def render_index_list(self, items: list[Module | Page], name: str) -> str:
         """Renders a page using the index list template"""
-        return self.index_list_template.render(items=items)
+        tmp_items: list[Module | Page] = []
 
-    # def render_function(self, function: Function) -> str:
-    #     """Renders a module using the documentation page template."""
-    #     rendered_func: Function = self.render_values(function)
+        for item in items:
+            if name == "Guides":
+                copied_item = replace(item, description=item.brief)
+            else:
+                copied_item = replace(
+                    item, description=item.brief + item.description)
 
-    #     print(rendered_func.description)
+            tmp_items.append(copied_item)
+        content = self.index_list_template.render(items=tmp_items)
 
-    #     return ""
+        return self.docs_page_template.render(
+            title=name,
+            guides=self.guides,
+            modules=self.modules,
+            page_type="intro",
+            content_title=name,
+            content=content,
+            toc=""
+        )
+
+    def render_function(self, function: Function) -> str:
+        """Renders a module using the documentation page template."""
+        content = self.type_template.render(entry=function)
+
+        return self.docs_page_template.render(
+            title=function.name,
+            guides=self.guides,
+            modules=self.modules,
+            page_type="intro",
+            content_title=function.name,
+            content=content,
+            toc=""
+        )
 
     def _build_combined_pattern(self):
         """Builds one regex that can locate any token in a single scan."""
@@ -174,6 +200,17 @@ class HTMLRenderer:
                 quote=True,
             )
 
+            # get the par name from the content
+            if fields["type"] == "par":
+                parts = fields["content"].split("<", 1)
+                fields["prefix"] = f"<strong>{parts[0]}</strong>"
+                fields["content"] = f"<{parts[1]}"
+            else:
+                # make default types titlecase
+                tmp: str = fields['type']
+                type_str = tmp.capitalize()
+                fields["prefix"] = f"<strong>{type_str}</strong>"
+
         return HTML_TEMPLATES[key].format(**fields)
 
     def _convert_to_html(self, text: str) -> str:
@@ -202,25 +239,6 @@ def load_cache(filepath: Path):
         return pickle.load(file)
 
 
-def write_index_html_page(renderer: HTMLRenderer, html_dir: Path, items: list[Module | Page], name: str):
-    """Writes an html file using index list and docs templates"""
-    tmp_items: list[Module | Page] = []
-
-    for item in items:
-        if name == "Guides":
-            copied_item = replace(item, description=item.brief)
-        else:
-            copied_item = replace(item, description=item.brief + item.description)
-        tmp_items.append(copied_item)
-
-    rendered_index_list = renderer.render_index_list(tmp_items)
-    page = Page("", name, "", rendered_index_list)
-
-    rendered = renderer.render_page(page)
-    file = html_dir / f"{name.lower()}.html"
-    file.write_text(rendered, encoding="utf-8")
-
-
 def main():
     root_dir = Path(__file__).resolve().parents[1]
     website_dir = root_dir / "build/website"
@@ -244,8 +262,10 @@ def main():
         file.write_text(rendered, encoding="utf-8")
 
         # generate function pages
-        # for func in clean_module.functions:
-        #     rendered = renderer.render_function(func)
+        for func in clean_module.functions:
+            rendered = renderer.render_function(func)
+            file = html_dir / f"{func.id}.html"
+            file.write_text(rendered, encoding="utf-8")
 
     # generate markdown pages
     for page in pages:
@@ -271,8 +291,15 @@ def main():
         file = website_dir / f.name
         file.write_text(rendered, encoding="utf-8")
 
-    write_index_html_page(renderer, html_dir, clean_modules, "API_Reference")
-    write_index_html_page(renderer, html_dir, clean_guides, "Guides")
+    # generate api_reference page
+    rendered = renderer.render_index_list(clean_modules, "API_Reference")
+    file = html_dir / "api_reference.html"
+    file.write_text(rendered, encoding="utf-8")
+
+    # generate guides page
+    rendered = renderer.render_index_list(clean_guides, "Guides")
+    file = html_dir / "guides.html"
+    file.write_text(rendered, encoding="utf-8")
 
     print(f"html files generated successfully")
 
