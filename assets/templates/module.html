@@ -51,7 +51,7 @@
     {%- for constant in module.constants -%}
     <div class="section-entry">
         <div class="entry-signature">
-            <pre><span class="type-keyword">#define</span> <a href="{{ module.id }}__constants.html#{{ constant.id }}">{{ constant.name }}</a> {{ constant.value }}</pre>
+            <pre><span class="type-keyword">#define</span> {{ constant.name }} {{ constant.value }}</pre>
         </div>
         <div class="entry-brief">
             {{ constant.description }}

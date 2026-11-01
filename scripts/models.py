@@ -30,7 +30,6 @@ class Constant:
     name: str
     value: str
     description: str = ""
-    file: str = ""
 
 
 @dataclass(slots=True)
@@ -39,7 +38,6 @@ class ConstantGroup:
     name: str
     brief: str = ""
     description: str = ""
-    file: str = ""
     constants: List[Constant] = field(default_factory=list)
 
 
@@ -48,7 +46,7 @@ class Param:
     name: str
     type: str
     direction: str = "in"
-    brief: str = ""
+    description: str = ""
 
 
 @dataclass(slots=True)
@@ -88,7 +86,6 @@ class Typedef:
     type: str
     brief: str = ""
     description: str = ""
-    file: str = ""
 
 
 @dataclass(slots=True)

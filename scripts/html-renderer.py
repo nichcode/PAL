@@ -8,7 +8,6 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from models import (
-    Constant,
     ConstantGroup,
     Function,
     Module,
@@ -149,17 +148,20 @@ class HTMLRenderer:
             toc=""
         )
 
-    def render_type(self, data, kind: str) -> str:
+    def render_type(self, data, page_title: str = "") -> str:
         """Renders a type using the documentation page template."""
-        _data: Function | Struct | Typedef | Constant | ConstantGroup = data
+        _data: Function | Struct | Typedef | ConstantGroup = data
         content = self.type_template.render(entry=_data)
+        name = _data.name
+        if page_title:
+            name = page_title
 
         return self.docs_page_template.render(
-            title=_data.name,
+            title=name,
             guides=self.guides,
             modules=self.modules,
             page_type="intro",
-            content_title=_data.name,
+            content_title=name,
             content=content,
             toc=""
         )
@@ -264,21 +266,27 @@ def main():
 
         # generate function pages
         for func in clean_module.functions:
-            rendered = renderer.render_type(func, "function")
+            rendered = renderer.render_type(func)
             file = html_dir / f"{func.id}.html"
             file.write_text(rendered, encoding="utf-8")
 
         # generate struct pages
         for struct in clean_module.structs:
-            rendered = renderer.render_type(struct, "struct")
+            rendered = renderer.render_type(struct)
             file = html_dir / f"{struct.id}.html"
             file.write_text(rendered, encoding="utf-8")
 
         # generate typedef pages
         for typedef in clean_module.typedefs:
-            rendered = renderer.render_type(typedef, "typedef")
+            rendered = renderer.render_type(typedef)
             file = html_dir / f"{typedef.id}.html"
             file.write_text(rendered, encoding="utf-8")
+
+        # generate constant groups page
+        for group in clean_module.constant_groups:
+            rendered = renderer.render_type(group)
+            file = html_dir / f"{group.id}.html"
+            file.write_text(rendered, encoding="utf-8")        
 
     # generate markdown pages
     for page in pages:

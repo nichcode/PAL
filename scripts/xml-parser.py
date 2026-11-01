@@ -141,27 +141,25 @@ class XMLParser:
         refid = memberdef.get("id")
         name = memberdef.findtext("name")
         type_ = self._convert_to_tokens(memberdef.find("type"))
-        filepath = self._get_filepath(memberdef)
 
         brief = self._convert_to_tokens(memberdef.find("briefdescription"))
         description = self._convert_to_tokens(
             memberdef.find("detaileddescription")
         )
 
-        return Typedef(refid, name, type_, brief, description, filepath)
+        return Typedef(refid, name, type_, brief, description)
 
     def parse_constant(self, memberdef: ET.Element) -> Constant:
         """Parses a Doxygen constant into a data object."""
         refid = memberdef.get("id")
         name = memberdef.findtext("name")
         value = memberdef.findtext("initializer") or ""
-        filepath = self._get_filepath(memberdef)
 
         description = self._convert_to_tokens(
             memberdef.find("detaileddescription")
         )
 
-        return Constant(refid, name, value, description, filepath)
+        return Constant(refid, name, value, description)
 
     def parse_constant_group(self, inner_group: ET.Element) -> ConstantGroup:
         """Parses a Doxygen group/constant group into a data object."""
@@ -184,7 +182,6 @@ class XMLParser:
             name,
             brief,
             description,
-            constants[0].file,
             constants,
         )
 

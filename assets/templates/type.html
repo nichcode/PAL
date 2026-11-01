@@ -6,9 +6,6 @@
 
         {%- elif entry.type is defined -%}
             <span class="type-keyword">typedef</span> {{ entry.type }} {{ entry.name }}
-
-        {%- elif entry.constants is defined -%}
-            <span class="type-keyword">#define</span> {{ entry.name }} {{ entry.value }}
         {%- endif -%}
         </pre>
     </div>
@@ -46,17 +43,8 @@
         {%- if entry.constants is defined and entry.constants -%}
         <div class="entry-list">
             {%- for item in entry.constants -%}
-            <pre><span class="type-keyword">#define</span>{{ item.name }} {{ item.value }}</pre>
-            {%- endfor -%}
-        </div>
-        {%- endif -%}
-
-
-        {%- if entry.constant_groups is defined and entry.constant_groups -%}
-        <div class="sub-heading"><strong>Constants</strong></div>
-        <div class="entry-list">
-            {%- for item in entry.constant_groups -%}
-            <pre><span class="type-keyword">#define</span>{{ item.name }} {{ item.value }}</pre>
+            <pre><span class="type-keyword">#define</span> {{ item.name }} {{ item.value }}</pre>
+            <p class="desc"> {{ item.description }}</p>
             {%- endfor -%}
         </div>
         {%- endif -%}
