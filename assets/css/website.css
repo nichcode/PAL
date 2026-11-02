@@ -3,7 +3,7 @@
    Requires style.css.
 ============================================================================= */
 
-.page-content {
+.content {
     max-width: 1240px;
     margin: calc(var(--nav-bar-height) + 80px) auto 80px auto;
     padding: 0 var(--layout-padding);
@@ -107,6 +107,99 @@
 }
 
 /* ============================================================================
+   Quick facts, feature blurbs, code example
+=============================================================================== */
+
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    margin: 0 0 40px 0;
+    padding: 14px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.facts div {
+    display: flex;
+    gap: var(--spacing-medium);
+    align-items: baseline;
+}
+
+.facts dt {
+    font-size: 0.8125rem;
+    color: var(--muted-color);
+}
+
+.facts dd {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+
+.facts dd a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.facts dd a:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 32px 40px;
+    margin-top: 72px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border-color);
+}
+
+.feature h2 {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+
+.feature p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.7;
+}
+
+.next-step {
+    margin: 0;
+    max-width: 68ch;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--text-color);
+}
+
+.next-step a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.next-step a:hover {
+    color: var(--accent-hover-color);
+    text-decoration: underline;
+}
+
+.section-title {
+    margin: 0 0 16px 0;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+
+.sidegrid-actions {
+    margin-top: 10px;
+}
+
+/* ============================================================================
    Right grid panel
 =============================================================================== */
 
@@ -144,19 +237,29 @@
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.sidegrid-list li:last-child {
-    border-bottom: none;
-}
-
 .sidegrid-list li:hover {
     background-color: var(--accent-soft-color);
     border-left-color: var(--accent-color);
 }
 
+.sidegrid-list li:last-child {
+    border-bottom: none;
+}
+
 .sidegrid-label {
     font-size: 0.9375rem;
-    font-weight: 700;
+    font-weight: 400;
+    color: var(--heading-color);
+}
+
+.sidegrid-label a {
     color: var(--accent-color);
+    text-decoration: none;
+}
+
+.sidegrid-label a:hover {
+    color: var(--accent-hover-color);
+    text-decoration: underline;
 }
 
 .sidegrid-value {
@@ -175,7 +278,7 @@ footer {
     padding: 56px var(--layout-padding) 28px var(--layout-padding);
     margin: 0 auto;
     margin-top: 80px;
-    max-width: 1160px;
+    max-width: 1240px;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -281,10 +384,20 @@ footer {
     .intro-block {
         max-width: none;
     }
+
+    .features {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 48px;
+    }
 }
 
 @media (max-width: 600px) {
-    .page-content {
+    .features {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .content {
         margin-top: calc(var(--nav-bar-height) + 40px);
     }
 
