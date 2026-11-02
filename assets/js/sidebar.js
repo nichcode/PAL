@@ -9,8 +9,8 @@ const arrowIcon = `
 // direct children only, so a group never grabs its nested groups parts.
 function parts(group) {
     return {
-        button: group.querySelector(':scope > .sidebar-heading > .sidebar-arrow'),
-        tree: group.querySelector(':scope > .sidebar-tree')
+        button: group.querySelector(':scope > .group-heading > .group-arrow'),
+        tree: group.querySelector(':scope > .tree-container')
     };
 }
 
@@ -40,13 +40,13 @@ document.querySelectorAll('.sidebar a').forEach(link => {
     link.setAttribute('aria-current', 'page');
 
     // A heading link also opens its own tree.
-    const ownGroup = link.closest('.sidebar-heading')?.parentElement;
+    const ownGroup = link.closest('.group-heading')?.parentElement;
     if (ownGroup) setOpen(ownGroup, true);
 
-    let tree = link.closest('.sidebar-tree');
+    let tree = link.closest('.tree-container');
     while (tree) {
         setOpen(tree.parentElement, true);
-        tree = tree.parentElement.closest('.sidebar-tree');
+        tree = tree.parentElement.closest('.tree-container');
     }
 });
 })();
