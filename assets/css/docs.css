@@ -394,14 +394,23 @@ body {
    Module pages
 ============================================================================== */
 
-.module-desc {
+.content .module-include {
+    padding: 6px;
+}
+
+.module-brief {
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
     margin-top: 16px;
 }
 
-.module-desc p {
+.content .module-brief p {
     margin-top: 25px;
+    font-size: 1.05rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--text-color);
+    line-height: 1.65;
 }
 
 .section-heading {
@@ -478,6 +487,10 @@ body {
 
 .entry-brief p {
     margin: 0;
+}
+
+.entry-desc {
+    padding-top: 10px;
 }
 
 /* ===========================================================================

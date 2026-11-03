@@ -93,12 +93,7 @@ class HTMLRenderer:
 
     def render_module(self, module: Module) -> str:
         """Renders a module using the documentation page template."""
-        desc = module.brief + module.description
-
-        content = self.module_template.render(
-            module=module,
-            desc=desc
-        )
+        content = self.module_template.render(module=module)
 
         return self.docs_page_template.render(
             title=module.name,
@@ -169,7 +164,7 @@ class HTMLRenderer:
                 f"(?P<TOKEN_{key}>{unnamed_pattern})"
             )
 
-        return re.compile("|".join(alternatives), re.S)
+        return re.compile("|".join(alternatives), re.DOTALL)
 
     def _replace_token(self, match: re.Match):
         key = match.lastgroup.removeprefix("TOKEN_")
@@ -361,7 +356,7 @@ def main():
     variable = "window.PAL_SEARCH_INDEX"
     tmp = build_search_index(clean_guides, clean_modules)
     data = json.dumps(tmp, separators=(",", ":"))
-    file = html_dir / "search_index.js"
+    file = html_dir / "search-index.js"
     file.write_text(f"{variable}=" + data + ";\n", encoding="utf-8")
 
     print(f"html files generated successfully")

@@ -40,18 +40,18 @@
         </div>
         {%- endif -%}
 
+        {%- if entry.description -%}
+        <div class="entry-desc">
+            {{ entry.description | safe }}
+        </div>
+        {%- endif -%}
+
         {%- if entry.constants is defined and entry.constants -%}
         <div class="entry-list">
             {%- for item in entry.constants -%}
             <pre><span class="type-keyword">#define</span> {{ item.name }} {{ item.value }}</pre>
             <p class="row-desc"> {{ item.description }}</p>
             {%- endfor -%}
-        </div>
-        {%- endif -%}
-
-        {%- if entry.description -%}
-        <div class="entry-desc">
-            {{ entry.description | safe }}
         </div>
         {%- endif -%}
 
