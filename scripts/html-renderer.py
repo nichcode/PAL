@@ -104,10 +104,8 @@ class HTMLRenderer:
             title=module.name,
             guides=self.guides,
             modules=self.modules,
-            page_type="intro",
             content_title=module.name,
-            content=content,
-            toc=""
+            content=content
         )
 
     def render_page(self, page: Page, is_docs_page: bool = True) -> str:
@@ -117,10 +115,8 @@ class HTMLRenderer:
                 title=page.name,
                 guides=self.guides,
                 modules=self.modules,
-                page_type="intro",
                 content_title=page.name,
-                content=page.description,
-                toc=""
+                content=page.description
             )
 
         else:
@@ -131,26 +127,14 @@ class HTMLRenderer:
 
     def render_index_list(self, items: list[Module | Page], name: str) -> str:
         """Renders a page using the index list template"""
-        tmp_items: list[Module | Page] = []
-
-        for item in items:
-            if name == "Guides":
-                copied_item = replace(item, description=item.brief)
-            else:
-                copied_item = replace(
-                    item, description=item.brief + item.description)
-
-            tmp_items.append(copied_item)
-        content = self.index_list_template.render(items=tmp_items)
+        content = self.index_list_template.render(items=items)
 
         return self.docs_page_template.render(
             title=name,
             guides=self.guides,
             modules=self.modules,
-            page_type="intro",
             content_title=name,
-            content=content,
-            toc=""
+            content=content
         )
 
     def render_type(self, data, page_title: str = "") -> str:
@@ -165,10 +149,8 @@ class HTMLRenderer:
             title=name,
             guides=self.guides,
             modules=self.modules,
-            page_type="intro",
             content_title=name,
-            content=content,
-            toc=""
+            content=content
         )
 
     def _build_combined_pattern(self):
@@ -366,7 +348,7 @@ def main():
         file.write_text(rendered, encoding="utf-8")
 
     # generate api_reference page
-    rendered = renderer.render_index_list(clean_modules, "API_Reference")
+    rendered = renderer.render_index_list(clean_modules, "API Reference")
     file = html_dir / "api_reference.html"
     file.write_text(rendered, encoding="utf-8")
 

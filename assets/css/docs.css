@@ -346,22 +346,20 @@ body {
    Index list
 ============================================================================== */
 
-.indexlist {
+.content .indexlist {
     list-style: none;
     margin: 0;
     padding: 0;
-    max-width: var(--reading-width);
 }
 
-.indexlist-item {
+.content .indexlist-item {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    /* margin: 0; */
-    margin-left: -40px;
+    margin: 0;
     padding: 22px 0;
     border-bottom: var(--seperator);
 }
@@ -381,15 +379,10 @@ body {
     transition: color var(--transition-fast);
 }
 
-.indexlist a:hover {
-    color: var(--accent-hover-color);
-    text-decoration: none;
-}
-
-.indexlist-desc {
+.indexlist-brief {
     display: block;
     max-width: 72ch;
-    margin: 6px 0 0 0; /* Clear, stable gap between link and description */
+    margin: 6px 0 0 0;
     padding: 0;
     font-size: 0.9375rem;
     font-weight: 400;
@@ -414,16 +407,6 @@ body {
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
 }
-
-/* ===========================================================================
-   TOC
-============================================================================== */
-
-/* intro-style pages dont have TOC */
-div.toc[page-type="intro"] {
-    display: none;
-}
-
 
 /* ===========================================================================
    Detail pages (functions, structs, types)

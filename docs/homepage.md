@@ -22,4 +22,6 @@ PAL supports Windows, Linux, Vulkan and D3D12. Both Wayland and X11 are
 supported on Linux. PAL supports both callback and poll event dispatch mode, 
 custom allocators, custom loggers and custom graphics backends.
 
-PAL is released under the [Zlib License](https://opensource.org/licenses/Zlib).
+PAL is released under the [zlib/libpng](https://opensource.org/licenses/Zlib) license.
+
+New to PAL? See [Getting Started](@ref getting_started) to create your first application.

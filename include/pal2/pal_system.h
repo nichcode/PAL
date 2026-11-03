@@ -29,10 +29,7 @@
 
 /**
  * @defgroup pal_system System Module
- * @brief Defines the types, constants and functions of the system module. 
- * 
- * The module provides information about the CPU and the platform 
- * the application runs on.
+ * @brief Information about the CPU and the platform the application runs on.
  * @{
  */
 
