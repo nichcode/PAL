@@ -14,7 +14,6 @@
 
 body {
     --seperator: 1px solid var(--border-color);
-    --module-license-text-color: var(--muted-color);
 }
 
 /* ===========================================================================
@@ -391,10 +390,18 @@ body {
     line-height: 1.65;
 }
 
+/* ===========================================================================
+   Module pages
+============================================================================== */
+
 .module-desc {
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
     margin-top: 16px;
+}
+
+.module-desc p {
+    margin-top: 25px;
 }
 
 .section-heading {
@@ -406,6 +413,71 @@ body {
     border-bottom: var(--seperator);
     padding-bottom: var(--seperator-margin);
     margin-bottom: var(--seperator-margin);
+    scroll-margin-top: calc(var(--nav-bar-height) + 24px);
+}
+
+.section-entry {
+    padding: 14px 0;
+}
+
+.section-entry + .section-entry {
+    border-top: 1px solid var(--border-color);
+}
+
+.section-heading + .section-entry {
+    padding-top: 4px;
+}
+
+.section-entry + .section-heading {
+    margin-top: 48px;
+}
+
+.entry-signature pre {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--heading-color);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding-left: 4ch;
+    text-indent: -4ch;
+}
+
+.type-keyword {
+    color: var(--muted-color);
+}
+
+.entry-signature a {
+    color: var(--muted-color);
+    font-weight: 400;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.entry-signature a:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.entry-signature a.entry-name {
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+.entry-brief {
+    max-width: var(--reading-width);
+    margin-top: 6px;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--text-color);
+}
+
+.entry-brief p {
+    margin: 0;
 }
 
 /* ===========================================================================
@@ -459,5 +531,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .group-arrow svg {
         transition: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .entry-signature pre {
+        font-size: 0.875rem;
+    }
+
+    .section-entry {
+        padding: 12px 0;
     }
 }

@@ -3,11 +3,11 @@
 <span class="module-desc">{{ desc }}</span>
 
 {%- if module.functions -%}
-<div class="section-heading">Functions</div>
+<div class="section-heading" id="functions">Functions</div>
 {%- for func in module.functions -%}
 <div class="section-entry">
     <div class="entry-signature">
-        <pre><span class="type-keyword">{{ func.return_type }}</span> <a href="{{ func.id }}.html">{{ func.name }}</a> ({{ func.args }})</pre>
+        <pre><span class="type-keyword">{{ func.return_type }}</span><a href="{{ func.id }}.html" class="entry-name">{{ func.name }}</a> ({{ func.args }})</pre>
     </div>
     <div class="entry-brief">
         {{ func.brief }}
@@ -17,11 +17,11 @@
 {%- endif -%}
 
 {%- if module.structs -%}
-<div class="section-heading">Structs</div>
+<div class="section-heading" id="structs">Structs</div>
 {%- for struct in module.structs -%}
 <div class="section-entry">
     <div class="entry-signature">
-        <pre><span class="type-keyword">struct</span> <a href="{{ struct.id }}.html">{{ struct.name }}</a></pre>
+        <pre><span class="type-keyword">struct</span> <a href="{{ struct.id }}.html" class="entry-name">{{ struct.name }}</a></pre>
     </div>
     <div class="entry-brief">
         {{ struct.brief }}
@@ -31,11 +31,11 @@
 {%- endif -%}
 
 {%- if module.typedefs -%}
-<div class="section-heading">Typedefs</div>
+<div class="section-heading" id="typedefs">Typedefs</div>
 {%- for typedef in module.typedefs -%}
 <div class="section-entry">
     <div class="entry-signature">
-        <pre><span class="type-keyword">typedef</span> {{ typedef.type }} <a href="{{ typedef.id }}.html">{{ typedef.name }}</a></pre>
+        <pre><span class="type-keyword">typedef</span> {{ typedef.type }} <a href="{{ typedef.id }}.html" class="entry-name">{{ typedef.name }}</a></pre>
     </div>
     <div class="entry-brief">
         {{ typedef.brief }}
@@ -45,7 +45,7 @@
 {%- endif -%}
 
 {%- if module.constants or module.constant_groups -%}
-<div class="section-heading">Constants</div>
+<div class="section-heading" id="constants">Constants</div>
 
 {%- for constant in module.constants -%}
 <div class="section-entry">
@@ -61,7 +61,7 @@
 {%- for group in module.constant_groups -%}
 <div class="section-entry">
     <div class="entry-signature">
-        <pre><a href="{{ group.id }}.html">{{ group.name }}</a></pre>
+        <pre><a href="{{ group.id }}.html" class="entry-name">{{ group.name }}</a></pre>
     </div>
     <div class="entry-brief">
         {{ group.brief }}
@@ -70,4 +70,3 @@
 {%- endfor -%}
 
 {%- endif -%}
-

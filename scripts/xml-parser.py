@@ -54,8 +54,12 @@ class XMLParser:
         refid = memberdef.get("id", "")
         name = memberdef.findtext("name") or ""
         return_type = self._convert_to_tokens(memberdef.find("type"))
-        filepath = self._get_filepath(memberdef)
+        if "*" in return_type:
+            return_type = return_type.replace(" *", "* ")
+        else:
+            return_type += " "
 
+        filepath = self._get_filepath(memberdef)
         brief = self._convert_to_tokens(memberdef.find("briefdescription"))
         description = self._convert_to_tokens(memberdef.find("detaileddescription"))
 
