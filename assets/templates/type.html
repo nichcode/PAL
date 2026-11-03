@@ -2,16 +2,20 @@
     <div class="entry-signature">
         <pre>
         {%- if entry.args is defined -%}
-            <span class="type-keyword">{{ entry.return_type }}</span> {{ entry.name }} ({{ entry.args }})
+            <span class="type-keyword">{{ entry.return_type }}</span><span class="entry-name">{{ entry.name }}</span> ({{ entry.args }})
 
         {%- elif entry.type is defined -%}
-            <span class="type-keyword">typedef</span> {{ entry.type }} {{ entry.name }}
+            <span class="type-keyword">typedef</span> {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
         {%- endif -%}
         </pre>
     </div>
     <div class="types-body">
         {%- if entry.brief -%}
-        <p class="entry-brief"> {{ entry.brief }}</p>
+        <div class="entry-brief"> {{ entry.brief }}</div>
+        {%- endif -%}
+
+        {%- if entry.detailed -%}
+        <div class="entry-brief"> {{ entry.detailed }}</div>
         {%- endif -%}
 
         {%- if entry.params is defined and entry.params -%}
@@ -21,7 +25,7 @@
             <div class="entry-row">
                 <span class="row-direction">[{{ param.direction }}]</span>
                 <code class="row-name">{{ param.name }}</code>
-                <span class="row-desc">{{ param.brief }}</span>
+                <span class="row-desc">{{ param.description }}</span>
             </div>
             {%- endfor -%}
         </div>
@@ -40,18 +44,18 @@
         </div>
         {%- endif -%}
 
-        {%- if entry.description -%}
-        <div class="entry-desc">
-            {{ entry.description | safe }}
-        </div>
-        {%- endif -%}
-
         {%- if entry.constants is defined and entry.constants -%}
         <div class="entry-list">
             {%- for item in entry.constants -%}
             <pre><span class="type-keyword">#define</span> {{ item.name }} {{ item.value }}</pre>
             <p class="row-desc"> {{ item.description }}</p>
             {%- endfor -%}
+        </div>
+        {%- endif -%}
+
+        {%- if entry.description -%}
+        <div class="entry-desc">
+            {{ entry.description | safe }}
         </div>
         {%- endif -%}
 

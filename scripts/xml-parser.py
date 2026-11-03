@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import re
 import os
 import pickle
 from pathlib import Path
+
 import xml.etree.ElementTree as ET
 from typing import Dict, Optional
 
@@ -63,6 +65,17 @@ class XMLParser:
         brief = self._convert_to_tokens(memberdef.find("briefdescription"))
         description = self._convert_to_tokens(memberdef.find("detaileddescription"))
 
+        # cut description from callout
+        match = re.search(r"^(.*?)(\{\{callout:.*)", description, re.DOTALL)
+        detailed = match.group(1).strip()
+        description = match.group(2).strip()
+
+        if detailed.endswith("{{para:"):
+            detailed = detailed[:-7].strip()
+
+        if description.endswith("}}"):
+            description = description[:-2].strip()
+
         # Extract parameter documentation mapping
         param_docs = {}
         for item in memberdef.findall(".//parameteritem"):
@@ -96,6 +109,7 @@ class XMLParser:
             return_type,
             args_string,
             brief,
+            detailed,
             description,
             filepath,
             params

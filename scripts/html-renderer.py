@@ -137,14 +137,18 @@ class HTMLRenderer:
         _data: Function | Struct | Typedef | ConstantGroup = data
         content = self.type_template.render(entry=_data)
         name = _data.name
+        content_title = _data.name
         if page_title:
             name = page_title
+
+        if isinstance(_data, Function):
+            content_title += "()"
 
         return self.docs_page_template.render(
             title=name,
             guides=self.guides,
             modules=self.modules,
-            content_title=name,
+            content_title=content_title,
             content=content
         )
 

@@ -65,6 +65,7 @@ class Function:
     return_type: str
     args: str
     brief: str = ""
+    detailed: str = ""
     description: str = ""
     file: str = ""
     params: List[Param] = field(default_factory=list)

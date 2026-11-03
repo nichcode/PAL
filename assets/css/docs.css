@@ -180,8 +180,8 @@ body {
 }
 
 /* while searching, the results replace the tree */
-.sidebar.is-searching > .sidebar-entry,
-.sidebar.is-searching > .sidebar-group {
+.sidebar.is-searching>.sidebar-entry,
+.sidebar.is-searching>.sidebar-group {
     display: none;
 }
 
@@ -429,15 +429,15 @@ body {
     padding: 14px 0;
 }
 
-.section-entry + .section-entry {
+.section-entry+.section-entry {
     border-top: 1px solid var(--border-color);
 }
 
-.section-heading + .section-entry {
+.section-heading+.section-entry {
     padding-top: 4px;
 }
 
-.section-entry + .section-heading {
+.section-entry+.section-heading {
     margin-top: 48px;
 }
 
@@ -478,6 +478,7 @@ body {
 }
 
 .entry-brief {
+    margin: 0;
     max-width: var(--reading-width);
     margin-top: 6px;
     font-size: 0.9375rem;
@@ -489,14 +490,136 @@ body {
     margin: 0;
 }
 
-.entry-desc {
-    padding-top: 10px;
-}
-
 /* ===========================================================================
    Detail pages (functions, structs, types)
 ============================================================================== */
 
+.types-page .entry-signature {
+    padding-bottom: var(--seperator-margin);
+    border-bottom: var(--seperator);
+}
+
+.types-page .entry-signature pre {
+    margin: 0;
+    padding: 0 0 0 4ch;
+    background: none;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--heading-color);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    text-indent: -4ch;
+}
+
+.types-page .type-keyword {
+    color: var(--muted-color);
+}
+
+.types-page .entry-name {
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+.types-page .types-body {
+    margin-top: 20px;
+}
+
+.types-page .entry-brief p {
+    margin: 0 0 8px 0;
+    max-width: var(--reading-width);
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-color);
+}
+
+.types-page .sub-heading {
+    margin: 36px 0 4px 0;
+    font-size: 1.05rem;
+    line-height: 1.3;
+    color: var(--heading-color);
+}
+
+.types-page .entry-list {
+    display: grid;
+    grid-template-columns: 6ch max-content minmax(0, 1fr);
+    row-gap: 6px; 
+}
+
+.types-page .entry-row {
+    display: contents;
+}
+
+.types-page .entry-row * {
+    line-height: 1.2;
+    margin: 0;
+}
+
+/* struct fields */
+.types-page .entry-row:not(:has(.row-direction)) {
+    grid-template-columns: 24ch minmax(0, 1fr);
+}
+
+.types-page .row-direction {
+    color: var(--muted-color);
+}
+
+.types-page .row-desc {
+    padding-left: 12px; 
+}
+
+.types-page .row-name {
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: 0.9375rem;
+    color: var(--heading-color);
+    overflow-wrap: anywhere;
+}
+
+.types-page .row-desc {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--text-color);
+}
+
+/* "#define NAME value" with a description under each */
+.types-page .entry-list>pre {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--heading-color);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.types-page .entry-list>p.row-desc {
+    margin: 4px 0 0 0;
+    max-width: var(--reading-width);
+}
+
+.types-page .entry-list>pre:not(:first-child) {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+.types-page .entry-desc {
+    padding-top: 20px;
+}
+
+.types-page .entry-desc> :first-child {
+    margin-top: 0;
+}
+
+.types-page .entry-desc> :last-child {
+    margin-bottom: 0;
+}
 
 /* ===========================================================================
    Responsive
@@ -554,5 +677,26 @@ body {
 
     .section-entry {
         padding: 12px 0;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .types-page .entry-row,
+    .types-page .entry-row:not(:has(.row-direction)) {
+        display: block;
+    }
+
+    .types-page .row-direction {
+        margin-right: 8px;
+    }
+
+    .types-page .row-name {
+        display: inline;
+    }
+
+    .types-page .row-desc {
+        display: block;
+        margin-top: 4px;
     }
 }
