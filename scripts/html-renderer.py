@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import json
 import html
 import pickle
 import re
+
 from dataclasses import is_dataclass, fields, replace
 from pathlib import Path
 
@@ -29,7 +31,8 @@ HTML_TEMPLATES = {
     "table": "<table>{content}</table>",
     "row": "<tr>{content}</tr>",
     "cell": "<td>{content}</td>",
-    "para": "<p>{content}</p>"
+    "para": "<p>{content}</p>",
+    "link": '<a href="{url}" target="_blank" rel="noopener noreferrer">{content}</a>',
 }
 
 assert HTML_TEMPLATES.keys() == TOKENS.keys(), (
@@ -40,6 +43,8 @@ PATTERNS = {
     key: token_pattern(key)
     for key in TOKENS
 }
+
+BRIEF_LIMIT = 120
 
 
 class HTMLRenderer:
@@ -197,6 +202,7 @@ class HTMLRenderer:
                 html.unescape(fields["target_id"]),
                 quote=True,
             )
+
         elif key == "callout":
             fields["type"] = html.escape(
                 html.unescape(fields["type"]),
@@ -208,11 +214,18 @@ class HTMLRenderer:
                 parts = fields["content"].split("<", 1)
                 fields["prefix"] = f"<strong>{parts[0]}</strong>"
                 fields["content"] = f"<{parts[1]}"
+
             else:
                 # make default types titlecase
                 tmp: str = fields['type']
                 type_str = tmp.capitalize()
                 fields["prefix"] = f"<strong>{type_str}</strong>"
+
+        elif key == "link":
+            url = fields["url"]
+            parts = fields["content"].split(":", 1)
+            fields["url"] = f"{url}:{parts[0]}"
+            fields["content"] = f"{parts[1]}"
 
         return HTML_TEMPLATES[key].format(**fields)
 
@@ -240,6 +253,46 @@ def load_cache(filepath: Path):
     """Loads data objects from disk"""
     with open(filepath, "rb") as file:
         return pickle.load(file)
+
+
+def build_search_index(guides: list[Page], modules: list[Module]) -> list[dict]:
+    entries: list[dict] = []
+
+    def _brief(obj) -> str:
+        text = " ".join((getattr(obj, "brief", "") or "").split())
+        return text[:BRIEF_LIMIT]
+
+    def add(name, kind, module, url, brief=""):
+        entries.append(
+            {"n": name, "k": kind, "m": module, "u": url, "b": brief})
+
+    for guide in guides:
+        add(guide.name, "guide", "", f"{guide.id}.html", _brief(guide))
+
+    for module in modules:
+        add(module.name, "module", "", f"{module.id}.html", _brief(module))
+
+        for func in module.functions:
+            add(func.name, "function", module.name,
+                f"{func.id}.html", _brief(func))
+
+        for struct in module.structs:
+            add(struct.name, "struct", module.name,
+                f"{struct.id}.html", _brief(struct))
+
+        for typedef in module.typedefs:
+            add(typedef.name, "type", module.name,
+                f"{typedef.id}.html", _brief(typedef))
+
+        for constant in module.constants:
+            add(constant.name, "constant", module.name,
+                f"{module.id}__constants.html#{constant.id}")
+
+        for group in module.constant_groups:
+            add(group.name, "constants", module.name,
+                f"{group.id}.html", _brief(group))
+
+    return entries
 
 
 def main():
@@ -286,7 +339,7 @@ def main():
         for group in clean_module.constant_groups:
             rendered = renderer.render_type(group)
             file = html_dir / f"{group.id}.html"
-            file.write_text(rendered, encoding="utf-8")        
+            file.write_text(rendered, encoding="utf-8")
 
     # generate markdown pages
     for page in pages:
@@ -321,6 +374,13 @@ def main():
     rendered = renderer.render_index_list(clean_guides, "Guides")
     file = html_dir / "guides.html"
     file.write_text(rendered, encoding="utf-8")
+
+    # build search data.
+    variable = "window.PAL_SEARCH_INDEX"
+    tmp = build_search_index(clean_guides, clean_modules)
+    data = json.dumps(tmp, separators=(",", ":"))
+    file = html_dir / "search_index.js"
+    file.write_text(f"{variable}=" + data + ";\n", encoding="utf-8")
 
     print(f"html files generated successfully")
 

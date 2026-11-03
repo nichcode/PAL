@@ -31,6 +31,7 @@ DOXYGEN_TOKENS: Dict[str, str] = {
     "row": "row",
     "entry": "cell",
     "para": "para",
+    "ulink": "link",
 }
 
 # Self-closing tags that stand for a character.
@@ -289,6 +290,12 @@ class XMLParser:
                         parts.append(make_token(
                             "callout",
                             type=child.get("kind", "note"),
+                            content=content))
+
+                    elif token == "link":
+                        parts.append(make_token(
+                            "link",
+                            url=child.get("url"),
                             content=content))
 
                     else:

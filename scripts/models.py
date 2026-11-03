@@ -15,6 +15,7 @@ TOKENS: Dict[str, str] = {
     "row": "{{row:<content>}}",
     "cell": "{{cell:<content>}}",
     "para": "{{para:<content>}}",
+    "link": "{{link:<url>:<content>}}",
 }
 
 _PLACEHOLDER = re.compile(r"<(\w+)>")

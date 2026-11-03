@@ -6,10 +6,8 @@
 
 :root {
     --sidebar-width: 340px;
-    --toc-width: 240px;
     --content-padding: 56px;
-    --reading-width: 82ch;
-    --wide-width: 96ch;
+    --reading-width: 96ch;
     --seperator-margin: 16px;
     --table-padding: 12px 18px;
 }
@@ -60,6 +58,7 @@ body {
 
 .sidebar-entry {
     padding-left: 24px;
+    padding-top: 8px;
 }
 
 .sidebar-entry a,
@@ -142,6 +141,91 @@ body {
 }
 
 /* ===========================================================================
+   Sidebar search
+============================================================================== */
+
+.sidebar-search {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: calc(-1 * var(--spacing-large)) 0 var(--spacing-medium) 0;
+    padding: var(--spacing-large) 0 var(--spacing-large) 0;
+    background-color: var(--modules-grid-bg);
+}
+
+.sidebar-search[hidden],
+.search-results[hidden] {
+    display: none;
+}
+
+.search-input {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--heading-color);
+    background-color: var(--code-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-small);
+    transition: border-color var(--transition-fast);
+}
+
+.search-input::placeholder {
+    color: var(--muted-color);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* while searching, the results replace the tree */
+.sidebar.is-searching > .sidebar-entry,
+.sidebar.is-searching > .sidebar-group {
+    display: none;
+}
+
+.search-result {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 6px 8px;
+    text-decoration: none;
+    border-radius: var(--radius-small);
+    transition: background-color var(--transition-fast);
+}
+
+.search-result:hover,
+.search-result.is-active {
+    background-color: var(--accent-soft-color);
+}
+
+.result-name {
+    color: var(--heading-color);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-result.is-active .result-name {
+    color: var(--accent-color);
+}
+
+.result-meta {
+    color: var(--muted-color);
+    font-size: 0.75rem;
+}
+
+.search-empty {
+    padding: 8px;
+    color: var(--muted-color);
+    font-size: 0.875rem;
+}
+
+/* ===========================================================================
    Page title and content
 ============================================================================== */
 
@@ -156,7 +240,7 @@ body {
     margin-top: 0;
     padding-top: 32px;
     padding-bottom: 96px;
-    max-width: none;
+    max-width: calc(var(--reading-width) + var(--content-padding) * 2);
 }
 
 .content-title {
@@ -172,28 +256,9 @@ body {
     border-bottom: var(--seperator);
 }
 
-/* pages with a table of contents leave room for it on the right */
-.content-container:not([page-type="intro"]) {
-    margin-right: var(--toc-width);
-    max-width: calc(var(--wide-width) + var(--content-padding) * 2);
-}
-
-/* intro-style pages width are capped */
-.content-container:not([page-type="intro"]) {
-    max-width: calc(var(--reading-width) + var(--content-padding) * 2);
-}
-
 /* ===========================================================================
    Content typography
 ============================================================================== */
-
-.content p,
-.content ul,
-.content ol,
-.content dl,
-.content blockquote {
-    max-width: var(--reading-width);
-}
 
 .content p {
     margin: 0 0 1.1em 0;
@@ -210,6 +275,11 @@ body {
     text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.content p a:hover,
+.content li a:hover {
+    text-decoration: underline;
 }
 
 .content h2,
@@ -366,7 +436,6 @@ div.toc[page-type="intro"] {
 
 @media (max-width: 1100px) {
     :root {
-        --toc-width: 0px;
         --content-padding: 36px;
     }
 
@@ -389,6 +458,12 @@ div.toc[page-type="intro"] {
         border-right: none;
         border-bottom: var(--seperator);
         padding: var(--spacing-medium) var(--layout-padding);
+    }
+
+    .sidebar-search {
+        position: static;
+        margin: 0 0 var(--spacing-medium) 0;
+        padding: 0;
     }
 
     .content-title {
