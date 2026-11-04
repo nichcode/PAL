@@ -543,8 +543,9 @@ body {
 
 .types-page .entry-list {
     display: grid;
-    grid-template-columns: 6ch max-content minmax(0, 1fr);
-    row-gap: 6px; 
+    grid-template-columns: 5ch max-content minmax(0, 1fr);
+    column-gap: 2px;
+    row-gap: 6px;
 }
 
 .types-page .entry-row {
@@ -553,6 +554,10 @@ body {
 
 .types-page .entry-row * {
     line-height: 1.2;
+    margin: 0;
+}
+
+#see-entry p {
     margin: 0;
 }
 

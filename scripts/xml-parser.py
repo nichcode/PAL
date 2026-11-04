@@ -9,7 +9,6 @@ import xml.etree.ElementTree as ET
 from typing import Dict, Optional
 
 from models import (
-    Ref,
     Constant,
     ConstantGroup,
     Field,
@@ -68,7 +67,7 @@ class XMLParser:
         base = memberdef.find("detaileddescription")
         description = self._convert_to_tokens(base)
 
-        see = []
+        see: str | None = None
         returns: str | None = None
         sections = self._parse_section(base)
 
@@ -76,7 +75,7 @@ class XMLParser:
             returns = sections["return"]
 
         if sections.get("see"):
-            see.append(sections["see"])
+            see = sections["see"]
 
         # Extract parameter documentation mapping
         param_docs = {}
@@ -118,8 +117,8 @@ class XMLParser:
             returns,
             sections["thread-safety"],
             sections["since"],
-            params,
-            see
+            see,
+            params
         )
 
     def parse_struct(self, inner_class: ET.Element) -> Struct:
@@ -132,11 +131,11 @@ class XMLParser:
         brief = self._convert_to_tokens(compounddef.find("briefdescription"))
         base = compounddef.find("detaileddescription")
         description = self._convert_to_tokens(base)
-        
-        see = []
+
+        see: str | None = None
         sections = self._parse_section(base)
         if sections.get("see"):
-            see.append(sections["see"])
+            see = sections["see"]
 
         fields = []
         for field in compounddef.findall(
@@ -164,8 +163,8 @@ class XMLParser:
             description,
             filepath,
             sections["since"],
-            fields,
-            see
+            see,
+            fields
         )
 
     def parse_typedef(self, memberdef: ET.Element) -> Typedef:
@@ -221,7 +220,7 @@ class XMLParser:
         """Parses a Doxygen group/module into a Module data object."""
         compounddef = self._load_compound(refid)
 
-        filepath = f"pal2/{compounddef.findtext("compoundname")}.h"
+        filepath = f"pal2/{compounddef.findtext('compoundname')}.h"
         name = compounddef.findtext("title")
         brief = self._convert_to_tokens(compounddef.find("briefdescription"))
         description = self._convert_to_tokens(
@@ -367,6 +366,8 @@ class XMLParser:
 
     def _parse_section(self, detailed: ET.Element) -> dict:
         sections = {}
+        see = []
+
         for element in detailed.iter("simplesect"):
             kind = element.get("kind")
 
@@ -377,17 +378,24 @@ class XMLParser:
                 sections["return"] = self._convert_to_tokens(element)
 
             elif kind == "see":
-                refs = []
                 for ref in element.iter("ref"):
-                    text = "".join(ref.itertext()).strip()
-                    refs.append(Ref(ref.get("refid"), text))
+                    token = make_token(
+                        "ref",
+                        target_id=ref.get("refid"),
+                        content="".join(ref.itertext()).strip())
 
-                sections["see"] = refs
+                    # wrap in a para token to place the links on newlines
+                    see.append(make_token(
+                        "para",
+                        content=token))
 
             elif kind == "par":
                 tmp = self._convert_to_tokens(element)
                 parts = tmp.split(element.findtext("title").strip(), 1)
                 sections["thread-safety"] = parts[1]
+
+        if see:
+            sections["see"] = "\n".join(see).strip()
 
         return sections
 

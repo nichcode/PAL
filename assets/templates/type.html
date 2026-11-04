@@ -57,20 +57,17 @@
 
         {%- if entry.thread_safety -%}
         <div class="sub-heading"><strong>Thread Safety</strong></div>
-        <div">{{ entry.thread_safety | safe }}</div>
+        <div>{{ entry.thread_safety | safe }}</div>
         {%- endif -%}
 
         {%- if entry.since -%}
         <div class="sub-heading"><strong>Since</strong></div>
-        <div">{{ entry.since | safe }}</div>
+        <div>{{ entry.since | safe }}</div>
         {%- endif -%}
 
-        {%- if entry.see is defined and entry.see -%}
+        {%- if entry.see -%}
         <div class="sub-heading"><strong>See</strong></div>
-        {%- for item in entry.see -%}
-        <div">{{ item | safe }}</div
-        {%- endfor -%}
+        <div id="see-entry">{{ entry.see | safe }}</div>
         {%- endif -%}
-
     </div>
 </div>
