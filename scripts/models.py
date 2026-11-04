@@ -26,6 +26,12 @@ _CONTENT_BODY = r"(?:[^{}\\]|\\.)*?"   # no bare braces: innermost token first
 
 
 @dataclass(slots=True)
+class Ref:
+    id: str
+    text: str
+
+
+@dataclass(slots=True)
 class Constant:
     id: str
     name: str
@@ -65,11 +71,13 @@ class Function:
     return_type: str
     args: str
     brief: str = ""
-    detailed: str = ""
     description: str = ""
     file: str = ""
+    returns: str | None = None
+    thread_safety: str | None = None
+    since: str = ""
     params: List[Param] = field(default_factory=list)
-
+    see: List[Ref] = field(default_factory=list)
 
 @dataclass(slots=True)
 class Struct:
@@ -78,7 +86,9 @@ class Struct:
     brief: str = ""
     description: str = ""
     file: str = ""
+    since: str = ""
     fields: List[Field] = field(default_factory=list)
+    see: List[Ref] = field(default_factory=list)
 
 
 @dataclass(slots=True)

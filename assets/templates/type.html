@@ -14,8 +14,10 @@
         <div class="entry-brief"> {{ entry.brief }}</div>
         {%- endif -%}
 
-        {%- if entry.detailed -%}
-        <div class="entry-brief"> {{ entry.detailed }}</div>
+        {%- if entry.description -%}
+        <div class="entry-desc">
+            {{ entry.description | safe }}
+        </div>
         {%- endif -%}
 
         {%- if entry.params is defined and entry.params -%}
@@ -53,10 +55,21 @@
         </div>
         {%- endif -%}
 
-        {%- if entry.description -%}
-        <div class="entry-desc">
-            {{ entry.description | safe }}
-        </div>
+        {%- if entry.thread_safety -%}
+        <div class="sub-heading"><strong>Thread Safety</strong></div>
+        <div">{{ entry.thread_safety | safe }}</div>
+        {%- endif -%}
+
+        {%- if entry.since -%}
+        <div class="sub-heading"><strong>Since</strong></div>
+        <div">{{ entry.since | safe }}</div>
+        {%- endif -%}
+
+        {%- if entry.see is defined and entry.see -%}
+        <div class="sub-heading"><strong>See</strong></div>
+        {%- for item in entry.see -%}
+        <div">{{ item | safe }}</div
+        {%- endfor -%}
         {%- endif -%}
 
     </div>

@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from typing import Dict, Optional
 
 from models import (
+    Ref,
     Constant,
     ConstantGroup,
     Field,
@@ -43,7 +44,7 @@ DOXYGEN_CHARS: Dict[str, str] = {
 }
 
 # Dxoygen tags that are not used.
-DOXYGEN_SKIP = {"parameterlist"}
+DOXYGEN_SKIP = {"parameterlist", "simplesect"}
 
 
 class XMLParser:
@@ -55,6 +56,7 @@ class XMLParser:
         """Parses a Doxygen function into a data object."""
         refid = memberdef.get("id", "")
         name = memberdef.findtext("name") or ""
+
         return_type = self._convert_to_tokens(memberdef.find("type"))
         if "*" in return_type:
             return_type = return_type.replace(" *", "* ")
@@ -63,18 +65,18 @@ class XMLParser:
 
         filepath = self._get_filepath(memberdef)
         brief = self._convert_to_tokens(memberdef.find("briefdescription"))
-        description = self._convert_to_tokens(memberdef.find("detaileddescription"))
+        base = memberdef.find("detaileddescription")
+        description = self._convert_to_tokens(base)
 
-        # cut description from callout
-        match = re.search(r"^(.*?)(\{\{callout:.*)", description, re.DOTALL)
-        detailed = match.group(1).strip()
-        description = match.group(2).strip()
+        see = []
+        returns: str | None = None
+        sections = self._parse_section(base)
 
-        if detailed.endswith("{{para:"):
-            detailed = detailed[:-7].strip()
+        if sections.get("return"):
+            returns = sections["return"]
 
-        if description.endswith("}}"):
-            description = description[:-2].strip()
+        if sections.get("see"):
+            see.append(sections["see"])
 
         # Extract parameter documentation mapping
         param_docs = {}
@@ -93,10 +95,12 @@ class XMLParser:
             param_name = (param.findtext("declname") or "").strip()
 
             direction, param_brief = param_docs.get(param_name, ("in", ""))
-            params.append(Param(param_name, param_type, direction, param_brief))
+            params.append(
+                Param(param_name, param_type, direction, param_brief))
 
             if param_name:
-                full_arg = f"{param_type} {param_name}".replace(" *", "* ").replace("  ", " ")
+                full_arg = f"{param_type} {param_name}".replace(
+                    " *", "* ").replace("  ", " ")
                 args_list.append(full_arg)
             else:
                 args_list.append(param_type)
@@ -109,10 +113,13 @@ class XMLParser:
             return_type,
             args_string,
             brief,
-            detailed,
             description,
             filepath,
-            params
+            returns,
+            sections["thread-safety"],
+            sections["since"],
+            params,
+            see
         )
 
     def parse_struct(self, inner_class: ET.Element) -> Struct:
@@ -123,9 +130,13 @@ class XMLParser:
         filepath = self._get_filepath(compounddef)
 
         brief = self._convert_to_tokens(compounddef.find("briefdescription"))
-        description = self._convert_to_tokens(
-            compounddef.find("detaileddescription")
-        )
+        base = compounddef.find("detaileddescription")
+        description = self._convert_to_tokens(base)
+        
+        see = []
+        sections = self._parse_section(base)
+        if sections.get("see"):
+            see.append(sections["see"])
 
         fields = []
         for field in compounddef.findall(
@@ -152,7 +163,9 @@ class XMLParser:
             brief,
             description,
             filepath,
+            sections["since"],
             fields,
+            see
         )
 
     def parse_typedef(self, memberdef: ET.Element) -> Typedef:
@@ -316,6 +329,15 @@ class XMLParser:
                             url=child.get("url"),
                             content=content))
 
+                    elif token == "para":
+                        tmp = content.strip()
+                        if not tmp:
+                            continue
+                        else:
+                            parts.append(make_token(
+                                "para",
+                                content=content))
+
                     else:
                         parts.append(make_token(token, content=content))
                 else:
@@ -342,6 +364,32 @@ class XMLParser:
             return f"{last_folder}/{filename}"
 
         return filename
+
+    def _parse_section(self, detailed: ET.Element) -> dict:
+        sections = {}
+        for element in detailed.iter("simplesect"):
+            kind = element.get("kind")
+
+            if kind == "since":
+                sections["since"] = "".join(element.itertext()).strip()
+
+            elif kind == "return":
+                sections["return"] = self._convert_to_tokens(element)
+
+            elif kind == "see":
+                refs = []
+                for ref in element.iter("ref"):
+                    text = "".join(ref.itertext()).strip()
+                    refs.append(Ref(ref.get("refid"), text))
+
+                sections["see"] = refs
+
+            elif kind == "par":
+                tmp = self._convert_to_tokens(element)
+                parts = tmp.split(element.findtext("title").strip(), 1)
+                sections["thread-safety"] = parts[1]
+
+        return sections
 
 
 def find_compounds(parser: XMLParser):

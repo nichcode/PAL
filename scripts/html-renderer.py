@@ -27,7 +27,7 @@ HTML_TEMPLATES = {
     "bold": "<strong>{content}</strong>",
     "ref": '<a href="{target_id}.html">{content}</a>',
     "codeblock": "<pre>{content}</pre>",
-    "callout": '<div class="callout" type="{type}">{prefix}{content}</div>',
+    "callout": '<div class="callout" type="{type}">{content}</div>',
     "table": "<table>{content}</table>",
     "row": "<tr>{content}</tr>",
     "cell": "<td>{content}</td>",
@@ -183,24 +183,6 @@ class HTMLRenderer:
                 html.unescape(fields["target_id"]),
                 quote=True,
             )
-
-        elif key == "callout":
-            fields["type"] = html.escape(
-                html.unescape(fields["type"]),
-                quote=True,
-            )
-
-            # get the par name from the content
-            if fields["type"] == "par":
-                parts = fields["content"].split("<", 1)
-                fields["prefix"] = f"<strong>{parts[0]}</strong>"
-                fields["content"] = f"<{parts[1]}"
-
-            else:
-                # make default types titlecase
-                tmp: str = fields['type']
-                type_str = tmp.capitalize()
-                fields["prefix"] = f"<strong>{type_str}</strong>"
 
         elif key == "link":
             url = fields["url"]

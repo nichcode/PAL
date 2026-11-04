@@ -610,15 +610,7 @@ body {
 }
 
 .types-page .entry-desc {
-    padding-top: 20px;
-}
-
-.types-page .entry-desc> :first-child {
-    margin-top: 0;
-}
-
-.types-page .entry-desc> :last-child {
-    margin-bottom: 0;
+    padding-top: 6px;
 }
 
 /* ===========================================================================
