@@ -1,25 +1,3 @@
-/* ==========================================================================
-   PAL shared styles: tokens, base typography, navigation bar, inline code.
-   Loaded by every page (website and docs).
-============================================================================= */
-
-@font-face {
-    font-family: 'DejaVu Sans Mono';
-    src: local('DejaVu Sans Mono'), local('DejaVuSansMono'),
-         url('DejaVuSansMono-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'DejaVu Sans Mono';
-    src: local('DejaVu Sans Mono Bold'), local('DejaVuSansMono-Bold'),
-         url('DejaVuSansMono-Bold.ttf') format('truetype');
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
-}
 
 :root {
     /* surfaces */
@@ -61,7 +39,8 @@
     --transition-normal: 0.2s ease;
 
     /* font */
-    --font-mono: "DejaVu Sans Mono", monospace;
+    --font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+    --font-family-monospace: ui-monospace, SFMono-Regular, SFMono, Menlo, Consolas, Liberation Mono, monospace;
 
     color-scheme: dark;
 }
@@ -115,9 +94,7 @@ body {
     transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-/* =========================================================================
-   Navigation bar
-============================================================================ */
+/* Navigation bar */
 
 .navbar {
     position: fixed;
@@ -219,9 +196,7 @@ html.light-mode .logo-img {
     color: var(--heading-color);
 }
 
-/* =====================================================================
-   Inline code
-========================================================================= */
+/* Inline code */
 
 .content p code,
 .content li code,
