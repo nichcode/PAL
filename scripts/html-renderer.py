@@ -272,50 +272,50 @@ def main():
     clean_guides: list[Page] = []
 
     # generate module pages
-    for module in modules:
-        clean_module: Module = renderer.render_values(module)
-        rendered = renderer.render_module(clean_module)
-        clean_modules.append(clean_module)
+    # for module in modules:
+    #     clean_module: Module = renderer.render_values(module)
+    #     rendered = renderer.render_module(clean_module)
+    #     clean_modules.append(clean_module)
 
-        file = html_dir / f"{module.id}.html"
-        file.write_text(rendered, encoding="utf-8")
+    #     file = html_dir / f"{module.id}.html"
+    #     file.write_text(rendered, encoding="utf-8")
 
-        # generate function pages
-        for func in clean_module.functions:
-            rendered = renderer.render_type(func)
-            file = html_dir / f"{func.id}.html"
-            file.write_text(rendered, encoding="utf-8")
+    #     # generate function pages
+    #     for func in clean_module.functions:
+    #         rendered = renderer.render_type(func)
+    #         file = html_dir / f"{func.id}.html"
+    #         file.write_text(rendered, encoding="utf-8")
 
-        # generate struct pages
-        for struct in clean_module.structs:
-            rendered = renderer.render_type(struct)
-            file = html_dir / f"{struct.id}.html"
-            file.write_text(rendered, encoding="utf-8")
+    #     # generate struct pages
+    #     for struct in clean_module.structs:
+    #         rendered = renderer.render_type(struct)
+    #         file = html_dir / f"{struct.id}.html"
+    #         file.write_text(rendered, encoding="utf-8")
 
-        # generate typedef pages
-        for typedef in clean_module.typedefs:
-            rendered = renderer.render_type(typedef)
-            file = html_dir / f"{typedef.id}.html"
-            file.write_text(rendered, encoding="utf-8")
+    #     # generate typedef pages
+    #     for typedef in clean_module.typedefs:
+    #         rendered = renderer.render_type(typedef)
+    #         file = html_dir / f"{typedef.id}.html"
+    #         file.write_text(rendered, encoding="utf-8")
 
-        # generate constant groups page
-        for group in clean_module.constant_groups:
-            rendered = renderer.render_type(group)
-            file = html_dir / f"{group.id}.html"
-            file.write_text(rendered, encoding="utf-8")
+    #     # generate constant groups page
+    #     for group in clean_module.constant_groups:
+    #         rendered = renderer.render_type(group)
+    #         file = html_dir / f"{group.id}.html"
+    #         file.write_text(rendered, encoding="utf-8")
 
     # generate markdown pages
-    for page in pages:
-        clean_page: Page = renderer.render_values(page)
-        rendered = renderer.render_page(clean_page)
+    # for page in pages:
+    #     clean_page: Page = renderer.render_values(page)
+    #     rendered = renderer.render_page(clean_page)
 
-        file = html_dir / f"{page.id}.html"
-        if page.id == "indexpage":
-            file = html_dir / "index.html"
-        else:
-            clean_guides.append(clean_page)
+    #     file = html_dir / f"{page.id}.html"
+    #     if page.id == "indexpage":
+    #         file = html_dir / "index.html"
+    #     else:
+    #         clean_guides.append(clean_page)
 
-        file.write_text(rendered, encoding="utf-8")
+    #     file.write_text(rendered, encoding="utf-8")
 
     # generates website pages
     pages_dir = root_dir / "assets/pages"
@@ -329,21 +329,21 @@ def main():
         file.write_text(rendered, encoding="utf-8")
 
     # generate api_reference page
-    rendered = renderer.render_index_list(clean_modules, "API Reference")
-    file = html_dir / "api_reference.html"
-    file.write_text(rendered, encoding="utf-8")
+    # rendered = renderer.render_index_list(clean_modules, "API Reference")
+    # file = html_dir / "api_reference.html"
+    # file.write_text(rendered, encoding="utf-8")
 
     # generate guides page
-    rendered = renderer.render_index_list(clean_guides, "Guides")
-    file = html_dir / "guides.html"
-    file.write_text(rendered, encoding="utf-8")
+    # rendered = renderer.render_index_list(clean_guides, "Guides")
+    # file = html_dir / "guides.html"
+    # file.write_text(rendered, encoding="utf-8")
 
     # build search data.
-    variable = "window.PAL_SEARCH_INDEX"
-    tmp = build_search_index(clean_guides, clean_modules)
-    data = json.dumps(tmp, separators=(",", ":"))
-    file = html_dir / "search-index.js"
-    file.write_text(f"{variable}=" + data + ";\n", encoding="utf-8")
+    # variable = "window.PAL_SEARCH_INDEX"
+    # tmp = build_search_index(clean_guides, clean_modules)
+    # data = json.dumps(tmp, separators=(",", ":"))
+    # file = html_dir / "search-index.js"
+    # file.write_text(f"{variable}=" + data + ";\n", encoding="utf-8")
 
     print(f"html files generated successfully")
 

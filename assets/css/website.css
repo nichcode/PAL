@@ -1,12 +1,9 @@
-/* ==========================================================================
-   PAL landing page: introduction, modules panel, footer.
-   Requires style.css.
-============================================================================= */
 
-.content {
-    max-width: 1240px;
-    margin: calc(var(--nav-bar-height) + 80px) auto 80px auto;
-    padding: 0 var(--layout-padding);
+/* requires style.css */
+.page-content {
+    max-width: var(--web-page-max-width);
+    margin: calc(var(--navbar-height) + 80px) auto 80px auto;
+    padding: 0 var(--content-padding);
 }
 
 .intro-grid {
@@ -16,46 +13,28 @@
     align-items: start;
 }
 
-.intro-block {
+.intro-section {
     max-width: 720px;
 }
-
-/* ============================================================================
-   Introduction
-=============================================================================== */
 
 .intro-desc h1 {
     margin: 0 0 28px 0;
     color: var(--heading-color);
-    font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+    font-size: var(--font-size-title);
     font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.15;
 }
 
 .intro-desc p {
     margin: 0 0 22px 0;
     max-width: 68ch;
-    font-size: 0.9375rem;
-    line-height: 1.75;
-    color: var(--text-color);
-}
-
-.intro-desc p a {
-    text-decoration: none;
-}
-
-.intro-desc p a:hover {
-    text-decoration: underline;
 }
 
 .intro-desc p strong {
     color: var(--heading-color);
 }
 
-.intro-desc .intro-lead {
-    font-size: 1.0625rem;
-    line-height: 1.7;
+.intro-lead {
+    font-size: var(--font-size-medium);
     color: var(--heading-color);
     margin-bottom: 0;
 }
@@ -69,151 +48,58 @@
 
 .button {
     display: inline-block;
-    padding: 10px 22px;
-    border-radius: var(--radius-small);
+    padding: 8px 18px;
+    border-radius: var(--border-radius-small);
     border: 1px solid transparent;
     text-decoration: none;
     font-weight: 700;
-    font-size: 0.875rem;
-    line-height: 1.4;
     transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
 }
 
-.button.is-primary {
+.button.primary {
     background: var(--accent-color);
     color: var(--on-accent-color);
 }
 
-.button.is-primary:hover {
-    background: var(--accent-hover-color);
-    color: var(--on-accent-color);
+.button.primary:hover {
+    background: var(--accent-color-hover);
+    text-decoration: none;
 }
 
-.button.is-secondary {
+.button.secondary {
     background: transparent;
-    border-color: var(--border-strong-color);
+    border-color: var(--secondary-button-border-color);
     color: var(--heading-color);
 }
 
-.button.is-secondary:hover {
-    background: var(--accent-soft-color);
+.button.secondary:hover {
+    background: var(--accent-color-soft);
     border-color: var(--accent-color);
     color: var(--heading-color);
-}
-
-.button.is-small {
-    padding: 6px 14px;
-    font-size: 0.8125rem;
-}
-
-/* ============================================================================
-   Quick facts, feature blurbs, code example
-=============================================================================== */
-
-.facts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 32px;
-    margin: 0 0 40px 0;
-    padding: 14px 0;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.facts div {
-    display: flex;
-    gap: var(--spacing-medium);
-    align-items: baseline;
-}
-
-.facts dt {
-    font-size: 0.8125rem;
-    color: var(--muted-color);
-}
-
-.facts dd {
-    margin: 0;
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--heading-color);
-}
-
-.facts dd a {
-    color: inherit;
     text-decoration: none;
 }
 
-.facts dd a:hover {
-    color: var(--accent-color);
-    text-decoration: underline;
-}
-
-.features {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 32px 40px;
-    margin-top: 72px;
-    padding-top: 40px;
-    border-top: 1px solid var(--border-color);
-}
-
-.feature h2 {
-    margin: 0 0 8px 0;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--heading-color);
-}
-
-.feature p {
-    margin: 0;
-    font-size: 0.875rem;
-    line-height: 1.7;
-}
-
-.next-step {
-    margin: 0;
-    max-width: 68ch;
-    font-size: 0.875rem;
-    line-height: 1.7;
-    color: var(--text-color);
-}
-
-.next-step a {
-    color: var(--accent-color);
-    text-decoration: none;
-}
-
-.next-step a:hover {
-    color: var(--accent-hover-color);
-    text-decoration: underline;
-}
-
-.section-title {
-    margin: 0 0 16px 0;
-    font-size: 1.0625rem;
-    font-weight: 700;
-    color: var(--heading-color);
+.button.small {
+    padding: 2px 14px;
+    font-size: var(--font-size-small);
 }
 
 .sidegrid-actions {
     margin-top: 10px;
 }
 
-/* ============================================================================
-   Right grid panel
-=============================================================================== */
-
+/* sidegrid */
 .sidegrid {
-    background-color: var(--modules-grid-bg);
+    background-color: var(--sidegrid-color);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: var(--spacing-medium);
     overflow: hidden;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .sidegrid-title {
     padding: 18px 28px;
-    font-size: 0.9375rem;
+    font-size: var(--font-size-subtitle);
     font-weight: 700;
     color: var(--heading-color);
     border-bottom: 1px solid var(--border-color);
@@ -237,48 +123,24 @@
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.sidegrid-list li:hover {
-    background-color: var(--accent-soft-color);
-    border-left-color: var(--accent-color);
-}
-
 .sidegrid-list li:last-child {
     border-bottom: none;
 }
 
 .sidegrid-label {
-    font-size: 0.9375rem;
+    font-size: var(--font-size-subtitle);
     font-weight: 400;
     color: var(--heading-color);
 }
 
-.sidegrid-label a {
-    color: var(--accent-color);
-    text-decoration: none;
-}
-
-.sidegrid-label a:hover {
-    color: var(--accent-hover-color);
-    text-decoration: underline;
-}
-
-.sidegrid-value {
-    font-size: 0.8125rem;
-    line-height: 1.65;
-    color: var(--text-color);
-}
-
-/* ==========================================================================
-   footer
-============================================================================= */
-
+/* footer */
 footer {
     border-top: 1px solid var(--border-color);
-    background-color: var(--modules-grid-bg);
-    padding: 56px var(--layout-padding) 28px var(--layout-padding);
+    background-color: var(--sidegrid-color);
+    padding: 56px var(--content-padding) 28px var(--content-padding);
     margin: 0 auto;
     margin-top: 80px;
-    max-width: 1240px;
+    max-width: var(--web-page-max-width);
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -307,17 +169,14 @@ footer {
 }
 
 .footer-title {
-    font-size: 1rem;
+    font-size: var(--font-size-subtitle);
     font-weight: 700;
-    letter-spacing: -0.01em;
     color: var(--heading-color);
 }
 
 .footer-desc {
     margin: 0;
-    font-size: 0.8125rem;
-    line-height: 1.7;
-    color: var(--muted-color);
+    color: var(--secondary-text-color);
 }
 
 .footer-links {
@@ -329,7 +188,6 @@ footer {
 .column-title {
     display: block;
     margin-bottom: 14px;
-    font-size: 0.875rem;
     font-weight: 700;
     color: var(--heading-color);
 }
@@ -346,12 +204,13 @@ footer {
 .column-links a {
     color: var(--text-color);
     text-decoration: none;
-    font-size: 0.8125rem;
     transition: color var(--transition-normal);
+    font-size: var(--font-side-footer-links);
 }
 
 .column-links a:hover {
     color: var(--accent-color);
+    text-decoration: none;
 }
 
 .footer-bottom {
@@ -361,73 +220,9 @@ footer {
     flex-wrap: wrap;
     gap: var(--spacing-medium);
     padding-top: 24px;
-    font-size: 0.75rem;
-    color: var(--muted-color);
+    color: var(--secondary-text-color);
 }
 
 .footer-bottom p {
     margin: 0;
-}
-
-/* ==========================================================================
-   Responsive
-============================================================================= */
-
-@media (max-width: 960px) {
-
-    .intro-grid,
-    .footer-top {
-        grid-template-columns: 1fr;
-        gap: 48px;
-    }
-
-    .intro-block {
-        max-width: none;
-    }
-
-    .features {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin-top: 48px;
-    }
-}
-
-@media (max-width: 600px) {
-    .features {
-        grid-template-columns: 1fr;
-        gap: 28px;
-    }
-
-    .content {
-        margin-top: calc(var(--nav-bar-height) + 40px);
-    }
-
-    /* Keep the documentation link; hide the rest to fit the bar */
-    .navbar-links a:not([href$="index.html"]) {
-        display: none;
-    }
-
-    .navbar-title {
-        font-size: 0.9rem;
-    }
-
-    .sidegrid-title,
-    .sidegrid-list li {
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    .sidegrid-list li {
-        padding-left: 17px;
-    }
-
-    .button.is-primary,
-    .button.is-secondary {
-        text-align: center;
-        flex: 1 1 auto;
-    }
-
-    .footer-bottom {
-        flex-direction: column;
-        align-items: flex-start;
-    }
 }

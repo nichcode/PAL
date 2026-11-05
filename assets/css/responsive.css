@@ -1,0 +1,63 @@
+
+@media (max-width: 960px) {
+
+    .intro-grid,
+    .footer-top {
+        grid-template-columns: 1fr;
+        gap: 48px;
+    }
+
+    .intro-section {
+        max-width: none;
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --content-padding: 20px;
+    }
+
+    .page-content {
+        margin-top: calc(var(--nav-bar-height) + 40px);
+    }
+
+    /* keep the documentation link; hide the rest to fit the bar */
+    .navbar-links a:not([href$="index.html"]) {
+        display: none;
+    }
+
+    .navbar-title {
+        font-size: 0.9rem;
+    }
+
+    .sidegrid-title,
+    .sidegrid-list li {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .sidegrid-list li {
+        padding-left: 17px;
+    }
+
+    .button.primary,
+    .button.secondary {
+        text-align: center;
+        flex: 1 1 auto;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    * {
+        transition: none !important;
+    }
+}
