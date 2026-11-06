@@ -6,7 +6,7 @@
     --secondary-text-color: #6f7e8e;
     --sidebar-color: #1c1e22;
     --navbar-color: rgba(13, 16, 20, 0.86);
-    --code-color: #0d0f11;
+    --code-color: #1b2027;
 
     --sidegrid-color: #13171d;
     --border-color: #232a33;
@@ -29,8 +29,11 @@
     --font-size-code: 14px;
     --font-size-title: 22px;
     --font-size-subtitle: 18px;
+
     --font-size-small: 12px;
-    --font-side-footer-links: 14px;
+    --font-size-sidebar: 15px;
+    --font-size-footer-links: 14px;
+    --font-size-searchbar: 14px;
 
     --border-radius-small: 4px;
     --border-radius-medium: 8px;
@@ -46,6 +49,9 @@
     --scrollbar-color: var(--separator-color);
 
     --web-page-max-width: 1240px;
+    --sidebar-width: 340px;
+    --reading-width: 96ch;
+    --seperator: 1px solid var(--border-color);
 
     --transition-fast: 0.15s ease;
     --transition-normal: 0.2s ease;
@@ -62,7 +68,7 @@ html.light-mode {
     --code-color: #f1f5f9;
 
     --sidegrid-color: #f1f5f9;
-    --border-color: #e2e8f0;
+    --border-color: #cbd5e1;
     --separator-color: #cbd5e1;
     --heading-color: #0f172a;
     --secondary-button-border-color: #cbd5e1;
@@ -89,7 +95,6 @@ html.light-mode {
 }
 
 * a:hover {
-    color: var(--accent-color-hover);
     text-decoration: underline;
 }
 
@@ -101,6 +106,7 @@ body {
     color: var(--text-color);
     background-color: var(--background-color);
     font-size: var(--font-size);
+    font-family: var(--font-family);
     margin: 0;
     padding: 0;
     line-height: var(--line-height);
@@ -136,7 +142,7 @@ body::-webkit-scrollbar-track {
     background-color: var(--navbar-color);
     backdrop-filter: saturate(140%) blur(14px);
     -webkit-backdrop-filter: saturate(140%) blur(14px);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: var(--seperator);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -163,7 +169,7 @@ body::-webkit-scrollbar-track {
 
 .navbar-logo .navbar-title {
     color: var(--heading-color);
-    font-weight: 700;
+    font-weight: 600;
     font-size: var(--font-size-title);
     margin: 0;
     white-space: nowrap;
@@ -184,7 +190,8 @@ body::-webkit-scrollbar-track {
 }
 
 .navbar-links a:hover {
-    color: var(--accent-color);
+    color: var(--heading-color);
+    background-color: var(--accent-color-soft);
 }
 
 .logo-img {
@@ -222,4 +229,17 @@ html.light-mode .logo-img {
     background-color: var(--accent-color-soft);
     border-color: var(--border-color);
     color: var(--heading-color);
+}
+
+/* inline code */
+.page-content p code,
+.page-content li code,
+.page-content td code,
+.page-content code {
+    background-color: var(--code-color);
+    border: var(--seperator);
+    padding: 3px 6px;
+    border-radius: var(--border-radius-small);
+    font-family: var(--font-family-monospace);
+    font-size: var(--font-size-code)
 }

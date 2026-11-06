@@ -305,17 +305,17 @@ def main():
     #         file.write_text(rendered, encoding="utf-8")
 
     # generate markdown pages
-    # for page in pages:
-    #     clean_page: Page = renderer.render_values(page)
-    #     rendered = renderer.render_page(clean_page)
+    for page in pages:
+        clean_page: Page = renderer.render_values(page)
+        rendered = renderer.render_page(clean_page)
 
-    #     file = html_dir / f"{page.id}.html"
-    #     if page.id == "indexpage":
-    #         file = html_dir / "index.html"
-    #     else:
-    #         clean_guides.append(clean_page)
+        file = html_dir / f"{page.id}.html"
+        if page.id == "indexpage":
+            file = html_dir / "index.html"
+        else:
+            clean_guides.append(clean_page)
 
-    #     file.write_text(rendered, encoding="utf-8")
+        file.write_text(rendered, encoding="utf-8")
 
     # generates website pages
     pages_dir = root_dir / "assets/pages"
@@ -339,11 +339,11 @@ def main():
     # file.write_text(rendered, encoding="utf-8")
 
     # build search data.
-    # variable = "window.PAL_SEARCH_INDEX"
-    # tmp = build_search_index(clean_guides, clean_modules)
-    # data = json.dumps(tmp, separators=(",", ":"))
-    # file = html_dir / "search-index.js"
-    # file.write_text(f"{variable}=" + data + ";\n", encoding="utf-8")
+    variable = "window.PAL_SEARCH_INDEX"
+    tmp = build_search_index(clean_guides, clean_modules)
+    data = json.dumps(tmp, separators=(",", ":"))
+    file = html_dir / "search-index.js"
+    file.write_text(f"{variable}=" + data + ";\n", encoding="utf-8")
 
     print(f"html files generated successfully")
 
