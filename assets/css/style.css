@@ -39,6 +39,8 @@
     --font-size-footer-links: 14px;
     --font-size-searchbar: 14px;
 
+    --font-size-indexlist-item: var(--font-size-subtitle);
+
     --border-radius-small: 4px;
     --border-radius-medium: 8px;
     --spacing-small: 5px;
@@ -104,7 +106,7 @@ a {
 a:hover {
     text-decoration: underline;
     text-decoration-color: var(--accent-color);
-    text-underline-offset: 4px;
+    text-underline-offset: 5px;
     text-decoration-thickness: 1.5px;
 }
 

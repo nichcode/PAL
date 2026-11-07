@@ -350,7 +350,8 @@ def main():
         rendered = renderer.render_page(page, False)
         if f.name == "index.html":
             modules_content = build_modules_grid(clean_modules)
-            rendered = rendered.replace("<!-- modules_grid -->", modules_content)
+            rendered = rendered.replace(
+                "<!-- modules_grid -->", modules_content)
 
         file = website_dir / f.name
         file.write_text(rendered, encoding="utf-8")

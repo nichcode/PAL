@@ -254,3 +254,28 @@ body {
     padding-top: 8px;
     padding-bottom: 5px;
 }
+
+/* indexlist */
+.indexlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.indexlist-item {
+    border-bottom: var(--separator);
+}
+
+.indexlist li:last-child {
+    border-bottom: none;
+}
+
+.indexlist-item a {
+    font-size: var(--font-size-indexlist-item);
+    font-weight: 600;
+}
+
+.indexlist-item p {
+    margin: 0;
+    padding-bottom: 20px;
+}

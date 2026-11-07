@@ -142,7 +142,7 @@ footer {
     position: relative;
     border-top: var(--separator);
     background-color: var(--sidegrid-color);
-    padding: 56px var(--content-padding) 28px var(--content-padding);
+    padding: 56px var(--content-padding) 20px var(--content-padding);
     margin: 0 auto;
     margin-top: 80px;
     max-width: var(--web-page-max-width);
