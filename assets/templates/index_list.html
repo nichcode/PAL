@@ -2,7 +2,13 @@
 <ul class="indexlist">
     {%- for item in items -%}
     <li class="indexlist-item">
-        <a href="{{ item.id }}.html">{{ item.name }}</a>
+        <a href="{{ item.id }}.html">
+        {%- if item.functions is defined -%}
+        {{ item.name ~ " Module"}}
+        {%- else -%}
+        {{ item.name}}
+        {%- endif -%}            
+        </a>
         <span>{{ item.brief }}</span>
     </li>
     {%- endfor -%}

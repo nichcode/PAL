@@ -225,7 +225,7 @@ body {
 .page-content-title {
     display: block;
     margin-top: var(--navbar-height);
-    padding-top: var(--spacing-extra-large);
+    padding-top: calc(var(--spacing-extra-large) + var(--spacing-extra-large));
     color: var(--heading-color);
     font-size: 225%;
     font-weight: 600;
@@ -236,7 +236,7 @@ body {
 .page-content {
     margin-top: 0;
     padding-bottom: calc(var(--spacing-extra-large) + var(--spacing-extra-large));
-    max-width: calc(var(--reading-width) + var(--content-padding) * 3);
+    max-width: var(--docs-page-max-width);
     grid-row: 2;
 }
 
@@ -247,12 +247,14 @@ body {
     color: var(--secondary-text-color);     
     margin-top: 24px;
     text-align: right;
+    padding-right: 0;
 }
 
 .copyright p {
     margin: 0;
     padding-top: 8px;
     padding-bottom: 5px;
+    padding-right: 0;
 }
 
 /* indexlist */
@@ -264,9 +266,14 @@ body {
 
 .indexlist-item {
     border-bottom: var(--separator);
+    padding-top: 16px;
 }
 
-.indexlist li:last-child {
+.indexlist-item:first-child {
+    padding-top: 0;
+}
+
+.indexlist-item:last-child {
     border-bottom: none;
 }
 
@@ -278,4 +285,65 @@ body {
 .indexlist-item p {
     margin: 0;
     padding-bottom: 20px;
+    color: var(--secondary-text-color);
+}
+
+.module-brief, 
+.module-include {
+    color: var(--secondary-text-color);
+}
+
+.section-heading {
+    font-size: 150%;
+    font-weight: 400;
+    color: var(--heading-color);
+    border-bottom: var(--separator);
+    padding-top: 30px;
+    padding-bottom: 6px;
+    scroll-margin-top: calc(var(--navbar-height) + 24px);
+}
+
+.section-entry {
+    padding: 14px 0;
+}
+
+.section-heading+.section-entry {
+    padding-top: 4px;
+}
+
+.section-entry+.section-heading {
+    margin-top: 14px;
+}
+
+.section-entry+.section-entry {
+    border-top: var(--separator)
+}
+
+.entry-signature pre {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: var(--font-family-monospace);
+}
+
+.entry-signature a {
+    color: var(--accent-color);
+    font-weight: 400;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.entry-signature a:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.entry-brief {
+    margin: 0;
+    color: var(--secondary-text-color);
+}
+
+.entry-brief p {
+    margin: 0;
 }

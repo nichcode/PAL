@@ -32,27 +32,29 @@
             <div class="sidebar-group">
                 <div class="sidebar-group-heading">
                     <button class="sidebar-group-arrow" aria-label="Toggle {{ module.name }}" aria-expanded="false"></button>
-                    <a href="{{ module.id }}.html">{{ module.name }}</a>
+                    <a href="{{ module.id }}.html">{{ module.name ~ " Module" }}</a>
                 </div>
 
-                {#- Empty groups are skipped. Each link jumps to its section on the module page
-                    (the section headings need matching ids: functions, structs, typedefs). -#}
                 <div class="sidebar-tree" hidden>
-                    {%- if module.functions -%}
-                    <div class="sidebar-tree-item"><a href="{{ module.id }}.html#functions">Functions</a></div>
-                    {%- endif -%}
+                    {%- for func in module.functions -%}
+                    <div class="sidebar-tree-item"><a href="{{ func.id }}.html">{{ func.name }}</a></div>
+                    {%- endfor -%}
 
-                    {%- if module.structs -%}
-                    <div class="sidebar-tree-item"><a href="{{ module.id }}.html#structs">Structs</a></div>
-                    {%- endif -%}
+                    {%- for struct in module.structs -%}
+                    <div class="sidebar-tree-item"><a href="{{ struct.id }}.html">{{ struct.name }}</a></div>
+                    {%- endfor -%}
 
-                    {%- if module.typedefs -%}
-                    <div class="sidebar-tree-item"><a href="{{ module.id }}.html#typedefs">Typedefs</a></div>
-                    {%- endif -%}
+                    {%- for typedef in module.typedefs -%}
+                    <div class="sidebar-tree-item"><a href="{{ typedef.id }}.html">{{ typedef.name }}</a></div>
+                    {%- endfor -%}
 
-                    {%- if module.constants or module.constant_groups -%}
-                    <div class="sidebar-tree-item"><a href="{{ module.id }}.html#constants">Constants</a></div>
-                    {%- endif -%}
+                    {%- for constant in module.constants -%}
+                    <div class="sidebar-tree-item"><a href="{{ module.id }}.html#{{ constant.id }}">{{ constant.name }}</a></div>
+                    {%- endfor -%}
+
+                    {%- for group in module.constant_groups -%}
+                    <div class="sidebar-tree-item"><a href="{{ group.id }}.html">{{ group.name }}</a></div>
+                    {%- endfor -%}
                 </div>
             </div>
         {%- endfor -%}
