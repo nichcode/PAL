@@ -28,7 +28,7 @@
 #include "pal_core.h"
 
 /**
- * @defgroup pal_system System Module
+ * @defgroup pal_system System
  * @brief Information about the CPU and the platform the application runs on.
  * @{
  */

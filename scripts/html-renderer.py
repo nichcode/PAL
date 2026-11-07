@@ -258,6 +258,29 @@ def build_search_index(guides: list[Page], modules: list[Module]) -> list[dict]:
     return entries
 
 
+def build_modules_grid(modules: list[Module]):
+    content = [
+        '<aside class="sidegrid">',
+        '<div class="sidegrid-title">Modules</div>',
+        '<ul class="sidegrid-list">'
+    ]
+
+    for module in modules:
+        content.extend([
+            '<li>',
+            f'<span class="sidegrid-label"><a href="{module.id}.html">{module.name}</a></span>',
+            f'<span class="sidegrid-value">{module.brief}</span>'
+            '</li>',
+        ])
+
+    content.extend([
+        '</ul>',
+        '</aside>'
+    ])
+
+    return "\n".join(content)
+
+
 def main():
     root_dir = Path(__file__).resolve().parents[1]
     website_dir = root_dir / "build/website"
@@ -272,13 +295,13 @@ def main():
     clean_guides: list[Page] = []
 
     # generate module pages
-    # for module in modules:
-    #     clean_module: Module = renderer.render_values(module)
-    #     rendered = renderer.render_module(clean_module)
-    #     clean_modules.append(clean_module)
+    for module in modules:
+        clean_module: Module = renderer.render_values(module)
+        rendered = renderer.render_module(clean_module)
+        clean_modules.append(clean_module)
 
-    #     file = html_dir / f"{module.id}.html"
-    #     file.write_text(rendered, encoding="utf-8")
+        file = html_dir / f"{module.id}.html"
+        file.write_text(rendered, encoding="utf-8")
 
     #     # generate function pages
     #     for func in clean_module.functions:
@@ -325,18 +348,22 @@ def main():
         page = Page("", match.group(1), "", text[match.end():])
 
         rendered = renderer.render_page(page, False)
+        if f.name == "index.html":
+            modules_content = build_modules_grid(clean_modules)
+            rendered = rendered.replace("<!-- modules_grid -->", modules_content)
+
         file = website_dir / f.name
         file.write_text(rendered, encoding="utf-8")
 
     # generate api_reference page
-    # rendered = renderer.render_index_list(clean_modules, "API Reference")
-    # file = html_dir / "api_reference.html"
-    # file.write_text(rendered, encoding="utf-8")
+    rendered = renderer.render_index_list(clean_modules, "API Reference")
+    file = html_dir / "api_reference.html"
+    file.write_text(rendered, encoding="utf-8")
 
     # generate guides page
-    # rendered = renderer.render_index_list(clean_guides, "Guides")
-    # file = html_dir / "guides.html"
-    # file.write_text(rendered, encoding="utf-8")
+    rendered = renderer.render_index_list(clean_guides, "Guides")
+    file = html_dir / "guides.html"
+    file.write_text(rendered, encoding="utf-8")
 
     # build search data.
     variable = "window.PAL_SEARCH_INDEX"

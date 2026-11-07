@@ -1,18 +1,22 @@
 :root {
     color-scheme: dark;
 
-    --background-color: #141619;
+    --background-color: #16181b;
     --text-color: #c7cbd1;
-    --secondary-text-color: #6f7e8e;
-    --sidebar-color: #1c1e22;
-    --navbar-color: rgba(13, 16, 20, 0.86);
-    --code-color: #1b2027;
+    --secondary-text-color: #7d8b9b;
+    --sidebar-color: #1e2125;
+    --navbar-color: rgba(22, 24, 27, 0.86);
+    --code-background-color: #262a2f;
 
-    --sidegrid-color: #13171d;
-    --border-color: #232a33;
-    --separator-color: #2d3540;
+    --sidegrid-color: #1e2125;
+    --border-color: #2c3036;
+    --separator-color: #363b42;
     --heading-color: #ffffff;
-    --secondary-button-border-color: #313a46;
+    --secondary-button-border-color: #363b42;
+
+    /* overlay for hover and selected states */
+    --overlay-color: rgba(255, 255, 255, 0.06);
+    --box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.35);
 
     --accent-color: #5eaaff;
     --accent-color-hover: #8cc2ff;
@@ -21,10 +25,10 @@
 
     --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
     --font-family-monospace: ui-monospace, SFMono-Regular, SFMono, Menlo, Consolas, Liberation Mono, monospace;
-    --line-height: 1.8em;
+    --line-height: 1.8;
     --font-size: 15.6px;
 
-    --font-size-medium: 16.6;
+    --font-size-medium: 16.6px;
     --font-size-navbar: 14.4px;
     --font-size-code: 14px;
     --font-size-title: 22px;
@@ -51,7 +55,7 @@
     --web-page-max-width: 1240px;
     --sidebar-width: 340px;
     --reading-width: 96ch;
-    --seperator: 1px solid var(--border-color);
+    --separator: 1px solid var(--border-color);
 
     --transition-fast: 0.15s ease;
     --transition-normal: 0.2s ease;
@@ -62,16 +66,19 @@ html.light-mode {
 
     --background-color: #ffffff;
     --text-color: #2f4153;
-    --secondary-text-color: #6f7e8e;
-    --sidebar-color: #f8fafc;
-    --navbar-color: rgba(248, 250, 252, 0.92);
-    --code-color: #f1f5f9;
+    --secondary-text-color: #5b6b7c;
+    --sidebar-color: #f8f9fb;
+    --navbar-color: rgba(255, 255, 255, 0.92);
+    --code-background-color: #f0f2f5;
 
-    --sidegrid-color: #f1f5f9;
-    --border-color: #cbd5e1;
-    --separator-color: #cbd5e1;
+    --sidegrid-color: #f8f9fb;
+    --border-color: #e3e6ea;
+    --separator-color: #d9dde3;
     --heading-color: #0f172a;
-    --secondary-button-border-color: #cbd5e1;
+    --secondary-button-border-color: #d9dde3;
+
+    --overlay-color: rgba(0, 0, 0, 0.05);
+    --box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.075);
 
     --accent-color: #0066cc;
     --accent-color-hover: #0052a3;
@@ -89,13 +96,16 @@ html.light-mode {
     border-radius: 2px;
 }
 
-* a {
+a {
     color: var(--accent-color);
     text-decoration: none;
 }
 
-* a:hover {
+a:hover {
     text-decoration: underline;
+    text-decoration-color: var(--accent-color);
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1.5px;
 }
 
 html {
@@ -122,7 +132,7 @@ body::-webkit-scrollbar {
 }
 
 body::-webkit-scrollbar-thumb {
-    background-color: transparent;
+    background-color: var(--scrollbar-color);
     border: var(--scrollbar-padding) solid transparent;
     border-radius: calc(var(--scrollbar-padding) + var(--scrollbar-padding));
     background-clip: padding-box;
@@ -142,7 +152,7 @@ body::-webkit-scrollbar-track {
     background-color: var(--navbar-color);
     backdrop-filter: saturate(140%) blur(14px);
     -webkit-backdrop-filter: saturate(140%) blur(14px);
-    border-bottom: var(--seperator);
+    border-bottom: var(--separator);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -185,13 +195,16 @@ body::-webkit-scrollbar-track {
     color: var(--text-color);
     text-decoration: none;
     padding: 6px 12px;
-    border-radius: var(--border-radius-small);
-    transition: color var(--transition-normal), background-color var(--transition-normal);
+    transition: color var(--transition-normal);
 }
 
 .navbar-links a:hover {
-    color: var(--heading-color);
-    background-color: var(--accent-color-soft);
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.navbar-logo a:hover {
+    text-decoration: none;
 }
 
 .logo-img {
@@ -226,7 +239,7 @@ html.light-mode .logo-img {
 }
 
 #theme-toggle:hover {
-    background-color: var(--accent-color-soft);
+    background-color: var(--overlay-color);
     border-color: var(--border-color);
     color: var(--heading-color);
 }
@@ -236,10 +249,10 @@ html.light-mode .logo-img {
 .page-content li code,
 .page-content td code,
 .page-content code {
-    background-color: var(--code-color);
-    border: var(--seperator);
+    background-color: var(--code-background-color);
+    border: var(--separator);
     padding: 3px 6px;
     border-radius: var(--border-radius-small);
     font-family: var(--font-family-monospace);
-    font-size: var(--font-size-code)
+    font-size: var(--font-size-code);
 }

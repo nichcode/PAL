@@ -1,4 +1,3 @@
-
 @media (max-width: 960px) {
 
     .intro-grid,
@@ -18,7 +17,7 @@
     }
 
     .page-content {
-        margin-top: calc(var(--nav-bar-height) + 40px);
+        margin-top: calc(var(--navbar-height) + 40px);
     }
 
     /* keep the documentation link; hide the rest to fit the bar */

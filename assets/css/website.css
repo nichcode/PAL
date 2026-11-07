@@ -91,8 +91,9 @@
 /* sidegrid */
 .sidegrid {
     background-color: var(--sidegrid-color);
-    border: var(--seperator);
-    border-radius: var(--spacing-medium);
+    border: var(--separator);
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--box-shadow);
     overflow: hidden;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
@@ -102,7 +103,7 @@
     font-size: var(--font-size-subtitle);
     font-weight: 600;
     color: var(--heading-color);
-    border-bottom: var(--seperator);
+    border-bottom: var(--separator);
 }
 
 .sidegrid-list {
@@ -118,8 +119,7 @@
     flex-direction: column;
     gap: 4px;
     padding: 18px 28px 18px 25px;
-    border-left: 3px solid transparent;
-    border-bottom: var(--seperator);
+    border-bottom: var(--separator);
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -133,10 +133,14 @@
     color: var(--heading-color);
 }
 
+.sidegrid-value p {
+    margin: 0;
+}
+
 /* footer */
 footer {
     position: relative;
-    border-top: var(--seperator);
+    border-top: var(--separator);
     background-color: var(--sidegrid-color);
     padding: 56px var(--content-padding) 28px var(--content-padding);
     margin: 0 auto;

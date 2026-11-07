@@ -24,7 +24,7 @@
  */
 
 /**
- * @defgroup pal_core Core Module
+ * @defgroup pal_core Core
  * @brief Result codes, memory allocation, logging, timing, shared library loading
  * and value packing utilities.
  * @{
