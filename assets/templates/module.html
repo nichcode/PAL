@@ -6,11 +6,21 @@
 {%- if module.functions -%}
 <div class="section-heading">Functions</div>
 {%- for func in module.functions -%}
-<div class="section-entry">
-    <div class="entry-signature">
-        <pre>{{ func.return_type }}<a href="{{ func.id }}.html" class="entry-name">{{ func.name }}</a> ({{ func.args }})</pre>
+<div class="section">
+    <div class="section-signature-function">
+        {%- if func.args is defined -%}
+        {%- if func.params|length > 1 -%}
+        {{ func.return_type }}<a href="{{ func.id }}.html" class="section-name">{{ func.name }}</a> (
+        {%- for param in func.params -%}
+        <span class="signature-line">{{ param.type }}<span class="param-name">{{ param.name }}</span>{% if not loop.last %},{% endif %}</span>
+        {%- endfor -%})
+        {%- else -%}
+        {{ func.return_type }}<a href="{{ func.id }}.html" class="section-name">{{ func.name }}</a> ({{ func.args }})
+        {%- endif -%}
+        {%- endif -%}
     </div>
-    <div class="entry-brief">
+
+    <div class="section-brief">
         {{ func.brief }}
     </div>
 </div>
@@ -21,11 +31,12 @@
 {%- if module.structs -%}
 <div class="section-heading">Structs</div>
 {%- for struct in module.structs -%}
-<div class="section-entry">
-    <div class="entry-signature">
-        <pre>struct <a href="{{ struct.id }}.html" class="entry-name">{{ struct.name }}</a></pre>
+<div class="section">
+    <div class="section-signature">
+        <pre>struct <a href="{{ struct.id }}.html">{{ struct.name }}</a></pre>
     </div>
-    <div class="entry-brief struct">
+
+    <div class="section-brief struct">
         {{ struct.brief }}
     </div>
 </div>
@@ -36,11 +47,11 @@
 {%- if module.typedefs -%}
 <div class="section-heading">Typedefs</div>
 {%- for typedef in module.typedefs -%}
-<div class="section-entry">
-    <div class="entry-signature">
-        <pre>typedef {{ typedef.type }} <a href="{{ typedef.id }}.html" class="entry-name">{{ typedef.name }}</a></pre>
+<div class="section">
+    <div class="section-signature">
+        <pre>typedef {{ typedef.type }} <a href="{{ typedef.id }}.html" class="section-name">{{ typedef.name }}</a></pre>
     </div>
-    <div class="entry-brief typedef">
+    <div class="section-brief typedef">
         {{ typedef.brief }}
     </div>
 </div>
@@ -52,11 +63,11 @@
 
 <!-- CONSTANTS SECTION -->
 {%- for constant in module.constants -%}
-<div class="section-entry", id="{{ constant.id }}">
-    <div class="entry-signature">
+<div class="section", id="{{ constant.id }}">
+    <div class="section-signature">
         <pre>#define {{ constant.name }} {{ constant.value }}</pre>
     </div>
-    <div class="entry-brief constant">
+    <div class="section-brief constant">
         {{ constant.description }}
     </div>
 </div>
@@ -64,14 +75,13 @@
 
 <!-- CONSTANT GROUPS SECTION -->
 {%- for group in module.constant_groups -%}
-<div class="section-entry">
-    <div class="entry-signature">
-        <pre><a href="{{ group.id }}.html" class="entry-name">{{ group.name }}</a></pre>
+<div class="section">
+    <div class="section-signature">
+        <pre><a href="{{ group.id }}.html" class="section-name">{{ group.name }}</a></pre>
     </div>
-    <div class="entry-brief constant_group">
+    <div class="section-brief constant_group">
         {{ group.brief }}
     </div>
 </div>
 {%- endfor -%}
-
 {%- endif -%}

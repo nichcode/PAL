@@ -1,15 +1,29 @@
 
 <div class="type-page">
     <div class="entry-signature">
-        <pre>
-        {%- if entry.args is defined -%}
-            {{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> ({{ entry.args }})
-        {%- elif entry.type is defined -%}
-            typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
-        {%- endif -%}
-        </pre>
+<pre><code>{%- if entry.args is defined -%}
+    {%- if entry.params|length > 1 -%}
+{{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> (
+        {%- for param in entry.params -%}
+    <span class="signature-line">{{ param.type }}<span class="param-name">{{ param.name }}</span>{% if not loop.last %},{% endif %}</span>
+        {%- endfor -%}
+)
+    {%- else -%}
+{{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> ({{ entry.args }})
+    {%- endif -%}
+{%- elif entry.fields is defined and entry.fields -%}
+struct <span class="entry-name">{{ entry.name }}</span> {
+    {%- for field in entry.fields -%}
+    <span class="signature-line">{{ field.type }} <span class="field-name">{{ field.name }}</span>{% if field.argsstring %}{{ field.argsstring }}{% endif %};</span>
+    {%- endfor -%}
+}
+{%- elif entry.type is defined -%}
+typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
+{%- endif -%}</code></pre>
     </div>
-    <div class="type-body">
+
+    <!-- PAGE_BODY -->
+     <div class="type-body">
         {%- if entry.brief -%}
         <div class="entry-brief"> {{ entry.brief }}</div>
         {%- endif -%}
@@ -22,11 +36,11 @@
 
         {%- if entry.params is defined and entry.params -%}
         <div class="sub-heading"><strong>Parameters</strong></div>
-        <div class="entry-list params">
+        <div class="parameter-list">
             {%- for param in entry.params -%}
             <div class="entry-row">
                 <span class="row-direction">[{{ param.direction }}]</span>
-                <code class="row-name">{{ param.name }}</code>
+                <span class="row-name">{{ param.name }}</span>
                 <span class="row-desc">{{ param.description }}</span>
             </div>
             {%- endfor -%}
@@ -35,21 +49,21 @@
 
         {%- if entry.fields is defined and entry.fields -%}
         <div class="sub-heading"><strong>Fields</strong></div>
-        <div class="entry-list fields">
+        <div class="field-list">
             {%- for field in entry.fields -%}
             <div class="entry-row">
-                <code class="row-name">{{ field.type }}</code>
-                <span class="row-desc"><strong>{{ field.name }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%}</strong> — {{ field.description }}</span>
+                <span class="row-name">{{ field.type }} {{ field.name }}{%- if field.argsstring -%}{{ field.argsstring }}{%- endif -%}</span>
+                <span class="row-desc">{{ field.description }}</span>
             </div>
             {%- endfor -%}
         </div>
         {%- endif -%}
 
         {%- if entry.constants is defined and entry.constants -%}
-        <div class="entry-list constants">
+        <div class="constant-list">
             {%- for item in entry.constants -%}
             <pre>#define {{ item.name }} {{ item.value }}</pre>
-            <p class="row-desc"> {{ item.description }}</p>
+            <!-- <p class="row-desc"> {{ item.description }}</p> -->
             {%- endfor -%}
         </div>
         {%- endif -%}
