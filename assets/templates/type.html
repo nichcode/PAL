@@ -1,15 +1,15 @@
-<div class="types-page" id="{{ entry.id }}">
+
+<div class="type-page">
     <div class="entry-signature">
         <pre>
         {%- if entry.args is defined -%}
-            <span class="type-keyword">{{ entry.return_type }}</span><span class="entry-name">{{ entry.name }}</span> ({{ entry.args }})
-
+            {{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> ({{ entry.args }})
         {%- elif entry.type is defined -%}
-            <span class="type-keyword">typedef</span> {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
+            typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
         {%- endif -%}
         </pre>
     </div>
-    <div class="types-body">
+    <div class="type-body">
         {%- if entry.brief -%}
         <div class="entry-brief"> {{ entry.brief }}</div>
         {%- endif -%}
@@ -22,7 +22,7 @@
 
         {%- if entry.params is defined and entry.params -%}
         <div class="sub-heading"><strong>Parameters</strong></div>
-        <div class="entry-list">
+        <div class="entry-list params">
             {%- for param in entry.params -%}
             <div class="entry-row">
                 <span class="row-direction">[{{ param.direction }}]</span>
@@ -33,41 +33,40 @@
         </div>
         {%- endif -%}
 
-
         {%- if entry.fields is defined and entry.fields -%}
         <div class="sub-heading"><strong>Fields</strong></div>
-        <div class="entry-list">
+        <div class="entry-list fields">
             {%- for field in entry.fields -%}
             <div class="entry-row">
                 <code class="row-name">{{ field.type }}</code>
-                <span class="row-desc">{{ field.name }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%} {{ field.description }}</span>
+                <span class="row-desc"><strong>{{ field.name }}{%- if field.argsstring -%}[{{ field.argsstring }}]{%- endif -%}</strong> — {{ field.description }}</span>
             </div>
             {%- endfor -%}
         </div>
         {%- endif -%}
 
         {%- if entry.constants is defined and entry.constants -%}
-        <div class="entry-list">
+        <div class="entry-list constants">
             {%- for item in entry.constants -%}
-            <pre><span class="type-keyword">#define</span> {{ item.name }} {{ item.value }}</pre>
+            <pre>#define {{ item.name }} {{ item.value }}</pre>
             <p class="row-desc"> {{ item.description }}</p>
             {%- endfor -%}
         </div>
         {%- endif -%}
 
         {%- if entry.thread_safety -%}
-        <div class="sub-heading"><strong>Thread Safety</strong></div>
-        <div>{{ entry.thread_safety | safe }}</div>
+        <div class="sub-heading"><strong>Thread safety</strong></div>
+        <div class="sub-heading-value">{{ entry.thread_safety | safe }}</div>
         {%- endif -%}
 
         {%- if entry.since -%}
         <div class="sub-heading"><strong>Since</strong></div>
-        <div>{{ entry.since | safe }}</div>
+        <div class="sub-heading-value">{{ entry.since | safe }}</div>
         {%- endif -%}
 
         {%- if entry.see -%}
-        <div class="sub-heading"><strong>See</strong></div>
-        <div id="see-entry">{{ entry.see | safe }}</div>
+        <div class="sub-heading"><strong>See also</strong></div>
+        <div class="sub-heading-value" id="see-entry">{{ entry.see | safe }}</div>
         {%- endif -%}
     </div>
 </div>

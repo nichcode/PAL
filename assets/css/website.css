@@ -21,7 +21,8 @@
     margin: 0 0 28px 0;
     color: var(--heading-color);
     font-size: var(--font-size-title);
-    font-weight: 600;
+    font-weight: 700;
+    line-height: 1.3;
 }
 
 .intro-desc p {
@@ -31,6 +32,7 @@
 
 .intro-desc p strong {
     color: var(--heading-color);
+    font-weight: 700;
 }
 
 .intro-lead {
@@ -52,7 +54,7 @@
     border-radius: var(--border-radius-small);
     border: 1px solid transparent;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
     transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
 }
 
@@ -101,7 +103,7 @@
 .sidegrid-title {
     padding: 18px 28px;
     font-size: var(--font-size-subtitle);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--heading-color);
     border-bottom: var(--separator);
 }
@@ -118,7 +120,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 18px 28px 18px 25px;
+    padding: 14px 28px;
     border-bottom: var(--separator);
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
@@ -128,9 +130,25 @@
 }
 
 .sidegrid-label {
-    font-size: var(--font-size-subtitle);
-    font-weight: 400;
-    color: var(--heading-color);
+    font-size: var(--font-size-medium); 
+    font-weight: 600;
+}
+
+.sidegrid-label a {
+    color: var(--accent-color);
+    text-decoration: none;
+    display: inline-block;
+    transition: color var(--transition-fast);
+}
+
+.sidegrid-label a:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.sidegrid-value {
+    font-size: var(--font-size-sidebar); 
+    color: var(--text-color);
 }
 
 .sidegrid-value p {
@@ -174,13 +192,14 @@ footer {
 
 .footer-title {
     font-size: var(--font-size-subtitle);
-    font-weight: 600;
+    font-weight: 700;
     color: var(--heading-color);
 }
 
 .footer-desc {
     margin: 0;
     color: var(--secondary-text-color);
+    font-size: var(--font-size-footer-links);
 }
 
 .footer-links {
@@ -192,7 +211,7 @@ footer {
 .column-title {
     display: block;
     margin-bottom: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--heading-color);
 }
 

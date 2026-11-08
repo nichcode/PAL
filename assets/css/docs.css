@@ -1,5 +1,43 @@
 
 /* requires style.css */
+pre, code {
+    font-family: var(--font-family-monospace);
+    font-size: 0.9em; 
+}
+
+/* Inline code tags inside prose paragraphs, lists, and tables */
+.page-content p code,
+.page-content li code,
+.page-content td code,
+.page-content code {
+    background-color: var(--code-background-color);
+    border: var(--separator);
+    padding: 3px 6px;
+    border-radius: var(--border-radius-small);
+}
+
+/* multi-line preformatted code blocks */
+pre {
+    display: block;
+    background-color: var(--code-background-color);
+    border: var(--separator);
+    border-radius: var(--border-radius-medium);
+    padding: var(--spacing-large);
+    margin: var(--spacing-extra-large) 0;
+    overflow-x: auto;
+    white-space: pre;
+}
+
+/* reset nested code tags within pre blocks */
+pre code {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 1em; 
+}
+
+/* sidebar */
 .sidebar {
     position: fixed;
     top: var(--navbar-height);
@@ -119,7 +157,7 @@
     font-size: 0.9rem;
 }
 
-/* sidebar search */
+/* search */
 .sidebar-search {
     position: sticky;
     top: 0;
@@ -156,7 +194,6 @@
     border-color: var(--accent-color);
 }
 
-/* while searching, the results replace the tree */
 .sidebar.is-searching>.sidebar-entry,
 .sidebar.is-searching>.sidebar-group {
     display: none;
@@ -288,43 +325,55 @@ body {
     color: var(--secondary-text-color);
 }
 
+/* module page */
 .module-brief, 
 .module-include {
     color: var(--secondary-text-color);
 }
 
 .section-heading {
-    font-size: 150%;
+    font-size: 130%;
     font-weight: 400;
     color: var(--heading-color);
     border-bottom: var(--separator);
     padding-top: 30px;
     padding-bottom: 6px;
-    scroll-margin-top: calc(var(--navbar-height) + 24px);
+}
+
+.section-entry .entry-signature {
+    background-color: var(--code-background-color);
+    border: var(--separator);
+    border-radius: var(--border-radius-medium);
+    padding: var(--spacing-large);
+    margin-bottom: var(--spacing-medium);
+    box-shadow: var(--box-shadow);
+}
+
+.section-entry .entry-signature pre {
+    margin: 0;
+    padding: 0 0 0 3ch;
+    background: none;
+    border: none;
+    font-family: var(--font-family-monospace);
+    font-size: var(--font-size-code);
+    line-height: 1.6;
+    color: var(--heading-color);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    text-indent: -3ch;
 }
 
 .section-entry {
     padding: 14px 0;
+    scroll-margin-top: var(--navbar-height); 
 }
 
-.section-heading+.section-entry {
-    padding-top: 4px;
+.section-entry + .section-entry {
+    border-top: none;
 }
 
-.section-entry+.section-heading {
-    margin-top: 14px;
-}
-
-.section-entry+.section-entry {
-    border-top: var(--separator)
-}
-
-.entry-signature pre {
-    margin: 0;
-    padding: 0;
-    background: none;
-    border: none;
-    font-family: var(--font-family-monospace);
+.section-heading + .section-entry {
+    padding-top: 14px;
 }
 
 .entry-signature a {
@@ -342,8 +391,169 @@ body {
 .entry-brief {
     margin: 0;
     color: var(--secondary-text-color);
+    padding-left: 60px;
+}
+
+.entry-brief.struct {
+    padding-left: 80px;
+}
+
+.entry-brief.typedef {
+    padding-left: 160px;
+}
+
+.entry-brief.constant {
+    padding-left: 90px;
+}
+
+.entry-brief.constant_group {
+    padding-left: 20px;
 }
 
 .entry-brief p {
+    margin: 0;
+}
+
+/* type page */
+.type-page .entry-signature {
+    background-color: var(--code-background-color);
+    border: var(--separator);
+    border-radius: var(--border-radius-medium);
+    padding: var(--spacing-large);
+    margin-bottom: var(--spacing-extra-large);
+    box-shadow: var(--box-shadow);
+}
+
+.type-page .entry-signature pre {
+    margin: 0;
+    padding: 0 0 0 3ch; 
+    background: none;
+    border: none;
+    font-family: var(--font-family-monospace);
+    font-size: var(--font-size-code);
+    line-height: 1.6;
+    color: var(--heading-color);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    text-indent: -3ch;
+}
+
+.type-page .entry-name {
+    color: var(--heading-color);
+    font-weight: 700;
+}
+
+.type-page .type-body {
+    margin-top: 20px;
+}
+
+.type-page .entry-brief {
+    padding-left: 0;
+}
+
+.type-page .entry-brief p {
+    margin: 0 0 4px 0;
+    max-width: var(--docs-page-max-width);
+    font-size: var(--font-size);
+    line-height: 1.7;
+    color: var(--text-color);
+}
+
+.type-page .sub-heading {
+    margin: 30px 0 8px 0;
+    font-size: var(--font-size-medium);
+    line-height: 1.3;
+    color: var(--heading-color);
+}
+
+.type-page .sub-heading-value {
+    padding-left: 40px;
+}
+
+.type-page .entry-list.params {
+    display: grid;
+    grid-template-columns: 4ch max-content minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 8px;
+    align-items: baseline;
+    padding-left: 40px;
+}
+
+.type-page .entry-list.fields {
+    display: grid;
+    grid-template-columns: 24ch minmax(0, 1fr);
+    column-gap: var(--spacing-large);
+    row-gap: 8px;
+    align-items: baseline;
+    padding-left: 40px;
+}
+
+.type-page .entry-row {
+    display: contents;
+}
+
+.type-page .entry-row * {
+    line-height: 1.4;
+    margin: 0;
+}
+
+.type-page .row-direction {
+    color: var(--secondary-text-color);
+    font-family: var(--font-family-monospace);
+}
+
+.type-page .row-name {
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: var(--font-size-code);
+    color: var(--heading-color);
+    overflow-wrap: anywhere;
+}
+
+.type-page .row-desc {
+    font-size: var(--font-size);
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+/* constants */
+.type-page .entry-list.constants {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-medium);
+}
+
+.type-page .entry-list.constants > pre {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: var(--font-family-monospace);
+    font-size: var(--font-size-code);
+    line-height: 1.6;
+    color: var(--heading-color);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.type-page .entry-list.constants > p.row-desc {
+    margin: 4px 0 0 0;
+    max-width: var(--docs-page-max-width);
+    font-size: var(--font-size);
+    color: var(--text-color);
+}
+
+.type-page .entry-list.constants > pre:not(:first-child) {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+.type-page .entry-desc {
+    padding-top: 6px;
+}
+
+#see-entry p {
     margin: 0;
 }

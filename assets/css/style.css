@@ -1,3 +1,28 @@
+
+@font-face {
+    font-family: 'Open Sans';
+    src: url('OpenSans-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    src: url('OpenSans-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'DejaVu Sans Mono';
+    src: url('DejaVuSansMono.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     color-scheme: dark;
 
@@ -23,14 +48,14 @@
     --accent-color-soft: rgba(94, 170, 255, 0.12);
     --on-accent-color: #08111f;
 
-    --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-    --font-family-monospace: ui-monospace, SFMono-Regular, SFMono, Menlo, Consolas, Liberation Mono, monospace;
-    --line-height: 27px;
+    --font-family: 'Open Sans', sans-serif;
+    --font-family-monospace: 'DejaVu Sans Mono', monospace;
+    --line-height: 1.6;
     --font-size: 15.6px;
 
     --font-size-medium: 16.6px;
     --font-size-navbar: 14.4px;
-    --font-size-code: 14px;
+    --font-size-code: 0.9em;
     --font-size-title: 22px;
     --font-size-subtitle: 18px;
 
@@ -67,7 +92,7 @@ html.light-mode {
     color-scheme: light;
 
     --background-color: #ffffff;
-    --text-color: #2f4153;
+    --text-color: #383f47;
     --secondary-text-color: #5b6b7c;
     --sidebar-color: #f8f9fb;
     --navbar-color: rgba(255, 255, 255, 0.92);
@@ -116,14 +141,14 @@ body {
     background-color: var(--background-color);
     font-size: var(--font-size);
     font-family: var(--font-family);
+    font-weight: 400;
     margin: 0;
     padding: 0;
     line-height: var(--line-height);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
 }
 
+/* scrollbar */
 body::-webkit-scrollbar {
     background: transparent;
     width: calc(var(--scrollbar-size) + var(--scrollbar-padding) + var(--scrollbar-padding));
@@ -241,17 +266,4 @@ html.light-mode .logo-img {
     background-color: var(--overlay-color);
     border-color: var(--border-color);
     color: var(--heading-color);
-}
-
-/* inline code */
-.page-content p code,
-.page-content li code,
-.page-content td code,
-.page-content code {
-    background-color: var(--code-background-color);
-    border: var(--separator);
-    padding: 3px 6px;
-    border-radius: var(--border-radius-small);
-    font-family: var(--font-family-monospace);
-    font-size: var(--font-size-code);
 }
