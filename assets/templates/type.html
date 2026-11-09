@@ -95,6 +95,11 @@
         <div class="sub-heading-value">{{ entry.thread_safety | safe }}</div>
         {%- endif -%}
 
+        {%- if entry.result_codes -%}
+        <div class="sub-heading"><strong>Possible result codes</strong></div>
+        <div class="sub-heading-value">{{ entry.result_codes | safe }}</div>
+        {%- endif -%}
+
         {%- if entry.since -%}
         <div class="sub-heading"><strong>Since</strong></div>
         <div class="sub-heading-value">{{ entry.since | safe }}</div>

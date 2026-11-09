@@ -68,6 +68,7 @@ class XMLParser:
 
         see: str | None = None
         returns: str | None = None
+        result_codes: str | None = None
         sections = self._parse_section(base)
 
         if sections.get("return"):
@@ -75,6 +76,9 @@ class XMLParser:
 
         if sections.get("see"):
             see = sections["see"]
+
+        if sections.get("result-codes"):
+            result_codes = sections["result-codes"]
 
         # Extract parameter documentation mapping
         param_docs = {}
@@ -120,6 +124,7 @@ class XMLParser:
             sections["thread-safety"],
             sections["since"],
             see,
+            result_codes,
             params
         )
 
@@ -391,6 +396,7 @@ class XMLParser:
     def _parse_section(self, detailed: ET.Element) -> dict:
         sections = {}
         see = []
+        result_codes = []
 
         for element in detailed.iter("simplesect"):
             kind = element.get("kind")
@@ -414,12 +420,29 @@ class XMLParser:
                         content=token))
 
             elif kind == "par":
-                tmp = self._convert_to_tokens(element)
-                parts = tmp.split(element.findtext("title").strip(), 1)
-                sections["thread-safety"] = parts[1]
+                title = element.findtext("title").strip()
+                if title == "Thread safety": # must match doxyfile alias
+                    tmp = self._convert_to_tokens(element)
+                    parts = tmp.split(title, 1)
+                    sections["thread-safety"] = parts[1]
+
+                elif title == "Result codes": # must match doxyfile alias
+                    if element.get("kind") != "par":
+                        continue
+
+                    if element.findtext("title").strip() != title:
+                        continue
+
+                    # now we have only result codes
+                    tmp = self._convert_to_tokens(element)
+                    parts = tmp.split(title, 1)
+                    result_codes.append(parts[1].strip())
 
         if see:
             sections["see"] = "\n".join(see).strip()
+
+        if result_codes:
+            sections["result-codes"] = "".join(result_codes).strip()
 
         return sections
 

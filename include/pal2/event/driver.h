@@ -86,8 +86,8 @@ typedef struct PalEventDriverCreateInfo {
  *
  * @Thread-safety `eventDriver` must be per thread.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
+ * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @since Added in version 2.0
  * @ingroup pal_event

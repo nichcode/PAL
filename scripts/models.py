@@ -71,6 +71,7 @@ class Function:
     thread_safety: str | None = None
     since: str = ""
     see: str | None = None
+    result_codes: str | None = None
     params: List[Param] = field(default_factory=list)
 
 
