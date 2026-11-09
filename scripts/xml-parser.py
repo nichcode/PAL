@@ -203,7 +203,11 @@ class XMLParser:
         name = memberdef.findtext("name")
         value = memberdef.findtext("initializer") or ""
 
-        description = self._convert_to_tokens(
+        brief = self._convert_to_tokens(
+            memberdef.find("briefdescription")
+        )
+
+        description = brief + self._convert_to_tokens(
             memberdef.find("detaileddescription")
         )
 
@@ -377,7 +381,10 @@ class XMLParser:
 
         # make relative path for sub module files
         if last_folder:
-            return f"{last_folder}/{filename}"
+            if last_folder == "pal2":
+                return f"{last_folder}/{filename}"
+            else:
+                return f"pal2/{last_folder}/{filename}"
 
         return filename
 
