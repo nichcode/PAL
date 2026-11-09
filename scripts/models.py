@@ -93,6 +93,8 @@ class Typedef:
     type: str
     brief: str = ""
     description: str = ""
+    since: str = ""
+    see: str | None = None
 
 
 @dataclass(slots=True)

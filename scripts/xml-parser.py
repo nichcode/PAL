@@ -180,11 +180,23 @@ class XMLParser:
         type_ = self._convert_to_tokens(memberdef.find("type"))
 
         brief = self._convert_to_tokens(memberdef.find("briefdescription"))
-        description = self._convert_to_tokens(
-            memberdef.find("detaileddescription")
-        )
+        base = memberdef.find("detaileddescription")
+        description = self._convert_to_tokens(base)
 
-        return Typedef(refid, name, type_, brief, description)
+        see: str | None = None
+        sections = self._parse_section(base)
+        if sections.get("see"):
+            see = sections["see"]
+
+        return Typedef(
+            refid, 
+            name, 
+            type_, 
+            brief, 
+            description,
+            sections["since"],
+            see
+        )
 
     def parse_constant(self, memberdef: ET.Element) -> Constant:
         """Parses a Doxygen constant into a data object."""
