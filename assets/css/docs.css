@@ -487,17 +487,17 @@ body {
 
 .type-page .entry-signature .entry-name {
     color: var(--heading-color);
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .type-page .entry-signature .param-name {
     color: var(--heading-color);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .type-page .entry-signature .field-name {
     color: var(--heading-color);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .type-page .type-body {
