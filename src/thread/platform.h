@@ -29,7 +29,6 @@
 #define THREAD_PLATFORM_H
 
 #include "pal2/pal_thread.h"
-#include <stdbool.h>
 
 /** This function has the same semantics and rules as 
  * palCreateThread()

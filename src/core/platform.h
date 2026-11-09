@@ -29,7 +29,6 @@
 #define CORE_PLATFORM_H
 
 #include "pal2/pal_core.h"
-#include <stdbool.h>
 
 /** 
  * A sensible default for native code format buffer size. It can be increased.
