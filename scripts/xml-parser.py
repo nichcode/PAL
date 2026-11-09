@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import re
 import os
 import pickle
 from pathlib import Path
@@ -91,15 +90,18 @@ class XMLParser:
 
         for param in memberdef.findall("param"):
             param_type = self._convert_to_tokens(param.find("type"))
-            param_name = (param.findtext("declname") or "").strip()
+            if "*" in param_type:
+                param_type = param_type.replace(" *", "* ")
+            else:
+                param_type += " "
 
+            param_name = (param.findtext("declname") or "").strip()
             direction, param_brief = param_docs.get(param_name, ("in", ""))
             params.append(
                 Param(param_name, param_type, direction, param_brief))
 
             if param_name:
-                full_arg = f"{param_type} {param_name}".replace(
-                    " *", "* ").replace("  ", " ")
+                full_arg = f"{param_type} {param_name}"
                 args_list.append(full_arg)
             else:
                 args_list.append(param_type)
@@ -143,8 +145,12 @@ class XMLParser:
         ):
             field_name = field.findtext("name")
             field_type = self._convert_to_tokens(field.find("type"))
-            argsstring = field.findtext("argsstring") or ""
+            if "*" in field_type:
+                field_type = field_type.replace(" *", "* ")
+            else:
+                field_type += " "
 
+            argsstring = field.findtext("argsstring") or ""
             field_description = self._convert_to_tokens(
                 field.find("detaileddescription")
             )
@@ -182,7 +188,6 @@ class XMLParser:
 
     def parse_constant(self, memberdef: ET.Element) -> Constant:
         """Parses a Doxygen constant into a data object."""
-        refid = memberdef.get("id")
         name = memberdef.findtext("name")
         value = memberdef.findtext("initializer") or ""
 
@@ -190,7 +195,7 @@ class XMLParser:
             memberdef.find("detaileddescription")
         )
 
-        return Constant(refid, name, value, description)
+        return Constant(memberdef.get("id"), name, value, description)
 
     def parse_constant_group(self, inner_group: ET.Element) -> ConstantGroup:
         """Parses a Doxygen group/constant group into a data object."""
@@ -308,12 +313,13 @@ class XMLParser:
             elif tag not in DOXYGEN_SKIP:
                 if tag in DOXYGEN_TOKENS:
                     token = DOXYGEN_TOKENS[tag]
-                    content = self._convert_to_tokens(child, False)
+                    content = self._convert_to_tokens(child, strip=False)
 
                     if token == "ref":
+                        refid = self._convert_ref(child.get("refid"))
                         parts.append(make_token(
                             "ref",
-                            target_id=child.get("refid"),
+                            target_id=refid,
                             content=content))
 
                     elif token == "callout":
@@ -336,11 +342,10 @@ class XMLParser:
                             parts.append(make_token(
                                 "para",
                                 content=content))
-
                     else:
                         parts.append(make_token(token, content=content))
                 else:
-                    parts.append(self._convert_to_tokens(child, False))
+                    parts.append(self._convert_to_tokens(child, strip=False))
 
             if child.tail:
                 parts.append(esc(child.tail))
@@ -398,6 +403,19 @@ class XMLParser:
             sections["see"] = "\n".join(see).strip()
 
         return sections
+
+    def _convert_ref(self, refid: str) -> str:
+        if "_1g" in refid:
+            module, id = refid.split("_1g", 1)
+            compounddef = self._load_compound(f"{module}")
+            target = f"{module}_1g{id}"
+            memberdef = compounddef.find(f".//memberdef[@id='{target}']")
+
+            kind = memberdef.get("kind")
+            if kind == "define":
+                return f"{module}@{refid}"
+
+        return refid
 
 
 def find_compounds(parser: XMLParser):

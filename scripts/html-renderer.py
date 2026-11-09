@@ -5,7 +5,7 @@ import html
 import pickle
 import re
 
-from dataclasses import is_dataclass, fields, replace
+from dataclasses import is_dataclass, fields
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -25,7 +25,7 @@ from models import (
 HTML_TEMPLATES = {
     "code": "<code>{content}</code>",
     "bold": "<strong>{content}</strong>",
-    "ref": '<a href="{target_id}.html">{content}</a>',
+    "ref": '<a href="{target_id}">{content}</a>',
     "codeblock": "<pre>{content}</pre>",
     "callout": '<div class="callout" type="{type}">{content}</div>',
     "table": "<table>{content}</table>",
@@ -184,6 +184,13 @@ class HTMLRenderer:
                 quote=True,
             )
 
+            tmp: str = fields["target_id"]
+            if "@" in tmp:
+                fields["target_id"] = tmp.replace("@", ".html#")
+            else:
+                fields["target_id"] = f"{tmp}.html"
+
+
         elif key == "link":
             url = fields["url"]
             parts = fields["content"].split(":", 1)
@@ -249,7 +256,7 @@ def build_search_index(guides: list[Page], modules: list[Module]) -> list[dict]:
 
         for constant in module.constants:
             add(constant.name, "constant", module.name,
-                f"{module.id}__constants.html#{constant.id}")
+                f"{module.id}.html#{constant.id}")
 
         for group in module.constant_groups:
             add(group.name, "constants", module.name,
@@ -268,7 +275,7 @@ def build_modules_grid(modules: list[Module]):
     for module in modules:
         content.extend([
             '<li>',
-            f'<span class="sidegrid-label"><a href="{module.id}.html">{module.name}</a></span>',
+            f'<span class="sidegrid-label"><a href="html/{module.id}.html">{module.name}</a></span>',
             f'<span class="sidegrid-value">{module.brief}</span>'
             '</li>',
         ])
@@ -279,7 +286,7 @@ def build_modules_grid(modules: list[Module]):
     ])
 
     return "\n".join(content)
-
+    
 
 def main():
     root_dir = Path(__file__).resolve().parents[1]

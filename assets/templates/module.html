@@ -1,6 +1,8 @@
 
 <span class="module-brief">{{ module.brief }}</span>
-<code class="module-include">#include &lt;{{ module.file }}&gt;</code>
+<div class="module-include">
+    <code>#include &lt;{{ module.file }}&gt;</code>
+</div>
 
 <!-- FUNCTIONS SECTION -->
 {%- if module.functions -%}
@@ -63,7 +65,7 @@
 
 <!-- CONSTANTS SECTION -->
 {%- for constant in module.constants -%}
-<div class="section", id="{{ constant.id }}">
+<div class="section" id="{{ constant.id }}">
     <div class="section-signature">
         <pre>#define {{ constant.name }} {{ constant.value }}</pre>
     </div>

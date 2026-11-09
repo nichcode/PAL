@@ -1,25 +1,37 @@
 
+{%- if entry.file is defined -%}
+<div class="type-include">
+    <code>#include &lt;{{ entry.file }}&gt;</code>
+</div>
+{%- endif -%}
+
 <div class="type-page">
-    <div class="entry-signature">
-<pre><code>{%- if entry.args is defined -%}
-    {%- if entry.params|length > 1 -%}
-{{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> (
-        {%- for param in entry.params -%}
-    <span class="signature-line">{{ param.type }}<span class="param-name">{{ param.name }}</span>{% if not loop.last %},{% endif %}</span>
-        {%- endfor -%}
-)
+    {%- if entry.constants is defined -%}
+    <!-- Skip for constants -->
+
     {%- else -%}
-{{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> ({{ entry.args }})
+    <div class="entry-signature">
+    <pre><code>{%- if entry.args is defined -%}
+        {%- if entry.params|length > 1 -%}
+    {{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> (
+            {%- for param in entry.params -%}
+        <span class="signature-line">{{ param.type }}<span class="param-name">{{ param.name }}</span>{% if not loop.last %},{% endif %}</span>
+            {%- endfor -%}
+    )
+        {%- else -%}
+    {{ entry.return_type }}<span class="entry-name">{{ entry.name }}</span> ({{ entry.args }})
+        {%- endif -%}
+    {%- elif entry.fields is defined and entry.fields -%}
+    struct <span class="entry-name">{{ entry.name }}</span> {
+        {%- for field in entry.fields -%}
+        <span class="signature-line">{{ field.type }}<span class="field-name">{{ field.name }}</span>{% if field.argsstring %}{{ field.argsstring }}{% endif %};</span>
+        {%- endfor -%}
+    }
+    {%- elif entry.type is defined -%}
+    typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
+    {%- endif -%}</code></pre>
+
     {%- endif -%}
-{%- elif entry.fields is defined and entry.fields -%}
-struct <span class="entry-name">{{ entry.name }}</span> {
-    {%- for field in entry.fields -%}
-    <span class="signature-line">{{ field.type }} <span class="field-name">{{ field.name }}</span>{% if field.argsstring %}{{ field.argsstring }}{% endif %};</span>
-    {%- endfor -%}
-}
-{%- elif entry.type is defined -%}
-typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
-{%- endif -%}</code></pre>
     </div>
 
     <!-- PAGE_BODY -->
@@ -35,7 +47,9 @@ typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
         {%- endif -%}
 
         {%- if entry.params is defined and entry.params -%}
+        {%- if entry.params[0].type != "void" -%}
         <div class="sub-heading"><strong>Parameters</strong></div>
+
         <div class="parameter-list">
             {%- for param in entry.params -%}
             <div class="entry-row">
@@ -45,6 +59,7 @@ typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
             </div>
             {%- endfor -%}
         </div>
+        {%- endif -%}
         {%- endif -%}
 
         {%- if entry.fields is defined and entry.fields -%}
@@ -62,8 +77,15 @@ typedef {{ entry.type }} <span class="entry-name">{{ entry.name }}</span>
         {%- if entry.constants is defined and entry.constants -%}
         <div class="constant-list">
             {%- for item in entry.constants -%}
-            <pre>#define {{ item.name }} {{ item.value }}</pre>
-            <!-- <p class="row-desc"> {{ item.description }}</p> -->
+            <div class="section">
+                <div class="section-signature">
+                    <pre>#define {{ item.name }} {{ item.value }}</pre>
+                </div>
+
+                <div class="section-brief constant">
+                    {{ item.description }}
+                </div>
+            </div>
             {%- endfor -%}
         </div>
         {%- endif -%}
