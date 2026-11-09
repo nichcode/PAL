@@ -956,6 +956,8 @@ WARN_LOGFILE           = ../build/doxygen.log
 
 INPUT                  = ../include/pal2/pal_core.h \
                          ../include/pal2/core \
+                         ../include/pal2/pal_event.h \
+                         ../include/pal2/event \
                          ../include/pal2/pal_system.h \
                          guides/getting_started.md \
                          guides/event_payload.md \

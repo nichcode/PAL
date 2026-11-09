@@ -1,6 +1,7 @@
 
 /**
  * @file library.h
+ * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
