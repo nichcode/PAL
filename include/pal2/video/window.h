@@ -86,9 +86,7 @@
  * feature to be supported.
  *
  * The following flash flags require:
- *
  * - @ref PAL_FLASH_FLAG_CAPTION - @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION feature to be supported
- *
  * - @ref PAL_FLASH_FLAG_TRAY - @ref PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY feature to be supported
  *
  * Uninitialized fields may result in undefined behavior.
@@ -130,17 +128,11 @@ typedef struct PalWindowHandleInfo {
  * and the initial state of the window is not @ref PAL_WINDOW_STATE_NORMAL.
  *
  * The following window styles require:
- *
  * - @ref PAL_WINDOW_STYLE_TRANSPARENT - @ref PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW feature to be supported
- *
  * - @ref PAL_WINDOW_STYLE_TOPMOST - @ref PAL_VIDEO_FEATURE_TOPMOST_WINDOW feature to be supported
- *
  * - @ref PAL_WINDOW_STYLE_NO_MINIMIZEBOX - @ref PAL_VIDEO_FEATURE_NO_MINIMIZEBOX feature to be supported
- *
  * - @ref PAL_WINDOW_STYLE_NO_MAXIMIZEBOX - @ref PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX feature to be supported
- *
  * - @ref PAL_WINDOW_STYLE_TOOL - @ref PAL_VIDEO_FEATURE_TOOL_WINDOW feature to be supported
- *
  * - @ref PAL_WINDOW_STYLE_BORDERLESS - @ref PAL_VIDEO_FEATURE_BORDERLESS_WINDOW feature to be supported
  *
  * Uninitialized fields may result in undefined behavior.
@@ -191,22 +183,18 @@ typedef struct PalWindowCreateInfo {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  * 
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @note On `Wayland`:
- *
  * - Creating non-resizable windows is not supported. It will be ignored.
- *
  * - Creating windows on a specific monitor is not supported.
- *
  * - Creating hidden windows is not supported. It will be ignored.
  *
  * On `Win32`:
- *
  * - Creating non-resizable windows also removes the maximize box.
  *
  * @since Added in version 2.0
@@ -226,7 +214,7 @@ PAL_API PalResult PAL_CALL palCreateWindow(
  *
  * @param[in] window The window to destroy.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -244,7 +232,7 @@ PAL_API void PAL_CALL palDestroyWindow(PalWindow* window);
  *
  * @param[in] window Window to minimize.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -263,7 +251,7 @@ PAL_API void PAL_CALL palMinimizeWindow(PalWindow* window);
  *
  * @param[in] window Window to maximize.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -282,7 +270,7 @@ PAL_API void PAL_CALL palMaximizeWindow(PalWindow* window);
  *
  * @param[in] window Window to restore.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @note Wayland does not support restoring a minimized window.
  *
@@ -303,7 +291,7 @@ PAL_API void PAL_CALL palRestoreWindow(PalWindow* window);
  *
  * @param[in] window Window to show.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -321,7 +309,7 @@ PAL_API void PAL_CALL palShowWindow(PalWindow* window);
  *
  * @param[in] window Window to hide.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -339,7 +327,7 @@ PAL_API void PAL_CALL palHideWindow(PalWindow* window);
  * @param[in] window Window to flash.
  * @param[in] info Window flash parameters.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -367,10 +355,10 @@ PAL_API void PAL_CALL palFlashWindow(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  * 
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -396,10 +384,10 @@ PAL_API PalResult PAL_CALL palAttachWindow(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  * 
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
- * @Result-code @ref PAL_RESULT_CODE_INVALID_HANDLE
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ * @result-code @ref PAL_RESULT_CODE_INVALID_HANDLE
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -420,7 +408,7 @@ PAL_API PalResult PAL_CALL palDetachWindow(
  * @param[in] window Window to get its style.
  * @param[out] style Output to receive the window style.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -440,7 +428,7 @@ PAL_API void PAL_CALL palGetWindowStyle(
  * @param[in] window Window to get its monitor.
  * @param[out] monitor Output handle to receive the monitor.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -466,7 +454,7 @@ PAL_API void PAL_CALL palGetWindowMonitor(
  * @param[out] size Output to receive the size of the window title in bytes, or `nullptr` to ignore it.
  * @param[out] buffer Output buffer to receive the window title, or `nullptr` to get its size.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -492,7 +480,7 @@ PAL_API void PAL_CALL palGetWindowTitle(
  * @param[out] x Output to receive the window x position, or `nullptr` to ignore it.
  * @param[out] y Output to receive the window y position, or `nullptr` to ignore it.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -515,7 +503,7 @@ PAL_API void PAL_CALL palGetWindowPos(
  * @param[out] width Output to receive the window width, or `nullptr` to ignore it.
  * @param[out] height Output to receive the window height, or `nullptr` to ignore it.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -536,7 +524,7 @@ PAL_API void PAL_CALL palGetWindowSize(
  * @param[in] window Window to get its state.
  * @param[out] state Output to receive the window state.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -554,7 +542,7 @@ PAL_API void PAL_CALL palGetWindowState(
  * @param[in] window Window to check its visibility.
  * @return `PAL_TRUE` if the window is visible, otherwise `PAL_FALSE`.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -565,13 +553,12 @@ PAL_API PalBool PAL_CALL palIsWindowVisible(PalWindow* window);
  * @brief Gets the input-focused window.
  *
  * This function gets the window that currently has keyboard or mouse input focus within
- * the application.
- * @ref PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS feature must be
+ * the application. @ref PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS feature must be
  * supported or this function results in undefined behavior.
  *
  * @return Input-focused window on success, or `nullptr` on failure.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -584,14 +571,11 @@ PAL_API PalWindow* PAL_CALL palGetFocusWindow(void);
  * @param[in] window Window to get its native handles.
  * @param[out] info Output struct to receive the window handle information.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @note On `Wayland`:
- *
  * - info->nativeHandle1 is `xdg_surface`.
- *
  * - info->nativeHandle2 is `xdg_toplevel`.
- *
  * - info->nativeHandle3 is `wl_egl_window`.
  *
  * @since Added in version 2.0
@@ -612,7 +596,7 @@ PAL_API void PAL_CALL palGetWindowHandleInfo(
  * @param[in] window Window to set its opacity.
  * @param[in] opacity Window opacity in the range `0.0` to `1.0`.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -630,7 +614,7 @@ PAL_API void PAL_CALL palSetWindowOpacity(
  * @param[in] window Window to set its style.
  * @param[in] style Window style to set.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -651,7 +635,7 @@ PAL_API void PAL_CALL palSetWindowStyle(
  * @param[in] window Window to set its title.
  * @param[in] title Window title (NULL-terminated, UTF-8 encoded).
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -675,7 +659,7 @@ PAL_API void PAL_CALL palSetWindowTitle(
  * @param[in] x X coordinate of the window.
  * @param[in] y Y coordinate of the window.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -699,7 +683,7 @@ PAL_API void PAL_CALL palSetWindowPos(
  * @param[in] width Width of the window.
  * @param[in] height Height of the window.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -721,7 +705,7 @@ PAL_API void PAL_CALL palSetWindowSize(
  *
  * @param[in] window Window to request input-focus for.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video

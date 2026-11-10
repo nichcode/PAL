@@ -36,7 +36,7 @@
  * @param[in] high High 32-bit unsigned integer.
  * @return Combined 64-bit unsigned integer.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -57,7 +57,7 @@ static inline uint64_t PAL_CALL palPackUint32(
  * @param[in] high High 32-bit signed integer.
  * @return Combined 64-bit unsigned integer.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -77,7 +77,7 @@ static inline uint64_t PAL_CALL palPackInt32(
  * @param[in] ptr Pointer to pack.
  * @return Packed 64-bit unsigned integer.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -96,7 +96,7 @@ static inline uint64_t PAL_CALL palPackPointer(void* ptr)
  * @param[in] high High float value.
  * @return Combined 64-bit unsigned integer.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -126,7 +126,7 @@ static inline uint64_t PAL_CALL palPackFloat(
  * @param[out] low Output to receive the low value, or `nullptr` to ignore it.
  * @param[out] high Output to receive the high value, or `nullptr` to ignore it.
  *
- * @Thread-safety `low` and `high` must be per thread.
+ * @thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -154,7 +154,7 @@ static inline void PAL_CALL palUnpackUint32(
  * @param[out] low Output to receive the low value, or `nullptr` to ignore it.
  * @param[out] high Output to receive the high value, or `nullptr` to ignore it.
  *
- * @Thread-safety `low` and `high` must be per thread.
+ * @thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -181,7 +181,7 @@ static inline void PAL_CALL palUnpackInt32(
  * @param[in] data 64-bit unsigned integer.
  * @return Pointer unpacked from the 64-bit unsigned integer.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -200,7 +200,7 @@ static inline void* PAL_CALL palUnpackPointer(uint64_t data)
  * @param[out] low Output to receive the low value, or `nullptr` to ignore it.
  * @param[out] high Output to receive the high value, or `nullptr` to ignore it.
  *
- * @Thread-safety `low` and `high` must be per thread.
+ * @thread-safety `low` and `high` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core

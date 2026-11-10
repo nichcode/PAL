@@ -30,7 +30,6 @@
 
 /**
  * @brief Function completed successfully result value.
- * 
  * @ingroup pal_core
  */
 #define PAL_RESULT_SUCCESS 0
@@ -38,7 +37,6 @@
 /**
  * @defgroup result_codes Result Codes
  * @brief Defines result codes of a result value.
- * 
  * @ingroup pal_core
  * @{
  */
@@ -58,7 +56,6 @@
 /**
  * @defgroup result_sources Result Sources
  * @brief Defines result sources of a result value.
- * 
  * @ingroup pal_core
  * @{
  */
@@ -82,7 +79,7 @@
  * @param[in] bufferSize Size of `buffer` in bytes.
  * @param[out] buffer Output buffer to write to.
  *
- * @Thread-safety `buffer` must be per thread.
+ * @thread-safety `buffer` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -98,7 +95,7 @@ PAL_API void PAL_CALL palFormatResult(
  * @param[in] result Result value.
  * @return Result code.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -117,7 +114,7 @@ static inline PalResultCode PAL_CALL palGetResultCode(PalResult result)
  * @param[in] result Result value.
  * @return Result source.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -136,7 +133,7 @@ static inline PalResultSource PAL_CALL palGetResultSource(PalResult result)
  * @param[in] result Result value.
  * @return Result native code.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -163,7 +160,7 @@ static inline uint32_t PAL_CALL palGetResultNativeCode(PalResult result)
  * @param[in] nativeCode Native code.
  * @return Created result value.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core

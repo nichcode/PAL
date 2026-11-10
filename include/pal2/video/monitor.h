@@ -103,10 +103,10 @@ typedef struct PalMonitorMode {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  * 
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -127,7 +127,7 @@ PAL_API PalResult PAL_CALL palEnumerateMonitors(
  *
  * @param[out] monitor Output to receive the monitor.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -142,7 +142,7 @@ PAL_API void PAL_CALL palGetPrimaryMonitor(PalMonitor** monitor);
  * @param[in] monitor Monitor to get its information.
  * @param[out] info Output struct to receive the monitor information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -173,7 +173,7 @@ PAL_API void PAL_CALL palGetMonitorInfo(
  * @param[in, out] count Capacity of the monitor display mode array.
  * @param[out] modes Monitor display mode array.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -192,7 +192,7 @@ PAL_API void PAL_CALL palEnumerateMonitorModes(
  * @param[in] monitor Monitor to get its current display mode.
  * @param[out] mode Output struct to receive the display mode.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -217,10 +217,10 @@ PAL_API void PAL_CALL palGetCurrentMonitorMode(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  * 
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -245,10 +245,10 @@ PAL_API PalResult PAL_CALL palSetMonitorMode(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -271,10 +271,10 @@ PAL_API PalResult PAL_CALL palValidateMonitorMode(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  * 
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_video

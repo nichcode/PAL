@@ -31,21 +31,18 @@
 #ifdef __cplusplus
 /**
  * @brief C linkage when compiled as C++.
- * 
  * @ingroup pal_core
  */
 #define PAL_EXTERN_C extern "C"
 #else
 /**
  * @brief Empty when compiled as C.
- * 
  * @ingroup pal_core
  */
 #define PAL_EXTERN_C
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ <= 201710L
 /**
  * @brief A value representing `NULL`.
- * 
  * @ingroup pal_core
  */
 #define nullptr ((void*)0)
@@ -55,21 +52,18 @@
 #ifdef _WIN32
 /**
  * @brief Calling convention of PAL functions and callbacks.
- * 
  * @ingroup pal_core
  */
 #define PAL_CALL __stdcall
 #ifdef _PAL_EXPORT
 /**
  * @brief Exports symbols when building the PAL shared library.
- * 
  * @ingroup pal_core
  */
 #define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllexport)
 #else
 /**
  * @brief Imports symbols from the PAL shared library.
- * 
  * @ingroup pal_core
  */
 #define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport)
@@ -77,21 +71,18 @@
 #else
 /**
  * @brief Calling convention of PAL functions and callbacks.
- * 
  * @ingroup pal_core
  */
 #define PAL_CALL
 #ifdef _PAL_EXPORT
 /**
  * @brief Exports symbols when building the PAL shared library.
- * 
  * @ingroup pal_core
  */
 #define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default")))
 #else
 /**
  * @brief Imports symbols from the PAL shared library.
- * 
  * @ingroup pal_core
  */
 #define PAL_DECLSPEC PAL_EXTERN_C
@@ -101,14 +92,12 @@
 #ifdef _PAL_BUILD_DLL
 /**
  * @brief Marks a function as part of the PAL API
- * 
  * @ingroup pal_core
  */
 #define PAL_API PAL_EXTERN_C PAL_DECLSPEC
 #else
 /**
  * @brief Marks a function as part of the PAL API
- * 
  * @ingroup pal_core
  */
 #define PAL_API PAL_EXTERN_C
@@ -117,14 +106,12 @@
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 /**
  * @brief `1` if the target platform is big-endian.
- * 
  * @ingroup pal_core
  */
 #define PAL_BIG_ENDIAN 1
 #else
 /**
  * @brief `0` if the target platform is little-endian.
- * 
  * @ingroup pal_core
  */
 #define PAL_BIG_ENDIAN 0
@@ -132,21 +119,18 @@
 
 /**
  * @brief A value representing boolean true or `1`.
- * 
  * @ingroup pal_core
  */
 #define PAL_TRUE 1
 
 /**
  * @brief A value representing boolean false or `0`.
- * 
  * @ingroup pal_core
  */
 #define PAL_FALSE 0
 
 /**
  * @brief A value representing infinite time or number.
- * 
  * @ingroup pal_core
  */
 #define PAL_INFINITE UINT32_MAX

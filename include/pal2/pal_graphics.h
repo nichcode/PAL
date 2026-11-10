@@ -3432,10 +3432,10 @@ typedef struct PalGraphicsBackendVtable2 {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety Must only be called from the main thread.
+ * @thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3455,7 +3455,7 @@ PAL_API PalResult PAL_CALL palInitGraphics(
  * destroyed before this call. If the graphics system has not been initialized, the
  * function returns silently.
  *
- * @Thread-safety Must only be called from the main thread.
+ * @thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3488,10 +3488,10 @@ PAL_API void PAL_CALL palShutdownGraphics();
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
- * @Thread-safety Must only be called from the main thread.
+ * @thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3506,7 +3506,7 @@ PAL_API PalResult PAL_CALL palEnumerateAdapters(
  * @param[in] adapter Adapter to get its information.
  * @param[out] info Output struct to receive the adapter information.
  *
- * @Thread-safety `info` must be per thread.
+ * @thread-safety `info` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3523,7 +3523,7 @@ PAL_API void PAL_CALL palGetAdapterInfo(
  * @param[in] adapter Adapter to get its capabilities.
  * @param[out] caps Output struct to receive the adapter capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3540,7 +3540,7 @@ PAL_API void PAL_CALL palGetAdapterCapabilities(
  * @param[in] adapter Adapter to get its features.
  * @return Adapter features on success or `0` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3564,7 +3564,7 @@ PAL_API PalAdapterFeatures PAL_CALL palGetAdapterFeatures(PalAdapter* adapter);
  * @param[in] shaderFormat Shader format. Must only have a single bit set.
  * @return Highest supported shader target, or `0` if the format is unsupported.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3591,10 +3591,10 @@ PAL_API uint32_t PAL_CALL palGetHighestSupportedShaderTarget(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `adapter` must be externally synchronized.
+ * @thread-safety `adapter` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3613,7 +3613,7 @@ PAL_API PalResult PAL_CALL palCreateDevice(
  *
  * @param[in] device Pointer to the device to destroy.
  *
- * @Thread-safety the adapter used to create the device must be externally synchronized.
+ * @thread-safety the adapter used to create the device must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3631,7 +3631,7 @@ PAL_API void PAL_CALL palDestroyDevice(PalDevice* device);
  * @param[in] device The device.
  * @return Backend-specific native device lost reason code.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3653,10 +3653,10 @@ PAL_API uint32_t PAL_CALL palGetDeviceLostReason(PalDevice* device);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
- * @Thread-safety `device` must be externally synchronized and `memory` must be per thread.
+ * @thread-safety `device` must be externally synchronized and `memory` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3677,7 +3677,7 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  *
  * @param[in] memory Memory to free.
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3695,7 +3695,7 @@ PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
  * @param[in] device Device to get its sampler anisotropy capabilities.
  * @param[out] caps Output struct to recieve the sampler anisotropy capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3713,7 +3713,7 @@ PAL_API void PAL_CALL palQuerySamplerAnisotropyCapabilities(
  * @param[in] device Device to get its multi view capabilities.
  * @param[out] caps Output struct to recieve the multi view capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3731,7 +3731,7 @@ PAL_API void PAL_CALL palQueryMultiViewCapabilities(
  * @param[in] device Device to get its multi viewport capabilities.
  * @param[out] caps Output struct to recieve the multi viewport capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3749,7 +3749,7 @@ PAL_API void PAL_CALL palQueryMultiViewportCapabilities(
  * @param[in] device Device to get its depth stencil capabilities.
  * @param[out] caps Output struct to recieve the depth stencil capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3767,7 +3767,7 @@ PAL_API void PAL_CALL palQueryDepthStencilCapabilities(
  * @param[in] device Device to get its fragment shading rate capabilities.
  * @param[out] caps Output struct to recieve the fragment shading rate capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3785,7 +3785,7 @@ PAL_API void PAL_CALL palQueryFragmentShadingRateCapabilities(
  * @param[in] device Device to get its mesh shader capabilities.
  * @param[out] caps Output struct to recieve the mesh shader capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3803,7 +3803,7 @@ PAL_API void PAL_CALL palQueryMeshShaderCapabilities(
  * @param[in] device Device to get its ray tracing capabilities.
  * @param[out] caps Output struct to recieve the ray tracing capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3821,7 +3821,7 @@ PAL_API void PAL_CALL palQueryRayTracingCapabilities(
  * @param[in] device Device to get its bindless/descriptor indexing capabilities.
  * @param[out] caps Output struct to recieve the bindless/descriptor indexing capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3849,10 +3849,10 @@ PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_INVALID_OPERATION
  *
- * @Thread-safety `device` must be externally synchronized and `queue` must be per thread.
+ * @thread-safety `device` must be externally synchronized and `queue` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3869,7 +3869,7 @@ PAL_API PalResult PAL_CALL palCreateQueue(
  *
  * @param[in] queue Queue to destroy.
  *
- * @Thread-safety the device used to create the queue must be externally synchronized.
+ * @thread-safety the device used to create the queue must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3885,7 +3885,7 @@ PAL_API void PAL_CALL palDestroyQueue(PalQueue* queue);
  * @param[in] surface Surface to check presentation support for.
  * @return `PAL_TRUE` if the queue supports presentation to `surface` otherwise `PAL_FALSE`.
  *
- * @Thread-safety Must only be called from the main thread.
+ * @thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3907,7 +3907,7 @@ PAL_API PalBool PAL_CALL palCanQueuePresent(
  * @param[in] b Second queue.
  * @return `PAL_TRUE` if resources can be shared without an ownership transfer otherwise `PAL_FALSE`.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.1
  * @ingroup pal_graphics
@@ -3926,7 +3926,7 @@ PAL_API PalBool PAL_CALL palCanQueueShareOwnership(
  * @param[in] state The usage state.
  * @return `PAL_TRUE` if the queue supports the usage state otherwise `PAL_FALSE`.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.1
  * @ingroup pal_graphics
@@ -3947,7 +3947,7 @@ PAL_API PalBool PAL_CALL palCanQueueUseUsageState(
  * @param[in] stages The pipeline stages.
  * @return `PAL_TRUE` if the queue supports the pipeline stages otherwise `PAL_FALSE`.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.1
  * @ingroup pal_graphics
@@ -3968,9 +3968,9 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *
- * @Thread-safety `queue` must be externally synchronized.
+ * @thread-safety `queue` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -3993,7 +3993,7 @@ PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
  * @param[in, out] count Capacity of the `formats` array on input; number of formats written on output.
  * @param[out] formats Format array.
  *
- * @Thread-safety `formats` must be per thread.
+ * @thread-safety `formats` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4016,7 +4016,7 @@ PAL_API void PAL_CALL palEnumerateFormats(
  * @param[in] format Format to query support for.
  * @return `PAL_TRUE` if the format is supported otherwise `PAL_FALSE`.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4035,7 +4035,7 @@ PAL_API PalBool PAL_CALL palIsFormatSupported(
  * @param[in] format Format to query image usages for.
  * @return Bitmask of image usages supported for the format or `0` if the format is unsupported.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4051,7 +4051,7 @@ PAL_API PalImageUsages PAL_CALL palQueryFormatImageUsages(
  * @param[in] format Format to query sample count for.
  * @return Bitmask of supported sample counts, or `0` if the format is unsupported.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4078,10 +4078,10 @@ PAL_API PalSampleCount PAL_CALL palQueryFormatSampleCount(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4098,7 +4098,7 @@ PAL_API PalResult PAL_CALL palCreateImage(
  *
  * @param[in] image Image to destroy.
  *
- * @Thread-safety the device used to create the image must be externally synchronized.
+ * @thread-safety the device used to create the image must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4113,7 +4113,7 @@ PAL_API void PAL_CALL palDestroyImage(PalImage* image);
  * @param[in] image Image to query its information.
  * @param[out] info Output struct to recieve image information.
  *
- * @Thread-safety `info` must be per thread.
+ * @thread-safety `info` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4130,7 +4130,7 @@ PAL_API void PAL_CALL palGetImageInfo(
  * @param[in] image Image to query its memory requirements.
  * @param[out] requirements Output struct to recieve image memory requirements.
  *
- * @Thread-safety `requirements` must be per thread.
+ * @thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4151,10 +4151,10 @@ PAL_API void PAL_CALL palGetImageMemoryRequirements(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_INVALID_OPERATION
  *
- * @Thread-safety `requirements` must be per thread.
+ * @thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4190,10 +4190,10 @@ PAL_API PalResult PAL_CALL palBindImageMemory(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4211,7 +4211,7 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  *
  * @param[in] imageView Image view to destroy.
  *
- * @Thread-safety the device used to create the image view must be externally synchronized.
+ * @thread-safety the device used to create the image view must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4231,10 +4231,10 @@ PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4251,7 +4251,7 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  *
  * @param[in] sampler Sampler to destroy.
  *
- * @Thread-safety the device used to create the sampler must be externally synchronized.
+ * @thread-safety the device used to create the sampler must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4276,10 +4276,10 @@ PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4298,7 +4298,7 @@ PAL_API PalResult PAL_CALL palCreateSurface(
  *
  * @param[in] surface Surface to destroy.
  *
- * @Thread-safety the device used to create the surface must be externally synchronized.
+ * @thread-safety the device used to create the surface must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4317,7 +4317,7 @@ PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
  * @param[in] surface Surface to query capabilities.
  * @param[out] caps Output struct to recieve surface capabilities.
  *
- * @Thread-safety `caps` must be per thread.
+ * @thread-safety `caps` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4347,10 +4347,10 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4369,7 +4369,7 @@ PAL_API PalResult PAL_CALL palCreateSwapchain(
  *
  * @param[in] swapchain Swapchain to destroy.
  *
- * @Thread-safety the device used to create the swapchain must be externally synchronized.
+ * @thread-safety the device used to create the swapchain must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4385,7 +4385,7 @@ PAL_API void PAL_CALL palDestroySwapchain(PalSwapchain* swapchain);
  * @param[in] index Index of the swapchain image. Must be less than the swapchain image count.
  * @return A pointer to the image on success otherwise `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4405,10 +4405,10 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_TIMEOUT @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `swapchain` externally synchronized.
+ * @thread-safety `swapchain` externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4429,10 +4429,10 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety Must only be called from the main thread.
+ * @thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4455,10 +4455,10 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_DEVICE_LOST
  *
- * @Thread-safety `swapchain` externally synchronized.
+ * @thread-safety `swapchain` externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4483,10 +4483,10 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4503,7 +4503,7 @@ PAL_API PalResult PAL_CALL palCreateShader(
  *
  * @param[in] shader Shader to destroy.
  *
- * @Thread-safety the device used to create the shader must be externally synchronized.
+ * @thread-safety the device used to create the shader must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4524,9 +4524,9 @@ PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4543,7 +4543,7 @@ PAL_API PalResult PAL_CALL palCreateFence(
  *
  * @param[in] fence Fence to destroy.
  *
- * @Thread-safety the device used to create the fence must be externally synchronized.
+ * @thread-safety the device used to create the fence must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4563,10 +4563,10 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_TIMEOUT
  *
- * @Thread-safety `fence` must be externally synchronized.
+ * @thread-safety `fence` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4587,10 +4587,10 @@ PAL_API PalResult PAL_CALL palWaitFence(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `fence` must be externally synchronized.
+ * @thread-safety `fence` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4606,7 +4606,7 @@ PAL_API PalResult PAL_CALL palResetFence(PalFence* fence);
  *
  * @return `PAL_TRUE` if signaled otherwise `PAL_FALSE`.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4628,10 +4628,10 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4648,7 +4648,7 @@ PAL_API PalResult PAL_CALL palCreateSemaphore(
  *
  * @param[in] semaphore Semaphore to destroy.
  *
- * @Thread-safety the device used to create the semaphore must be externally synchronized.
+ * @thread-safety the device used to create the semaphore must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4668,10 +4668,10 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_TIMEOUT @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `semaphore` must be externally synchronized.
+ * @thread-safety `semaphore` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4695,10 +4695,10 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `queue` must be externally synchronized.
+ * @thread-safety `queue` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4721,10 +4721,10 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
- * @Thread-safety `semaphore` must be externally synchronized.
+ * @thread-safety `semaphore` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4747,10 +4747,10 @@ PAL_API PalResult PAL_CALL palGetSemaphoreValue(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4770,7 +4770,7 @@ PAL_API PalResult PAL_CALL palCreateCommandPool(
  *
  * @param[in] pool Command pool to destroy.
  *
- * @Thread-safety the device used to create the command pool is
+ * @thread-safety the device used to create the command pool is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -4787,10 +4787,10 @@ PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `pool` must be externally synchronized.
+ * @thread-safety `pool` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4808,10 +4808,10 @@ PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` and `pool` must be externally synchronized.
+ * @thread-safety `device` and `pool` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4829,7 +4829,7 @@ PAL_API PalResult PAL_CALL palAllocateCommandBuffer(
  *
  * @param[in] cmdBuffer Command buffer to free.
  *
- * @Thread-safety the command pool used to create the command buffer is
+ * @thread-safety the command pool used to create the command buffer is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -4846,10 +4846,10 @@ PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4866,10 +4866,10 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `queue` must be externally synchronized.
+ * @thread-safety `queue` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4888,10 +4888,10 @@ PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4909,10 +4909,10 @@ PAL_API PalResult PAL_CALL palCmdBegin(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4929,7 +4929,7 @@ PAL_API PalResult PAL_CALL palCmdEnd(PalCommandBuffer* cmdBuffer);
  * @param[in] primaryCmdBuffer Primary command buffer. Must be in recording state.
  * @param[in] secondaryCmdBuffer Secondary command buffer.
  *
- * @Thread-safety `primaryCmdBuffer` must be externally synchronized.
+ * @thread-safety `primaryCmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4947,7 +4947,7 @@ PAL_API void PAL_CALL palCmdExecuteCommandBuffer(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] state Pointer to a PalFragmentShadingRateState struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -4967,7 +4967,7 @@ PAL_API void PAL_CALL palCmdSetFragmentShadingRate(
  * @param[in] groupCountY Number of mesh shader groups to dispatch on the y axis.
  * @param[in] groupCountZ Number of mesh shader groups to dispatch on the z axis.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -4992,7 +4992,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasks(
  * @param[in] buffer Buffer containing an array of PalDispatchIndirectData structs.
  * @param[in] drawCount Number of draws to perform.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5018,7 +5018,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirect(
  * @param[in] countBuffer Buffer containing a single `uint32_t` specifying the number of draws.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5043,7 +5043,7 @@ PAL_API void PAL_CALL palCmdDrawMeshTasksIndirectCount(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5058,7 +5058,7 @@ PAL_API void PAL_CALL palCmdBuildAccelerationStructure(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] info Pointer to a PalRenderingInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5072,7 +5072,7 @@ PAL_API void PAL_CALL palCmdBeginRendering(
  *
  * @param[in] cmdBuffer Command buffer being recorded.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5087,7 +5087,7 @@ PAL_API void PAL_CALL palCmdEndRendering(PalCommandBuffer* cmdBuffer);
  * @param[in] src Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferCopyInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5106,7 +5106,7 @@ PAL_API void PAL_CALL palCmdCopyBuffer(
  * @param[in] srcBuffer Source buffer.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5125,7 +5125,7 @@ PAL_API void PAL_CALL palCmdCopyBufferToImage(
  * @param[in] src Source image.
  * @param[in] copyInfo Pointer to a PalImageCopyInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5144,7 +5144,7 @@ PAL_API void PAL_CALL palCmdCopyImage(
  * @param[in] srcImage Source image.
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5164,7 +5164,7 @@ PAL_API void PAL_CALL palCmdCopyImageToBuffer(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] pipeline Pipeline to bind.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5183,7 +5183,7 @@ PAL_API void PAL_CALL palCmdBindPipeline(
  * @param[in] count Capacity of the PalViewport array.
  * @param[in] viewports Pointer to an array of viewports.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5203,7 +5203,7 @@ PAL_API void PAL_CALL palCmdSetViewport(
  * @param[in] count Capacity of the PalRect2D array.
  * @param[in] scissors Pointer to an array of scissors.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5222,7 +5222,7 @@ PAL_API void PAL_CALL palCmdSetScissors(
  * @param[in] buffers Pointer to an array of vertex buffers.
  * @param[in] offsets Pointer to an array of offsets in bytes into each vertex buffer.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5244,7 +5244,7 @@ PAL_API void PAL_CALL palCmdBindVertexBuffers(
  * @param[in] offset Offset in bytes into the index buffer.
  * @param[in] type Type of indices stored in the index buffer. (eg. `PAL_INDEX_TYPE_UINT32`).
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5266,7 +5266,7 @@ PAL_API void PAL_CALL palCmdBindIndexBuffer(
  * @param[in] firstVertex Index of the first vertex to draw.
  * @param[in] firstInstance Index of the first instance to draw.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5293,7 +5293,7 @@ PAL_API void PAL_CALL palCmdDraw(
  * Can be a single struct.
  * @param[in] count Number of draws to perform.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5319,7 +5319,7 @@ PAL_API void PAL_CALL palCmdDrawIndirect(
  * @param[in] countBuffer Buffer containing a single `uint32_t` specifying the number of draws.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5345,7 +5345,7 @@ PAL_API void PAL_CALL palCmdDrawIndirectCount(
  * @param[in] vertexOffset Added offset to vertex indices.
  * @param[in] firstInstance Index of the first instance to draw.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5372,7 +5372,7 @@ PAL_API void PAL_CALL palCmdDrawIndexed(
  * @param[in] buffer Buffer containing an array of PalDrawIndexedIndirectData structs.
  * @param[in] count Number of draws to perform.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5398,7 +5398,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirect(
  * @param[in] countBuffer Buffer containing a single `uint32_t` specifying the number of draws.
  * @param[in] maxDrawCount Maximum Number of draws to perform.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5446,7 +5446,7 @@ PAL_API void PAL_CALL palCmdDrawIndexedIndirectCount(
  * @param[in] as Acceleration structure to set barrier on.
  * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5488,7 +5488,7 @@ PAL_API void PAL_CALL palCmdAccelerationStructureBarrier(
  * @param[in] subresourceRange Subresource range of the image.
  * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5528,7 +5528,7 @@ PAL_API void PAL_CALL palCmdImageBarrier(
  * @param[in] srcUsageState Usage state of the image on the source command buffer.
  * @param[in] srcPipelineStages Source pipeline stages.
  *
- * @Thread-safety `srcCmdBuffer` and `dstCmdBuffer` must be externally synchronized.
+ * @thread-safety `srcCmdBuffer` and `dstCmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.1
  * @ingroup pal_graphics
@@ -5571,7 +5571,7 @@ PAL_API void PAL_CALL palCmdImageOwnershipTransfer(
  * @param[in] buffer Buffer to set barrier on.
  * @param[in] info Pointer to a PalBarrierInfo struct that specifies parameters.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5609,7 +5609,7 @@ PAL_API void PAL_CALL palCmdBufferBarrier(
  * @param[in] srcUsageState Usage state of the buffer on the source command buffer.
  * @param[in] srcPipelineStages Source pipeline stages.
  *
- * @Thread-safety `srcCmdBuffer` and `dstCmdBuffer` must be externally synchronized.
+ * @thread-safety `srcCmdBuffer` and `dstCmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.1
  * @ingroup pal_graphics
@@ -5633,7 +5633,7 @@ PAL_API void PAL_CALL palCmdBufferOwnershipTransfer(
  * @param[in] groupCountY Number of compute shader groups to dispatch on the y axis.
  * @param[in] groupCountZ Number of compute shader groups to dispatch on the z axis.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5662,7 +5662,7 @@ PAL_API void PAL_CALL palCmdDispatch(
  * @param[in] groupCountY Number of compute shader groups to dispatch on the y axis.
  * @param[in] groupCountZ Number of compute shader groups to dispatch on the z axis.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5689,7 +5689,7 @@ PAL_API void PAL_CALL palCmdDispatchBase(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] buffer Buffer containing the PalDispatchIndirectData struct.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  * @note The buffer must be created with `PAL_BUFFER_USAGE_INDIRECT` usage.
@@ -5716,7 +5716,7 @@ PAL_API void PAL_CALL palCmdDispatchIndirect(
  * @param[in] height Number of rays to trace on the y axis.
  * @param[in] depth Number of rays to trace on the z axis.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5742,7 +5742,7 @@ PAL_API void PAL_CALL palCmdTraceRays(
  * @param[in] sbt The shader binding table to use.
  * @param[in] buffer Buffer containing the PalDispatchIndirectData struct.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note The argument buffer memory must not be `PAL_MEMORY_TYPE_CPU_UPLOAD`. The implementation
  * internally copies the data into a GPU buffer for execution.
@@ -5766,7 +5766,7 @@ PAL_API void PAL_CALL palCmdTraceRaysIndirect(
  * @param[in] setIndex Index of the descriptor set to bind.
  * @param[in] set Descriptor set to bind. Must be compatible with `layout`.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5786,7 +5786,7 @@ PAL_API void PAL_CALL palCmdBindDescriptorSet(
  * @param[in] size Size of `value` in bytes.
  * @param[in] value Pointer to the push constant range data to write.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @note A pipeline must be bound before this call.
  *
@@ -5808,7 +5808,7 @@ PAL_API void PAL_CALL palCmdPushConstants(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] cullMode Cull mode to set.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5826,7 +5826,7 @@ PAL_API void PAL_CALL palCmdSetCullMode(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] frontFace Front face to set.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5844,7 +5844,7 @@ PAL_API void PAL_CALL palCmdSetFrontFace(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] topology Topology to set.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5862,7 +5862,7 @@ PAL_API void PAL_CALL palCmdSetPrimitiveTopology(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] enable True to enable.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5880,7 +5880,7 @@ PAL_API void PAL_CALL palCmdSetDepthTestEnable(
  * @param[in] cmdBuffer Command buffer being recorded.
  * @param[in] enable True to enable.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5901,7 +5901,7 @@ PAL_API void PAL_CALL palCmdSetDepthWriteEnable(
  * @param[in] depthFailOp Stencil operation to perform when stencil passes but depth fails.
  * @param[in] compareOp Compare operation for stencil tests.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5929,10 +5929,10 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -5949,7 +5949,7 @@ PAL_API PalResult PAL_CALL palCreateAccelerationstructure(
  *
  * @param[in] as Acceleration structure to destroy.
  *
- * @Thread-safety the device used to create the acceleration structure is
+ * @thread-safety the device used to create the acceleration structure is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -5972,7 +5972,7 @@ PAL_API void PAL_CALL palDestroyAccelerationStructure(PalAccelerationStructure* 
  * @param[in] info Pointer to a PalAccelerationStructureBuildInfo struct that specifies parameters.
  * @param[out] size Pointer to a PalAccelerationStructureBuildSize to recieve the build size.
  *
- * @Thread-safety `cmdBuffer` must be externally synchronized.
+ * @thread-safety `cmdBuffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6003,10 +6003,10 @@ PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6023,7 +6023,7 @@ PAL_API PalResult PAL_CALL palCreateBuffer(
  *
  * @param[in] buffer buffer to destroy.
  *
- * @Thread-safety the device used to create the buffer is
+ * @thread-safety the device used to create the buffer is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -6039,7 +6039,7 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
  * @param[in] buffer Buffer to query memory requirements on.
  * @param[out] requirements Pointer to a PalMemoryRequirements to fill.
  *
- * @Thread-safety `requirements` must be per thread.
+ * @thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6061,7 +6061,7 @@ PAL_API void PAL_CALL palGetBufferMemoryRequirements(
  * @param[in] instanceCount Number of instances the instance buffer will hold.
  * @param[out] outSize Pointer to a uint64_t to recieve the required size.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6089,7 +6089,7 @@ PAL_API void PAL_CALL palComputeInstanceStagingSize(
  * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
  * @param[out] requirements Pointer to a PalImageStagingRequirements to recieve the requirements
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6113,7 +6113,7 @@ PAL_API void PAL_CALL palComputeImageStagingRequirements(
  * @param[in] instances Array of PalAccelerationStructureInstance struct to write.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6135,7 +6135,7 @@ PAL_API void PAL_CALL palWriteInstanceStaging(
  * @param[out] srcData Pointer to the CPU visible memory with the data.
  * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6161,10 +6161,10 @@ PAL_API void PAL_CALL palWriteImageStaging(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `requirements` must be per thread.
+ * @thread-safety `requirements` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6193,10 +6193,10 @@ PAL_API PalResult PAL_CALL palBindBufferMemory(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `buffer` must be externally synchronized.
+ * @thread-safety `buffer` must be externally synchronized.
  * Mapping with different offsets into the same buffer is thread safe as long as `buffer`
  * must be externally synchronized.
  *
@@ -6219,7 +6219,7 @@ PAL_API PalResult PAL_CALL palMapBuffer(
  *
  * @param[in] buffer Pointer to buffer to unmap.
  *
- * @Thread-safety `buffer` must be externally synchronized.
+ * @thread-safety `buffer` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6237,7 +6237,7 @@ PAL_API void PAL_CALL palUnmapBuffer(PalBuffer* buffer);
  *
  * @return Buffer device address on success or `0` on failure.
  *
- * @Thread-safety `buffer` must be per thread.
+ * @thread-safety `buffer` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6261,10 +6261,10 @@ PAL_API PalDeviceAddress PAL_CALL palGetBufferDeviceAddress(PalBuffer* buffer);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6281,7 +6281,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorSetLayout(
  *
  * @param[in] layout Descriptor set layout to destroy.
  *
- * @Thread-safety the device used to create the descriptor set layout is
+ * @thread-safety the device used to create the descriptor set layout is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -6302,10 +6302,10 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6322,7 +6322,7 @@ PAL_API PalResult PAL_CALL palCreateDescriptorPool(
  *
  * @param[in] pool Descriptor pool to destroy.
  *
- * @Thread-safety the device used to create the descriptor pool is
+ * @thread-safety the device used to create the descriptor pool is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -6339,10 +6339,10 @@ PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `pool` must be externally synchronized.
+ * @thread-safety `pool` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6365,10 +6365,10 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` and `pool` must be externally synchronized.
+ * @thread-safety `device` and `pool` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6391,10 +6391,10 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6416,10 +6416,10 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6436,7 +6436,7 @@ PAL_API PalResult PAL_CALL palCreatePipelineLayout(
  *
  * @param[in] layout Pipeline layout to destroy.
  *
- * @Thread-safety the device used to create the pipeline layout is
+ * @thread-safety the device used to create the pipeline layout is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -6457,10 +6457,10 @@ PAL_API void PAL_CALL palDestroyPipelineLayout(PalPipelineLayout* layout);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6483,10 +6483,10 @@ PAL_API PalResult PAL_CALL palCreateGraphicsPipeline(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @note The first entry of the compute shader will be used.
  *
@@ -6514,10 +6514,10 @@ PAL_API PalResult PAL_CALL palCreateComputePipeline(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6534,7 +6534,7 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  *
  * @param[in] pipeline Pipeline to destroy.
  *
- * @Thread-safety the device used to create the pipeline is
+ * @thread-safety the device used to create the pipeline is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -6564,12 +6564,12 @@ PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure. 
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must only be called from the main thread.
+ * @thread-safety Must only be called from the main thread.
  * 
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
- * @Thread-safety `device` must be externally synchronized.
+ * @thread-safety `device` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6586,7 +6586,7 @@ PAL_API PalResult PAL_CALL palCreateShaderBindingTable(
  *
  * @param[in] sbt Shader binding table to destroy.
  *
- * @Thread-safety the device used to create the shader binding table is
+ * @thread-safety the device used to create the shader binding table is
  * externally synchronized.
  *
  * @since Added in version 2.0
@@ -6607,7 +6607,7 @@ PAL_API void PAL_CALL palDestroyShaderBindingTable(PalShaderBindingTable* sbt);
  * @param[in] count Capacity of the PalShaderBindingTableRecordInfo array.
  * @param[in] infos Array of PalShaderBindingTableRecordInfo to update.
  *
- * @Thread-safety `sbt` must be externally synchronized.
+ * @thread-safety `sbt` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -6636,7 +6636,7 @@ PAL_API void PAL_CALL palUpdateShaderBindingTable(
  * @param[in, out] count Capacity of the PalWorkGroupInfo array.
  * @param[out] infos Pointer to an Array of PalWorkGroupInfo.
  *
- * @Thread-safety Must only be called from the main thread.
+ * @thread-safety Must only be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

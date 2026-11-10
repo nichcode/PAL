@@ -208,9 +208,9 @@ typedef struct PalThreadCreateInfo {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `thread` must be per thread.
+ * @thread-safety `thread` must be per thread.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY and
  *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
@@ -237,9 +237,9 @@ PAL_API PalResult PAL_CALL palCreateThread(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `retval` must be per thread. `thread` must be externally synchronized.
+ * @thread-safety `retval` must be per thread. `thread` must be externally synchronized.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE.
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -260,7 +260,7 @@ PAL_API PalResult PAL_CALL palJoinThread(
  *
  * @param[in] thread Thread to detach.
  *
- * @Thread-safety `thread` must be externally synchronized.
+ * @thread-safety `thread` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -276,7 +276,7 @@ PAL_API void PAL_CALL palDetachThread(PalThread* thread);
  *
  * @param[in] milliseconds Number of milliseconds to sleep.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -290,7 +290,7 @@ PAL_API void PAL_CALL palSleep(uint64_t milliseconds);
  * allowing other threads of equal priority to run. The next thread is selected
  * by the platform.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -302,7 +302,7 @@ PAL_API void PAL_CALL palYield();
  *
  * @return The current thread on success or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -316,7 +316,7 @@ PAL_API PalThread* PAL_CALL palGetCurrentThread();
  *
  * @return The thread features on success or `0` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -331,7 +331,7 @@ PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
  * @param[in] thread Thread to get the priority from.
  * @return The thread priority on success or @ref PAL_THREAD_PRIORITY_NORMAL on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -348,7 +348,7 @@ PAL_API PalThreadPriority PAL_CALL palGetThreadPriority(PalThread* thread);
  * @param[in] thread Thread to get the affinity from.
  * @return The thread affinity bitmask on success or `0` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -372,7 +372,7 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  * @param[out] buffer Output buffer to write the thread name to, or `nullptr`
  *                    to only query the size.
  *
- * @Thread-safety `buffer` must be per thread.
+ * @thread-safety `buffer` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -395,9 +395,9 @@ PAL_API void PAL_CALL palGetThreadName(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `thread` must be externally synchronized.
+ * @thread-safety `thread` must be externally synchronized.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
  *               and @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
  * @since Added in version 2.0
@@ -421,9 +421,9 @@ PAL_API PalResult PAL_CALL palSetThreadPriority(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `thread` must be externally synchronized.
+ * @thread-safety `thread` must be externally synchronized.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
  *               and @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
  * @since Added in version 2.0
@@ -446,9 +446,9 @@ PAL_API PalResult PAL_CALL palSetThreadAffinity(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `thread` must be externally synchronized.
+ * @thread-safety `thread` must be externally synchronized.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
  *               and @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
  * @note On Linux, thread names are limited to 16 characters including the NULL terminator.
@@ -474,7 +474,7 @@ PAL_API PalResult PAL_CALL palSetThreadName(
  * @param[in] destructor TLS destructor function, or `nullptr` for no destructor.
  * @return The created TLS on success or `0` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -491,7 +491,7 @@ PAL_API PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor);
  *
  * @param[in] Tls TLS to destroy.
  *
- * @Thread-safety `Tls` must be externally synchronized.
+ * @thread-safety `Tls` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -507,7 +507,7 @@ PAL_API void PAL_CALL palDestroyTLS(PalTLSId Tls);
  * @return Pointer to the value on success or `nullptr` if no value was set or
  *         on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -522,7 +522,7 @@ PAL_API void* PAL_CALL palGetTLS(PalTLSId Tls);
  * @param[in] Tls TLS to set the value of.
  * @param[in] data Pointer to the value to set, or `nullptr` for no value.
  *
- * @Thread-safety `Tls` must be externally synchronized.
+ * @thread-safety `Tls` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -546,9 +546,9 @@ PAL_API void PAL_CALL palSetTLS(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `mutex` must be per thread.
+ * @thread-safety `mutex` must be per thread.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               and @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
  *
  * @since Added in version 2.0
@@ -567,7 +567,7 @@ PAL_API PalResult PAL_CALL palCreateMutex(
  *
  * @param[in] mutex Mutex to destroy.
  *
- * @Thread-safety `mutex` must be externally synchronized.
+ * @thread-safety `mutex` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -583,7 +583,7 @@ PAL_API void PAL_CALL palDestroyMutex(PalMutex* mutex);
  *
  * @param[in] mutex Mutex to lock.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -599,7 +599,7 @@ PAL_API void PAL_CALL palLockMutex(PalMutex* mutex);
  *
  * @param[in] mutex Mutex to unlock.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -621,9 +621,9 @@ PAL_API void PAL_CALL palUnlockMutex(PalMutex* mutex);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `condVar` must be per thread.
+ * @thread-safety `condVar` must be per thread.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT
  *               and @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
  *
  * @since Added in version 2.0
@@ -644,7 +644,7 @@ PAL_API PalResult PAL_CALL palCreateCondVar(
  *
  * @param[in] condVar Condition variable to destroy.
  *
- * @Thread-safety `condVar` must be externally synchronized.
+ * @thread-safety `condVar` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -671,9 +671,9 @@ PAL_API void PAL_CALL palDestroyCondVar(PalCondVar* condVar);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE.
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -709,9 +709,9 @@ PAL_API PalResult PAL_CALL palWaitCondVar(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_HANDLE
  *               and @ref PAL_RESULT_CODE_TIMEOUT.
  *
  * @since Added in version 2.0
@@ -732,7 +732,7 @@ PAL_API PalResult PAL_CALL palWaitCondVarTimeout(
  *
  * @param[in] condVar Condition variable to signal.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread
@@ -746,7 +746,7 @@ PAL_API void PAL_CALL palSignalCondVar(PalCondVar* condVar);
  *
  * @param[in] condVar Condition variable to broadcast to.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_thread

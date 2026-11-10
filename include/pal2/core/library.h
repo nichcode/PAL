@@ -45,7 +45,7 @@
  * @param[in] path Path to the library (absolute or relative, including the file extension).
  * @return The loaded library on success or `nullptr` if the library failed to load.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.2
  * @ingroup pal_core
@@ -68,7 +68,7 @@ PAL_API PalLibrary* PAL_CALL palLoadLibrary(const char* path);
  * @param[in] name Null-terminated UTF-8 encoded name of the symbol.
  * @return The symbol on success or `nullptr` if the symbol was not found.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.2
  * @ingroup pal_core
@@ -88,7 +88,7 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  *
  * @param[in] library Library to free.
  *
- * @Thread-safety `library` must be externally synchronized.
+ * @thread-safety `library` must be externally synchronized.
  *
  * @since Added in version 2.2
  * @ingroup pal_core

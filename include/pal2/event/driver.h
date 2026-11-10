@@ -33,7 +33,6 @@
 /**
  * @defgroup dispatch_modes Event Dispatch Modes
  * @brief Defines dispatch modes of an event.
- * 
  * @ingroup pal_event
  * @{
  */
@@ -84,10 +83,10 @@ typedef struct PalEventDriverCreateInfo {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `eventDriver` must be per thread.
+ * @thread-safety `eventDriver` must be per thread.
  *
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @since Added in version 2.0
  * @ingroup pal_event
@@ -107,7 +106,7 @@ PAL_API PalResult PAL_CALL palCreateEventDriver(
  *
  * @param[in] eventDriver Event driver to destroy.
  *
- * @Thread-safety `eventDriver` must be externally synchronized.
+ * @thread-safety `eventDriver` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_event
@@ -123,7 +122,7 @@ PAL_API void PAL_CALL palDestroyEventDriver(PalEventDriver* eventDriver);
  * @param[in] type Event type to set dispatch mode for.
  * @param[in] mode Dispatch mode to use.
  *
- * @Thread-safety `eventDriver` must be externally synchronized.
+ * @thread-safety `eventDriver` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_event
@@ -142,7 +141,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  * @param[in] type Event type.
  * @return The dispatch mode on success or @ref PAL_DISPATCH_MODE_NONE on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_event
@@ -172,7 +171,7 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  * @param[in] eventDriver The event driver.
  * @param[in] event The event to push.
  *
- * @Thread-safety The event queue or callback of `eventDriver` must be thread
+ * @thread-safety The event queue or callback of `eventDriver` must be thread
  *                safe with respect to the dispatch mode of `event`.
  *
  * @since Added in version 2.0
@@ -196,7 +195,7 @@ PAL_API void PAL_CALL palPushEvent(
  * @param[out] event Output struct to receive the event.
  * @return `PAL_TRUE` if an event was retrieved or `PAL_FALSE` if the queue is empty.
  *
- * @Thread-safety The event queue of `eventDriver` must be thread safe.
+ * @thread-safety The event queue of `eventDriver` must be thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_event

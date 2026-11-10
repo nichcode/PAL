@@ -121,9 +121,10 @@ typedef struct PalVideoDriver {
  * removed at runtime.
  *
  * @param[in, out] count Capacity of the video driver array.
- * @param[out] drivers Output array to receive the video drivers, or `nullptr` to get the number of video drivers.
+ * @param[out] drivers Output array to receive the video drivers, or `nullptr` to get
+ *             the number of video drivers.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.2
  * @ingroup pal_video
@@ -145,7 +146,7 @@ PAL_API void PAL_CALL palEnumerateVideoDrivers(
  *
  * @param[in] driver Preferred video driver.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.2
  * @ingroup pal_video
@@ -163,7 +164,7 @@ PAL_API void PAL_CALL palSetVideoDriver(PalVideoDriver* driver);
  *
  * @param[out] driver Output struct to receive the video driver.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.2
  * @ingroup pal_video
@@ -195,11 +196,11 @@ PAL_API void PAL_CALL palGetVideoDriver(PalVideoDriver* driver);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
- * @Result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -221,7 +222,7 @@ PAL_API PalResult PAL_CALL palInitVideo(
  * must be destroyed before this call. If the video system has not been
  * initialized, the function returns silently.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -239,7 +240,7 @@ PAL_API void PAL_CALL palShutdownVideo(void);
  * unresponsive; the behavior is undefined. This function does not
  * block or wait for the event driver to populate events.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -255,7 +256,7 @@ PAL_API void PAL_CALL palUpdateVideo(void);
  *
  * @return Video features on success or `0` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -275,7 +276,7 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures(void);
  *
  * @return Instance on success, or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_video

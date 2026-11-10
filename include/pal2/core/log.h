@@ -31,7 +31,6 @@
 /**
  * @brief Maximum size of the log messagge buffer in bytes including 
  * the NULL terminator.
- * 
  * @ingroup pal_core
  */
 #define PAL_LOG_MSG_SIZE 4096
@@ -95,7 +94,7 @@ typedef struct PalLogger {
  * @param[in] fmt printf-style format string.
  * @param[in] ... Arguments for the format string.
  *
- * @Thread-safety Thread safe, but log output and callbacks may be invoked concurrently.
+ * @thread-safety Thread safe, but log output and callbacks may be invoked concurrently.
  *
  * @since Added in version 2.0
  * @ingroup pal_core

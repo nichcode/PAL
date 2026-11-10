@@ -82,11 +82,11 @@ typedef struct PalCursorCreateInfo {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -113,11 +113,11 @@ PAL_API PalResult PAL_CALL palCreateCursor(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -137,7 +137,7 @@ PAL_API PalResult PAL_CALL palCreateCursorFrom(
  *
  * @param[in] cursor Cursor to destroy.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -156,7 +156,7 @@ PAL_API void PAL_CALL palDestroyCursor(PalCursor* cursor);
  *
  * @param[in] show `PAL_TRUE` to make the cursor visible, otherwise `PAL_FALSE`.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -174,7 +174,7 @@ PAL_API void PAL_CALL palShowCursor(PalBool show);
  * @param[in] window Window to confine the cursor to.
  * @param[in] clip `PAL_TRUE` to clip the cursor to the window, or `PAL_FALSE` to unclip it.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -194,7 +194,7 @@ PAL_API void PAL_CALL palClipCursor(
  * @param[out] x Output to receive the x cursor position, or `nullptr` to ignore it.
  * @param[out] y Output to receive the y cursor position, or `nullptr` to ignore it.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -215,7 +215,7 @@ PAL_API void PAL_CALL palGetCursorPos(
  * @param[in] x X coordinate of the cursor.
  * @param[in] y Y coordinate of the cursor.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -237,7 +237,7 @@ PAL_API void PAL_CALL palSetCursorPos(
  * @param[in] window Window to set cursor on.
  * @param[in] cursor Cursor, or `nullptr` to revert to the platform default.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video

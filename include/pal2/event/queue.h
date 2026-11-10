@@ -30,7 +30,6 @@
 
 /**
  * @brief Number of events the default queue can hold at a time.
- * 
  * @ingroup pal_event
  */
 #define PAL_DEFAULT_QUEUE_EVENT_COUNT 512
@@ -110,7 +109,7 @@ typedef PalBool(PAL_CALL* PalPollFn)(
 typedef struct PalEventQueue {
     PalPushFn push; /**< Push function. */
     PalPollFn poll; /**< Poll function. */
-    void* userData; /**< User-defined data passed to the functions, or `nullptr`. */
+    void* userData; /**< User-defined data passed to the functions or `nullptr`. */
 } PalEventQueue;
 
 #endif // PAL_EVENT_QUEUE_H

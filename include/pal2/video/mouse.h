@@ -52,7 +52,7 @@
  *
  * @return Pointer to the mouse button array on success, or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -67,7 +67,7 @@ PAL_API const PalBool* PAL_CALL palGetMouseState(void);
  * @param[out] dx Output to receive the relative x movement, or `nullptr` to ignore it.
  * @param[out] dy Output to receive the relative y movement, or `nullptr` to ignore it.
  *
- * @Thread-safety `dx` and `dy` must be per thread.
+ * @thread-safety `dx` and `dy` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -84,7 +84,7 @@ PAL_API void PAL_CALL palGetMouseDelta(
  * @param[out] dx Output to receive the x wheel delta, or `nullptr` to ignore it.
  * @param[out] dy Output to receive the y wheel delta, or `nullptr` to ignore it.
  *
- * @Thread-safety `dx` and `dy` must be per thread.
+ * @thread-safety `dx` and `dy` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video

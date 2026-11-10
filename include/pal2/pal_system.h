@@ -200,7 +200,7 @@ typedef struct PalPlatformInfo {
  * @param[in] allocator Allocator to use, or `nullptr` for the default.
  * @param[out] info Output struct to receive the CPU information.
  *
- * @Thread-safety `info` must be per thread.
+ * @thread-safety `info` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_system
@@ -214,7 +214,7 @@ PAL_API void PAL_CALL palGetCPUInfo(
  *
  * @param[out] info Output struct to receive the platform information.
  *
- * @Thread-safety `info` must be per thread.
+ * @thread-safety `info` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_system

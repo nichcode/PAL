@@ -335,9 +335,9 @@ typedef struct PalGLContextCreateInfo {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY, @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
  * @since Added in version 2.0
@@ -361,7 +361,7 @@ PAL_API PalResult PAL_CALL palInitGL(
  * The instance passed to @ref palInitGL() is not freed or destroyed;
  * the caller is responsible for destroying it.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -380,7 +380,7 @@ PAL_API void PAL_CALL palShutdownGL();
  *
  * @return Pointer to the driver information on success or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -399,7 +399,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
  * @param[in] name UTF-8 encoded function name (NULL-terminated).
  * @return Pointer to the function on success or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -422,7 +422,7 @@ PAL_API void* PAL_CALL palGetGLProcAddress(const char* name);
  * @param[in] instance Instance to query for supported OpenGL APIs.
  * @return Pointer to the OpenGL APIs array on success or `nullptr` on failure.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -452,9 +452,9 @@ PAL_API const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
  *
  * @since Added in version 2.0
@@ -483,7 +483,7 @@ PAL_API PalResult PAL_CALL palEnumerateGLFBConfigs(
  * @param[in] desired Desired framebuffer configuration.
  * @return Closest matching framebuffer configuration on success or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -519,9 +519,9 @@ PAL_API const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `context` must be per thread.
+ * @thread-safety `context` must be per thread.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
  *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY, @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
  *
  * @note On Wayland, `info->window->window` is `wl_egl_window`.
@@ -548,7 +548,7 @@ PAL_API PalResult PAL_CALL palCreateGLContext(
  *
  * @param[in] context Context to destroy.
  *
- * @Thread-safety `context` must be externally synchronized.
+ * @thread-safety `context` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -578,9 +578,9 @@ PAL_API void PAL_CALL palDestroyGLContext(PalGLContext* context);
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety A context may be current to only one thread at a time.
+ * @thread-safety A context may be current to only one thread at a time.
  *
- * @Result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT.
+ * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -605,7 +605,7 @@ PAL_API PalResult PAL_CALL palMakeContextCurrent(
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety `context` must be externally synchronized.
+ * @thread-safety `context` must be externally synchronized.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl
@@ -632,7 +632,7 @@ PAL_API PalResult PAL_CALL palSwapBuffers(
  *
  * @param[in] interval Minimum number of video frame periods between swaps.
  *
- * @Thread-safety Must be called from a thread with a bound context.
+ * @thread-safety Must be called from a thread with a bound context.
  *
  * @since Added in version 2.0
  * @ingroup pal_opengl

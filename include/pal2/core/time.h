@@ -36,7 +36,7 @@
  *
  * @return Current performance counter value.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -53,7 +53,7 @@ PAL_API uint64_t PAL_CALL palGetPerformanceCounter(void);
  *
  * @return Performance counter frequency.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core

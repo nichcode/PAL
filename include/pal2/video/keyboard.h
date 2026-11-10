@@ -266,7 +266,7 @@
  *
  * @return Pointer to the keycodes array on success, or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -283,7 +283,7 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState(void);
  *
  * @return Pointer to the scancodes array on success, or `nullptr` on failure.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_video

@@ -77,8 +77,8 @@ class XMLParser:
         if sections.get("see"):
             see = sections["see"]
 
-        if sections.get("result-codes"):
-            result_codes = sections["result-codes"]
+        if sections.get("result-code"):
+            result_codes = sections["result-code"]
 
         # Extract parameter documentation mapping
         param_docs = {}
@@ -421,12 +421,12 @@ class XMLParser:
 
             elif kind == "par":
                 title = element.findtext("title").strip()
-                if title == "Thread safety": # must match doxyfile alias
+                if title == "thread-safety": # must match doxyfile alias
                     tmp = self._convert_to_tokens(element)
                     parts = tmp.split(title, 1)
-                    sections["thread-safety"] = parts[1]
+                    sections[title] = parts[1]
 
-                elif title == "Result codes": # must match doxyfile alias
+                elif title == "result-code": # must match doxyfile alias
                     if element.get("kind") != "par":
                         continue
 
@@ -442,7 +442,7 @@ class XMLParser:
             sections["see"] = "\n".join(see).strip()
 
         if result_codes:
-            sections["result-codes"] = "".join(result_codes).strip()
+            sections["result-code"] = "".join(result_codes).strip()
 
         return sections
 

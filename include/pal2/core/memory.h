@@ -124,7 +124,7 @@ typedef struct PalAllocator {
  * @param[in] alignment Alignment of the allocated memory in bytes.
  * @return Pointer to the allocated memory on success, or `nullptr` if allocation fails.
  *
- * @Thread-safety `allocator` implementation must be thread safe.
+ * @thread-safety `allocator` implementation must be thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -154,7 +154,7 @@ PAL_API void* PAL_CALL palAllocate(
  * @param[in] allocator Allocator to use, or `nullptr` for the default.
  * @param[in] ptr Memory to free, or `nullptr` to do nothing.
  *
- * @Thread-safety `allocator` implementation must be thread safe.
+ * @thread-safety `allocator` implementation must be thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core

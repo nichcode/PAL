@@ -52,7 +52,7 @@ typedef struct PalVersion {
  *
  * @param[out] version Output struct to receive the PAL runtime version.
  *
- * @Thread-safety `version` must be per thread.
+ * @thread-safety `version` must be per thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_core
@@ -70,7 +70,7 @@ PAL_API void PAL_CALL palGetVersion(PalVersion* version);
  *
  * @return Null-terminated string containing the PAL runtime version.
  *
- * @Thread-safety Thread safe.
+ * @thread-safety Thread safe.
  *
  * @since Added in version 2.0
  * @ingroup pal_core

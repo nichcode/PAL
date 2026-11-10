@@ -67,11 +67,11 @@ typedef struct PalIconCreateInfo {
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
  *         Call @ref palFormatResult() for more information.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
- * @Result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @Result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
- * @Result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -91,7 +91,7 @@ PAL_API PalResult PAL_CALL palCreateIcon(
  *
  * @param[in] icon Icon to destroy.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
@@ -112,7 +112,7 @@ PAL_API void PAL_CALL palDestroyIcon(PalIcon* icon);
  * @param[in] window Window to set icon on.
  * @param[in] icon Icon or `nullptr` to revert to the platform default.
  *
- * @Thread-safety Must be called from the main thread.
+ * @thread-safety Must be called from the main thread.
  *
  * @since Added in version 2.0
  * @ingroup pal_video
