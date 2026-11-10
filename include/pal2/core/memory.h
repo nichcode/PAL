@@ -100,9 +100,9 @@ typedef void(PAL_CALL* PalFreeFn)(
  * @ingroup pal_core
  */
 typedef struct PalAllocator {
-    PalAllocateFn allocate; /**< memory allocation function */
-    PalFreeFn free; /**< memory deallocation function */
-    void* userData; /**< user-defined data passed to callbacks or `nullptr` */
+    PalAllocateFn allocate; /**< Memory allocation function */
+    PalFreeFn free; /**< Memory deallocation function */
+    void* userData; /**< User-defined data passed to callbacks or `nullptr` */
 } PalAllocator;
 
 /**

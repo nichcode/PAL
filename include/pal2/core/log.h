@@ -75,8 +75,8 @@ typedef void(PAL_CALL* PalLogCallback)(
  * @ingroup pal_core
  */
 typedef struct PalLogger {
-    PalLogCallback callback; /**< log callback */
-    void* userData; /**< user-defined data passed to callback or `nullptr` */
+    PalLogCallback callback; /**< Log callback */
+    void* userData; /**< User-defined data passed to callback or `nullptr` */
 } PalLogger;
 
 /**

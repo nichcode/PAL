@@ -23,14 +23,14 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_EVENT_H
-#define PAL_EVENT_H
-
 /**
  * @defgroup pal_event Event
  * @brief Event driver, which delivers events to an event callback or an
  * event queue according to the dispatch mode of each event type.
  */
+
+#ifndef PAL_EVENT_H
+#define PAL_EVENT_H
 
 #include "event/driver.h"
 

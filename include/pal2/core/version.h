@@ -42,9 +42,9 @@
  * @ingroup pal_core
  */
 typedef struct PalVersion {
-    uint32_t major; /**< major version */
-    uint32_t minor; /**< minor version */
-    uint32_t build; /**< build (patch) version */
+    uint32_t major; /**< Major version */
+    uint32_t minor; /**< Minor version */
+    uint32_t build; /**< Build (patch) version */
 } PalVersion;
 
 /**
