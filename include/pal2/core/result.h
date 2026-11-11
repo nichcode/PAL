@@ -36,7 +36,6 @@
 
 /**
  * @defgroup result_codes Result Codes
- * @brief Defines result codes of a result value.
  * @ingroup pal_core
  * @{
  */
@@ -55,7 +54,6 @@
 
 /**
  * @defgroup result_sources Result Sources
- * @brief Defines result sources of a result value.
  * @ingroup pal_core
  * @{
  */

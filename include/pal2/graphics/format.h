@@ -1,5 +1,5 @@
 /**
- * @file init.h
+ * @file format.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *

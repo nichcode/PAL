@@ -37,7 +37,6 @@
 
 /**
  * @defgroup platform_types Platform Types
- * @brief Defines types of a platform.
  * @ingroup pal_system
  * @{
  */
@@ -51,7 +50,6 @@
 
 /**
  * @defgroup platform_api_types Platform API Types
- * @brief Defines API types of a platform.
  * @ingroup pal_system
  * @{
  */

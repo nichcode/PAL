@@ -1,5 +1,5 @@
 /**
- * @file next.h
+ * @file buffer.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -92,19 +92,15 @@ typedef struct PalBufferCopyInfo {
  * @brief Buffer creation parameters.
  *
  * `memoryUsage` may be one of the following:
- *
  * - PAL_BUFFER_MEMORY_USAGE_MANUAL - PAL does not allocate
  *   memory for the buffer. Call @ref palGetBufferMemoryRequirements() to get the
  *   memory requirement of the buffer and allocate memory with @ref palAllocateMemory()
  *   after the buffer has been created. Users are required to free the allocated
  *   memory with @ref palFreeMemory() when no longer needed.
- *
  * - PAL_BUFFER_MEMORY_USAGE_AUTO_GPU_ONLY - PAL allocates GPU
  *   only memory for the buffer after creation.
- *
  * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_UPLOAD - PAL allocates CPU
  *   upload memory for the buffer after creation.
- *
  * - PAL_BUFFER_MEMORY_USAGE_AUTO_CPU_READBACK - PAL allocates CPU
  *   readback memory for the buffer after creation.
  *

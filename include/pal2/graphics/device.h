@@ -1,5 +1,5 @@
 /**
- * @file init.h
+ * @file device.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -156,13 +156,10 @@ typedef struct PalRayTracingCapabilities {
  *
  * `flags` shows the sub-features or capabilities of the descriptor indexing feature.
  * Each bit represents a supported operation. See below for more information:
- *
  * - PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND - Descriptors can be updated after
  *   the descriptor set has been bound.
- *
  * - PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND - Unused descriptors can be
  *   left uninitialized if shaders never access them.
- *
  * - PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING - Different threads
  *   can access different descriptors.
  *

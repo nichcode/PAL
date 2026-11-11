@@ -32,7 +32,6 @@
 
 /**
  * @defgroup dispatch_modes Event Dispatch Modes
- * @brief Defines dispatch modes of an event.
  * @ingroup pal_event
  * @{
  */

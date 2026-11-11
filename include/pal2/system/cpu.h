@@ -43,7 +43,6 @@
 
 /**
  * @defgroup cpu_architectures CPU Architectures
- * @brief Defines architectures of a CPU.
  * @ingroup pal_system
  * @{
  */
@@ -57,7 +56,6 @@
 
 /**
  * @defgroup cpu_features CPU Features (Instruction Sets)
- * @brief Defines instruction sets of a CPU.
  * @ingroup pal_system
  * @{
  */

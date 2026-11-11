@@ -30,7 +30,6 @@
 
 /**
  * @defgroup decoration_modes Window Decoration Modes
- * @brief Defines decoration modes of a decoration mode event.
  * @ingroup pal_event
  * @{
  */
@@ -41,7 +40,6 @@
 
 /**
  * @defgroup event_types Event Types
- * @brief Defines event types.
  * @ingroup pal_event
  * @{
  */
