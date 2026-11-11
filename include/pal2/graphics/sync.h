@@ -41,7 +41,7 @@
  *
  * @thread-safety `device` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -80,8 +80,8 @@ PAL_API void PAL_CALL palDestroyFence(PalFence* fence);
  *
  * @thread-safety `fence` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_TIMEOUT.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_TIMEOUT
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -104,8 +104,8 @@ PAL_API PalResult PAL_CALL palWaitFence(
  *
  * @thread-safety `fence` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -143,9 +143,9 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -183,10 +183,10 @@ PAL_API void PAL_CALL palDestroySemaphore(PalSemaphore* semaphore);
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `semaphore` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_TIMEOUT,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_TIMEOUT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -211,9 +211,9 @@ PAL_API PalResult PAL_CALL palWaitSemaphore(
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `queue` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -237,9 +237,9 @@ PAL_API PalResult PAL_CALL palSignalSemaphore(
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `semaphore` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

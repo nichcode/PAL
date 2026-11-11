@@ -38,8 +38,7 @@
  * @since Added in version 2.0
  * @ingroup pal_opengl
  */
-typedef struct PalGLFBConfig
-{
+typedef struct PalGLFBConfig {
     PalBool doubleBuffer; /**< Whether double buffering is supported. */
     PalBool stereo; /**< Whether stereo is supported. */
     PalBool sRGB; /**< Whether sRGB colorspace is supported. */

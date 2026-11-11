@@ -201,10 +201,10 @@ typedef struct PalDescriptorPoolCreateInfo {
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -242,10 +242,10 @@ PAL_API void PAL_CALL palDestroyDescriptorSetLayout(PalDescriptorSetLayout* layo
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -279,10 +279,10 @@ PAL_API void PAL_CALL palDestroyDescriptorPool(PalDescriptorPool* pool);
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `pool` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -306,10 +306,10 @@ PAL_API PalResult PAL_CALL palResetDescriptorPool(PalDescriptorPool* pool);
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` and `pool` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -333,10 +333,10 @@ PAL_API PalResult PAL_CALL palAllocateDescriptorSet(
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

@@ -81,9 +81,9 @@ typedef struct PalShaderBindingTableCreateInfo {
  *
  * @thread-safety `device` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

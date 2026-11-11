@@ -70,9 +70,9 @@ typedef struct PalCommandBufferSubmitInfo {
  *
  * @thread-safety `device` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -110,9 +110,9 @@ PAL_API void PAL_CALL palDestroyCommandPool(PalCommandPool* pool);
  *
  * @thread-safety `pool` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -131,9 +131,9 @@ PAL_API PalResult PAL_CALL palResetCommandPool(PalCommandPool* pool);
  *
  * @thread-safety `device` and `pool` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -168,10 +168,10 @@ PAL_API void PAL_CALL palFreeCommandBuffer(PalCommandBuffer* cmdBuffer);
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `cmdBuffer` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -189,10 +189,10 @@ PAL_API PalResult PAL_CALL palResetCommandBuffer(PalCommandBuffer* cmdBuffer);
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `queue` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

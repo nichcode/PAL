@@ -128,9 +128,9 @@ typedef struct PalSwapchainCreateInfo {
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -199,10 +199,10 @@ PAL_API void PAL_CALL palGetSurfaceCapabilities(
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -258,10 +258,10 @@ PAL_API PalImage* PAL_CALL palGetSwapchainImage(
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `swapchain` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_TIMEOUT,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_TIMEOUT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -283,9 +283,9 @@ PAL_API PalResult PAL_CALL palGetNextSwapchainImage(
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety Must be called from the main thread.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -310,8 +310,8 @@ PAL_API PalResult PAL_CALL palPresentSwapchain(
  *
  * @thread-safety `swapchain` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_DEVICE_LOST.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_DEVICE_LOST.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

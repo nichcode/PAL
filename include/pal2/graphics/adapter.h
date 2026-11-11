@@ -297,8 +297,8 @@ typedef struct PalAdapterCapabilities {
  *
  * @thread-safety Must be called from the main thread.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

@@ -29,6 +29,7 @@
 
 /**
  * @defgroup opengl_profiles OpenGL Context Profiles
+ * @brief Defines profiles for an OpenGL context.
  * @ingroup pal_opengl
  * @{
  */
@@ -41,6 +42,7 @@
 
 /**
  * @defgroup opengl_context_reset OpenGL Context Reset Behaviors
+ * @brief Defines reset behaviors for an OpenGL context.
  * @ingroup pal_opengl
  * @{
  */
@@ -52,6 +54,7 @@
 
 /**
  * @defgroup opengl_release OpenGL Context Release Behaviors
+ * @brief Defines release behaviors for an OpenGL context.
  * @ingroup pal_opengl
  * @{
  */

@@ -28,6 +28,17 @@
 #include "types.h"
 
 /**
+ * @defgroup descriptor_indexing_flags Descriptor Indexing Flags
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_NONE 0 /**< No descriptor indexing flags. */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND (1U << 0) /**< Update after bind. */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND (1U << 1) /**< Unused descriptors can be left uninitialized. */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING (1U << 2) /**< Non-uniform descriptor access. */
+/** @} */
+
+/**
  * @struct PalSamplerAnisotropyCapabilities
  * @brief Adapter sampler anisotropy capabilities.
  *
@@ -213,10 +224,10 @@ typedef struct PalSurfaceCapabilities {
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `adapter` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

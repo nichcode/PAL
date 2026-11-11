@@ -58,10 +58,10 @@
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `device` must be externally synchronized and `queue` must be per thread.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_INVALID_OPERATION.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_INVALID_OPERATION
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -179,7 +179,7 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
  *
  * @thread-safety `queue` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT.
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics

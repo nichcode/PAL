@@ -94,8 +94,7 @@
  * @since Added in version 2.0
  * @ingroup pal_opengl
  */
-typedef struct PalGLInfo
-{
+typedef struct PalGLInfo {
     PalGLExtensions extensions; /**< Bitmask of supported OpenGL extensions. */
     uint32_t major; /**< Major version. */
     uint32_t minor; /**< Minor version. */

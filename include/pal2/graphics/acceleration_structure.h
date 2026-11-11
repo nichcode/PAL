@@ -1,5 +1,5 @@
 /**
- * @file next.h
+ * @file acceleration_structure.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_NEXT_H
-#define PAL_GRAPHICS_NEXT_H
+#ifndef PAL_GRAPHICS_ACCELERATION_STRUCTURE_H
+#define PAL_GRAPHICS_ACCELERATION_STRUCTURE_H
 
 #include "types.h"
 
@@ -227,9 +227,9 @@ typedef struct PalAccelerationStructureCreateInfo {
  *
  * @thread-safety `device` must be externally synchronized.
  *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -278,4 +278,4 @@ PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size);
 
-#endif // PAL_GRAPHICS_NEXT_H
+#endif // PAL_GRAPHICS_ACCELERATION_STRUCTURE_H

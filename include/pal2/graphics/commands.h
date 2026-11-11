@@ -49,6 +49,36 @@
 /** @} */
 
 /**
+ * @defgroup usage_states Usage States
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_USAGE_STATE_UNDEFINED 0 /**< Invalid usage state. */
+#define PAL_USAGE_STATE_PRESENT 1 /**< Presenting to a surface. */
+#define PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE 2 /**< Writing as a color attachment. */
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ 3 /**< Reading as a depth attachment. */
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE 4 /**< Writing as a depth attachment. */
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ 5 /**< Reading as a stencil attachment. */
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE 6 /**< Writing as a stencil attachment. */
+#define PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ 7 /**< Reading as a fragment shading rate attachment. */
+#define PAL_USAGE_STATE_TRANSFER_READ 8 /**< Reading in a transfer operation. */
+#define PAL_USAGE_STATE_TRANSFER_WRITE 9 /**< Writing in a transfer operation. */
+#define PAL_USAGE_STATE_VERTEX_READ 10 /**< Reading as a vertex buffer. */
+#define PAL_USAGE_STATE_INDEX_READ 11 /**< Reading as an index buffer. */
+#define PAL_USAGE_STATE_INDIRECT_READ 12 /**< Reading as indirect arguments. */
+#define PAL_USAGE_STATE_UNIFORM_READ 13 /**< Reading as a uniform buffer. */
+#define PAL_USAGE_STATE_SHADER_READ 14 /**< Reading in a shader. */
+#define PAL_USAGE_STATE_SHADER_WRITE 15 /**< Writing in a shader. */
+#define PAL_USAGE_STATE_STORAGE_READ 16 /**< Reading as a storage resource. */
+#define PAL_USAGE_STATE_STORAGE_WRITE 17 /**< Writing as a storage resource. */
+#define PAL_USAGE_STATE_HOST_READ 18 /**< Reading from the CPU. */
+#define PAL_USAGE_STATE_HOST_WRITE 19 /**< Writing from the CPU. */
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ 20 /**< Reading as an acceleration structure. */
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE 21 /**< Writing as an acceleration structure. */
+#define PAL_USAGE_STATE_COUNT 22 /**< Number of usage states. */
+/** @} */
+
+/**
  * @struct PalClearValue
  * @brief Clear values.
  *
@@ -144,27 +174,6 @@ typedef struct PalRenderingInfo {
     uint32_t arrayLayerCount;                   /**< Number of array layers. */
     uint32_t colorAttachentCount;               /**< Number of color attachments. */
 } PalRenderingInfo;
-
-/**
- * @struct PalRenderingLayoutInfo
- * @brief Rendering layout information.
- *
- * This struct is used to reference an already existing @ref PalRenderingInfo.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- */
-typedef struct PalRenderingLayoutInfo {
-    PalFormat* colorAttachmentsFormat;             /**< Color attachments formats. */
-    uint32_t colorAttachentCount;                  /**< Number of color attachment formats. */
-    uint32_t viewCount;                            /**< Number of views. */
-    PalSampleCount sampleCount;                    /**< Number of samples per pixel. */
-    PalRenderingFlags flags;                       /**< Rendering flags. */
-    PalFormat depthStencilAttachmentFormat;        /**< Depth/stencil attachment format. */
-    PalFormat fragmentShadingRateAttachmentFormat; /**< Fragment shading rate attachment format. */
-} PalRenderingLayoutInfo;
 
 /**
  * @struct PalDrawIndirectData
@@ -273,10 +282,10 @@ typedef struct PalWorkGroupInfo {
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `cmdBuffer` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
@@ -295,10 +304,10 @@ PAL_API PalResult PAL_CALL palCmdBegin(
  *         Call @ref palFormatResult() for more information.
  *
  * @thread-safety `cmdBuffer` must be externally synchronized.
- *
- * @result-codes Possible result codes include @ref PAL_RESULT_CODE_INVALID_ARGUMENT,
- *               @ref PAL_RESULT_CODE_OUT_OF_MEMORY,
- *               @ref PAL_RESULT_CODE_PLATFORM_FAILURE.
+ * 
+ * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
+ * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
+ * @result-code @ref PAL_RESULT_CODE_PLATFORM_FAILURE
  *
  * @since Added in version 2.0
  * @ingroup pal_graphics
