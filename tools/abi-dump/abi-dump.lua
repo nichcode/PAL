@@ -6,5 +6,8 @@ project "abi-dump"
     objdir(objDir)
 
     files { "src/**.c" }
-    includedirs { "%{wks.location}/include" }
+    includedirs { 
+        "%{wks.location}/include", 
+        "%{wks.location}/tools/abi-dump/src"
+    }
     links { "PAL2" }

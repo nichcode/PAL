@@ -1,5 +1,6 @@
 
-#include "helpers.h"
+#include "dumps.h"
+#include "pal2/core/version.h"
 
 #define VERSION "1.0"
 #define LOG_NAME "PAL ABI Dump"

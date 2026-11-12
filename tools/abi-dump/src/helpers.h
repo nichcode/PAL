@@ -1,8 +1,8 @@
 
-#ifndef HELPERS_H
-#define HELPERS_H
+#ifndef ABI_DUMP_HELPERS_H
+#define ABI_DUMP_HELPERS_H
 
-#include "pal2/pal_core.h"
+#include "pal2/core/base.h"
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -25,28 +25,24 @@
 
 extern uint32_t g_DumpFlags;
 
-typedef struct FieldBase
-{
+typedef struct FieldBase {
     uint32_t offset;
     uint32_t size;
 } FieldBase;
 
-typedef struct StructBase
-{
+typedef struct StructBase {
     uint32_t align;
     uint32_t size;
     uint32_t padding;
 } StructBase;
 
-typedef struct FieldInfo
-{
+typedef struct FieldInfo {
     const char* name;
     FieldBase expected;
     FieldBase actual;
 } FieldInfo;
 
-typedef struct StructInfo
-{
+typedef struct StructInfo {
     const char* name;
     FieldInfo* fields;
     uint32_t fieldCount;
@@ -61,16 +57,4 @@ typedef struct StructInfo
 
 bool dumpStruct(const StructInfo* info);
 
-/**
- * We add a high level function that calls its system dump functions. This is
- * here to avoid bloating the main.c with dumps (eg. allocator dump, etc)
-*/
-bool coreStructs(void);
-bool eventStructs(void);
-bool threadStructs(void);
-bool systemStructs(void);
-bool videoStructs(void);
-bool openglStructs(void);
-bool graphicsStructs(void);
-
-#endif // HELPERS_H
+#endif // ABI_DUMP_HELPERS_H

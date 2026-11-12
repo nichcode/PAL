@@ -1,17 +1,9 @@
 
 #include "helpers.h"
-#include "pal2/pal_thread.h"
+#include "pal2/thread/thread.h"
 
-bool threadStructs(void)
+bool threadCreateInfoStruct(void)
 {
-    if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
-        palLog(nullptr, "");
-        palLog(nullptr, "===========================================");
-        palLog(nullptr, "Thread ABI Dump");
-        palLog(nullptr, "===========================================");
-        palLog(nullptr, "");
-    }
-
     FieldInfo fields[] = {
         {"stackSize", {0, 8}, FIELD(PalThreadCreateInfo, stackSize)},
         {"allocator", {8, 8}, FIELD(PalThreadCreateInfo, allocator)},
