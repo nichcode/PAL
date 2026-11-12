@@ -25,8 +25,51 @@
 #ifndef PAL_OPENGL_INIT_H
 #define PAL_OPENGL_INIT_H
 
-#include "types.h"
+#include "pal2/core/result.h"
 #include "pal2/core/memory.h"
+
+/**
+ * @typedef PalGLExtensions
+ * @brief OpenGL extensions.
+ *
+ * Identifies the OpenGL extensions supported by the driver. This is a bitmask of all
+ * supported extensions of the OpenGL system known to PAL.
+ *
+ * All values of this type follow the format `PAL_GL_EXTENSION_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_opengl
+ */
+typedef uint64_t PalGLExtensions;
+
+/**
+ * @typedef PalGLBackend
+ * @brief OpenGL backend.
+ *
+ * Identifies the backend used by the OpenGL driver.
+ *
+ * All values of this type follow the format `PAL_GL_BACKEND_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_opengl
+ */
+typedef uint32_t PalGLBackend;
+
+/**
+ * @typedef PalGLAPI
+ * @brief OpenGL API.
+ *
+ * Identifies the kind of OpenGL API used by the driver.
+ *
+ * All values of this type follow the format `PAL_GL_API_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_opengl
+ */
+typedef uint32_t PalGLAPI;
 
 /**
  * @brief Maximum size of the vendor name, including the NULL terminator.

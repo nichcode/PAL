@@ -25,7 +25,7 @@
 #ifndef PAL_OPENGL_FBCONFIG_H
 #define PAL_OPENGL_FBCONFIG_H
 
-#include "types.h"
+#include "pal2/core/base.h"
 
 /**
  * @struct PalGLFBConfig

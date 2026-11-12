@@ -25,7 +25,60 @@
 #ifndef PAL_OPENGL_CONTEXT_H
 #define PAL_OPENGL_CONTEXT_H
 
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
 #include "fbconfig.h"
+
+/**
+ * @typedef PalGLProfile
+ * @brief OpenGL context profile.
+ *
+ * Identifies the profile used to create an OpenGL context.
+ *
+ * All values of this type follow the format `PAL_GL_PROFILE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_opengl
+ */
+typedef uint32_t PalGLProfile;
+
+/**
+ * @typedef PalGLContextReset
+ * @brief OpenGL context reset behavior.
+ *
+ * Identifies how a context behaves when a graphics reset occurs.
+ *
+ * All values of this type follow the format `PAL_GL_CONTEXT_RESET_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_opengl
+ */
+typedef uint32_t PalGLContextReset;
+
+/**
+ * @typedef PalGLReleaseBehavior
+ * @brief OpenGL context release behavior.
+ *
+ * Identifies how a context behaves when it is released.
+ *
+ * All values of this type follow the format `PAL_GL_RELEASE_BEHAVIOR_*` for
+ * API consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_opengl
+ */
+typedef uint32_t PalGLReleaseBehavior;
+
+/**
+ * @struct PalGLContext
+ * @brief Opaque handle to an OpenGL context.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_opengl
+ */
+typedef struct PalGLContext PalGLContext;
 
 /**
  * @defgroup opengl_profiles OpenGL Context Profiles
