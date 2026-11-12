@@ -26,15 +26,13 @@
 #ifndef PAL_EVENT_QUEUE_H
 #define PAL_EVENT_QUEUE_H
 
-#include "types.h"
+#include "event.h"
 
 /**
  * @brief Number of events the default queue can hold at a time.
  * @ingroup pal_event
  */
 #define PAL_DEFAULT_QUEUE_EVENT_COUNT 512
-
-typedef struct PalEvent PalEvent;
 
 /**
  * @typedef PalPushFn

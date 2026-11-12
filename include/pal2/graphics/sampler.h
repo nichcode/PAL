@@ -1,5 +1,5 @@
 /**
- * @file init.h
+ * @file sampler.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_SBT_H
-#define PAL_GRAPHICS_SBT_H
+#ifndef PAL_GRAPHICS_SAMPLER_H
+#define PAL_GRAPHICS_SAMPLER_H
 
 #include "types.h"
 
@@ -142,4 +142,4 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  */
 PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
 
-#endif // PAL_GRAPHICS_SBT_H
+#endif // PAL_GRAPHICS_SAMPLER_H

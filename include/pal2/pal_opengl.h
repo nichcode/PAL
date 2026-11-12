@@ -23,7 +23,7 @@
  */
 
 /**
- * @defgroup pal_opengl OpenGL Module
+ * @defgroup pal_opengl OpenGL
  * @brief Contexts and framebuffer configurations for native windows.
  */
 

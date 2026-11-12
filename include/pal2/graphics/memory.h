@@ -1,5 +1,5 @@
 /**
- * @file init.h
+ * @file memory.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_INIT_H
-#define PAL_GRAPHICS_INIT_H
+#ifndef PAL_GRAPHICS_MEMORY_H
+#define PAL_GRAPHICS_MEMORY_H
 
 #include "types.h"
 
@@ -103,4 +103,4 @@ PAL_API PalResult PAL_CALL palAllocateMemory(
  */
 PAL_API void PAL_CALL palFreeMemory(PalMemory* memory);
 
-#endif // PAL_GRAPHICS_INIT_H
+#endif // PAL_GRAPHICS_MEMORY_H

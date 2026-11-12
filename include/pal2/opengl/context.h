@@ -25,7 +25,7 @@
 #ifndef PAL_OPENGL_CONTEXT_H
 #define PAL_OPENGL_CONTEXT_H
 
-#include "types.h"
+#include "fbconfig.h"
 
 /**
  * @defgroup opengl_profiles OpenGL Context Profiles
@@ -59,8 +59,6 @@
 #define PAL_GL_RELEASE_BEHAVIOR_FLUSH 1 /**< Flush context before release. */
 #define PAL_GL_RELEASE_BEHAVIOR_COUNT 2 /**< Number of context release behaviors. */
 /** @} */
-
-typedef struct PalGLFBConfig PalGLFBConfig;
 
 /**
  * @struct PalGLWindow

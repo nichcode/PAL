@@ -1,11 +1,6 @@
 
 /**
  * @file pal_graphics.h
- * @brief Header file for the PAL Graphics API.
- *
- * Defines the types, constants and functions of the module. The module provides a low-level, Vulkan-style API
- * for adapters, devices, queues, swapchains, resources, pipelines and command recording, and supports custom
- * backends.
  *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -29,12 +24,32 @@
  */
 
 /**
- * @defgroup pal_graphics Graphics Module
+ * @defgroup pal_graphics Graphics
+ * @brief Adapters, devices, queues, swapchains, resources, pipelines and supports custom backends.
  * @ingroup pal_graphics
- * @{
  */
 
 #ifndef PAL_GRAPHICS_H
 #define PAL_GRAPHICS_H
+
+#include "graphics/acceleration_structure.h"
+#include "graphics/adapter.h"
+#include "graphics/buffer.h"
+#include "graphics/command_buffer.h"
+#include "graphics/commands.h"
+#include "graphics/descriptor.h"
+#include "graphics/device.h"
+#include "graphics/format.h"
+#include "graphics/image.h"
+#include "graphics/init.h"
+#include "graphics/memory.h"
+#include "graphics/pipeline.h"
+#include "graphics/queue.h"
+#include "graphics/sampler.h"
+#include "graphics/sbt.h"
+#include "graphics/swapchain.h"
+#include "graphics/sync.h"
+#include "graphics/vtable1.h"
+#include "graphics/vtable2.h"
 
 #endif // PAL_GRAPHICS_H

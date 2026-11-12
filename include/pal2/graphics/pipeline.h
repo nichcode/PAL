@@ -1,5 +1,5 @@
 /**
- * @file next.h
+ * @file pipeline.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_NEXT_H
-#define PAL_GRAPHICS_NEXT_H
+#ifndef PAL_GRAPHICS_PIPELINE_H
+#define PAL_GRAPHICS_PIPELINE_H
 
 #include "types.h"
 
@@ -760,4 +760,4 @@ PAL_API PalResult PAL_CALL palCreateRayTracingPipeline(
  */
 PAL_API void PAL_CALL palDestroyPipeline(PalPipeline* pipeline);
 
-#endif // PAL_GRAPHICS_NEXT_H
+#endif // PAL_GRAPHICS_PIPELINE_H

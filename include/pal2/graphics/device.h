@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_SBT_H
-#define PAL_GRAPHICS_SBT_H
+#ifndef PAL_GRAPHICS_DEVICE_H
+#define PAL_GRAPHICS_DEVICE_H
 
 #include "types.h"
 
@@ -441,4 +441,4 @@ static inline PalBool PAL_CALL palIsSupported(
     return (mask & (1U << value)) != 0;
 }
 
-#endif // PAL_GRAPHICS_SBT_H
+#endif // PAL_GRAPHICS_DEVICE_H

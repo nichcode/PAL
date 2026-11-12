@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_NEXT_H
-#define PAL_GRAPHICS_NEXT_H
+#ifndef PAL_GRAPHICS_COMMAND_BUFFER_H
+#define PAL_GRAPHICS_COMMAND_BUFFER_H
 
 #include "types.h"
 
@@ -201,4 +201,4 @@ PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalCommandBufferSubmitInfo* info);
 
-#endif // PAL_GRAPHICS_NEXT_H
+#endif // PAL_GRAPHICS_COMMAND_BUFFER_H

@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_NEXT_H
-#define PAL_GRAPHICS_NEXT_H
+#ifndef PAL_GRAPHICS_IMAGE_H
+#define PAL_GRAPHICS_IMAGE_H
 
 #include "types.h"
 
@@ -110,31 +110,6 @@ typedef struct PalImageInfo {
     PalFormat format;           /**< Image format. */
     PalBool belongsToSwapchain; /**< Whether image belongs to a swapchain. */
 } PalImageInfo;
-
-/**
- * @struct PalBufferImageCopyInfo
- * @brief Buffer-image copy information.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- */
-typedef struct PalBufferImageCopyInfo {
-    uint64_t bufferOffset;         /**< Offset in bytes into the buffer. */
-    PalImageAspect imageAspect;    /**< Image aspect. */
-    uint32_t bufferRowLength;      /**< Buffer row length in texels. */
-    uint32_t bufferImageHeight;    /**< Buffer image height in texels. */
-    uint32_t ImageMipLevel;        /**< Mipmap level of the image. */
-    uint32_t ImageStartArrayLayer; /**< Starting array layer of the image. */
-    uint32_t ImageArrayLayerCount; /**< Number of array layers of the image. */
-    int32_t imageOffsetX;          /**< X image offset in texels. */
-    int32_t imageOffsetY;          /**< Y image offset in texels. */
-    int32_t imageOffsetZ;          /**< Z image offset in texels. */
-    uint32_t imageWidth;           /**< Image width in texels. */
-    uint32_t imageHeight;          /**< Image height in texels. */
-    uint32_t imageDepth;           /**< Image depth in texels. */
-} PalBufferImageCopyInfo;
 
 /**
  * @struct PalImageCopyInfo
@@ -399,4 +374,4 @@ PAL_API PalResult PAL_CALL palCreateImageView(
  */
 PAL_API void PAL_CALL palDestroyImageView(PalImageView* imageView);
 
-#endif // PAL_GRAPHICS_NEXT_H
+#endif // PAL_GRAPHICS_IMAGE_H

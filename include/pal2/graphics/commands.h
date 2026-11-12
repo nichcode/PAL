@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_NEXT_H
-#define PAL_GRAPHICS_NEXT_H
+#ifndef PAL_GRAPHICS_COMMANDS_H
+#define PAL_GRAPHICS_COMMANDS_H
 
 #include "types.h"
 
@@ -1343,4 +1343,4 @@ PAL_API void PAL_CALL palBuildWorkGroupInfo(
     uint32_t* count,
     PalWorkGroupInfo* infos);
 
-#endif // PAL_GRAPHICS_NEXT_H
+#endif // PAL_GRAPHICS_COMMANDS_H

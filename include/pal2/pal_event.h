@@ -33,5 +33,7 @@
 #define PAL_EVENT_H
 
 #include "event/driver.h"
+#include "event/event.h"
+#include "event/queue.h"
 
 #endif // PAL_EVENT_H

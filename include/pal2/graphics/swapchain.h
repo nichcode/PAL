@@ -1,5 +1,5 @@
 /**
- * @file next.h
+ * @file swapchain.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_NEXT_H
-#define PAL_GRAPHICS_NEXT_H
+#ifndef PAL_GRAPHICS_SWAPCHAIN_H
+#define PAL_GRAPHICS_SWAPCHAIN_H
 
 #include "types.h"
 
@@ -69,7 +69,7 @@
 #define PAL_WINDOW_INSTANCE_TYPE_WAYLAND 0 /**< Wayland display. */
 #define PAL_WINDOW_INSTANCE_TYPE_X11 1 /**< X11 display (Xlib). */
 #define PAL_WINDOW_INSTANCE_TYPE_XCB 2 /**< XCB connection. */
-#define PAL_WINDOW_INSTANCE_TYPE_WIN32 3 /**< Win32 module instance. */
+#define PAL_WINDOW_INSTANCE_TYPE_WIN32 3 /**< Win32 application instance. */
 #define PAL_WINDOW_INSTANCE_TYPE_COUNT 4 /**< Number of window instance types. */
 /** @} */
 
@@ -321,4 +321,4 @@ PAL_API PalResult PAL_CALL palResizeSwapchain(
     uint32_t newWidth,
     uint32_t newHeight);
 
-#endif // PAL_GRAPHICS_NEXT_H
+#endif // PAL_GRAPHICS_SWAPCHAIN_H

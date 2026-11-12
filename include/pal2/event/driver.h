@@ -28,7 +28,6 @@
 
 #include "pal2/core/memory.h"
 #include "queue.h"
-#include "event.h"
 
 /**
  * @defgroup dispatch_modes Event Dispatch Modes

@@ -23,7 +23,7 @@
  */
 
 /**
- * @defgroup pal_video Video Module
+ * @defgroup pal_video Video
  * @brief Windows, monitors, cursors and icons, and reports keyboard and mouse
  * input state.
  */

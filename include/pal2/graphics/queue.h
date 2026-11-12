@@ -1,5 +1,5 @@
 /**
- * @file init.h
+ * @file queue.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,8 +22,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_FORMAT_H
-#define PAL_GRAPHICS_FORMAT_H
+#ifndef PAL_GRAPHICS_QUEUE_H
+#define PAL_GRAPHICS_QUEUE_H
 
 #include "types.h"
 
@@ -186,4 +186,4 @@ PAL_API PalBool PAL_CALL palCanQueueUsePipelineStages(
  */
 PAL_API PalResult PAL_CALL palWaitQueue(PalQueue* queue);
 
-#endif // PAL_GRAPHICS_FORMAT_H
+#endif // PAL_GRAPHICS_QUEUE_H

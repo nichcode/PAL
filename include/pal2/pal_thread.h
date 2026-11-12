@@ -24,7 +24,7 @@
  */
 
 /**
- * @defgroup pal_thread Thread Module
+ * @defgroup pal_thread Thread
  * @brief Threads, thread-local storage (TLS), mutexes and condition variables.
  */
 
