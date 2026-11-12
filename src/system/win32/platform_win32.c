@@ -21,8 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "shared.h"
-#include "system/system_platform.h"
+#include "system/platform.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

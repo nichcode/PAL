@@ -1,5 +1,5 @@
 
-#include "pal2/pal_core.h"
+#include "pal2/core/memory.h"
 #include <stdbool.h>
 
 typedef struct AllocatorContext

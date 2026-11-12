@@ -21,8 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "shared.h"
-#include "thread/thread_platform.h"
+#include "thread/platform.h"
 
 #if PLATFORM_POSIX
 #include "thread_posix.h"

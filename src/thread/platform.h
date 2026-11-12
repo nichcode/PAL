@@ -24,7 +24,11 @@
 #ifndef THREAD_PLATFORM_H
 #define THREAD_PLATFORM_H
 
-#include "pal2/pal_thread.h"
+#include "shared.h"
+#include "pal2/thread/thread.h"
+#include "pal2/thread/condvar.h"
+#include "pal2/thread/mutex.h"
+#include "pal2/thread/tls.h"
 
 /** This function has the same semantics and rules as 
  * palCreateThread()

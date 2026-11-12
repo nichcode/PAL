@@ -1,5 +1,5 @@
 
-#include "pal2/pal_core.h"
+#include "pal2/core/result.h"
 
 #define MAX_RESULTS 4
 

@@ -24,16 +24,17 @@
 #ifndef SYSTEM_PLATFORM_H
 #define SYSTEM_PLATFORM_H
 
+#include "shared.h"
 #include "pal2/pal_system.h"
 
-/** This function has the same semantics and rules as 
- * palGetPlatformInfo()
+/** Gets platform information. Defaults must be used if
+ * there is no real information.
  */
 void platformGetPlatformInfo(PalPlatformInfo* info);
 
 
-/** This function has the same semantics and rules as 
- * palGetCPUInfo()
+/** Gets CPU information. Defaults must be used if
+ * there is no real information.
  */
 void platformGetCPUInfo(
     const PalAllocator* allocator,

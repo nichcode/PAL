@@ -21,8 +21,9 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "shared.h"
-#include "core/core_platform.h"
+#include "core/platform.h"
+#include "pal2/core/result.h"
+
 #if PLATFORM_POSIX
 
 void platformFormatResult(

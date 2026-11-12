@@ -21,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "pal2/pal_core.h"
 #include "shared.h"
+#include "pal2/core/memory.h"
 #include <stdlib.h>
 
 void* PAL_CALL palAllocate(

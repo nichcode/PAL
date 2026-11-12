@@ -21,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "shared.h"
-#include "system_platform.h"
+#include "platform.h"
+#include "string.h"
 
 void PAL_CALL palGetPlatformInfo(PalPlatformInfo* info)
 {

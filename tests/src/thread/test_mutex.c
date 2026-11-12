@@ -1,6 +1,6 @@
 
-#include "pal2/pal_thread.h"
-#include <stdbool.h>
+#include "pal2/thread/thread.h"
+#include "pal2/thread/mutex.h"
 
 #define MAX_COUNTER 10000
 #define THREAD_COUNT 2

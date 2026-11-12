@@ -21,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "core_platform.h"
-#include "shared.h"
+#include "platform.h"
+#include "pal2/core/memory.h"
 #include <stdio.h>
 #include <string.h>
 

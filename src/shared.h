@@ -31,7 +31,6 @@
 #define PLATFORM_POSIX 0
 #endif // __linux__
 
-#include <stdbool.h>
 #include <stdarg.h>
 #include <stdint.h>
 

@@ -21,8 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "pal2/pal_core.h"
-#include "core_platform.h"
+#include "platform.h"
 
 uint64_t PAL_CALL palGetPerformanceCounter(void)
 {

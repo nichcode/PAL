@@ -27,8 +27,8 @@
 #include "shared.h"
 #if PLATFORM_POSIX
 
+#include "pal2/core/memory.h"
 #include <pthread.h>
-#include "pal2/pal_thread.h"
 
 struct PalCondVar 
 {

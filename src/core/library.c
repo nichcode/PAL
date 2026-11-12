@@ -21,9 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "pal2/pal_core.h"
-#include "shared.h"
-#include "core_platform.h"
+#include "platform.h"
+#include "pal2/core/library.h"
 
 PalLibrary* PAL_CALL palLoadLibrary(const char* path)
 {

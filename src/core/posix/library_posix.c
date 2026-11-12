@@ -21,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "shared.h"
-#include "pal2/pal_core.h"
+#include "core/platform.h"
+#include "pal2/core/library.h"
 
 #if PLATFORM_POSIX
 #include <dlfcn.h>

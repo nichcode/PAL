@@ -25,8 +25,8 @@
 #define THREAD_WIN32_H
 #ifdef _WIN32
 
+#include "pal2/core/memory.h"
 #include <windows.h>
-#include "pal2/pal_thread.h"
 
 struct PalCondVar 
 {

@@ -24,7 +24,10 @@
 #ifndef CORE_PLATFORM_H
 #define CORE_PLATFORM_H
 
-#include "pal2/pal_core.h"
+#include "shared.h"
+#include "pal2/core/result.h"
+#include "pal2/core/library.h"
+#include "pal2/core/log.h"
 
 /** 
  * A sensible default for native code format buffer size. It can be increased.
@@ -32,7 +35,7 @@
  */
 #define FORMAT_BUFFER_SIZE 256
 
-/** Contains Log TLS state. Every platform must use this exact data structure*/
+/** Contains Log TLS state. Every platform must use this exact data structure. */
 typedef struct LogTLSData
 {
     char tmp[PAL_LOG_MSG_SIZE];
@@ -41,50 +44,45 @@ typedef struct LogTLSData
 } LogTLSData;
 
 /**
- * Create a TLS for logging. This function returns nothing because
+ * Creates a TLS for logging. This function returns nothing because
  * it leaves the actual TLS handle to the implementation.
  */
 void platformCreateLogTLS(void);
 
-/** Gets the Log TLS data.*/
+/** Gets the Log TLS data with the TLS handle created from 
+ * platformCreateLogTLS().*/
 LogTLSData* platformGetLogTLSData(void);
 
-/** Sets the Log TLS data.*/
+/** Sets the Log TLS data for the TLS handle created from 
+ * platformCreateLogTLS(). */
 void platformSetLogTLSData(LogTLSData* data);
 
 
 /**
- * This function gets the native code and the source from the result
+ * Gets the native code and the source from the result
  * and gets the platform format string if available.
- * The buffer size is `FORMAT_BUFFER_SIZE`. 
+ * The buffer size is must be `FORMAT_BUFFER_SIZE` including the
+ * Null-terminator.
  */
 void platformFormatResult(PalResult result, char* buffer);
 
 
-/** This function has the same semantics and rules as 
- * palGetPerformanceCounter()
- */
+/** Gets the performance counter value */
 uint64_t platformGetPerformanceCounter(void);
 
-/** This function has the same semantics and rules as 
- * palGetPerformanceFrequency()
- */
+/** Get the performance counter frequency in counts per second. */
 uint64_t platformGetPerformanceFrequency(void);
 
 
-/** This function has the same semantics and rules as 
- * palLoadLibrary()
- */
+/** Loads a dynamic library. If the library depends on other libraries,
+ * they must be loaded. If `path` is nullptr, behavior is
+ * implementation defined. */
 PalLibrary* platformLoadLibrary(const char* path);
 
-/** This function has the same semantics and rules as 
- * palGetSymbol()
- */
+/** Gets a symbol from a loaded dynamic library. */
 PalLibrarySymbol platformGetSymbol(PalLibrary* library, const char* name);
 
-/** This function has the same semantics and rules as 
- * palFreeLibrary()
- */
+/** Frees a loaded dynamic library. */
 void platformFreeLibrary(PalLibrary* library);
 
 #endif // CORE_PLATFORM_H

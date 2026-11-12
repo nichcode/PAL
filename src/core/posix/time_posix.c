@@ -21,8 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "shared.h"
-#include "core/core_platform.h"
+#include "core/platform.h"
 
 #if PLATFORM_POSIX
 #include <time.h>

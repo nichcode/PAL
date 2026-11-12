@@ -22,8 +22,7 @@
  */
 
 #define _GNU_SOURCE
-#include "shared.h"
-#include "thread/thread_platform.h"
+#include "thread/platform.h"
 
 #if PLATFORM_POSIX
 #include <sched.h>

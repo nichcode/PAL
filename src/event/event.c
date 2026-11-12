@@ -22,7 +22,7 @@
  */
 
 #include "shared.h"
-#include "pal2/pal_event.h"
+#include "pal2/event/driver.h"
 #include <string.h>
 
 struct PalEventDriver 

@@ -21,7 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "pal2/pal_event.h"
+#include "pal2/core/memory.h"
+#include "pal2/event/queue.h"
 
 typedef struct QueueData
 {

@@ -1,5 +1,5 @@
 
-#include "pal2/pal_core.h"
+#include "pal2/core/log.h"
 #include <stdbool.h>
 
 #define MAX_LOGGERS 4

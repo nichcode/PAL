@@ -21,7 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "core/core_platform.h"
+#include "core/platform.h"
+#include "pal2/core/log.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

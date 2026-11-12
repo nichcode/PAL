@@ -1,5 +1,5 @@
 
-#include "pal2/pal_system.h"
+#include "pal2/system/cpu.h"
 #include <string.h>
 
 static const char* cpuArchToString(PalCpuArch arch)

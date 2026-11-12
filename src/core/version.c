@@ -21,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "pal2/pal_core.h"
 #include "shared.h"
+#include "pal2/core/version.h"
 
 #define VERSION_MAJOR 2
 #define VERSION_MINOR 2

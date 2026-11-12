@@ -21,8 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "shared.h"
-#include "thread_platform.h"
+#include "platform.h"
 
 PalResult PAL_CALL palCreateMutex(
     const PalAllocator* allocator,
