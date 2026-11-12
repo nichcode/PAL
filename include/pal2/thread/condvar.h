@@ -26,8 +26,19 @@
 #ifndef PAL_THREAD_CONDVAR_H
 #define PAL_THREAD_CONDVAR_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
 #include "pal2/core/memory.h"
+#include "mutex.h"
+
+/**
+ * @struct PalCondVar
+ * @brief Opaque handle to a condition variable.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_thread
+ */
+typedef struct PalCondVar PalCondVar;
 
 /**
  * @brief Creates a condition variable.

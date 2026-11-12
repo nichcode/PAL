@@ -26,8 +26,18 @@
 #ifndef PAL_THREAD_MUTEX_H
 #define PAL_THREAD_MUTEX_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
 #include "pal2/core/memory.h"
+
+/**
+ * @struct PalMutex
+ * @brief Opaque handle to a mutex.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_thread
+ */
+typedef struct PalMutex PalMutex;
 
 /**
  * @brief Creates a mutex.

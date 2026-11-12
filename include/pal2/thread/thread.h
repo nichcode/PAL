@@ -26,8 +26,46 @@
 #ifndef PAL_THREAD_THREAD_H
 #define PAL_THREAD_THREAD_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
 #include "pal2/core/memory.h"
+
+/**
+ * @typedef PalThreadFeatures
+ * @brief Thread system features.
+ *
+ * This is a bitmask of the features supported by the thread system.
+ *
+ * All values of this type follow the format `PAL_THREAD_FEATURE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_thread
+ */
+typedef uint32_t PalThreadFeatures;
+
+/**
+ * @typedef PalThreadPriority
+ * @brief Thread priority.
+ *
+ * Identifies the scheduling priority of a thread.
+ *
+ * All values of this type follow the format `PAL_THREAD_PRIORITY_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_thread
+ */
+typedef uint32_t PalThreadPriority;
+
+/**
+ * @struct PalThread
+ * @brief Opaque handle to a thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_thread
+ */
+typedef struct PalThread PalThread;
 
 /**
  * @defgroup thread_features Thread Features

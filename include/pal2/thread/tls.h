@@ -26,7 +26,16 @@
 #ifndef PAL_THREAD_TLS_H
 #define PAL_THREAD_TLS_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+
+/**
+ * @typedef PalTLSId
+ * @brief Opaque handle to a thread-local storage (TLS) slot.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_thread
+ */
+typedef uint32_t PalTLSId;
 
 /**
  * @typedef PaTlsDestructorFn
