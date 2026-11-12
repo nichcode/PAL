@@ -29,7 +29,6 @@
 #include "pal2/core/result.h"
 #include "device.h"
 #include "memory.h"
-#include "acceleration_structure.h"
 
 /**
  * @typedef PalDeviceAddress
@@ -112,21 +111,6 @@ typedef struct PalBuffer PalBuffer;
 /** @} */
 
 /**
- * @struct PalImageStagingRequirements
- * @brief Image staging buffer requirements.
- *
- * Filled in by @ref palComputeImageStagingRequirements().
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- */
-typedef struct PalImageStagingRequirements {
-    uint64_t bufferSize;        /**< Required buffer size in bytes. */
-    uint32_t bufferRowLength;   /**< Required buffer row length in texels. */
-    uint32_t bufferImageHeight; /**< Required buffer image height in texels. */
-} PalImageStagingRequirements;
-
-/**
  * @struct PalBufferCopyInfo
  * @brief Buffer copy information.
  *
@@ -140,31 +124,6 @@ typedef struct PalBufferCopyInfo {
     uint64_t dstOffset; /**< Offset in bytes in destination buffer. */
     uint64_t srcOffset; /**< Offset in bytes in source buffer. */
 } PalBufferCopyInfo;
-
-/**
- * @struct PalBufferImageCopyInfo
- * @brief Buffer-image copy information.
- *
- * Uninitialized fields may result in undefined behavior.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- */
-typedef struct PalBufferImageCopyInfo {
-    uint64_t bufferOffset;         /**< Offset in bytes into the buffer. */
-    PalImageAspect imageAspect;    /**< Image aspect. */
-    uint32_t bufferRowLength;      /**< Buffer row length in texels. */
-    uint32_t bufferImageHeight;    /**< Buffer image height in texels. */
-    uint32_t ImageMipLevel;        /**< Mipmap level of the image. */
-    uint32_t ImageStartArrayLayer; /**< Starting array layer of the image. */
-    uint32_t ImageArrayLayerCount; /**< Number of array layers of the image. */
-    int32_t imageOffsetX;          /**< X image offset in texels. */
-    int32_t imageOffsetY;          /**< Y image offset in texels. */
-    int32_t imageOffsetZ;          /**< Z image offset in texels. */
-    uint32_t imageWidth;           /**< Image width in texels. */
-    uint32_t imageHeight;          /**< Image height in texels. */
-    uint32_t imageDepth;           /**< Image depth in texels. */
-} PalBufferImageCopyInfo;
 
 /**
  * @struct PalBufferCreateInfo
@@ -262,107 +221,6 @@ PAL_API void PAL_CALL palDestroyBuffer(PalBuffer* buffer);
 PAL_API void PAL_CALL palGetBufferMemoryRequirements(
     PalBuffer* buffer,
     PalMemoryRequirements* requirements);
-
-/**
- * @brief Computes size for an acceleration structure instance buffer.
- *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
- * Otherwise behavior is undefined.
- *
- * This does not allocate memory for the buffer. This function is required for all
- * acceleration structure instance buffers.
- *
- * @param[in] device The device to use.
- * @param[in] instanceCount Number of instances the instance buffer will hold.
- * @param[out] outSize Pointer to a uint64_t to receive the required size.
- *
- * @thread-safety Thread safe.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- *
- * @sa palWriteInstanceStaging
- */
-PAL_API void PAL_CALL palComputeInstanceStagingSize(
-    PalDevice* device,
-    uint32_t instanceCount,
-    uint64_t* outSize);
-
-/**
- * @brief Computes requirements for an image staging buffer.
- *
- * This does not allocate memory for the buffer. This function is required for all
- * image copy staging buffers.
- *
- * `PalBufferImageCopyInfo::bufferRowLength` and `PalBufferImageCopyInfo::bufferImageHeight`
- * are hints. The driver might used it defaults if the requested is not supported. After this call,
- * set those values to the required ones from `requirements`.
- * If the driver supports the provided, the values will be the same.
- *
- * @param[in] device The device to use.
- * @param[in] imageFormat Destination image format.
- * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * @param[out] requirements Pointer to a PalImageStagingRequirements to receive the requirements.
- *
- * @thread-safety Thread safe.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- *
- * @sa palWriteImageStaging
- */
-PAL_API void PAL_CALL palComputeImageStagingRequirements(
-    PalDevice* device,
-    PalFormat imageFormat,
-    const PalBufferImageCopyInfo* copyInfo,
-    PalImageStagingRequirements* requirements);
-
-/**
- * @brief Writes data to an instance staging buffer.
- *
- * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
- * Otherwise behavior is undefined.
- *
- * @param[in] device The device to use.
- * @param[in] instanceCount Number of instances.
- * @param[in] instances Array of PalAccelerationStructureInstance struct to write.
- * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
- *
- * @thread-safety Thread safe.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- *
- * @sa palComputeInstanceStagingSize
- */
-PAL_API void PAL_CALL palWriteInstanceStaging(
-    PalDevice* device,
-    uint32_t instanceCount,
-    PalAccelerationStructureInstance* instances,
-    void* ptr);
-
-/**
- * @brief Writes data to an image staging buffer.
- *
- * @param[in] device The device to use.
- * @param[in] imageFormat Destination image format.
- * @param[in] copyInfo Pointer to a PalBufferImageCopyInfo struct that specifies parameters.
- * @param[out] srcData Pointer to the CPU visible memory with the data.
- * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
- *
- * @thread-safety Thread safe.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- *
- * @sa palComputeImageStagingRequirements
- */
-PAL_API void PAL_CALL palWriteImageStaging(
-    PalDevice* device,
-    PalFormat imageFormat,
-    PalBufferImageCopyInfo* copyInfo,
-    void* srcData,
-    void* ptr);
 
 /**
  * @brief Binds an allocated memory to a buffer.

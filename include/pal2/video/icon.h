@@ -28,6 +28,7 @@
 
 #include "pal2/core/base.h"
 #include "pal2/core/result.h"
+#include "window.h"
 
 /**
  * @struct PalIcon

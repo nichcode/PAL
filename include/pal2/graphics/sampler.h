@@ -171,6 +171,19 @@ typedef struct PalSampler PalSampler;
 /** @} */
 
 /**
+ * @struct PalSamplerAnisotropyCapabilities
+ * @brief Adapter sampler anisotropy capabilities.
+ *
+ * Filled in by @ref palQuerySamplerAnisotropyCapabilities().
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalSamplerAnisotropyCapabilities {
+    uint32_t maxAnisotropy; /**< Maximum texture filtering level. */
+} PalSamplerAnisotropyCapabilities;
+
+/**
  * @struct PalSamplerCreateInfo
  * @brief Sampler creation parameters.
  *
@@ -238,5 +251,23 @@ PAL_API PalResult PAL_CALL palCreateSampler(
  * @sa palCreateSampler
  */
 PAL_API void PAL_CALL palDestroySampler(PalSampler* sampler);
+
+/**
+ * @brief Gets sampler anisotropy feature capabilities of a device.
+ *
+ * @ref PAL_ADAPTER_FEATURE_SAMPLER_ANISOTROPY feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
+ *
+ * @param[in] device Device to get its sampler anisotropy capabilities.
+ * @param[out] caps Output struct to receive the sampler anisotropy capabilities.
+ *
+ * @thread-safety `caps` must be per thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+PAL_API void PAL_CALL palQuerySamplerAnisotropyCapabilities(
+    PalDevice* device,
+    PalSamplerAnisotropyCapabilities* caps);
 
 #endif // PAL_GRAPHICS_SAMPLER_H

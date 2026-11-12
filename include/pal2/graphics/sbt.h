@@ -27,6 +27,7 @@
 
 #include "pal2/core/base.h"
 #include "pal2/core/result.h"
+#include "device.h"
 #include "pipeline.h"
 
 /**

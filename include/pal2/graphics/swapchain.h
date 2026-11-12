@@ -27,7 +27,11 @@
 
 #include "pal2/core/base.h"
 #include "pal2/core/result.h"
+#include "device.h"
 #include "surface.h"
+#include "queue.h"
+
+#include "image.h"
 #include "sync.h"
 
 /**
@@ -76,73 +80,6 @@ typedef struct PalSwapchainCreateInfo {
     PalCompositeAplha compositeAlpha; /**< Composite alpha. */
     PalSurfaceFormat format;          /**< Swapchain format. */
 } PalSwapchainCreateInfo;
-
-/**
- * @brief Creates a presentation surface for a window.
- *
- * The created surface must be destroyed using @ref palDestroySurface().
- *
- * @ref PAL_ADAPTER_FEATURE_SWAPCHAIN feature must be supported and enabled when
- * creating the device or this function results in undefined behavior.
- *
- * @param[in] device Device that creates the surface.
- * @param[in] window Window to create the surface for.
- * @param[in] windowInstance Instance of the window.
- * @param[in] instanceType Instance type of the window.
- * @param[out] outSurface Output handle to receive the created surface.
- * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
- *         Call @ref palFormatResult() for more information.
- *
- * @thread-safety `device` must be externally synchronized.
- * 
- * @result-code @ref PAL_RESULT_CODE_INVALID_ARGUMENT
- * @result-code @ref PAL_RESULT_CODE_OUT_OF_MEMORY
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- *
- * @sa palDestroySurface
- */
-PAL_API PalResult PAL_CALL palCreateSurface(
-    PalDevice* device,
-    void* window,
-    void* windowInstance,
-    PalWindowInstanceType instanceType,
-    PalSurface** outSurface);
-
-/**
- * @brief Destroys a presentation surface.
- *
- * @param[in] surface Surface to destroy.
- *
- * @thread-safety The device used to create `surface` must be externally synchronized.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- *
- * @sa palCreateSurface
- */
-PAL_API void PAL_CALL palDestroySurface(PalSurface* surface);
-
-/**
- * @brief Gets surface capabilities of a device.
- *
- * @ref PAL_ADAPTER_FEATURE_SWAPCHAIN feature must be supported and enabled when
- * creating the device or this function results in undefined behavior.
- *
- * @param[in] device Device to query its surface capabilities.
- * @param[in] surface Surface to query capabilities.
- * @param[out] caps Output struct to receive surface capabilities.
- *
- * @thread-safety `caps` must be per thread.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- */
-PAL_API void PAL_CALL palGetSurfaceCapabilities(
-    PalDevice* device,
-    PalSurface* surface,
-    PalSurfaceCapabilities* caps);
 
 /**
  * @brief Creates a swapchain.

@@ -25,6 +25,10 @@
 #ifndef PAL_GRAPHICS_SHADER_H
 #define PAL_GRAPHICS_SHADER_H
 
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+
 /**
  * @typedef PalShaderStage
  * @brief Shader stage.
@@ -76,6 +80,24 @@ typedef struct PalShader PalShader;
 #define PAL_SHADER_STAGE_CALLABLE 14
 #define PAL_SHADER_STAGE_COUNT 15 /**< Number of shader stages. */
 /** @} */
+
+/**
+ * @struct PalMeshShaderCapabilities
+ * @brief Adapter mesh shader capabilities.
+ *
+ * Filled in by @ref palQueryMeshShaderCapabilities().
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalMeshShaderCapabilities {
+    uint32_t maxOutputPrimitives;         /**< Maximum number of primitives per mesh workgroup. */
+    uint32_t maxOutputVertices;           /**< Maximum number of vertices per mesh workgroup. */
+    uint32_t maxWorkGroupInvocations;     /**< Maximum mesh invocations across all workgroups. */
+    uint32_t maxTaskWorkGroupInvocations; /**< Maximum task invocations across all workgroups. */
+    uint32_t maxWorkGroupCount[3];        /**< Maximum mesh workgroups per dimension. */
+    uint32_t maxTaskWorkGroupCount[3];    /**< Maximum task workgroups per dimension. */
+} PalMeshShaderCapabilities;
 
 /**
  * @struct PalShaderEntryInfo
@@ -170,5 +192,23 @@ PAL_API PalResult PAL_CALL palCreateShader(
  * @sa palCreateShader
  */
 PAL_API void PAL_CALL palDestroyShader(PalShader* shader);
+
+/**
+ * @brief Gets mesh shader feature capabilities of a device.
+ *
+ * @ref PAL_ADAPTER_FEATURE_MESH_SHADER feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
+ *
+ * @param[in] device Device to get its mesh shader capabilities.
+ * @param[out] caps Output struct to receive the mesh shader capabilities.
+ *
+ * @thread-safety `caps` must be per thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+PAL_API void PAL_CALL palQueryMeshShaderCapabilities(
+    PalDevice* device,
+    PalMeshShaderCapabilities* caps);
 
 #endif // PAL_GRAPHICS_SHADER_H

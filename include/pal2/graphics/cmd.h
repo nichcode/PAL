@@ -30,10 +30,16 @@
 #include "device.h"
 #include "cmdbuffer.h"
 #include "image.h"
+
 #include "buffer.h"
 #include "buffer.h"
 #include "pipeline.h"
 #include "queue.h"
+#include "vertex.h"
+
+#include "acceleration_structure.h"
+#include "descriptor.h"
+#include "sbt.h"
 
 /**
  * @typedef PalLoadOp

@@ -141,6 +141,28 @@ typedef struct PalSurface PalSurface;
 /** @} */
 
 /**
+ * @struct PalSurfaceCapabilities
+ * @brief Adapter surface capabilities.
+ *
+ * Filled in by @ref palGetSurfaceCapabilities().
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalSurfaceCapabilities {
+    uint32_t supportedPresentModes;    /**< Mask of supported present modes. */
+    uint32_t supportedCompositeAlphas; /**< Mask of supported composite alphas. */
+    uint32_t supportedFormats;         /**< Mask of supported surface formats. */
+    uint32_t minImageCount;            /**< Minimum image or back buffer count. */
+    uint32_t maxImageCount;            /**< Maximum image or back buffer count. */
+    uint32_t minImageWidth;            /**< Minimum image width in pixels. */
+    uint32_t minImageHeight;           /**< Minimum image height in pixels. */
+    uint32_t maxImageWidth;            /**< Maximum image width in pixels. */
+    uint32_t maxImageHeight;           /**< Maximum image height in pixels. */
+    uint32_t maxImageArrayLayers;      /**< Maximum number of image layers. */
+} PalSurfaceCapabilities;
+
+/**
  * @brief Creates a presentation surface for a window.
  *
  * The created surface must be destroyed using @ref palDestroySurface().

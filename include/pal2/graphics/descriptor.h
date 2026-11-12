@@ -28,6 +28,25 @@
 #include "pal2/core/base.h"
 #include "pal2/core/result.h"
 #include "device.h"
+#include "image.h"
+#include "buffer.h"
+
+#include "acceleration_structure.h"
+#include "sampler.h"
+
+/**
+ * @typedef PalDescriptorIndexingFlags
+ * @brief Descriptor indexing flags.
+ *
+ * Identifies the descriptor indexing behaviors of descriptors.
+ *
+ * All values of this type follow the format `PAL_DESCRIPTOR_INDEXING_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalDescriptorIndexingFlags;
 
 /**
  * @typedef PalDescriptorType
@@ -71,6 +90,17 @@ typedef struct PalDescriptorPool PalDescriptorPool;
 typedef struct PalDescriptorSet PalDescriptorSet;
 
 /**
+ * @defgroup descriptor_indexing_flags Descriptor Indexing Flags
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_NONE 0 /**< No descriptor indexing flags. */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND (1U << 0) /**< Update after bind. */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND (1U << 1) /**< Unused descriptors can be left uninitialized. */
+#define PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING (1U << 2) /**< Non-uniform descriptor access. */
+/** @} */
+
+/**
  * @defgroup descriptor_types Descriptor Types
  * @ingroup pal_graphics
  * @{
@@ -83,6 +113,40 @@ typedef struct PalDescriptorSet PalDescriptorSet;
 #define PAL_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE 5 /**< Acceleration structure. */
 #define PAL_DESCRIPTOR_TYPE_COUNT 6 /**< Number of descriptor types. */
 /** @} */
+
+/**
+ * @struct PalDescriptorIndexingCapabilities
+ * @brief Adapter descriptor indexing capabilities.
+ *
+ * Filled in by @ref palQueryDescriptorIndexingCapabilities().
+ *
+ * `flags` shows the sub-features or capabilities of the descriptor indexing feature.
+ * Each bit represents a supported operation. See below for more information:
+ * - PAL_DESCRIPTOR_INDEXING_FLAG_UPDATE_AFTER_BIND - Descriptors can be updated after
+ *   the descriptor set has been bound.
+ * - PAL_DESCRIPTOR_INDEXING_FLAG_PARTIALLY_BOUND - Unused descriptors can be
+ *   left uninitialized if shaders never access them.
+ * - PAL_DESCRIPTOR_INDEXING_FLAG_NON_UNIFORM_INDEXING - Different threads
+ *   can access different descriptors.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalDescriptorIndexingCapabilities {
+    PalDescriptorIndexingFlags flags;   /**< Descriptor indexing flags. */
+    uint32_t maxPerStageSampledImages;  /**< Maximum sampled images per shader stage. */
+    uint32_t maxPerSetSampledImages;    /**< Maximum sampled images per descriptor set. */
+    uint32_t maxPerStageStorageImages;  /**< Maximum storage images per shader stage. */
+    uint32_t maxPerSetStorageImages;    /**< Maximum storage images per descriptor set. */
+    uint32_t maxPerStageSamplers;       /**< Maximum samplers per shader stage. */
+    uint32_t maxPerSetSamplers;         /**< Maximum samplers per descriptor set. */
+    uint32_t maxPerStageStorageBuffers; /**< Maximum storage buffers per shader stage. */
+    uint32_t maxPerSetStorageBuffers;   /**< Maximum storage buffers per descriptor set. */
+    uint32_t maxPerStageUniformBuffers; /**< Maximum uniform buffers per shader stage. */
+    uint32_t maxPerSetUniformBuffers;   /**< Maximum uniform buffers per descriptor set. */
+    uint32_t maxPerStageAccelerationStructure; /**< Maximum acceleration structures per shader stage. */
+    uint32_t maxPerSetAccelerationStructure; /**< Maximum acceleration structures per descriptor set. */
+} PalDescriptorIndexingCapabilities;
 
 /**
  * @struct PalDescriptorSetLayoutBinding
@@ -388,5 +452,23 @@ PAL_API PalResult PAL_CALL palUpdateDescriptorSet(
     PalDevice* device,
     uint32_t count,
     PalDescriptorSetWriteInfo* infos);
+
+/**
+ * @brief Gets bindless/descriptor indexing feature capabilities of a device.
+ *
+ * @ref PAL_ADAPTER_FEATURE_DESCRIPTOR_INDEXING feature must be supported and enabled when
+ * creating the device or this function results in undefined behavior.
+ *
+ * @param[in] device Device to get its bindless/descriptor indexing capabilities.
+ * @param[out] caps Output struct to receive the bindless/descriptor indexing capabilities.
+ *
+ * @thread-safety `caps` must be per thread.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+PAL_API void PAL_CALL palQueryDescriptorIndexingCapabilities(
+    PalDevice* device,
+    PalDescriptorIndexingCapabilities* caps);
 
 #endif // PAL_GRAPHICS_DESCRIPTOR_H

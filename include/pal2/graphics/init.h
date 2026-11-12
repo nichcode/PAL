@@ -28,6 +28,7 @@
 #include "pal2/core/base.h"
 #include "pal2/core/result.h"
 #include "pal2/core/memory.h"
+#include "adapter.h"
 
 /**
  * @typedef PalDebugMessageSeverity
@@ -56,34 +57,6 @@ typedef uint32_t PalDebugMessageSeverity;
  * @ingroup pal_graphics
  */
 typedef uint32_t PalDebugMessageType;
-
-/**
- * @typedef PalDescriptorIndexingFlags
- * @brief Descriptor indexing flags.
- *
- * Identifies the descriptor indexing behaviors of descriptors.
- *
- * All values of this type follow the format `PAL_DESCRIPTOR_INDEXING_FLAG_*` for API
- * consistency and ease of use.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- */
-typedef uint32_t PalDescriptorIndexingFlags;
-
-/**
- * @typedef PalGraphicsBackendVtableVersion
- * @brief Graphics backend vtable version.
- *
- * Identifies the version of a graphics backend vtable.
- *
- * All values of this type follow the format `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_*` for API
- * consistency and ease of use.
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- */
-typedef uint32_t PalGraphicsBackendVtableVersion;
 
 /**
  * @typedef PalDebugCallback
@@ -124,16 +97,6 @@ typedef void(PAL_CALL* PalDebugCallback)(
  * @ingroup pal_graphics
  */
 #define PAL_MAX_CUSTOM_BACKENDS 16
-
-/**
- * @defgroup gfx_backend_table_version Graphics Backend Vtable Version
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0 /**< Version 1 (@ref PalGraphicsBackendVtable1). */
-#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2 1 /**< Version 2 (@ref PalGraphicsBackendVtable2). */
-#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_COUNT 2 /**< Number of graphics backend vtable versions. */
-/** @} */
 
 /**
  * @defgroup debug_msg_severities Debug Message Severities

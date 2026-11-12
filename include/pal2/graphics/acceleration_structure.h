@@ -28,6 +28,8 @@
 #include "pal2/core/base.h"
 #include "pal2/core/result.h"
 #include "device.h"
+#include "buffer.h"
+#include "vertex.h"
 
 /**
  * @typedef PalAccelerationStructureType
@@ -380,5 +382,54 @@ PAL_API void PAL_CALL palGetAccelerationStructureBuildSize(
     PalDevice* device,
     PalAccelerationStructureBuildInfo* info,
     PalAccelerationStructureBuildSize* size);
+
+/**
+ * @brief Computes size for an acceleration structure instance buffer.
+ *
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
+ * Otherwise behavior is undefined.
+ *
+ * This does not allocate memory for the buffer. This function is required for all
+ * acceleration structure instance buffers.
+ *
+ * @param[in] device The device to use.
+ * @param[in] instanceCount Number of instances the instance buffer will hold.
+ * @param[out] outSize Pointer to a uint64_t to receive the required size.
+ *
+ * @thread-safety Thread safe.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ *
+ * @sa palWriteInstanceStaging
+ */
+PAL_API void PAL_CALL palComputeInstanceStagingSize(
+    PalDevice* device,
+    uint32_t instanceCount,
+    uint64_t* outSize);
+
+/**
+ * @brief Writes data to an instance staging buffer.
+ *
+ * `PAL_ADAPTER_FEATURE_RAY_TRACING` must be supported and enabled by the device.
+ * Otherwise behavior is undefined.
+ *
+ * @param[in] device The device to use.
+ * @param[in] instanceCount Number of instances.
+ * @param[in] instances Array of PalAccelerationStructureInstance struct to write.
+ * @param[out] ptr Pointer to the CPU visible memory. Must be mapped.
+ *
+ * @thread-safety Thread safe.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ *
+ * @sa palComputeInstanceStagingSize
+ */
+PAL_API void PAL_CALL palWriteInstanceStaging(
+    PalDevice* device,
+    uint32_t instanceCount,
+    PalAccelerationStructureInstance* instances,
+    void* ptr);
 
 #endif // PAL_GRAPHICS_ACCELERATION_STRUCTURE_H

@@ -93,6 +93,20 @@ typedef uint32_t PalAdapterApiType;
 typedef uint32_t PalShaderFormats;
 
 /**
+ * @typedef PalGraphicsBackendVtableVersion
+ * @brief Graphics backend vtable version.
+ *
+ * Identifies the version of a graphics backend vtable.
+ *
+ * All values of this type follow the format `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalGraphicsBackendVtableVersion;
+
+/**
  * @struct PalAdapter
  * @brief Opaque handle to an adapter.
  *
@@ -220,6 +234,16 @@ typedef struct PalAdapter PalAdapter;
 #define PAL_SHADER_FORMAT_GLSL (1U << 5) /**< GLSL source. */
 #define PAL_SHADER_FORMAT_HLSL (1U << 6) /**< HLSL source. */
 #define PAL_SHADER_FORMAT_WGSL (1U << 7) /**< WGSL source. */
+/** @} */
+
+/**
+ * @defgroup gfx_backend_table_version Graphics Backend Vtable Version
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1 0 /**< Version 1 (@ref PalGraphicsBackendVtable1). */
+#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2 1 /**< Version 2 (@ref PalGraphicsBackendVtable2). */
+#define PAL_GRAPHICS_BACKEND_VTABLE_VERSION_COUNT 2 /**< Number of graphics backend vtable versions. */
 /** @} */
 
 /**
