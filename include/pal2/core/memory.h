@@ -26,7 +26,7 @@
 #ifndef PAL_CORE_MEMORY_H
 #define PAL_CORE_MEMORY_H
 
-#include "types.h"
+#include "base.h"
 
 /**
  * @brief Memory allocation function.

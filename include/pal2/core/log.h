@@ -26,14 +26,7 @@
 #ifndef PAL_CORE_LOG_H
 #define PAL_CORE_LOG_H
 
-#include "types.h"
-
-/**
- * @brief Maximum size of the log messagge buffer in bytes including 
- * the NULL terminator.
- * @ingroup pal_core
- */
-#define PAL_LOG_MSG_SIZE 4096
+#include "base.h"
 
 /**
  * @brief Log callback function.
@@ -60,6 +53,13 @@
 typedef void(PAL_CALL* PalLogCallback)(
     void* userData,
     const char* msg);
+
+/**
+ * @brief Maximum size of the log messagge buffer in bytes including 
+ * the NULL terminator.
+ * @ingroup pal_core
+ */
+#define PAL_LOG_MSG_SIZE 4096
 
 /**
  * @struct PalLogger

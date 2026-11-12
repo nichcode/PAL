@@ -26,7 +26,7 @@
 #ifndef PAL_CORE_VERSION_H
 #define PAL_CORE_VERSION_H
 
-#include "types.h"
+#include "base.h"
 
 /**
  * @struct PalVersion

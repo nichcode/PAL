@@ -26,7 +26,25 @@
 #ifndef PAL_CORE_LIBRARY_H
 #define PAL_CORE_LIBRARY_H
 
-#include "types.h"
+#include "base.h"
+
+/**
+ * @typedef PalLibrarySymbol
+ * @brief Generic library symbol.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_core
+ */
+typedef void (PAL_CALL *PalLibrarySymbol)(void);
+
+/**
+ * @typedef PalLibrary
+ * @brief Opaque handle to a shared library.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_core
+ */
+typedef struct PalLibrary PalLibrary;
 
 /**
  * @brief Loads a shared library.

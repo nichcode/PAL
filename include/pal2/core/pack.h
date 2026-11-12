@@ -26,7 +26,7 @@
 #ifndef PAL_CORE_PACK_H
 #define PAL_CORE_PACK_H
 
-#include "types.h"
+#include "base.h"
 #include <string.h>
 
 /**

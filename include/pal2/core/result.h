@@ -26,7 +26,43 @@
 #ifndef PAL_CORE_RESULT_H
 #define PAL_CORE_RESULT_H
 
-#include "types.h"
+#include "base.h"
+
+/**
+ * @typedef PalResult
+ * @brief Value returned by most PAL functions.
+ *
+ * Contains the result code and, optionally, the result source and the native code.
+ * The result source identifies the origin of the native code.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_core
+ */
+typedef uint64_t PalResult;
+
+/**
+ * @typedef PalResultCode
+ * @brief PAL result code.
+ *
+ * All values of this type follow the format `PAL_RESULT_CODE_*` for API consistency
+ * and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_core
+ */
+typedef uint16_t PalResultCode;
+
+/**
+ * @typedef PalResultSource
+ * @brief PAL result source.
+ *
+ * All values of this type follow the format `PAL_RESULT_SOURCE_*` for API consistency
+ * and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_core
+ */
+typedef uint16_t PalResultSource;
 
 /**
  * @brief Function completed successfully result value.

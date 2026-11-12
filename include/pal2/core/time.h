@@ -26,7 +26,7 @@
 #ifndef PAL_CORE_TIME_H
 #define PAL_CORE_TIME_H
 
-#include "types.h"
+#include "base.h"
 
 /**
  * @brief Retrieves the performance counter.

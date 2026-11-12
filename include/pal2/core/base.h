@@ -1,6 +1,6 @@
 
 /**
- * @file types.h
+ * @file base.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -23,10 +23,19 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_CORE_TYPES_H
-#define PAL_CORE_TYPES_H
+#ifndef PAL_CORE_BASE_H
+#define PAL_CORE_BASE_H
 
 #include <stdint.h>
+
+/**
+ * @typedef PalBool
+ * @brief Boolean type.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_core
+ */
+typedef uint32_t PalBool;
 
 #ifdef __cplusplus
 /**
@@ -135,67 +144,4 @@
  */
 #define PAL_INFINITE UINT32_MAX
 
-/**
- * @typedef PalBool
- * @brief Boolean type.
- *
- * @since Added in version 2.0
- * @ingroup pal_core
- */
-typedef uint32_t PalBool;
-
-/**
- * @typedef PalResult
- * @brief Value returned by most PAL functions.
- *
- * Contains the result code and, optionally, the result source and the native code.
- * The result source identifies the origin of the native code.
- *
- * @since Added in version 2.0
- * @ingroup pal_core
- */
-typedef uint64_t PalResult;
-
-/**
- * @typedef PalResultCode
- * @brief PAL result code.
- *
- * All values of this type follow the format `PAL_RESULT_CODE_*` for API consistency
- * and ease of use.
- *
- * @since Added in version 2.0
- * @ingroup pal_core
- */
-typedef uint16_t PalResultCode;
-
-/**
- * @typedef PalResultSource
- * @brief PAL result source.
- *
- * All values of this type follow the format `PAL_RESULT_SOURCE_*` for API consistency
- * and ease of use.
- *
- * @since Added in version 2.0
- * @ingroup pal_core
- */
-typedef uint16_t PalResultSource;
-
-/**
- * @typedef PalLibrarySymbol
- * @brief Generic library symbol.
- *
- * @since Added in version 2.2
- * @ingroup pal_core
- */
-typedef void (PAL_CALL *PalLibrarySymbol)(void);
-
-/**
- * @typedef PalLibrary
- * @brief Opaque handle to a shared library.
- *
- * @since Added in version 2.2
- * @ingroup pal_core
- */
-typedef struct PalLibrary PalLibrary;
-
-#endif // PAL_CORE_TYPES_H
+#endif // PAL_CORE_BASE_H
