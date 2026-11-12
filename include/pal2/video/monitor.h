@@ -26,7 +26,31 @@
 #ifndef PAL_VIDEO_MONITOR_H
 #define PAL_VIDEO_MONITOR_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+
+/**
+ * @typedef PalOrientation
+ * @brief Monitor orientation.
+ *
+ * Identifies the orientation of a monitor.
+ *
+ * All values of this type follow the format `PAL_ORIENTATION_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalOrientation;
+
+/**
+ * @struct PalMonitor
+ * @brief Opaque handle to a monitor.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalMonitor PalMonitor;
 
 /**
  * @brief Maximum size of the monitor name, including the NULL terminator.

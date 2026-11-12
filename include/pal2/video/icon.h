@@ -26,7 +26,17 @@
 #ifndef PAL_VIDEO_ICON_H
 #define PAL_VIDEO_ICON_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+
+/**
+ * @struct PalIcon
+ * @brief Opaque handle to an icon.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalIcon PalIcon;
 
 /**
  * @struct PalIconCreateInfo

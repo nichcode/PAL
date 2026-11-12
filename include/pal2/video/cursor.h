@@ -26,7 +26,31 @@
 #ifndef PAL_VIDEO_CURSOR_H
 #define PAL_VIDEO_CURSOR_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+
+/**
+ * @typedef PalCursorType
+ * @brief System cursor type.
+ *
+ * Identifies the kind of a system cursor.
+ *
+ * All values of this type follow the format `PAL_CURSOR_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalCursorType;
+
+/**
+ * @struct PalCursor
+ * @brief Opaque handle to a cursor.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalCursor PalCursor;
 
 /**
  * @defgroup cursor_types Cursor Types

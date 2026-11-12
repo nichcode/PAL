@@ -26,8 +26,38 @@
 #ifndef PAL_VIDEO_INIT_H
 #define PAL_VIDEO_INIT_H
 
-#include "types.h"
+#include "pal2/core/base.h"
 #include "pal2/core/memory.h"
+#include "pal2/core/result.h"
+
+/**
+ * @typedef PalVideoFeatures
+ * @brief Video system features.
+ *
+ * Identifies the features supported by the video system. This is a bitmask of
+ * all supported features.
+ *
+ * All values of this type follow the format `PAL_VIDEO_FEATURE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint64_t PalVideoFeatures;
+
+/**
+ * @typedef PalVideoDriverType
+ * @brief Video driver type.
+ *
+ * Identifies the type of a video driver.
+ *
+ * All values of this type follow the format `PAL_VIDEO_DRIVER_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ */
+typedef uint32_t PalVideoDriverType;
 
 /**
  * @defgroup video_features Video Features

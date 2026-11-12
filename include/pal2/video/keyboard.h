@@ -1,6 +1,6 @@
 
 /**
- * @file types.h
+ * @file keyboard.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,7 +26,35 @@
 #ifndef PAL_VIDEO_KEYBOARD_H
 #define PAL_VIDEO_KEYBOARD_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+
+/**
+ * @typedef PalKeycode
+ * @brief Keycode (layout aware key) of a keyboard.
+ *
+ * Identifies a key of the keyboard by the character it produces on the current layout.
+ *
+ * All values of this type follow the format `PAL_KEYCODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalKeycode;
+
+/**
+ * @typedef PalScancode
+ * @brief Scancode (layout independent key) of a keyboard.
+ *
+ * Identifies a physical key of the keyboard regardless of the layout.
+ *
+ * All values of this type follow the format `PAL_SCANCODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalScancode;
 
 /**
  * @defgroup keycodes Keyboard Keycodes

@@ -1,6 +1,6 @@
 
 /**
- * @file types.h
+ * @file mouse.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,7 +26,21 @@
 #ifndef PAL_VIDEO_MOUSE_H
 #define PAL_VIDEO_MOUSE_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+
+/**
+ * @typedef PalMouseButton
+ * @brief Mouse button.
+ *
+ * Identifies a button of the mouse.
+ *
+ * All values of this type follow the format `PAL_MOUSE_BUTTON_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalMouseButton;
 
 /**
  * @defgroup mouse_buttons Mouse Buttons

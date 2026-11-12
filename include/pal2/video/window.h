@@ -26,7 +26,74 @@
 #ifndef PAL_VIDEO_WINDOW_H
 #define PAL_VIDEO_WINDOW_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "monitor.h"
+
+/**
+ * @typedef PalWindowStyle
+ * @brief Window style.
+ *
+ * Identifies the style of a window. Styles are combined as a bitmask.
+ *
+ * All values of this type follow the format `PAL_WINDOW_STYLE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalWindowStyle;
+
+/**
+ * @typedef PalWindowState
+ * @brief Window state.
+ *
+ * Identifies the state of a window.
+ *
+ * All values of this type follow the format `PAL_WINDOW_STATE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalWindowState;
+
+/**
+ * @typedef PalFlashFlags
+ * @brief Window flash flags.
+ *
+ * Identifies how a window is flashed. Flags are combined as a bitmask.
+ *
+ * All values of this type follow the format `PAL_FLASH_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalFlashFlags;
+
+/**
+ * @typedef PalFBConfigBackend
+ * @brief Window framebuffer configuration backend.
+ *
+ * Identifies the backend used to select the framebuffer configuration of a window.
+ *
+ * All values of this type follow the format `PAL_FBCONFIG_BACKEND_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef uint32_t PalFBConfigBackend;
+
+/**
+ * @struct PalWindow
+ * @brief Opaque handle to a window.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_video
+ */
+typedef struct PalWindow PalWindow;
 
 /**
  * @defgroup window_styles Window Styles
