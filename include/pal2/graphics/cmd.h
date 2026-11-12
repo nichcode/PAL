@@ -1333,7 +1333,7 @@ PAL_API void PAL_CALL palCmdSetStencilOp(
  * of the array.
  *
  * If the specified count is less than the number of work group infos, only the work group infos that fit in
- * the array will be written. If `count` is `0` and `infos` is `nullptr`, the function fails.
+ * the array will be written. If `count` is `0` and `infos` is `nullptr`, the function does nothing.
  *
  * @param[in] data Pointer to a PalWorkGroupBuildData with parameters.
  * @param[in, out] count Capacity of the work group info array.

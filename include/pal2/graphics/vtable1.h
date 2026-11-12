@@ -271,7 +271,7 @@ typedef struct PalGraphicsBackendVtable1 {
     void(PAL_CALL* cmdSetStencilOp)(PalCommandBuffer*, PalStencilFaceFlags, PalStencilOp, PalStencilOp, PalStencilOp, PalCompareOp);
     /** Implements @ref palCreateAccelerationstructure(). */
     PalResult(PAL_CALL* createAccelerationstructure)(PalDevice*, const PalAccelerationStructureCreateInfo*, PalAccelerationStructure**);
-    /** Implements @ref palDestroyAccelerationStructure(). */
+    /** Implements @ref palDestroyAccelerationstructure(). */
     void(PAL_CALL* destroyAccelerationstructure)(PalAccelerationStructure*);
     /** Implements @ref palGetAccelerationStructureBuildSize(). */
     void(PAL_CALL* getAccelerationStructureBuildSize)(PalDevice*, PalAccelerationStructureBuildInfo*, PalAccelerationStructureBuildSize*);

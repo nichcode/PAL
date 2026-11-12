@@ -66,7 +66,7 @@ typedef uint32_t PalAdapterType;
  * Identifies the graphics API behind an adapter.
  *
  * Custom backends that do not fit the declared API types may use
- * `PAL_ADAPTER_API_TYPE_CUSTOM`.
+ * `PAL_ADAPTER_API_TYPE_UNKNOWN`.
  *
  * All values of this type follow the format `PAL_ADAPTER_API_TYPE_*` for API
  * consistency and ease of use.
