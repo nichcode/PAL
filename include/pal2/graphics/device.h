@@ -25,7 +25,18 @@
 #ifndef PAL_GRAPHICS_DEVICE_H
 #define PAL_GRAPHICS_DEVICE_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "adapter.h"
+
+/**
+ * @struct PalDevice
+ * @brief Opaque handle to a graphics device.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalDevice PalDevice;
 
 /**
  * @defgroup descriptor_indexing_flags Descriptor Indexing Flags

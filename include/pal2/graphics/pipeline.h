@@ -25,40 +25,293 @@
 #ifndef PAL_GRAPHICS_PIPELINE_H
 #define PAL_GRAPHICS_PIPELINE_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "sampler.h"
+#include "shader.h"
+#include "queue.h"
+
+/**
+ * @typedef PalPrimitiveTopology
+ * @brief Primitive topology.
+ *
+ * Identifies how vertices are assembled into primitives.
+ *
+ * All values of this type follow the format `PAL_PRIMITIVE_TOPOLOGY_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalPrimitiveTopology;
+
+/**
+ * @typedef PalCullMode
+ * @brief Cull mode.
+ *
+ * Identifies which faces are culled.
+ *
+ * All values of this type follow the format `PAL_CULL_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalCullMode;
+
+/**
+ * @typedef PalFrontFace
+ * @brief Front face.
+ *
+ * Identifies the winding order of front-facing triangles.
+ *
+ * All values of this type follow the format `PAL_FRONT_FACE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalFrontFace;
+
+/**
+ * @typedef PalPolygonMode
+ * @brief Polygon mode.
+ *
+ * Identifies how polygons are rasterized.
+ *
+ * All values of this type follow the format `PAL_POLYGON_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalPolygonMode;
+
+/**
+ * @typedef PalStencilFaceFlags
+ * @brief Stencil face flags.
+ *
+ * Identifies the faces a stencil operation applies to.
+ *
+ * Multiple stencil face flags can be OR'ed together using bitwise OR operator (`|`).
+ *
+ * All values of this type follow the format `PAL_STENCIL_FACE_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalStencilFaceFlags;
+
+/**
+ * @typedef PalVertexType
+ * @brief Vertex attribute type.
+ *
+ * Identifies the data type of a vertex attribute.
+ *
+ * All values of this type follow the format `PAL_VERTEX_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalVertexType;
+
+/**
+ * @typedef PalVertexSemanticID
+ * @brief Vertex semantic identifier.
+ *
+ * Identifies the meaning of a vertex attribute.
+ *
+ * All values of this type follow the format `PAL_VERTEX_SEMANTIC_ID_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalVertexSemanticID;
+
+/**
+ * @typedef PalVertexLayoutType
+ * @brief Vertex layout type.
+ *
+ * Identifies the rate at which vertex attributes advance.
+ *
+ * All values of this type follow the format `PAL_VERTEX_LAYOUT_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalVertexLayoutType;
+
+/**
+ * @typedef PalStencilOp
+ * @brief Stencil operation.
+ *
+ * Identifies the action taken on a stencil value.
+ *
+ * All values of this type follow the format `PAL_STENCIL_OP_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalStencilOp;
+
+/**
+ * @typedef PalBlendOp
+ * @brief Blend operation.
+ *
+ * Identifies how source and destination colors are combined.
+ *
+ * All values of this type follow the format `PAL_BLEND_OP_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalBlendOp;
+
+/**
+ * @typedef PalBlendFactor
+ * @brief Blend factor.
+ *
+ * Identifies the factor applied to a color during blending.
+ *
+ * All values of this type follow the format `PAL_BLEND_FACTOR_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalBlendFactor;
+
+/**
+ * @typedef PalColorMask
+ * @brief Color mask.
+ *
+ * Identifies the color channels that are written.
+ *
+ * Multiple color masks can be OR'ed together using bitwise OR operator (`|`).
+ *
+ * All values of this type follow the format `PAL_COLOR_MASK_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalColorMask;
+
+/**
+ * @typedef PalFragmentShadingRate
+ * @brief Fragment shading rate.
+ *
+ * Identifies the size of the pixel area shaded by one fragment.
+ *
+ * All values of this type follow the format `PAL_FRAGMENT_SHADING_RATE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalFragmentShadingRate;
+
+/**
+ * @typedef PalFragmentShadingRateCombinerOp
+ * @brief Fragment shading rate combiner operation.
+ *
+ * Identifies how fragment shading rates are combined.
+ *
+ * All values of this type follow the format `PAL_FRAGMENT_SHADING_RATE_COMBINER_OP_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalFragmentShadingRateCombinerOp;
+
+/**
+ * @typedef PalIndexType
+ * @brief Index type.
+ *
+ * Identifies the size of the indices in an index buffer.
+ *
+ * All values of this type follow the format `PAL_INDEX_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalIndexType;
+
+/**
+ * @typedef PalRayTracingShaderGroupType
+ * @brief Ray tracing shader group type.
+ *
+ * Identifies the kind of a ray tracing shader group.
+ *
+ * All values of this type follow the format `PAL_RAY_TRACING_SHADER_GROUP_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalRayTracingShaderGroupType;
+
+/**
+ * @typedef PalResolveMode
+ * @brief Resolve mode.
+ *
+ * Identifies how multisampled attachments are resolved.
+ *
+ * All values of this type follow the format `PAL_RESOLVE_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalResolveMode;
+
+/**
+ * @typedef PalRenderingFlags
+ * @brief Rendering flags.
+ *
+ * Identifies the behavior of a rendering pass.
+ *
+ * All values of this type follow the format `PAL_RENDERING_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalRenderingFlags;
+
+/**
+ * @struct PalPipelineLayout
+ * @brief Opaque handle to a pipeline layout.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalPipelineLayout PalPipelineLayout;
+
+/**
+ * @struct PalPipeline
+ * @brief Opaque handle to a pipeline.
+ *
+ * This is the handle used for all pipeline types (Graphics, Compute, Ray tracing, ...).
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalPipeline PalPipeline;
 
 /**
  * @brief Marks a shader index as unused.
  * @ingroup pal_graphics
  */
 #define PAL_UNUSED_SHADER_INDEX UINT32_MAX
-
-/**
- * @defgroup pipeline_stages Pipeline Stages
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_PIPELINE_STAGE_NONE 0 /**< No pipeline stages. */
-#define PAL_PIPELINE_STAGE_VERTEX_SHADER (1U << 1) /**< Vertex shader stage. */
-#define PAL_PIPELINE_STAGE_FRAGMENT_SHADER (1U << 2) /**< Fragment shader stage. */
-#define PAL_PIPELINE_STAGE_COMPUTE_SHADER (1U << 3) /**< Compute shader stage. */
-#define PAL_PIPELINE_STAGE_GEOMETRY_SHADER (1U << 4) /**< Geometry shader stage. */
-#define PAL_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER (1U << 5) /**< Tessellation control shader stage. */
-#define PAL_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER (1U << 6) /**< Tessellation evaluation shader stage. */
-#define PAL_PIPELINE_STAGE_RAY_TRACING_SHADER (1U << 7) /**< Ray tracing shader stages. */
-#define PAL_PIPELINE_STAGE_TASK_SHADER (1U << 8) /**< Task shader stage. */
-#define PAL_PIPELINE_STAGE_MESH_SHADER (1U << 9) /**< Mesh shader stage. */
-#define PAL_PIPELINE_STAGE_VERTEX_INPUT (1U << 10) /**< Vertex input stage. */
-#define PAL_PIPELINE_STAGE_INDEX_INPUT (1U << 11) /**< Index input stage. */
-#define PAL_PIPELINE_STAGE_EARLY_DEPTH_STENCIL (1U << 12) /**< Early depth/stencil test stage. */
-#define PAL_PIPELINE_STAGE_LATE_DEPTH_STENCIL (1U << 13) /**< Late depth/stencil test stage. */
-#define PAL_PIPELINE_STAGE_TRANSFER (1U << 14) /**< Transfer (copy) stage. */
-#define PAL_PIPELINE_STAGE_HOST (1U << 15) /**< CPU access stage. */
-#define PAL_PIPELINE_STAGE_COLOR_ATTACHMENT (1U << 16) /**< Color attachment output stage. */
-#define PAL_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT (1U << 17) /**< Fragment shading rate attachment stage. */
-#define PAL_PIPELINE_STAGE_INDIRECT_INPUT (1U << 18) /**< Indirect argument input stage. */
-#define PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD (1U << 19) /**< Acceleration structure build stage. */
-/** @} */
 
 /**
  * @defgroup rt_shader_group_types Ray Tracing Shader Group Types
@@ -186,22 +439,6 @@
 #define PAL_VERTEX_LAYOUT_TYPE_PER_VERTEX 0 /**< Attributes advance once per vertex. */
 #define PAL_VERTEX_LAYOUT_TYPE_PER_INSTANCE 1 /**< Attributes advance once per instance. */
 #define PAL_VERTEX_LAYOUT_TYPE_COUNT 2 /**< Number of vertex layout types. */
-/** @} */
-
-/**
- * @defgroup compare_ops Compare Operations
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_COMPARE_OP_NEVER 0
-#define PAL_COMPARE_OP_LESS 1
-#define PAL_COMPARE_OP_EQUAL 2
-#define PAL_COMPARE_OP_LESS_OR_EQUAL 3
-#define PAL_COMPARE_OP_GREATER 4
-#define PAL_COMPARE_OP_NOT_EQUAL 5
-#define PAL_COMPARE_OP_GREATER_OR_EQUAL 6
-#define PAL_COMPARE_OP_ALWAYS 7
-#define PAL_COMPARE_OP_COUNT 8 /**< Number of compare operations. */
 /** @} */
 
 /**

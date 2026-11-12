@@ -25,7 +25,110 @@
 #ifndef PAL_GRAPHICS_ACCELERATION_STRUCTURE_H
 #define PAL_GRAPHICS_ACCELERATION_STRUCTURE_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+
+/**
+ * @typedef PalAccelerationStructureType
+ * @brief Acceleration structure type.
+ *
+ * Identifies the level of an acceleration structure.
+ *
+ * All values of this type follow the format `PAL_ACCELERATION_STRUCTURE_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalAccelerationStructureType;
+
+/**
+ * @typedef PalAccelerationStructureBuildMode
+ * @brief Acceleration structure build mode.
+ *
+ * Identifies whether an acceleration structure is built or updated.
+ *
+ * All values of this type follow the format `PAL_ACCELERATION_STRUCTURE_BUILD_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalAccelerationStructureBuildMode;
+
+/**
+ * @typedef PalAccelerationStructureBuildHints
+ * @brief Acceleration structure build hints.
+ *
+ * Identifies the optimization goals of an acceleration structure build.
+ *
+ * Multiple hints can be OR'ed together using bitwise OR operator (`|`).
+ * Hints can be ignored by the driver.
+ *
+ * All values of this type follow the format `PAL_ACCELERATION_STRUCTURE_BUILD_HINT_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalAccelerationStructureBuildHints;
+
+/**
+ * @typedef PalAccelerationStructureInstanceFlags
+ * @brief Acceleration structure instance flags.
+ *
+ * Identifies the behavior of an acceleration structure instance.
+ *
+ * Multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ *
+ * All values of this type follow the format `PAL_ACCELERATION_STRUCTURE_INSTANCE_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalAccelerationStructureInstanceFlags;
+
+/**
+ * @typedef PalGeometryType
+ * @brief Acceleration structure geometry type.
+ *
+ * Identifies the kind of acceleration structure geometry.
+ *
+ * All values of this type follow the format `PAL_GEOMETRY_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalGeometryType;
+
+/**
+ * @typedef PalGeometryFlags
+ * @brief Acceleration structure geometry flags.
+ *
+ * Identifies the behavior of acceleration structure geometry.
+ *
+ * Multiple flags can be OR'ed together using bitwise OR operator (`|`).
+ * Not all combinations are valid.
+ *
+ * All values of this type follow the format `PAL_GEOMETRY_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalGeometryFlags;
+
+/**
+ * @struct PalAccelerationStructure
+ * @brief Opaque handle to an acceleration structure.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalAccelerationStructure PalAccelerationStructure;
 
 /**
  * @defgroup as_types Acceleration Structure Types

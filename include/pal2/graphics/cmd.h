@@ -1,5 +1,5 @@
 /**
- * @file commands.h
+ * @file cmd.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,10 +22,46 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_COMMANDS_H
-#define PAL_GRAPHICS_COMMANDS_H
+#ifndef PAL_GRAPHICS_CMD_H
+#define PAL_GRAPHICS_CMD_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+#include "cmdbuffer.h"
+#include "image.h"
+#include "buffer.h"
+#include "buffer.h"
+#include "pipeline.h"
+#include "queue.h"
+
+/**
+ * @typedef PalLoadOp
+ * @brief Load operation.
+ *
+ * Identifies what happens to the contents of an attachment when rendering begins.
+ *
+ * All values of this type follow the format `PAL_LOAD_OP_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalLoadOp;
+
+/**
+ * @typedef PalStoreOp
+ * @brief Store operation.
+ *
+ * Identifies what happens to the contents of an attachment when rendering ends.
+ *
+ * All values of this type follow the format `PAL_STORE_OP_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalStoreOp;
 
 /**
  * @defgroup load_ops Load Operations
@@ -46,36 +82,6 @@
 #define PAL_STORE_OP_STORE 0 /**< Store the rendered contents of the attachment. */
 #define PAL_STORE_OP_DONT_CARE 1 /**< The rendered contents of the attachment may be discarded. */
 #define PAL_STORE_OP_COUNT 2 /**< Number of store operations. */
-/** @} */
-
-/**
- * @defgroup usage_states Usage States
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_USAGE_STATE_UNDEFINED 0 /**< Invalid usage state. */
-#define PAL_USAGE_STATE_PRESENT 1 /**< Presenting to a surface. */
-#define PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE 2 /**< Writing as a color attachment. */
-#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ 3 /**< Reading as a depth attachment. */
-#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE 4 /**< Writing as a depth attachment. */
-#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ 5 /**< Reading as a stencil attachment. */
-#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE 6 /**< Writing as a stencil attachment. */
-#define PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ 7 /**< Reading as a fragment shading rate attachment. */
-#define PAL_USAGE_STATE_TRANSFER_READ 8 /**< Reading in a transfer operation. */
-#define PAL_USAGE_STATE_TRANSFER_WRITE 9 /**< Writing in a transfer operation. */
-#define PAL_USAGE_STATE_VERTEX_READ 10 /**< Reading as a vertex buffer. */
-#define PAL_USAGE_STATE_INDEX_READ 11 /**< Reading as an index buffer. */
-#define PAL_USAGE_STATE_INDIRECT_READ 12 /**< Reading as indirect arguments. */
-#define PAL_USAGE_STATE_UNIFORM_READ 13 /**< Reading as a uniform buffer. */
-#define PAL_USAGE_STATE_SHADER_READ 14 /**< Reading in a shader. */
-#define PAL_USAGE_STATE_SHADER_WRITE 15 /**< Writing in a shader. */
-#define PAL_USAGE_STATE_STORAGE_READ 16 /**< Reading as a storage resource. */
-#define PAL_USAGE_STATE_STORAGE_WRITE 17 /**< Writing as a storage resource. */
-#define PAL_USAGE_STATE_HOST_READ 18 /**< Reading from the CPU. */
-#define PAL_USAGE_STATE_HOST_WRITE 19 /**< Writing from the CPU. */
-#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ 20 /**< Reading as an acceleration structure. */
-#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE 21 /**< Writing as an acceleration structure. */
-#define PAL_USAGE_STATE_COUNT 22 /**< Number of usage states. */
 /** @} */
 
 /**
@@ -1343,4 +1349,4 @@ PAL_API void PAL_CALL palBuildWorkGroupInfo(
     uint32_t* count,
     PalWorkGroupInfo* infos);
 
-#endif // PAL_GRAPHICS_COMMANDS_H
+#endif // PAL_GRAPHICS_CMD_H

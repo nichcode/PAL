@@ -1,3 +1,4 @@
+
 /**
  * @file queue.h
  * 
@@ -25,7 +26,120 @@
 #ifndef PAL_GRAPHICS_QUEUE_H
 #define PAL_GRAPHICS_QUEUE_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+#include "surface.h"
+
+/**
+ * @typedef PalPipelineStages
+ * @brief Pipeline stages.
+ *
+ * Identifies the pipeline stages used for synchronization.
+ *
+ * Multiple pipeline usages can be OR'ed together using bitwise OR operator (`|`).
+ *
+ * All values of this type follow the format `PAL_PIPELINE_STAGE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalPipelineStages;
+
+/**
+ * @typedef PalUsageState
+ * @brief Resource usage state.
+ *
+ * Identifies how a resource is used at a point in a command buffer.
+ *
+ * All values of this type follow the format `PAL_USAGE_STATE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalUsageState;
+
+/**
+ * @typedef PalQueueType
+ * @brief Queue type.
+ *
+ * Identifies the kind of work a queue accepts.
+ *
+ * All values of this type follow the format `PAL_QUEUE_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalQueueType;
+
+/**
+ * @struct PalQueue
+ * @brief Opaque handle to a queue.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalQueue PalQueue;
+
+/**
+ * @defgroup pipeline_stages Pipeline Stages
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_PIPELINE_STAGE_NONE 0 /**< No pipeline stages. */
+#define PAL_PIPELINE_STAGE_VERTEX_SHADER (1U << 1) /**< Vertex shader stage. */
+#define PAL_PIPELINE_STAGE_FRAGMENT_SHADER (1U << 2) /**< Fragment shader stage. */
+#define PAL_PIPELINE_STAGE_COMPUTE_SHADER (1U << 3) /**< Compute shader stage. */
+#define PAL_PIPELINE_STAGE_GEOMETRY_SHADER (1U << 4) /**< Geometry shader stage. */
+#define PAL_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER (1U << 5) /**< Tessellation control shader stage. */
+#define PAL_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER (1U << 6) /**< Tessellation evaluation shader stage. */
+#define PAL_PIPELINE_STAGE_RAY_TRACING_SHADER (1U << 7) /**< Ray tracing shader stages. */
+#define PAL_PIPELINE_STAGE_TASK_SHADER (1U << 8) /**< Task shader stage. */
+#define PAL_PIPELINE_STAGE_MESH_SHADER (1U << 9) /**< Mesh shader stage. */
+#define PAL_PIPELINE_STAGE_VERTEX_INPUT (1U << 10) /**< Vertex input stage. */
+#define PAL_PIPELINE_STAGE_INDEX_INPUT (1U << 11) /**< Index input stage. */
+#define PAL_PIPELINE_STAGE_EARLY_DEPTH_STENCIL (1U << 12) /**< Early depth/stencil test stage. */
+#define PAL_PIPELINE_STAGE_LATE_DEPTH_STENCIL (1U << 13) /**< Late depth/stencil test stage. */
+#define PAL_PIPELINE_STAGE_TRANSFER (1U << 14) /**< Transfer (copy) stage. */
+#define PAL_PIPELINE_STAGE_HOST (1U << 15) /**< CPU access stage. */
+#define PAL_PIPELINE_STAGE_COLOR_ATTACHMENT (1U << 16) /**< Color attachment output stage. */
+#define PAL_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT (1U << 17) /**< Fragment shading rate attachment stage. */
+#define PAL_PIPELINE_STAGE_INDIRECT_INPUT (1U << 18) /**< Indirect argument input stage. */
+#define PAL_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD (1U << 19) /**< Acceleration structure build stage. */
+/** @} */
+
+/**
+ * @defgroup usage_states Usage States
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_USAGE_STATE_UNDEFINED 0 /**< Invalid usage state. */
+#define PAL_USAGE_STATE_PRESENT 1 /**< Presenting to a surface. */
+#define PAL_USAGE_STATE_COLOR_ATTACHMENT_WRITE 2 /**< Writing as a color attachment. */
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_READ 3 /**< Reading as a depth attachment. */
+#define PAL_USAGE_STATE_DEPTH_ATTACHMENT_WRITE 4 /**< Writing as a depth attachment. */
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_READ 5 /**< Reading as a stencil attachment. */
+#define PAL_USAGE_STATE_STENCIL_ATTACHMENT_WRITE 6 /**< Writing as a stencil attachment. */
+#define PAL_USAGE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT_READ 7 /**< Reading as a fragment shading rate attachment. */
+#define PAL_USAGE_STATE_TRANSFER_READ 8 /**< Reading in a transfer operation. */
+#define PAL_USAGE_STATE_TRANSFER_WRITE 9 /**< Writing in a transfer operation. */
+#define PAL_USAGE_STATE_VERTEX_READ 10 /**< Reading as a vertex buffer. */
+#define PAL_USAGE_STATE_INDEX_READ 11 /**< Reading as an index buffer. */
+#define PAL_USAGE_STATE_INDIRECT_READ 12 /**< Reading as indirect arguments. */
+#define PAL_USAGE_STATE_UNIFORM_READ 13 /**< Reading as a uniform buffer. */
+#define PAL_USAGE_STATE_SHADER_READ 14 /**< Reading in a shader. */
+#define PAL_USAGE_STATE_SHADER_WRITE 15 /**< Writing in a shader. */
+#define PAL_USAGE_STATE_STORAGE_READ 16 /**< Reading as a storage resource. */
+#define PAL_USAGE_STATE_STORAGE_WRITE 17 /**< Writing as a storage resource. */
+#define PAL_USAGE_STATE_HOST_READ 18 /**< Reading from the CPU. */
+#define PAL_USAGE_STATE_HOST_WRITE 19 /**< Writing from the CPU. */
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_READ 20 /**< Reading as an acceleration structure. */
+#define PAL_USAGE_STATE_ACCELERATION_STRUCTURE_WRITE 21 /**< Writing as an acceleration structure. */
+#define PAL_USAGE_STATE_COUNT 22 /**< Number of usage states. */
+/** @} */
 
 /**
  * @defgroup queue_types Queue Types

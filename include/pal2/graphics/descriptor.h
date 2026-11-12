@@ -25,7 +25,50 @@
 #ifndef PAL_GRAPHICS_DESCRIPTOR_H
 #define PAL_GRAPHICS_DESCRIPTOR_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+
+/**
+ * @typedef PalDescriptorType
+ * @brief Descriptor type.
+ *
+ * Identifies the kind of resource a descriptor refers to.
+ *
+ * All values of this type follow the format `PAL_DESCRIPTOR_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalDescriptorType;
+
+/**
+ * @struct PalDescriptorSetLayout
+ * @brief Opaque handle to a descriptor set layout.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalDescriptorSetLayout PalDescriptorSetLayout;
+
+/**
+ * @struct PalDescriptorPool
+ * @brief Opaque handle to a descriptor pool.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalDescriptorPool PalDescriptorPool;
+
+/**
+ * @struct PalDescriptorSet
+ * @brief Opaque handle to a descriptor set.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalDescriptorSet PalDescriptorSet;
 
 /**
  * @defgroup descriptor_types Descriptor Types

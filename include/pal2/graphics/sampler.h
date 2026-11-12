@@ -25,7 +25,88 @@
 #ifndef PAL_GRAPHICS_SAMPLER_H
 #define PAL_GRAPHICS_SAMPLER_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+
+/**
+ * @typedef PalFilterMode
+ * @brief Filter mode.
+ *
+ * Identifies how texels are filtered when sampling.
+ *
+ * All values of this type follow the format `PAL_FILTER_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalFilterMode;
+
+/**
+ * @typedef PalSamplerMipmapMode
+ * @brief Sampler mipmap mode.
+ *
+ * Identifies how mipmap levels are selected when sampling.
+ *
+ * All values of this type follow the format `PAL_SAMPLER_MIPMAP_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalSamplerMipmapMode;
+
+/**
+ * @typedef PalSamplerAddressMode
+ * @brief Sampler address mode.
+ *
+ * Identifies how coordinates outside an image are handled when sampling.
+ *
+ * All values of this type follow the format `PAL_SAMPLER_ADDRESS_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalSamplerAddressMode;
+
+/**
+ * @typedef PalBorderColor
+ * @brief Sampler border color.
+ *
+ * Identifies the color used outside an image with clamp-to-border addressing.
+ *
+ * All values of this type follow the format `PAL_BORDER_COLOR_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalBorderColor;
+
+/**
+ * @typedef PalCompareOp
+ * @brief Compare operation.
+ *
+ * Identifies how two values are compared.
+ *
+ * All values of this type follow the format `PAL_COMPARE_OP_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalCompareOp;
+
+/**
+ * @struct PalSampler
+ * @brief Opaque handle to a sampler.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalSampler PalSampler;
 
 /**
  * @defgroup filter_modes Filter Modes
@@ -71,6 +152,22 @@
 #define PAL_BORDER_COLOR_FLOAT_OPAQUE_WHITE 4 /**< Opaque white as floating-point values. */
 #define PAL_BORDER_COLOR_INT_OPAQUE_WHITE 5 /**< Opaque white as integer values. */
 #define PAL_BORDER_COLOR_COUNT 6 /**< Number of sampler border colors. */
+/** @} */
+
+/**
+ * @defgroup compare_ops Compare Operations
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_COMPARE_OP_NEVER 0
+#define PAL_COMPARE_OP_LESS 1
+#define PAL_COMPARE_OP_EQUAL 2
+#define PAL_COMPARE_OP_LESS_OR_EQUAL 3
+#define PAL_COMPARE_OP_GREATER 4
+#define PAL_COMPARE_OP_NOT_EQUAL 5
+#define PAL_COMPARE_OP_GREATER_OR_EQUAL 6
+#define PAL_COMPARE_OP_ALWAYS 7
+#define PAL_COMPARE_OP_COUNT 8 /**< Number of compare operations. */
 /** @} */
 
 /**

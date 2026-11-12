@@ -25,7 +25,27 @@
 #ifndef PAL_GRAPHICS_SYNC_H
 #define PAL_GRAPHICS_SYNC_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+
+/**
+ * @struct PalFence
+ * @brief Opaque handle to a fence.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalFence PalFence;
+
+/**
+ * @struct PalSemaphore
+ * @brief Opaque handle to a semaphore.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalSemaphore PalSemaphore;
 
 /**
  * @brief Creates a fence.

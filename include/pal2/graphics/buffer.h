@@ -25,8 +25,61 @@
 #ifndef PAL_GRAPHICS_BUFFER_H
 #define PAL_GRAPHICS_BUFFER_H
 
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
 #include "memory.h"
 #include "acceleration_structure.h"
+
+/**
+ * @typedef PalDeviceAddress
+ * @brief Device address.
+ *
+ * Identifies the address of a buffer in GPU memory.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint64_t PalDeviceAddress;
+
+/**
+ * @typedef PalBufferUsages
+ * @brief Buffer usages.
+ *
+ * Identifies how a buffer may be used.
+ *
+ * Multiple buffer usages can be OR'ed together using bitwise OR operator (`|`).
+ *
+ * All values of this type follow the format `PAL_BUFFER_USAGE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalBufferUsages;
+
+/**
+ * @typedef PalBufferMemoryUsage
+ * @brief Buffer memory usage.
+ *
+ * Identifies how memory is provided for a buffer.
+ *
+ * All values of this type follow the format `PAL_BUFFER_MEMORY_USAGE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalBufferMemoryUsage;
+
+/**
+ * @struct PalBuffer
+ * @brief Opaque handle to a buffer.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalBuffer PalBuffer;
 
 /**
  * @defgroup buffer_usages Buffer Usages

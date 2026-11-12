@@ -25,7 +25,32 @@
 #ifndef PAL_GRAPHICS_MEMORY_H
 #define PAL_GRAPHICS_MEMORY_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+
+/**
+ * @typedef PalMemoryType
+ * @brief Memory type.
+ *
+ * Identifies the kind of device memory.
+ *
+ * All values of this type follow the format `PAL_MEMORY_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalMemoryType;
+
+/**
+ * @struct PalMemory
+ * @brief Opaque handle to a graphics device memory.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalMemory PalMemory;
 
 /**
  * @defgroup memory_types Memory Types

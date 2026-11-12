@@ -25,7 +25,52 @@
 #ifndef PAL_GRAPHICS_FORMAT_H
 #define PAL_GRAPHICS_FORMAT_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "adapter.h"
+
+/**
+ * @typedef PalSampleCount
+ * @brief Sample count.
+ *
+ * Identifies the number of samples per pixel.
+ *
+ * All values of this type follow the format `PAL_SAMPLE_COUNT_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalSampleCount;
+
+/**
+ * @typedef PalImageUsages
+ * @brief Image usages.
+ *
+ * Identifies how an image may be used.
+ *
+ * Multiple image usages may be OR'ed together using bitwise OR operator (`|`).
+ *
+ * All values of this type follow the format `PAL_IMAGE_USAGE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalImageUsages;
+
+/**
+ * @typedef PalFormat
+ * @brief Image format.
+ *
+ * Identifies the texel format of an image.
+ *
+ * All values of this type follow the format `PAL_FORMAT_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalFormat;
 
 /**
  * @defgroup sample_counts Sample Counts
@@ -40,6 +85,20 @@
 #define PAL_SAMPLE_COUNT_32 5
 #define PAL_SAMPLE_COUNT_64 6
 #define PAL_SAMPLE_COUNT_COUNT 7 /**< Number of sample counts. */
+/** @} */
+
+/**
+ * @defgroup image_usages Image Usages
+ * @ingroup pal_graphics
+ * @{
+ */
+#define PAL_IMAGE_USAGE_UNDEFINED 0 /**< Invalid image usage. */
+#define PAL_IMAGE_USAGE_COLOR_ATTACHEMENT (1U << 0) /**< Color attachment. */
+#define PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT (1U << 1) /**< Depth/stencil attachment. */
+#define PAL_IMAGE_USAGE_TRANSFER_SRC (1U << 2) /**< Source of a transfer (copy) operation. */
+#define PAL_IMAGE_USAGE_TRANSFER_DST (1U << 3) /**< Destination of a transfer (copy) operation. */
+#define PAL_IMAGE_USAGE_STORAGE (1U << 4) /**< Storage image. */
+#define PAL_IMAGE_USAGE_SAMPLED (1U << 5) /**< Sampled image. */
 /** @} */
 
 /**

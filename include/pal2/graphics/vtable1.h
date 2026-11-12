@@ -26,7 +26,29 @@
 #ifndef PAL_GRAPHICS_VTABLE1_H
 #define PAL_GRAPHICS_VTABLE1_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "acceleration_structure.h"
+#include "adapter.h"
+#include "buffer.h"
+
+#include "cmd.h"
+#include "cmdbuffer.h"
+#include "descriptor.h"
+#include "device.h"
+#include "format.h"
+
+#include "image.h"
+#include "memory.h"
+#include "pipeline.h"
+#include "queue.h"
+#include "sampler.h"
+
+#include "sbt.h"
+#include "shader.h"
+#include "surface.h"
+#include "swapchain.h"
+#include "sync.h"
 
 /**
  * @struct PalGraphicsBackendVtable1

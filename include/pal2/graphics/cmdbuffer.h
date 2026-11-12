@@ -1,5 +1,5 @@
 /**
- * @file command_buffer.h
+ * @file cmdbuffer.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,10 +22,47 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PAL_GRAPHICS_COMMAND_BUFFER_H
-#define PAL_GRAPHICS_COMMAND_BUFFER_H
+#ifndef PAL_GRAPHICS_CMDBUFFER_H
+#define PAL_GRAPHICS_CMDBUFFER_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+#include "pipeline.h"
+#include "sync.h"
+#include "queue.h"
+
+/**
+ * @typedef PalCommandBufferType
+ * @brief Command buffer type.
+ *
+ * Identifies the level of a command buffer.
+ *
+ * All values of this type follow the format `PAL_COMMAND_BUFFER_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalCommandBufferType;
+
+/**
+ * @struct PalCommandPool
+ * @brief Opaque handle to a command pool.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalCommandPool PalCommandPool;
+
+/**
+ * @struct PalCommandBuffer
+ * @brief Opaque handle to a command buffer.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalCommandBuffer PalCommandBuffer;
 
 /**
  * @defgroup cmdbuffer_types Command Buffer Types
@@ -201,4 +238,4 @@ PAL_API PalResult PAL_CALL palSubmitCommandBuffer(
     PalQueue* queue,
     PalCommandBufferSubmitInfo* info);
 
-#endif // PAL_GRAPHICS_COMMAND_BUFFER_H
+#endif // PAL_GRAPHICS_CMDBUFFER_H

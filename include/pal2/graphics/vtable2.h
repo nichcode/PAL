@@ -25,7 +25,7 @@
 #ifndef PAL_GRAPHICS_VTABLE2_H
 #define PAL_GRAPHICS_VTABLE2_H
 
-#include "types.h"
+#include "vtable1.h"
 
 /**
  * @struct PalGraphicsBackendVtable2

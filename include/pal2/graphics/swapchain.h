@@ -25,53 +25,19 @@
 #ifndef PAL_GRAPHICS_SWAPCHAIN_H
 #define PAL_GRAPHICS_SWAPCHAIN_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "surface.h"
+#include "sync.h"
 
 /**
- * @defgroup present_modes Swapchain Present Modes
+ * @struct PalSwapchain
+ * @brief Opaque handle to a swapchain.
+ *
+ * @since Added in version 2.0
  * @ingroup pal_graphics
- * @{
  */
-#define PAL_PRESENT_MODE_FIFO 0 /**< V-sync present mode. */
-#define PAL_PRESENT_MODE_IMMEDIATE 1 /**< Present right away, may tear. */
-#define PAL_PRESENT_MODE_MAILBOX 2 /**< Newest image replaces the queued one, no tearing. */
-#define PAL_PRESENT_MODE_COUNT 3 /**< Number of swapchain present modes. */
-/** @} */
-
-/**
- * @defgroup composite_alphas Swapchain Composite Alphas
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_COMPOSITE_ALPHA_OPAQUE 0 /**< Alpha is ignored. */
-#define PAL_COMPOSITE_ALPHA_PRE_MULTIPLIED 1 /**< Color is already multiplied by alpha. */
-#define PAL_COMPOSITE_ALPHA_POST_MULTIPLIED 2 /**< Color is multiplied by alpha on composite. */
-#define PAL_COMPOSITE_ALPHA_COUNT 3 /**< Number of swapchain composite alphas. */
-/** @} */
-
-/**
- * @defgroup surface_formats Surface Formats
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_SURFACE_FORMAT_BGRA8_UNORM_SRGB_NONLINEAR 0 /**< 8-bit BGRA UNORM with the sRGB nonlinear color space. */
-#define PAL_SURFACE_FORMAT_BGRA8_SRGB_NONLINEAR 1 /**< 8-bit BGRA sRGB with the sRGB nonlinear color space. */
-#define PAL_SURFACE_FORMAT_RGBA8_UNORM_SRGB_NONLINEAR 2 /**< 8-bit RGBA UNORM with the sRGB nonlinear color space. */
-#define PAL_SURFACE_FORMAT_RGBA16_FLOAT_HDR10 3 /**< 16-bit float RGBA with the HDR10 color space. */
-#define PAL_SURFACE_FORMAT_COUNT 4 /**< Number of surface formats. */
-/** @} */
-
-/**
- * @defgroup window_instance_types Window Instance Types
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_WINDOW_INSTANCE_TYPE_WAYLAND 0 /**< Wayland display. */
-#define PAL_WINDOW_INSTANCE_TYPE_X11 1 /**< X11 display (Xlib). */
-#define PAL_WINDOW_INSTANCE_TYPE_XCB 2 /**< XCB connection. */
-#define PAL_WINDOW_INSTANCE_TYPE_WIN32 3 /**< Win32 application instance. */
-#define PAL_WINDOW_INSTANCE_TYPE_COUNT 4 /**< Number of window instance types. */
-/** @} */
+typedef struct PalSwapchain PalSwapchain;
 
 /**
  * @struct PalSwapchainNextImageInfo

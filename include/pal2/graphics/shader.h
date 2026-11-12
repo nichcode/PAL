@@ -25,7 +25,28 @@
 #ifndef PAL_GRAPHICS_SHADER_H
 #define PAL_GRAPHICS_SHADER_H
 
-#include "types.h"
+/**
+ * @typedef PalShaderStage
+ * @brief Shader stage.
+ *
+ * Identifies the pipeline stage a shader runs in.
+ *
+ * All values of this type follow the format `PAL_SHADER_STAGE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalShaderStage;
+
+/**
+ * @struct PalShader
+ * @brief Opaque handle to a shader.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalShader PalShader;
 
 /**
  * @brief Maximum size of a shader entry name, including the NULL terminator.

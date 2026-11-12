@@ -25,8 +25,99 @@
 #ifndef PAL_GRAPHICS_INIT_H
 #define PAL_GRAPHICS_INIT_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
 #include "pal2/core/memory.h"
+
+/**
+ * @typedef PalDebugMessageSeverity
+ * @brief Debug message severity.
+ *
+ * Identifies how severe a debug message is.
+ *
+ * All values of this type follow the format `PAL_DEBUG_MESSAGE_SEVERITY_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalDebugMessageSeverity;
+
+/**
+ * @typedef PalDebugMessageType
+ * @brief Debug message type.
+ *
+ * Identifies the category of a debug message.
+ *
+ * All values of this type follow the format `PAL_DEBUG_MESSAGE_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalDebugMessageType;
+
+/**
+ * @typedef PalDescriptorIndexingFlags
+ * @brief Descriptor indexing flags.
+ *
+ * Identifies the descriptor indexing behaviors of descriptors.
+ *
+ * All values of this type follow the format `PAL_DESCRIPTOR_INDEXING_FLAG_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalDescriptorIndexingFlags;
+
+/**
+ * @typedef PalGraphicsBackendVtableVersion
+ * @brief Graphics backend vtable version.
+ *
+ * Identifies the version of a graphics backend vtable.
+ *
+ * All values of this type follow the format `PAL_GRAPHICS_BACKEND_VTABLE_VERSION_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalGraphicsBackendVtableVersion;
+
+/**
+ * @typedef PalDebugCallback
+ * @brief Debug callback function.
+ *
+ * `msg` is only valid for the duration of the callback and must not be modified or freed by the callback;
+ * the memory is owned by PAL.
+ *
+ * The callback may be called concurrently from multiple threads, so the implementation must be thread safe.
+ *
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL debugCallback(
+ *     void* userData,
+ *     PalDebugMessageSeverity severity,
+ *     PalDebugMessageType type,
+ *     const char* msg);
+ * @endcode
+ *
+ * @param[in] userData User-defined data passed to the callback, or `nullptr`.
+ * @param[in] severity Message severity.
+ * @param[in] type Message type.
+ * @param[in] msg Debug message (NULL-terminated UTF-8 string).
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ *
+ * @sa palInitGraphics
+ */
+typedef void(PAL_CALL* PalDebugCallback)(
+    void* userData,
+    PalDebugMessageSeverity severity,
+    PalDebugMessageType type,
+    const char* msg);
 
 /**
  * @brief Maximum number of custom backends.
@@ -65,40 +156,6 @@
 #define PAL_DEBUG_MESSAGE_TYPE_PERFORMANCE 2 /**< Performance message. */
 #define PAL_DEBUG_MESSAGE_TYPE_COUNT 3 /**< Number of debug message types. */
 /** @} */
-
-/**
- * @typedef PalDebugCallback
- * @brief Debug callback function.
- *
- * `msg` is only valid for the duration of the callback and must not be modified or freed by the callback;
- * the memory is owned by PAL.
- *
- * The callback may be called concurrently from multiple threads, so the implementation must be thread safe.
- *
- * The function signature should look like this:
- * @code
- * void PAL_CALL debugCallback(
- *     void* userData,
- *     PalDebugMessageSeverity severity,
- *     PalDebugMessageType type,
- *     const char* msg);
- * @endcode
- *
- * @param[in] userData User-defined data passed to the callback, or `nullptr`.
- * @param[in] severity Message severity.
- * @param[in] type Message type.
- * @param[in] msg Debug message (NULL-terminated UTF-8 string).
- *
- * @since Added in version 2.0
- * @ingroup pal_graphics
- *
- * @sa palInitGraphics
- */
-typedef void(PAL_CALL* PalDebugCallback)(
-    void* userData,
-    PalDebugMessageSeverity severity,
-    PalDebugMessageType type,
-    const char* msg);
 
 /**
  * @struct PalGraphicsDebugger

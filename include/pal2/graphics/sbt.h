@@ -25,7 +25,18 @@
 #ifndef PAL_GRAPHICS_SBT_H
 #define PAL_GRAPHICS_SBT_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "pipeline.h"
+
+/**
+ * @struct PalShaderBindingTable
+ * @brief Opaque handle to a shader binding table.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalShaderBindingTable PalShaderBindingTable;
 
 /**
  * @struct PalShaderBindingTableRecordInfo

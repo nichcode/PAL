@@ -25,7 +25,81 @@
 #ifndef PAL_GRAPHICS_ADAPTER_H
 #define PAL_GRAPHICS_ADAPTER_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+
+/**
+ * @typedef PalAdapterFeatures
+ * @brief Adapter features.
+ *
+ * Identifies the optional features of an adapter.
+ *
+ * This is a bitmask of all supported features of an adapter.
+ *
+ * All values of this type follow the format `PAL_ADAPTER_FEATURE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint64_t PalAdapterFeatures;
+
+/**
+ * @typedef PalAdapterType
+ * @brief Adapter type.
+ *
+ * Identifies the kind of an adapter.
+ *
+ * All values of this type follow the format `PAL_ADAPTER_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalAdapterType;
+
+/**
+ * @typedef PalAdapterApiType
+ * @brief Adapter API type.
+ *
+ * Identifies the graphics API behind an adapter.
+ *
+ * Custom backends that do not fit the declared API types may use
+ * `PAL_ADAPTER_API_TYPE_CUSTOM`.
+ *
+ * All values of this type follow the format `PAL_ADAPTER_API_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalAdapterApiType;
+
+/**
+ * @typedef PalShaderFormats
+ * @brief Shader formats.
+ *
+ * Identifies the code formats of a shader.
+ *
+ * This is a bitmask of all supported shader formats of an adapter.
+ *
+ * All values of this type follow the format `PAL_SHADER_FORMAT_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalShaderFormats;
+
+/**
+ * @struct PalAdapter
+ * @brief Opaque handle to an adapter.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalAdapter PalAdapter;
 
 /**
  * @brief Maximum size of the adapter name, including the NULL terminator.

@@ -25,7 +25,84 @@
 #ifndef PAL_GRAPHICS_IMAGE_H
 #define PAL_GRAPHICS_IMAGE_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+#include "pal2/core/result.h"
+#include "device.h"
+#include "format.h"
+
+/**
+ * @typedef PalImageType
+ * @brief Image type.
+ *
+ * Identifies the dimensionality of an image.
+ *
+ * All values of this type follow the format `PAL_IMAGE_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalImageType;
+
+/**
+ * @typedef PalImageAspect
+ * @brief Image aspect.
+ *
+ * Identifies which aspects of an image are accessed.
+ *
+ * All values of this type follow the format `PAL_IMAGE_ASPECT_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalImageAspect;
+
+/**
+ * @typedef PalImageViewType
+ * @brief Image view type.
+ *
+ * Identifies how an image view interprets its image.
+ *
+ * All values of this type follow the format `PAL_IMAGE_VIEW_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalImageViewType;
+
+/**
+ * @typedef PalImageMemoryUsage
+ * @brief Image memory usage.
+ *
+ * Identifies how memory is provided for an image.
+ *
+ * All values of this type follow the format `PAL_IMAGE_MEMORY_USAGE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef uint32_t PalImageMemoryUsage;
+
+/**
+ * @struct PalImage
+ * @brief Opaque handle to an image.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalImage PalImage;
+
+/**
+ * @struct PalImageView
+ * @brief Opaque handle to an image view.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_graphics
+ */
+typedef struct PalImageView PalImageView;
 
 /**
  * @defgroup image_types Image Types
@@ -48,20 +125,6 @@
 #define PAL_IMAGE_ASPECT_STENCIL 2 /**< Stencil aspect. */
 #define PAL_IMAGE_ASPECT_DEPTH_STENCIL 3 /**< Depth and stencil aspects. */
 #define PAL_IMAGE_ASPECT_COUNT 4 /**< Number of image aspects. */
-/** @} */
-
-/**
- * @defgroup image_usages Image Usages
- * @ingroup pal_graphics
- * @{
- */
-#define PAL_IMAGE_USAGE_UNDEFINED 0 /**< Invalid image usage. */
-#define PAL_IMAGE_USAGE_COLOR_ATTACHEMENT (1U << 0) /**< Color attachment. */
-#define PAL_IMAGE_USAGE_DEPTH_ATTACHEMENT (1U << 1) /**< Depth/stencil attachment. */
-#define PAL_IMAGE_USAGE_TRANSFER_SRC (1U << 2) /**< Source of a transfer (copy) operation. */
-#define PAL_IMAGE_USAGE_TRANSFER_DST (1U << 3) /**< Destination of a transfer (copy) operation. */
-#define PAL_IMAGE_USAGE_STORAGE (1U << 4) /**< Storage image. */
-#define PAL_IMAGE_USAGE_SAMPLED (1U << 5) /**< Sampled image. */
 /** @} */
 
 /**
