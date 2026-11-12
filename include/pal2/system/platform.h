@@ -1,6 +1,6 @@
 
 /**
- * @file types.h
+ * @file platform.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,8 +26,36 @@
 #ifndef PAL_SYSTEM_PLATFORM_H
 #define PAL_SYSTEM_PLATFORM_H
 
-#include "types.h"
+#include "pal2/core/base.h"
 #include "pal2/core/version.h"
+
+/**
+ * @typedef PalPlatformType
+ * @brief Platform (operating system) type.
+ *
+ * Identifies the operating system of the platform.
+ *
+ * All values of this type follow the format `PAL_PLATFORM_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_system
+ */
+typedef uint32_t PalPlatformType;
+
+/**
+ * @typedef PalPlatformApiType
+ * @brief Platform API type.
+ *
+ * Identifies the windowing/system API used on the platform.
+ *
+ * All values of this type follow the format `PAL_PLATFORM_API_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_system
+ */
+typedef uint32_t PalPlatformApiType;
 
 /**
  * @brief Maximum size of the platform name, including the NULL terminator.

@@ -1,6 +1,6 @@
 
 /**
- * @file types.h
+ * @file cpu.h
  * 
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,8 +26,38 @@
 #ifndef PAL_SYSTEM_CPU_H
 #define PAL_SYSTEM_CPU_H
 
-#include "types.h"
+#include "pal2/core/base.h"
 #include "pal2/core/memory.h"
+
+/**
+ * @typedef PalCpuArch
+ * @brief CPU architecture.
+ *
+ * Identifies the instruction set architecture of the CPU.
+ *
+ * All values of this type follow the format `PAL_CPU_ARCH_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_system
+ */
+typedef uint32_t PalCpuArch;
+
+/**
+ * @typedef PalCpuFeatures
+ * @brief CPU features (instruction sets).
+ *
+ * Identifies the instruction sets supported by the CPU. This is a bitmask of all
+ * supported instruction sets of the CPU. This only includes the instruction sets
+ * known to PAL; the CPU might support more.
+ *
+ * All values of this type follow the format `PAL_CPU_FEATURE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_system
+ */
+typedef uint64_t PalCpuFeatures;
 
 /**
  * @brief Maximum size of the CPU vendor name, including the NULL terminator.
