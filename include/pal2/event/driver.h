@@ -26,8 +26,33 @@
 #ifndef PAL_EVENT_DRIVER_H
 #define PAL_EVENT_DRIVER_H
 
+#include "pal2/core/result.h"
 #include "pal2/core/memory.h"
 #include "queue.h"
+#include "event.h"
+
+/**
+ * @typedef PalDispatchMode
+ * @brief Event dispatch mode.
+ *
+ * Identifies where an event of a given type is delivered.
+ *
+ * All values of this type follow the format `PAL_DISPATCH_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_event
+ */
+typedef uint32_t PalDispatchMode;
+
+/**
+ * @struct PalEventDriver
+ * @brief Opaque handle to an event driver.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_event
+ */
+typedef struct PalEventDriver PalEventDriver;
 
 /**
  * @defgroup dispatch_modes Event Dispatch Modes

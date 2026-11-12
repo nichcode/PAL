@@ -26,7 +26,63 @@
 #ifndef PAL_EVENT_EVENT_H
 #define PAL_EVENT_EVENT_H
 
-#include "types.h"
+#include "pal2/core/base.h"
+
+/**
+ * @typedef PalDecorationMode
+ * @brief Window decoration mode.
+ *
+ * Identifies whether the application or the windowing system draws the window decorations.
+ *
+ * All values of this type follow the format `PAL_DECORATION_MODE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_event
+ */
+typedef uint32_t PalDecorationMode;
+
+/**
+ * @typedef PalEventType
+ * @brief Event type.
+ *
+ * Identifies the kind of an event.
+ *
+ * All values of this type follow the format `PAL_EVENT_TYPE_*` for API
+ * consistency and ease of use.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_event
+ */
+typedef uint32_t PalEventType;
+
+typedef struct PalEvent PalEvent;
+
+/**
+ * @typedef PalEventCallback
+ * @brief Event callback function.
+ *
+ * `event` is only valid for the duration of the callback and must not be modified
+ * or freed by the callback; the memory is owned by PAL. If the event must be used
+ * after the callback returns, the callback must copy it. The callback must be
+ * thread-safe if the event driver that uses it will be called from multiple threads.
+ *
+ * The function signature should look like this:
+ * @code
+ * void PAL_CALL eventCallback(void* userData, const PalEvent* event);
+ * @endcode
+ *
+ * @param[in] userData User-defined data passed to the callback, or `nullptr`.
+ * @param[in] event The event being dispatched.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_event
+ *
+ * @sa PalPushFn
+ */
+typedef void(PAL_CALL* PalEventCallback)(
+    void* userData,
+    const PalEvent* event);
 
 /**
  * @defgroup decoration_modes Window Decoration Modes
@@ -86,31 +142,5 @@ typedef struct PalEvent {
     uint32_t userId; /**< Identifier for user events. */
     PalEventType type; /**< Event type. */
 } PalEvent;
-
-/**
- * @typedef PalEventCallback
- * @brief Event callback function.
- *
- * `event` is only valid for the duration of the callback and must not be modified
- * or freed by the callback; the memory is owned by PAL. If the event must be used
- * after the callback returns, the callback must copy it. The callback must be
- * thread-safe if the event driver that uses it will be called from multiple threads.
- *
- * The function signature should look like this:
- * @code
- * void PAL_CALL eventCallback(void* userData, const PalEvent* event);
- * @endcode
- *
- * @param[in] userData User-defined data passed to the callback, or `nullptr`.
- * @param[in] event The event being dispatched.
- *
- * @since Added in version 2.0
- * @ingroup pal_event
- *
- * @sa PalPushFn
- */
-typedef void(PAL_CALL* PalEventCallback)(
-    void* userData,
-    const PalEvent* event);
 
 #endif // PAL_EVENT_EVENT_H

@@ -29,12 +29,6 @@
 #include "event.h"
 
 /**
- * @brief Number of events the default queue can hold at a time.
- * @ingroup pal_event
- */
-#define PAL_DEFAULT_QUEUE_EVENT_COUNT 512
-
-/**
  * @typedef PalPushFn
  * @brief Queue push function.
  *
@@ -86,6 +80,12 @@ typedef void(PAL_CALL* PalPushFn)(
 typedef PalBool(PAL_CALL* PalPollFn)(
     void* userData,
     PalEvent* event);
+
+/**
+ * @brief Number of events the default queue can hold at a time.
+ * @ingroup pal_event
+ */
+#define PAL_DEFAULT_QUEUE_EVENT_COUNT 512
 
 /**
  * @struct PalEventQueue
