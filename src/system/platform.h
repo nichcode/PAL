@@ -27,14 +27,48 @@
 #include "shared.h"
 #include "pal2/pal_system.h"
 
-/** Gets platform information. Defaults must be used if
- * there is no real information.
+/**
+ * Platform contract for the system module.
+ *
+ * Every platform must implement every function declared here. A function
+ * that says it has the same semantics and rules as a public `pal*` function
+ * has only the platform requirements. A function with no public counterpart
+ * is documented in full. These rules apply to all of them:
+ *
+ * - Arguments are validated by the caller. A platform function can assume
+ *   every pointer it receives is valid and must not validate it again.
+ *   Any exception will be documented by the function.
+ */
+
+
+/* =========================================================================
+ * Platform
+ * ========================================================================= */
+
+/**
+ * This function has the same semantics and rules as palGetPlatformInfo().
+ *
+ * Additional rules:
+ * - Every field of `info` must be written, defaults must be used if there is
+ *   no real information.
  */
 void platformGetPlatformInfo(PalPlatformInfo* info);
 
 
-/** Gets CPU information. Defaults must be used if
- * there is no real information.
+/* =========================================================================
+ * CPU
+ * ========================================================================= */
+
+/**
+ * This function has the same semantics and rules as palGetCPUInfo().
+ *
+ * Additional rules:
+ * - Every field of `info` must be written, defaults must be used if there is
+ *   no real information.
+ * - `allocator` is for temporary allocations only, when needed. Every
+ *   temporary allocation must be freed before the function returns.
+ * - If a temporary allocation fails, defaults must be used for the data.
+ *   This function cannot report failure.
  */
 void platformGetCPUInfo(
     const PalAllocator* allocator,

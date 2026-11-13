@@ -30,167 +30,194 @@
 #include "pal2/thread/mutex.h"
 #include "pal2/thread/tls.h"
 
-/** This function has the same semantics and rules as 
- * palCreateThread()
+/**
+ * Platform contract for the thread module.
+ *
+ * Every platform must implement every function declared here. A function
+ * that says it has the same semantics and rules as a public `pal*` function
+ * has only the platform requirements. A function with no public counterpart
+ * is documented in full. These rules apply to all of them:
+ *
+ * - Arguments are validated by the caller. A platform function can assume
+ *   every pointer it receives is valid and must not validate it again.
+ *   Any exception will be documented by the function.
+ */
+
+
+/* =========================================================================
+ * Thread
+ * ========================================================================= */
+
+/**
+ * This function has the same semantics and rules as palCreateThread().
+ *
+ * Additional rules:
+ * - The value returned by the entry function must be kept so
+ * `platformJoinThread()` can return it.
  */
 PalResult platformCreateThread(
     const PalThreadCreateInfo* info,
     PalThread** thread);
 
-/** This function has the same semantics and rules as 
- * palJoinThread()
+/**
+ * This function has the same semantics and rules as palJoinThread().
+ *
+ * Additional rules:
+ * - On success the platform releases the native thread resources.
  */
 PalResult platformJoinThread(
     PalThread* thread,
     void** retval);
 
-/** This function has the same semantics and rules as 
- * palDetachThread()
- */
+/** This function has the same semantics and rules as palDetachThread(). */
 void platformDetachThread(PalThread* thread);
 
-/** This function has the same semantics and rules as 
- * palSleep()
+/**
+ * This function has the same semantics and rules as palSleep().
+ *
+ * Additional rules:
+ * - A sleep can return early because of a signal or an interrupt.
+ *   Resume with the remaining time (for example, on `EINTR`).
  */
 void platformSleep(uint64_t milliseconds);
 
-/** This function has the same semantics and rules as 
- * palYield()
+/**
+ * This function has the same semantics and rules as palYield().
+ *
+ * Additional rules:
+ * - It can do nothing if the platform has no implementation.
  */
 void platformYield();
 
-/** This function has the same semantics and rules as 
- * palGetCurrentThread()
+/**
+ * This function has the same semantics and rules as palGetCurrentThread().
+ *
+ * Additional rules:
+ * - The returned handle must be valid and one that other threads can use.
  */
 PalThread* platformGetCurrentThread();
 
-/** This function has the same semantics and rules as 
- * palGetThreadFeatures()
- */
+/** This function has the same semantics and rules as palGetThreadFeatures(). */
 PalThreadFeatures platformGetThreadFeatures();
 
-/** This function has the same semantics and rules as 
- * palGetThreadPriority()
- */
+/** This function has the same semantics and rules as palGetThreadPriority(). */
 PalThreadPriority platformGetThreadPriority(PalThread* thread);
 
-/** This function has the same semantics and rules as 
- * palGetThreadAffinity()
- */
+/** This function has the same semantics and rules as palGetThreadAffinity(). */
 uint64_t platformGetThreadAffinity(PalThread* thread);
 
-/** This function has the same semantics and rules as 
- * palGetThreadName()
- */
+/** This function has the same semantics and rules as palGetThreadName(). */
 void platformGetThreadName(
     PalThread* thread,
     uint64_t bufferSize,
     uint64_t* size,
     char* buffer);
 
-/** This function has the same semantics and rules as 
- * palSetThreadPriority()
- */
+/** This function has the same semantics and rules as palSetThreadPriority(). */
 PalResult platformSetThreadPriority(
     PalThread* thread,
     PalThreadPriority priority);
 
-/** This function has the same semantics and rules as 
- * palSetThreadAffinity()
- */
+/** This function has the same semantics and rules as palSetThreadAffinity(). */
 PalResult platformSetThreadAffinity(
     PalThread* thread,
     uint64_t mask);
 
-/** This function has the same semantics and rules as 
- * palSetThreadName()
+/**
+ * This function has the same semantics and rules as palSetThreadName().
+ *
+ * Additional rules:
+ * - `name` must be truncated to the required or maximum size of the name
+ *   for the platform.
  */
 PalResult platformSetThreadName(
     PalThread* thread,
     const char* name);
 
-    
-/** This function has the same semantics and rules as 
- * palCreateTLS()
+
+/* =========================================================================
+ * Thread Local Storage (TLS)
+ * ========================================================================= */
+
+/**
+ * This function has the same semantics and rules as palCreateTLS().
+ *
+ * Additional rules:
+ * - A platform without native destructors must use an alternative that has them
+ *   or any other way to avoid memory leaks.
  */
 PalTLSId platformCreateTLS(PaTlsDestructorFn destructor);
 
-/** This function has the same semantics and rules as 
- * palDestroyTLS()
- */
+/** This function has the same semantics and rules as palDestroyTLS(). */
 void platformDestroyTLS(PalTLSId Tls);
 
-/** This function has the same semantics and rules as 
- * palGetTLS()
- */
+/** This function has the same semantics and rules as palGetTLS(). */
 void* platformGetTLS(PalTLSId Tls);
 
-/** This function has the same semantics and rules as 
- * palSetTLS()
- */
+/** This function has the same semantics and rules as palSetTLS(). */
 void platformSetTLS(
     PalTLSId Tls,
     void* data);
 
 
-/** This function has the same semantics and rules as 
- * palCreateMutex()
+/* =========================================================================
+ * Mutex
+ * ========================================================================= */
+
+/**
+ * This function has the same semantics and rules as palCreateMutex().
+ * 
+ * Additional rules:
+ * - The native mutex type may be resursive or not, the caller assumes non-resursive.
+ * - The mutex and the condition variable must work together. The native
+ *   mutex must be usable by `platformWaitCondVar()`.
  */
 PalResult platformCreateMutex(
     const PalAllocator* allocator,
     PalMutex** mutex);
 
-/** This function has the same semantics and rules as 
- * palDestroyMutex()
- */
+/** This function has the same semantics and rules as palDestroyMutex(). */
 void platformDestroyMutex(PalMutex* mutex);
 
-/** This function has the same semantics and rules as 
- * palLockMutex()
- */
+/** This function has the same semantics and rules as palLockMutex(). */
 void platformLockMutex(PalMutex* mutex);
 
-/** This function has the same semantics and rules as 
- * palUnlockMutex()
- */
+/** This function has the same semantics and rules as palUnlockMutex(). */
 void platformUnlockMutex(PalMutex* mutex);
 
 
-/** This function has the same semantics and rules as 
- * palCreateCondVar()
+/* =========================================================================
+ * Condition Variable
+ * ========================================================================= */
+
+/**
+ * This function has the same semantics and rules as palCreateCondVar().
+ *
+ * Additional rules:
+ * - Use a monotonic native source; a system clock must not be used.
  */
 PalResult platformCreateCondVar(
     const PalAllocator* allocator,
     PalCondVar** condVar);
 
-/** This function has the same semantics and rules as 
- * palDestroyCondVar()
- */
+/** This function has the same semantics and rules as palDestroyCondVar(). */
 void platformDestroyCondVar(PalCondVar* condVar);
 
-/** This function has the same semantics and rules as 
- * palWaitCondVar()
- */
+/** This function has the same semantics and rules as palWaitCondVar(). */
 PalResult platformWaitCondVar(
     PalCondVar* condVar,
     PalMutex* mutex);
 
-/** This function has the same semantics and rules as 
- * palWaitCondVarTimeout()
- */
+/** This function has the same semantics and rules as palWaitCondVarTimeout(). */
 PalResult platformWaitCondVarTimeout(
     PalCondVar* condVar,
     PalMutex* mutex,
     uint64_t milliseconds);
 
-/** This function has the same semantics and rules as 
- * palSignalCondVar()
- */
+/** This function has the same semantics and rules as palSignalCondVar(). */
 void platformSignalCondVar(PalCondVar* condVar);
 
-/** This function has the same semantics and rules as 
- * palBroadcastCondVar()
- */
+/** This function has the same semantics and rules as palBroadcastCondVar(). */
 void platformBroadcastCondVar(PalCondVar* condVar);
 
 #endif // THREAD_PLATFORM_H
