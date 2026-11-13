@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <sys/utsname.h>
 #include <unistd.h>
+#include <string.h>
 
 static uint32_t parseCache(const char* path)
 {

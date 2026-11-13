@@ -1,6 +1,7 @@
 
 #include "pal2/thread/thread.h"
 #include "pal2/thread/tls.h"
+#include "pal2/core/log.h"
 #include <stdbool.h>
 
 typedef struct ThreadData

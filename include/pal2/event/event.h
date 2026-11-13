@@ -56,7 +56,25 @@ typedef uint32_t PalDecorationMode;
  */
 typedef uint32_t PalEventType;
 
-typedef struct PalEvent PalEvent;
+/**
+ * @struct PalEvent
+ * @brief Event.
+ *
+ * The payloads are packed in the `data` and `data2` fields of the struct.
+ * User events define how their payloads are packed.
+ * See [Event Payload](@ref event_payload) for more information.
+ *
+ * Filled in by @ref palPollEvent() or passed to the event callback.
+ *
+ * @since Added in version 2.0
+ * @ingroup pal_event
+ */
+typedef struct PalEvent {
+    uint64_t data; /**< Data payload. */
+    uint64_t data2; /**< Additional data payload. */
+    uint32_t userId; /**< Identifier for user events. */
+    PalEventType type; /**< Event type. */
+} PalEvent;
 
 /**
  * @typedef PalEventCallback
@@ -122,25 +140,5 @@ typedef void(PAL_CALL* PalEventCallback)(
 #define PAL_EVENT_TYPE_WINDOW_DECORATION_MODE 20 /**< Window decoration mode has been selected or changed. */
 #define PAL_EVENT_TYPE_COUNT 21 /**< Number of event types. */
 /** @} */
-
-/**
- * @struct PalEvent
- * @brief Event.
- *
- * The payloads are packed in the `data` and `data2` fields of the struct.
- * User events define how their payloads are packed.
- * See [Event Payload](@ref event_payload) for more information.
- *
- * Filled in by @ref palPollEvent() or passed to the event callback.
- *
- * @since Added in version 2.0
- * @ingroup pal_event
- */
-typedef struct PalEvent {
-    uint64_t data; /**< Data payload. */
-    uint64_t data2; /**< Additional data payload. */
-    uint32_t userId; /**< Identifier for user events. */
-    PalEventType type; /**< Event type. */
-} PalEvent;
 
 #endif // PAL_EVENT_EVENT_H

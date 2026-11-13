@@ -23,6 +23,7 @@
 
 #include "core/platform.h"
 #include "pal2/core/result.h"
+#include <string.h>
 
 #if PLATFORM_POSIX
 

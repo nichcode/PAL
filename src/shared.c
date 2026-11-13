@@ -23,6 +23,7 @@
 
 #include "shared.h"
 #include "pal2/core/base.h"
+#include "pal2/core/log.h"
 
 #include <stdio.h>
 #include <stdlib.h>

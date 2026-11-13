@@ -22,6 +22,7 @@
  */
 
 #include "platform.h"
+#include <string.h>
 
 static const char* resultCodeToString(PalResult result)
 {

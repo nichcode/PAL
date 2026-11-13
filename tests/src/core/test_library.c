@@ -1,5 +1,6 @@
 
 #include "pal2/core/library.h"
+#include "pal2/core/log.h"
 
 #ifdef _WIN32
 #define LIBRARY_NAME "ucrtbase.dll"

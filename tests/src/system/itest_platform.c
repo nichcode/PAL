@@ -1,5 +1,6 @@
 
 #include "pal2/system/platform.h"
+#include "pal2/core/log.h"
 
 static const char* platformTypeToString(PalPlatformType type)
 {

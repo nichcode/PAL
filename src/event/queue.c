@@ -23,6 +23,7 @@
 
 #include "pal2/core/memory.h"
 #include "pal2/event/queue.h"
+#include <string.h>
 
 typedef struct QueueData
 {

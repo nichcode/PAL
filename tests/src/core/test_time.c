@@ -1,5 +1,6 @@
 
 #include "pal2/core/time.h"
+#include "pal2/core/log.h"
 
 typedef struct Timer
 {

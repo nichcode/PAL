@@ -1,6 +1,7 @@
 
 #include "pal2/thread/thread.h"
 #include "pal2/thread/condvar.h"
+#include "pal2/core/log.h"
 #include <stdbool.h>
 
 #define THREAD_COUNT 4

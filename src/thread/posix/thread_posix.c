@@ -31,6 +31,8 @@
 #include <errno.h>
 #include <pthread.h>
 
+#include <string.h>
+
 #define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
 

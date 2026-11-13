@@ -1,5 +1,6 @@
 
 #include "pal2/system/cpu.h"
+#include "pal2/core/log.h"
 #include <string.h>
 
 static const char* cpuArchToString(PalCpuArch arch)

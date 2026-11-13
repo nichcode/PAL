@@ -1,6 +1,8 @@
 
 #include "pal2/event/driver.h"
+#include "pal2/core/log.h"
 #include <stdbool.h>
+#include <string.h>
 
 #define MAX_EVENTS 64
 

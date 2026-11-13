@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <sys/statvfs.h>
 #include <sys/sysinfo.h>
+#include <string.h>
 
 void platformGetPlatformInfo(PalPlatformInfo* info)
 {

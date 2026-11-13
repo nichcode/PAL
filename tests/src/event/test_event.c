@@ -1,5 +1,6 @@
 
 #include "pal2/event/driver.h"
+#include "pal2/core/log.h"
 #include <stdbool.h>
 
 typedef struct EventContext

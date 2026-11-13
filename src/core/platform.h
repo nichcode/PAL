@@ -28,6 +28,7 @@
 #include "pal2/core/result.h"
 #include "pal2/core/library.h"
 #include "pal2/core/log.h"
+#include <stdbool.h>
 
 /** 
  * A sensible default for native code format buffer size. It can be increased.
