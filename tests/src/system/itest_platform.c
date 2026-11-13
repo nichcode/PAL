@@ -51,7 +51,7 @@ int main(void)
     palLog(nullptr, " Name: %s", info.name);
     palLog(nullptr, " API: %s", platformAPITypeToString(info.apiType));
     palLog(nullptr, " Total RAM: %llu MB", info.totalRAM);
-    palLog(nullptr, " Total Memory: %llu GB", info.totalMemory);
+    palLog(nullptr, " Total Disk: %llu GB", info.totalMemory);
 
     uint32_t major, minor, build;
     major = info.version.major;

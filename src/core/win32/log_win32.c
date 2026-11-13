@@ -23,6 +23,7 @@
 
 #include "core/platform.h"
 #include "pal2/core/log.h"
+#include "pal2/core/memory.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
