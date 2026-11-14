@@ -22,6 +22,7 @@
  */
 
 #include "platform.h"
+#include "pal2/thread/mutex.h"
 
 PalResult PAL_CALL palCreateMutex(
     const PalAllocator* allocator,

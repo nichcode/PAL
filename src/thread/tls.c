@@ -22,6 +22,7 @@
  */
 
 #include "platform.h"
+#include "pal2/thread/tls.h"
 
 PalTLSId PAL_CALL palCreateTLS(PaTlsDestructorFn destructor)
 {

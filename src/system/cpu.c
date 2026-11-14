@@ -22,7 +22,8 @@
  */
 
 #include "platform.h"
-#include "string.h"
+#include "pal2/system/platform.h"
+#include <string.h>
 
 void PAL_CALL palGetCPUInfo(
     const PalAllocator* allocator,

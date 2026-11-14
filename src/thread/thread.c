@@ -22,6 +22,7 @@
  */
 
 #include "platform.h"
+#include "pal2/thread/thread.h"
 
 PalResult PAL_CALL palCreateThread(
     const PalThreadCreateInfo* info,

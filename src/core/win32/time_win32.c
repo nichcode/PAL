@@ -22,6 +22,7 @@
  */
 
 #include "core/platform.h"
+#include "pal2/core/time.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

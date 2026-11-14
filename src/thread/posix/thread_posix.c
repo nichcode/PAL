@@ -23,6 +23,7 @@
 
 #define _GNU_SOURCE
 #include "thread/platform.h"
+#include "pal2/thread/thread.h"
 
 #if PLATFORM_POSIX
 #include <sched.h>

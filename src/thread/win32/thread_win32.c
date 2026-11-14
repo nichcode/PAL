@@ -22,6 +22,7 @@
  */
 
 #include "thread/platform.h"
+#include "pal2/thread/thread.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

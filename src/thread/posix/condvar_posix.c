@@ -22,6 +22,7 @@
  */
 
 #include "thread/platform.h"
+#include "pal2/thread/condvar.h"
 
 #if PLATFORM_POSIX
 #include "thread_posix.h"

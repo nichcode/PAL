@@ -22,6 +22,7 @@
  */
 
 #include "thread/platform.h"
+#include "pal2/thread/mutex.h"
 
 #if PLATFORM_POSIX
 #include "thread_posix.h"

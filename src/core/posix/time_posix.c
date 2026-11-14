@@ -22,6 +22,7 @@
  */
 
 #include "core/platform.h"
+#include "pal2/core/time.h"
 
 #if PLATFORM_POSIX
 #include <time.h>

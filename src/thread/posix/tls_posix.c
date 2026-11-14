@@ -22,6 +22,7 @@
  */
 
 #include "thread/platform.h"
+#include "pal2/thread/tls.h"
 
 #if PLATFORM_POSIX
 #include <pthread.h>

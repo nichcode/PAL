@@ -22,6 +22,7 @@
  */
 
 #include "system/platform.h"
+#include "pal2/system/platform.h"
 
 #ifdef __linux__
 #include <stdio.h>

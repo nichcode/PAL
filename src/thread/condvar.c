@@ -22,6 +22,7 @@
  */
 
 #include "platform.h"
+#include "pal2/thread/condvar.h"
 
 PalResult PAL_CALL palCreateCondVar(
     const PalAllocator* allocator,
