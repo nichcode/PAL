@@ -64,4 +64,7 @@ typedef struct VideoBackend {
 
 extern VideoBackend* s_VideoBackend; /**< Active video backend. */
 
+/** Gets all supported backends per platform. */
+const VideoBackend* const* platformGetVideoBackends(uint32_t* count);
+
 #endif // VIDEO_PLATFORM_H

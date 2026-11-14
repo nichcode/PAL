@@ -25,14 +25,6 @@
 #include "pal2/video/init.h"
 #include <string.h>
 
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-
-#ifdef _WIN32
-static s_VideoBackends[] = {
-
-};
-#endif // _WIN32
-
 VideoBackend* s_VideoBackend = nullptr;
 static PalBool s_Initialized = PAL_FALSE;
 static PalVideoDriver s_VideoDriver; /**< Active video driver. */
@@ -44,13 +36,16 @@ void PAL_CALL palEnumerateVideoDrivers(
     ASSERT(drivers != nullptr && count != 0, "drivers parameter is not nullptr but count is 0");
     ASSERT(drivers == nullptr && count == nullptr, "drivers and count parameters are null");
 
+    uint32_t backendCount = 0;
+    const VideoBackend* const* backends = platformGetVideoBackends(&backendCount);
+    
     if (!drivers) {
-        *count = ARRAY_SIZE(s_VideoBackends);
+        *count = backendCount;
         return;
     }
 
     for (uint32_t i = 0; i < *count; i++) {
-        VideoBackend* backend = &s_VideoBackends[i];
+        const VideoBackend* backend = backends[i];
         PalVideoDriver* backendDriver = backend->getDriver();
 
         /** set the id of the driver to the loop index for easy lookup. */

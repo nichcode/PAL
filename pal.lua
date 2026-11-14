@@ -50,3 +50,64 @@ project "PAL2"
 
         filter {}
     end
+
+    if (PAL_BUILD_VIDEO_MODULE) then
+        files { "src/video/*.c" }
+
+        if (os.target() == "linux") then
+            -- check for wayland support. This is cross compiler
+            local waylandPaths = {
+                "/usr/include/wayland-client.h",
+                "/usr/include/x86_64-linux-gnu/wayland-client.h"
+            }
+
+            local found = false
+            for _, path in ipairs(waylandPaths) do
+                local file = io.open(path, "r")
+                if file then
+                    file:close()
+                    found = true
+                    break
+                end
+            end
+
+            if found then
+                defines { "PAL_HAS_WAYLAND_BACKEND=1" }
+            else
+                defines { "PAL_HAS_WAYLAND_BACKEND=0" }
+            end
+
+            -- check for Xlib support. This is cross compiler
+            local XPaths = {
+                "/usr/include/X11/Xlib.h",
+                "/usr/include/x86_64-linux-gnu/X11/Xlib.h"
+            }
+
+            found = false
+            for _, path in ipairs(XPaths) do
+                local file = io.open(path, "r")
+                if file then
+                    file:close()
+                    found = true
+                    break
+                end
+            end
+
+            if found then
+                defines { "PAL_HAS_X11_BACKEND=1" }
+            else
+                defines { "PAL_HAS_X11_BACKEND=0" }
+            end
+        end
+
+        filter {"system:windows", "configurations:*"}
+            files { "src/video/win32/*.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files {
+                "src/video/x11/*.c",
+                "src/video/wayland/*.c"
+            }
+            
+        filter {}
+    end
