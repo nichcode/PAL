@@ -37,3 +37,9 @@ local threadFiles = os.matchfiles("src/thread/*.c")
 for _, file in ipairs(threadFiles) do
     addTest(file)
 end
+
+
+local videoFiles = os.matchfiles("src/video/*.c")
+for _, file in ipairs(videoFiles) do
+    addTest(file)
+end

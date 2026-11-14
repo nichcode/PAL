@@ -33,8 +33,8 @@ void PAL_CALL palEnumerateVideoDrivers(
     uint32_t* count,
     PalVideoDriver* drivers)
 {
-    ASSERT(drivers != nullptr && count != 0, "drivers parameter is not nullptr but count is 0");
-    ASSERT(drivers == nullptr && count == nullptr, "drivers and count parameters are null");
+    ASSERT(count != nullptr, "count parameter is nullptr");
+    ASSERT(drivers == nullptr || *count > 0, "drivers parameter is not nullptr but *count is 0");
 
     uint32_t backendCount = 0;
     const VideoBackend* const* backends = platformGetVideoBackends(&backendCount);
