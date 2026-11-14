@@ -86,7 +86,8 @@ void platformSetLogTLSData(LogTLSData* data);
 /**
  * Gets the native code and the source from the result and gets the platform
  * format string if available.
- *
+ * 
+ * Additional rules:
  * - The buffer size is always `FORMAT_BUFFER_SIZE`, including the null terminator.
  * - `buffer` must always be null terminated. Text that does not fit is truncated.
  * - If there is nothing to format, `buffer` must be an empty string.

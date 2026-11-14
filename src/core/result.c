@@ -126,8 +126,8 @@ void PAL_CALL palFormatResult(
     uint64_t bufferSize,
     char* buffer)
 {
-    ASSERT(buffer != nullptr, "buffer paramter is null");
-    ASSERT(bufferSize != 0, "bufferSize paramter is 0");
+    ASSERT(buffer != nullptr, "buffer parameter is null");
+    ASSERT(bufferSize != 0, "bufferSize parameter is 0");
 
     const char* baseString = resultCodeToString(result);
     const char* sourceString = resultSourceToString(result);

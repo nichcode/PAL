@@ -31,7 +31,7 @@ void PAL_CALL palLog(
     const char* fmt,
     ...)
 {
-    ASSERT(fmt != nullptr, "fmt paramter is null");
+    ASSERT(fmt != nullptr, "fmt parameter is null");
 
     LogTLSData* data = platformGetLogTLSData();
     if (!data) {

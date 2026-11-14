@@ -165,16 +165,16 @@ PAL_GL_EXTENSION_SWAP_CONTROL_TEAR
 - Renamed fbConfig backend type constants from `PAL_FBCONFIG_BACKEND_**` to 
     `PAL_FBCONFIG_BACKEND_**`. (#4)
 - Renamed `PalFlashFlag` to `PalFlashFlags`. (#4)
-- `palGetMouseDelta()` now takes `dx` and `dy` paramters as `float`. (#4)
-- `palEnumerateMonitors()` now takes `count` paramter as `uint32_t`. (#4)
-- `palEnumerateMonitorModes()` now takes `count` paramter as `uint32_t`. (#4)
-- `palGetClosestGLFBConfig()` now takes `count` paramter as `uint32_t`. (#4)
-- `palGetMouseWheelDelta()` now takes `dx` and `dy` paramters as `float`. (#4)
-- `palJoinThread()` now takes `retval` paramters as `void**`. (#4)
-- `palUnpackUint32()` now takes `data` paramters as `uint64_t`. (#4)
-- `palUnpackInt32()` now takes `data` paramters as `uint64_t`. (#4)
-- `palUnpackPointer()` now takes `data` paramters as `uint64_t`. (#4)
-- `palUnpackFloat()` now takes `data` paramters as `uint64_t`. (#4)
+- `palGetMouseDelta()` now takes `dx` and `dy` parameters as `float`. (#4)
+- `palEnumerateMonitors()` now takes `count` parameter as `uint32_t`. (#4)
+- `palEnumerateMonitorModes()` now takes `count` parameter as `uint32_t`. (#4)
+- `palGetClosestGLFBConfig()` now takes `count` parameter as `uint32_t`. (#4)
+- `palGetMouseWheelDelta()` now takes `dx` and `dy` parameters as `float`. (#4)
+- `palJoinThread()` now takes `retval` parameters as `void**`. (#4)
+- `palUnpackUint32()` now takes `data` parameters as `uint64_t`. (#4)
+- `palUnpackInt32()` now takes `data` parameters as `uint64_t`. (#4)
+- `palUnpackPointer()` now takes `data` parameters as `uint64_t`. (#4)
+- `palUnpackFloat()` now takes `data` parameters as `uint64_t`. (#4)
 - `palPackUint32()` now returns `uint64_t` instead of `int64_t`. (#4)
 - `palPackInt32()` now returns `uint64_t` instead of `int64_t`. (#4)
 - `palPackPointer()` now returns `uint64_t` instead of `int64_t`. (#4)
@@ -331,7 +331,7 @@ palJoinThread(thread, &retval);
 - **System:** `PalCPUInfo.architecture` is now determined at runtime instead
     of build time.
 - **Opengl:** **palEnumerateGLFBConfigs()** now does not use the `glWindow`
-    paramter. Set to `nullptr`
+    parameter. Set to `nullptr`
 
 ### Fixed
 - Fixed a bug where **enter modal mode and exit modal mode** operations 

@@ -28,7 +28,7 @@ Another limitaton which must be enforced manually is the column width.
 Since its not enforced by `clang-format`, Its better if its `80` width.
 
 1. Function calls that take a single argument or function declaration that 
-takes a single paramter should be on a single line. If its a call, 
+takes a single parameter should be on a single line. If its a call, 
 its better to do any error checking just below the function call.
 
 ```C
@@ -41,7 +41,7 @@ if (result != PAL_RESULT_SUCCESS) {
 ```
 
 2. Function calls that take a multiple argument or function declaration that
-takes multiple paramters should be one argument/paramter per line. 
+takes multiple parameters should be one argument/parameter per line. 
 If its a call, its better to do any error checking after a blank line.
 
 ```C

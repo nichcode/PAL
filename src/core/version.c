@@ -31,7 +31,7 @@
 
 void PAL_CALL palGetVersion(PalVersion* version)
 {
-    ASSERT(version != nullptr, "version paramter is null");
+    ASSERT(version != nullptr, "version parameter is null");
 
     version->major = VERSION_MAJOR;
     version->minor = VERSION_MINOR;
