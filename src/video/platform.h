@@ -70,15 +70,33 @@ typedef PalResult (*InitVideoFn)(
     const void* preferredInstance,
     void** selectedInstance);
 
-/** Shutdowns the video backend. */
+/** This function has the same semantics and rules as palShutdownVideo(). */
 typedef void (*ShutdownVideoFn)(void);
 
-/** Updates the video backend. 
+/** This function has the same semantics and rules as palUpdateVideo().
  * 
  * Additional rules:
  * This function must not block.
 */
 typedef void (*UpdateVideoFn)(void);
+
+
+/* =========================================================================
+ * Icon
+ * ========================================================================= */
+
+/** This function has the same semantics and rules as palCreateIcon(). */
+typedef PalResult (*CreateIconFn)(
+    const PalIconCreateInfo* info,
+    PalIcon** icon);
+
+/** This function has the same semantics and rules as palDestroyIcon(). */
+typedef void (*DestroyIconFn)(PalIcon* icon);
+
+/** This function has the same semantics and rules as palSetWindowIcon(). */
+typedef void (*SetWindowIconFn)(
+    PalWindow* window,
+    PalIcon* icon);
 
 
 /* =========================================================================
@@ -110,6 +128,9 @@ typedef struct VideoBackend {
     InitVideoFn init;
     ShutdownVideoFn shutdown;
     UpdateVideoFn update;
+    CreateIconFn createIcon;
+    DestroyIconFn destroyIcon;
+    SetWindowIconFn setWindowIcon;
 } VideoBackend;
 
 extern const VideoBackend* g_VideoBackend; /**< Active video backend. */

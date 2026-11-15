@@ -27,10 +27,16 @@ PalVideoDriver* waylandGetVideoDriver(void);
 PalResult waylandInitVideo(const PalAllocator*, struct PalEventDriver*, const void*, void**);
 void waylandShutdownVideo(void);
 void waylandUpdateVideo(void);
+PalResult wlCreateIcon(const PalIconCreateInfo*, PalIcon**);
+void wlDestroyIcon(PalIcon*);
+void wlSetWindowIcon(PalWindow*, PalIcon*);
 
 const VideoBackend g_WaylandBackend = {
     .getDriver = waylandGetVideoDriver,
     .init = waylandInitVideo,
     .shutdown = waylandUpdateVideo,
-    .update = waylandUpdateVideo
+    .update = waylandUpdateVideo,
+    .createIcon = wlCreateIcon,
+    .destroyIcon = wlDestroyIcon,
+    .setWindowIcon = wlSetWindowIcon
 };
