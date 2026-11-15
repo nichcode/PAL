@@ -30,6 +30,8 @@
 #include "pal2/video/icon.h"
 #include "pal2/video/monitor.h"
 
+#include "pal2/video/keyboard.h"
+#include "pal2/video/mouse.h"
 #include "pal2/video/window.h"
 
 /**
@@ -79,6 +81,29 @@ typedef void (*ShutdownVideoFn)(void);
 typedef void (*UpdateVideoFn)(void);
 
 
+/* =========================================================================
+ * Keyboard
+ * ========================================================================= */
+
+typedef struct Keyboard {
+    PalBool scancodeState[PAL_SCANCODE_COUNT];
+    PalBool keycodeState[PAL_KEYCODE_COUNT];
+} Keyboard;
+
+
+/* =========================================================================
+ * Mouse
+ * ========================================================================= */
+
+typedef struct Mouse {
+    PalBool state[PAL_MOUSE_BUTTON_COUNT];
+    int32_t dx;
+    int32_t dy;
+    int32_t WheelX;
+    int32_t WheelY;
+} Mouse;
+
+
 /** A video backend. */
 typedef struct VideoBackend {
     GetVideoDriverFn getDriver;
@@ -88,6 +113,8 @@ typedef struct VideoBackend {
 } VideoBackend;
 
 extern const VideoBackend* g_VideoBackend; /**< Active video backend. */
+extern Keyboard g_Keyboard;
+extern Mouse g_Mouse;
 extern PalBool g_VideoInitialized;
 
 /** Gets all supported backends per platform. */

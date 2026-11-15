@@ -271,7 +271,30 @@ typedef struct Wayland {
     WaylandEglProcs eglProcs;
 } Wayland;
 
+typedef struct WaylandKeyboard {
+    int repeatRate;
+    int repeatDelay;
+    int repeatKey;
+    int repeatScancode;
+    int scancodes[512];
+    int keycodes[256];
+    uint64_t timer;
+    uint64_t frequency;
+} WaylandKeyboard;
+
+typedef struct WaylandMouse {
+    PalBool pendingScroll;
+    int32_t lastX;
+    int32_t lastY;
+    double tmpScrollX;
+    double tmpScrollY;
+    double accumScrollX;
+    double accumScrollY;
+} WaylandMouse;
+
 extern Wayland g_Wayland;
+extern WaylandKeyboard g_WaylandKeyboard;
+extern WaylandMouse g_WaylandMouse;
 
 struct wl_buffer* createShmBuffer(
     int width,
