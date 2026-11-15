@@ -21,21 +21,33 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef PAL_HAS_WAYLAND_BACKEND
+
 #include "pal2/core/library.h"
 #include "video/platform.h"
 #include "pal2/video/init.h"
-#ifdef PAL_HAS_WAYLAND_BACKEND
+#include "pal2/core/time.h"
+
+#if PAL_HAS_EVENT_MODULE
+#include "pal2/core/pack.h"
+#include "pal2/event/driver.h"
+#endif // PAL_HAS_EVENT_MODULE
 
 #include "wayland_helper.h"
+#include "client_protocol.h"
+#include "video/video_egl.h"
+
 #include <dlfcn.h>
 #include <errno.h>
 #include <string.h>
+#include <poll.h>
 
 Wayland g_Wayland = {0};
 WaylandKeyboard g_WaylandKeyboard = {0};
 WaylandMouse g_WaylandMouse = {0};
-extern struct wl_interface xdgWmBaseInterface;
+VideoEGL g_VideoEgl = {0};
 
+extern struct wl_interface xdgWmBaseInterface;
 static PalVideoDriver s_WaylandDriver = {0};
 
 /* =========================================================================
@@ -60,10 +72,10 @@ static void loadGlobals(void)
     interfaces->keyboard = palGetGlobal(wayland, "wl_keyboard_interface");
 }
 
-static void loadProcs(void)
+static void loadProcs(PalBool loadAll)
 {
     WaylandProcs* procs = &g_Wayland.procs;
-    XkbProcs* xkbProcs = &g_Wayland.xbkProcs;
+    XkbProcs* xkbProcs = &g_Wayland.xkbProcs;
     WaylandCursorProcs* cursorProcs = &g_Wayland.cursorProcs;
     WaylandEglProcs* eglProcs = &g_Wayland.eglProcs;
 
@@ -87,9 +99,12 @@ static void loadProcs(void)
     procs->prepareRead = (wlDisplayPrepareReadFn)palGetSymbol(wayland, "wl_display_prepare_read");
     procs->readEvents = (wlDisplayReadEventsFn)palGetSymbol(wayland, "wl_display_read_events");
     procs->displayGetFd = (wlDisplayGetFdFn)palGetSymbol(wayland, "wl_display_get_fd");
-    
     procs->cancelRead = (wlDisplayCancelReadFn)palGetSymbol(wayland, "wl_display_cancel_read");
     procs->proxyMarshalConstructor = (wlProxyMarshalConstructorVFn)palGetSymbol(wayland, marshal_proc);
+
+    if (!loadAll) {
+        return;
+    }
 
     // xkbcommon
     xkbProcs->keymapUnref = (xkbKeymapUnrefFn)palGetSymbol(xkb, "xkb_keymap_unref");
@@ -286,6 +301,57 @@ void createKeycodeTable(void)
     g_WaylandKeyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
+static inline uint64_t getCurrentTime()
+{
+    uint64_t now = palGetPerformanceCounter();
+    return (now * 1000) / g_WaylandKeyboard.frequency;
+}
+
+static void driverGlobalHandle(
+    void* data,
+    struct wl_registry* registry,
+    uint32_t name,
+    const char* interface,
+    uint32_t version)
+{
+    (void)data;
+    (void)registry;
+    (void)name;
+    (void)interface;
+    (void)version;
+
+    PalVideoFeatures features = 0;
+    features |= PAL_VIDEO_FEATURE_HIGH_DPI;
+    features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
+    features |= PAL_VIDEO_FEATURE_MULTI_MONITORS;
+    features |= PAL_VIDEO_FEATURE_MONITOR_GET_MODE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_TITLE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_SIZE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
+    features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
+
+    if (strcmp(interface, "zxdg_decoration_manager_v1") == 0) {
+        features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+    }
+
+    s_WaylandDriver.features = features;
+}
+
+static void driverGlobalRemove(
+    void* data,
+    struct wl_registry* registry,
+    uint32_t name)
+{
+    (void)data;
+    (void)registry;
+    (void)name;
+}
+
+struct wl_registry_listener s_DriverRegistryListener = {
+    .global = driverGlobalHandle,
+    .global_remove = driverGlobalRemove};
+
 
 /* =========================================================================
  * API
@@ -293,15 +359,36 @@ void createKeycodeTable(void)
 
 PalVideoDriver* waylandGetVideoDriver(void)
 {
+    if (s_WaylandDriver.features != 0) {
+        return &s_WaylandDriver;
+    }
+
+    g_Wayland.procs.handle = palLoadLibrary("libwayland-client.so.0");
+    if (g_Wayland.procs.handle) {
+        loadGlobals();
+        loadProcs(PAL_FALSE);
+        setupProtocols();
+
+        g_Wayland.display = g_Wayland.procs.displayConnect(nullptr);
+        if (g_Wayland.display) {
+            g_Wayland.registry = wlDisplayGetRegistry(g_Wayland.display);
+            wlRegistryAddListener(g_Wayland.registry, &s_DriverRegistryListener, nullptr);
+
+            g_Wayland.procs.displayRoundtrip(g_Wayland.display);
+            g_Wayland.procs.displayDisconnect(g_Wayland.display);
+        }
+
+        palFreeLibrary(g_Wayland.procs.handle);
+        memset(&g_Wayland, 0, sizeof(Wayland));
+    }
+
     s_WaylandDriver.type = PAL_VIDEO_DRIVER_TYPE_WAYLAND;
-    s_WaylandDriver.features = PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
-    
     return &s_WaylandDriver;
 }
 
 PalResult waylandInitVideo(
     const PalAllocator* allocator,
-    const PalEventDriver* eventDriver,
+    struct PalEventDriver* eventDriver,
     const void* preferredInstance,
     void** selectedInstance)
 {
@@ -309,13 +396,13 @@ PalResult waylandInitVideo(
     (void)eventDriver;
 
     g_Wayland.procs.handle = palLoadLibrary("libwayland-client.so.0");
-    g_Wayland.xbkProcs.handle = palLoadLibrary("libxkbcommon.so");
+    g_Wayland.xkbProcs.handle = palLoadLibrary("libxkbcommon.so");
     g_Wayland.cursorProcs.handle = palLoadLibrary("libwayland-cursor.so");
     g_Wayland.eglProcs.handle = palLoadLibrary("libwayland-egl.so");
 
     // clang-format off
     if (!g_Wayland.procs.handle ||
-        !g_Wayland.xbkProcs.handle ||
+        !g_Wayland.xkbProcs.handle ||
         !g_Wayland.cursorProcs.handle ||
         !g_Wayland.eglProcs.handle) {
         return palMakeResult(
@@ -326,7 +413,7 @@ PalResult waylandInitVideo(
     // clang-format on
 
     loadGlobals();
-    loadProcs();
+    loadProcs(PAL_TRUE);
     setupProtocols();
     createScancodeTable();
     createKeycodeTable();
@@ -336,12 +423,12 @@ PalResult waylandInitVideo(
     g_Wayland.maxWindowData = 32;
 
     g_Wayland.windowData = palAllocate(
-        g_Wayland.allocator, 
+        allocator, 
         sizeof(WindowData) * g_Wayland.maxWindowData, 
         0);
 
     g_Wayland.monitorData = palAllocate(
-        g_Wayland.allocator, 
+        allocator, 
         sizeof(MonitorData) * g_Wayland.maxMonitorData, 
         0);
 
@@ -350,53 +437,124 @@ PalResult waylandInitVideo(
         goto cleanup;
     }
 
-    g_Wayland.checkFeatures = PAL_TRUE;
     g_Wayland.monitorCount = 0;
     if (preferredInstance) {
         g_Wayland.display = (struct wl_display*)preferredInstance;
         *selectedInstance = (void*)preferredInstance;
 
     } else {
-        *selectedInstance = nullptr;
-        // g_Wayland.display = g_Wayland.procs.displayConnect(nullptr);
-        // if (!g_Wayland.display) {
-        //     result = PAL_RESULT_CODE_PLATFORM_FAILURE;
-        //     goto cleanup;
-        // }
+        g_Wayland.display = g_Wayland.procs.displayConnect(nullptr);
+        if (!g_Wayland.display) {
+            result = PAL_RESULT_CODE_PLATFORM_FAILURE;
+            goto cleanup;
+        }
+
+        *selectedInstance = (void*)g_Wayland.display;
     }
 
+    g_Wayland.allocator = allocator;
+    g_Wayland.eventDriver = eventDriver;
     return PAL_RESULT_SUCCESS;
 
     cleanup:
         palFreeLibrary(g_Wayland.procs.handle);
-        palFreeLibrary(g_Wayland.xbkProcs.handle);
+        palFreeLibrary(g_Wayland.xkbProcs.handle);
         palFreeLibrary(g_Wayland.cursorProcs.handle);
         palFreeLibrary(g_Wayland.eglProcs.handle);
-        
+
+        if (g_Wayland.monitorData) {
+            palFree(allocator, g_Wayland.monitorData);
+        }
+
+        if (g_Wayland.windowData) {
+            palFree(allocator, g_Wayland.windowData);
+        }
+
+        memset(&g_Wayland, 0, sizeof(Wayland));
         return result;
 }
 
 void waylandShutdownVideo(void)
 {
+    if (g_Wayland.state) {
+        g_Wayland.xkbProcs.stateUnref(g_Wayland.state);
+        g_Wayland.xkbProcs.keymapUnref(g_Wayland.keymap);
+    }
+
+    g_Wayland.xkbProcs.contextUnref(g_Wayland.inputContext);
+    if (g_Wayland.compositor) {
+        // if compositor was found, all this will be as well since we check all at init
+        g_Wayland.procs.proxyDestroy((struct wl_proxy*)g_Wayland.compositor);
+        g_Wayland.procs.proxyDestroy((struct wl_proxy*)g_Wayland.xdgBase);
+        g_Wayland.procs.proxyDestroy((struct wl_proxy*)g_Wayland.shm);
+        g_Wayland.procs.proxyDestroy((struct wl_proxy*)g_Wayland.seat);
+    }
+
     if (!g_Wayland.display) {
         // opened by PAL
         g_Wayland.procs.displayDisconnect(g_Wayland.display);
 
-        dlclose(g_Wayland.cursorProcs.handle);
-        dlclose(g_Wayland.xbkProcs.handle);
-        dlclose(g_Wayland.eglProcs.handle);
-        dlclose(g_Wayland.procs.handle);
+        palFreeLibrary(g_Wayland.cursorProcs.handle);
+        palFreeLibrary(g_Wayland.xkbProcs.handle);
+        palFreeLibrary(g_Wayland.eglProcs.handle);
+        palFreeLibrary(g_Wayland.procs.handle);
     }
 
     palFree(g_Wayland.allocator, g_Wayland.windowData);
     palFree(g_Wayland.allocator, g_Wayland.monitorData);
+    unloadVideoEGL();
 
     memset(&g_Wayland, 0, sizeof(Wayland));
 }
 
 void waylandUpdateVideo(void)
 {
+    // flush pending requests
+    g_WaylandMouse.tmpScrollX = 0;
+    g_WaylandMouse.tmpScrollY = 0;
 
+#if PAL_HAS_EVENT_MODULE
+    // key repeats. we only do this if the user wants key repeat events
+    if (g_WaylandKeyboard.repeatKey != 0 && g_Wayland.eventDriver) {
+        PalEventDriver* driver = g_Wayland.eventDriver;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+        mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_KEYREPEAT);
+        if (mode != PAL_DISPATCH_MODE_NONE) {
+            // get now time and check with the key repeat time
+            uint64_t now = getCurrentTime();
+            if (now >= g_WaylandKeyboard.timer) {
+                PalWindow* window = (PalWindow*)g_Wayland.keyboardSurface;
+                PalKeycode key = (PalKeycode)g_WaylandKeyboard.repeatKey;
+                PalScancode scancode = (PalScancode)g_WaylandKeyboard.repeatScancode;
+
+                PalEvent event = {0};
+                event.type = PAL_EVENT_TYPE_KEYREPEAT;
+                event.data = palPackUint32(key, scancode);
+                event.data2 = palPackPointer(window);
+                palPushEvent(driver, &event);
+                g_WaylandKeyboard.timer += (uint64_t)g_WaylandKeyboard.repeatRate;
+            }
+        }
+    }
+#endif // PAL_HAS_EVENT_MODULE
+
+    while (g_Wayland.procs.prepareRead(g_Wayland.display) != 0) {
+        g_Wayland.procs.dispatchPending(g_Wayland.display);
+    }
+
+    g_Wayland.procs.displayFlush(g_Wayland.display);
+    int fd = g_Wayland.procs.displayGetFd(g_Wayland.display);
+    struct pollfd pfd = {fd, POLLIN, 0};
+    if (poll(&pfd, 1, 0) > 0) {
+        // there are events ready to be read
+        g_Wayland.procs.readEvents(g_Wayland.display);
+
+    } else {
+        g_Wayland.procs.cancelRead(g_Wayland.display);
+    }
+
+    // dispatch events that were read
+    g_Wayland.procs.dispatchPending(g_Wayland.display);
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND

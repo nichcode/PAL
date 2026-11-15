@@ -236,7 +236,6 @@ typedef struct WindowData {
 } WindowData;
 
 typedef struct Wayland {
-    PalBool checkFeatures;
     uint32_t monitorCount;
     uint32_t maxWindowData;
     uint32_t maxMonitorData;
@@ -244,7 +243,7 @@ typedef struct Wayland {
     WindowData* windowData;
     MonitorData* monitorData;
     const PalAllocator* allocator;
-    const PalEventDriver* eventDriver;
+    struct PalEventDriver* eventDriver;
 
     struct wl_display* display;
     struct wl_registry* registry;
@@ -266,7 +265,7 @@ typedef struct Wayland {
 
     WaylandInterfaces interfaces;
     WaylandProcs procs;
-    XkbProcs xbkProcs;
+    XkbProcs xkbProcs;
     WaylandCursorProcs cursorProcs;
     WaylandEglProcs eglProcs;
 } Wayland;

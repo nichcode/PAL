@@ -24,7 +24,7 @@
 #include "video/platform.h"
 
 PalVideoDriver* waylandGetVideoDriver(void);
-PalResult waylandInitVideo(const PalAllocator*, const PalEventDriver*, const void*, void**);
+PalResult waylandInitVideo(const PalAllocator*, struct PalEventDriver*, const void*, void**);
 void waylandShutdownVideo(void);
 void waylandUpdateVideo(void);
 

@@ -118,7 +118,7 @@ typedef uint32_t PalVideoDriverType;
 #define PAL_VIDEO_DRIVER_TYPE_COUNT 4 /**< Number of video driver types. */
 /** @} */
 
-typedef struct PalEventDriver PalEventDriver;
+struct PalEventDriver;
 
 /**
  * @struct PalVideoDriver
@@ -242,7 +242,7 @@ PAL_API void PAL_CALL palGetVideoDriver(PalVideoDriver* driver);
  */
 PAL_API PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
-    const PalEventDriver* eventDriver,
+    struct PalEventDriver* eventDriver,
     const void* preferredInstance);
 
 /**

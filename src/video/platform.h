@@ -66,7 +66,7 @@ typedef PalVideoDriver* (*GetVideoDriverFn)(void);
 */
 typedef PalResult (*InitVideoFn)(
     const PalAllocator* allocator,
-    const PalEventDriver* eventDriver,
+    struct PalEventDriver* eventDriver,
     const void* preferredInstance,
     void** selectedInstance);
 

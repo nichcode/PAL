@@ -81,7 +81,7 @@ void PAL_CALL palGetVideoDriver(PalVideoDriver* driver)
 
 PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
-    const PalEventDriver* eventDriver,
+    struct PalEventDriver* eventDriver,
     const void* preferredInstance)
 {
     if (g_VideoInitialized) {
@@ -145,6 +145,9 @@ void PAL_CALL palShutdownVideo(void)
     g_VideoBackend->shutdown();
     g_VideoBackend = nullptr;
     s_Instance = nullptr;
+
+    memset(&g_Keyboard, 0, sizeof(Keyboard));
+    memset(&g_Mouse, 0, sizeof(Mouse));
     g_VideoInitialized = PAL_FALSE;
 }
 
