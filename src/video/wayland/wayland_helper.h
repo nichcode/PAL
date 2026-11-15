@@ -128,7 +128,7 @@ typedef struct {
 
 typedef struct {
     void* monitor;
-    int dpi;
+    uint32_t dpi;
 } SpanMonitor;
 
 typedef struct WaylandInterfaces {
@@ -195,7 +195,7 @@ typedef struct WaylandEglProcs {
 
 typedef struct MonitorData {
     PalBool used;
-    int dpi;
+    uint32_t dpi;
     int x;
     int y;
     uint32_t w;
@@ -221,8 +221,8 @@ typedef struct WindowData {
     int y;
     uint32_t w;
     uint32_t h;
-    int dpi;
-    int monitorCount;
+    uint32_t dpi;
+    uint32_t monitorCount;
     PalWindowState state;
     PalWindow* window;
 

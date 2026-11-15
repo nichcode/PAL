@@ -45,7 +45,7 @@ static const struct wl_message xdg_wm_base_events[] = {
     {"ping", "u", xdg_shell_types + 0},
 };
 
-const struct wl_interface xdg_wm_base_interface = {
+const struct wl_interface xdgWmBaseInterface = {
     "xdg_wm_base",
     6,
     4,

@@ -23,18 +23,18 @@
 
 #ifdef PAL_HAS_WAYLAND_BACKEND
 
-#include "pal2/core/library.h"
-#include "video/platform.h"
-#include "pal2/video/init.h"
-#include "pal2/core/time.h"
-
 #if PAL_HAS_EVENT_MODULE
 #include "pal2/core/pack.h"
 #include "pal2/event/driver.h"
 #endif // PAL_HAS_EVENT_MODULE
 
+#include "pal2/core/library.h"
+#include "video/platform.h"
+#include "pal2/video/init.h"
+#include "pal2/core/time.h"
+
 #include "wayland_helper.h"
-#include "client_protocol.h"
+#include "listeners.h"
 #include "video/video_egl.h"
 
 #include <dlfcn.h>
@@ -348,9 +348,84 @@ static void driverGlobalRemove(
     (void)name;
 }
 
+static void globalHandle(
+    void* data,
+    struct wl_registry* registry,
+    uint32_t name,
+    const char* interface,
+    uint32_t version)
+{
+    (void)data;
+    (void)interface;
+    (void)version;
+
+    WaylandInterfaces* interfaces = &g_Wayland.interfaces;
+
+    if (strcmp(interface, "wl_compositor") == 0) {
+        g_Wayland.compositor = wlRegistryBind(registry, name, interfaces->compositor, 4);
+
+    } else if (strcmp(interface, "xdg_wm_base") == 0) {
+        g_Wayland.xdgBase = wlRegistryBind(registry, name, &xdgWmBaseInterface, 1);
+        xdgWmBaseAddListener(g_Wayland.xdgBase, &g_WmBaseListener, nullptr);
+
+    } else if (strcmp(interface, "wl_shm") == 0) {
+        g_Wayland.shm = wlRegistryBind(registry, name, interfaces->shm, 1);
+
+    } else if (strcmp(interface, "wl_seat") == 0) {
+        g_Wayland.seat = wlRegistryBind(registry, name, interfaces->seat, 5);
+        wlSeatAddListener(g_Wayland.seat, &g_SeatListener, nullptr);
+
+    } else if (strcmp(interface, "zxdg_decoration_manager_v1") == 0) {
+        g_Wayland.decorationManager = wlRegistryBind(
+            registry, 
+            name, 
+            &zxdg_decoration_manager_v1_interface, 
+            1);
+
+    } else if (strcmp(interface, "wl_output") == 0) {
+        // wayland does not let use query monitors directly so we enumerate and store
+        // at init and update the cache when a monitor is added or removed.
+        MonitorData* monitorData = getFreeMonitorData();
+        if (!monitorData) {
+            return;
+        }
+
+        struct wl_output* output = nullptr;
+        output = wlRegistryBind(g_Wayland.registry, name, interfaces->output, 3);
+        wlOutputAddListener(output, &g_OutputListener, monitorData);
+
+        monitorData->wlName = name;
+        monitorData->monitor = (PalMonitor*)output;
+        g_Wayland.monitorCount++;
+    }
+}
+
+static void globalRemove(
+    void* data,
+    struct wl_registry* registry,
+    uint32_t name)
+{
+    (void)data;
+    (void)registry;
+
+    for (uint32_t i = 0; i < g_Wayland.maxMonitorData; ++i) {
+        if (g_Wayland.monitorData[i].used && g_Wayland.monitorData[i].wlName == name) {
+            MonitorData* data = &g_Wayland.monitorData[i];
+            data->used = PAL_FALSE;
+
+            g_Wayland.procs.proxyDestroy((struct wl_proxy*)data->monitor);
+            g_Wayland.monitorCount--;
+        }
+    }
+}
+
 struct wl_registry_listener s_DriverRegistryListener = {
     .global = driverGlobalHandle,
     .global_remove = driverGlobalRemove};
+
+struct wl_registry_listener s_RegistryListener = {
+    .global = globalHandle,
+    .global_remove = globalRemove};
 
 
 /* =========================================================================
