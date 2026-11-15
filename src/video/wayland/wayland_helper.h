@@ -277,8 +277,8 @@ typedef struct WaylandMouse {
 } WaylandMouse;
 
 extern Wayland g_Wl;
-extern WaylandKeyboard g_WaylandKeyboard;
-extern WaylandMouse g_WaylandMouse;
+extern WaylandKeyboard g_WlKeyboard;
+extern WaylandMouse g_WlMouse;
 
 struct wl_buffer* createShmBuffer(
     int width,

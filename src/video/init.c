@@ -30,6 +30,9 @@ PalBool g_VideoInitialized = PAL_FALSE;
 static const void* s_Instance = nullptr;
 static PalVideoDriver s_Driver = {0}; /**< Active video driver. */
 
+Keyboard g_Keyboard = {0};
+Mouse g_Mouse = {0};
+
 void PAL_CALL palEnumerateVideoDrivers(
     uint32_t* count,
     PalVideoDriver* drivers)
@@ -174,4 +177,45 @@ const void* PAL_CALL palGetInstance(void)
     }
 
     return nullptr;
+}
+
+const PalBool* PAL_CALL palGetKeycodeState(void)
+{
+    return g_Keyboard.keycodeState;
+}
+
+const PalBool* PAL_CALL palGetScancodeState(void)
+{
+    return g_Keyboard.scancodeState;
+}
+
+const PalBool* PAL_CALL palGetMouseState(void)
+{
+    return g_Mouse.state;
+}
+
+void PAL_CALL palGetMouseDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)g_Mouse.dx;
+    }
+
+    if (dy) {
+        *dy = (float)g_Mouse.dy;
+    }
+}
+
+void PAL_CALL palGetMouseWheelDelta(
+    float* dx,
+    float* dy)
+{
+    if (dx) {
+        *dx = (float)g_Mouse.WheelX;
+    }
+
+    if (dy) {
+        *dy = (float)g_Mouse.WheelY;
+    }
 }

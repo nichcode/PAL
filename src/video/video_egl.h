@@ -24,6 +24,8 @@
 #ifndef VIDEO_EGL_H
 #define VIDEO_EGL_H
 
+#ifndef _WIN32
+
 #include "pal2/core/library.h"
 
 #define EGL_CAST(type, value) ((type)(value))
@@ -74,3 +76,4 @@ void loadVideoEGL();
 void unloadVideoEGL();
 
 #endif // VIDEO_EGL_H
+#endif // _WIN32

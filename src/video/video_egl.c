@@ -23,6 +23,8 @@
 
 #include "video_egl.h"
 
+#ifndef _WIN32
+
 static eglGetProcAddressFn s_Load = nullptr;
 
 typedef union EGLSymbol
@@ -59,3 +61,5 @@ void unloadVideoEGL()
 {
     palFreeLibrary(g_VideoEgl.handle);
 }
+
+#endif // _WIN32

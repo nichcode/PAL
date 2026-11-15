@@ -98,6 +98,19 @@ typedef void (*SetWindowIconFn)(
     PalWindow* window,
     PalIcon* icon);
 
+typedef struct Keyboard {
+    PalBool scancodeState[PAL_SCANCODE_COUNT];
+    PalBool keycodeState[PAL_KEYCODE_COUNT];
+} Keyboard;
+
+typedef struct Mouse {
+    PalBool state[PAL_MOUSE_BUTTON_COUNT];
+    int32_t dx;
+    int32_t dy;
+    int32_t WheelX;
+    int32_t WheelY;
+} Mouse;
+
 
 /* =========================================================================
  * Cursor
@@ -140,29 +153,6 @@ typedef void (*SetCursorPosFn)(
 typedef void (*SetWindowCursorFn)(
     PalWindow* window,
     PalCursor* cursor);
-
-
-/* =========================================================================
- * Keyboard
- * ========================================================================= */
-
-typedef struct Keyboard {
-    PalBool scancodeState[PAL_SCANCODE_COUNT];
-    PalBool keycodeState[PAL_KEYCODE_COUNT];
-} Keyboard;
-
-
-/* =========================================================================
- * Mouse
- * ========================================================================= */
-
-typedef struct Mouse {
-    PalBool state[PAL_MOUSE_BUTTON_COUNT];
-    int32_t dx;
-    int32_t dy;
-    int32_t WheelX;
-    int32_t WheelY;
-} Mouse;
 
 
 /** A video backend. */

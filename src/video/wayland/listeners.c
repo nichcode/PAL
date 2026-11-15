@@ -38,7 +38,7 @@
 static inline uint64_t getCurrentTime()
 {
     uint64_t now = palGetPerformanceCounter();
-    return (now * 1000) / g_WaylandKeyboard.frequency;
+    return (now * 1000) / g_WlKeyboard.frequency;
 }
 
 /* =========================================================================
@@ -310,11 +310,11 @@ static void pointerHandleMotion(
 
     int x = wl_fixed_to_int(surface_x);
     int y = wl_fixed_to_int(surface_y);
-    const int dx = x - g_WaylandMouse.lastX;
-    const int dy = y - g_WaylandMouse.lastY;
+    const int dx = x - g_WlMouse.lastX;
+    const int dy = y - g_WlMouse.lastY;
 
-    g_WaylandMouse.lastX = x;
-    g_WaylandMouse.lastY = y;
+    g_WlMouse.lastX = x;
+    g_WlMouse.lastY = y;
     g_Mouse.dx = dx;
     g_Mouse.dy = dy;
 
@@ -430,15 +430,15 @@ static void pointerHandleAxis(
 
     double delta = wl_fixed_to_double(value);
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
-        g_WaylandMouse.tmpScrollX += delta;
-        g_WaylandMouse.accumScrollX += delta;
+        g_WlMouse.tmpScrollX += delta;
+        g_WlMouse.accumScrollX += delta;
 
     } else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL) {
-        g_WaylandMouse.tmpScrollY += delta;
-        g_WaylandMouse.accumScrollY += delta;
+        g_WlMouse.tmpScrollY += delta;
+        g_WlMouse.accumScrollY += delta;
     }
 
-    g_WaylandMouse.pendingScroll = PAL_TRUE;
+    g_WlMouse.pendingScroll = PAL_TRUE;
 }
 
 static void pointerHandleAxisDiscrete(
@@ -451,15 +451,15 @@ static void pointerHandleAxisDiscrete(
     (void)pointer;
 
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
-        g_WaylandMouse.tmpScrollX += discrete;
-        g_WaylandMouse.accumScrollX += discrete;
+        g_WlMouse.tmpScrollX += discrete;
+        g_WlMouse.accumScrollX += discrete;
 
     } else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL) {
-        g_WaylandMouse.tmpScrollY += discrete;
-        g_WaylandMouse.accumScrollY += discrete;
+        g_WlMouse.tmpScrollY += discrete;
+        g_WlMouse.accumScrollY += discrete;
     }
 
-    g_WaylandMouse.pendingScroll = PAL_TRUE;
+    g_WlMouse.pendingScroll = PAL_TRUE;
 }
 
 static void pointerHandleFrame(
@@ -469,7 +469,7 @@ static void pointerHandleFrame(
     (void)userData;
     (void)pointer;
 
-    if (!g_WaylandMouse.pendingScroll) {
+    if (!g_WlMouse.pendingScroll) {
         // no wheel event
         return;
     }
@@ -483,14 +483,14 @@ static void pointerHandleFrame(
         return;
     }
 
-    const int dx = (int)g_WaylandMouse.accumScrollX;
-    const int dy = (int)g_WaylandMouse.accumScrollY;
+    const int dx = (int)g_WlMouse.accumScrollX;
+    const int dy = (int)g_WlMouse.accumScrollY;
 
     g_Mouse.WheelX = dx;
     g_Mouse.WheelY = dy;
-    g_WaylandMouse.accumScrollX -= dx;
-    g_WaylandMouse.accumScrollY -= dy;
-    g_WaylandMouse.pendingScroll = PAL_FALSE;
+    g_WlMouse.accumScrollX -= dx;
+    g_WlMouse.accumScrollY -= dy;
+    g_WlMouse.pendingScroll = PAL_FALSE;
 
 #if PAL_HAS_EVENT_MODULE
     if (g_Wl.eventDriver) {
@@ -617,7 +617,7 @@ static void keyboardHandleRemap(
 
     g_Wl.state = state;
     g_Wl.keymap = keymap;
-    g_WaylandKeyboard.frequency = palGetPerformanceFrequency();
+    g_WlKeyboard.frequency = palGetPerformanceFrequency();
 }
 
 static void keyboardHandleKey(
@@ -660,7 +660,7 @@ static void keyboardHandleKey(
         scancode = PAL_SCANCODE_HOME;
 
     } else {
-        scancode = (PalScancode)g_WaylandKeyboard.scancodes[key];
+        scancode = (PalScancode)g_WlKeyboard.scancodes[key];
     }
 
     // printable and text input keys are from the range 32 (PAL_KEYCODE_SPACE) and
@@ -668,7 +668,7 @@ static void keyboardHandleKey(
     // Maybe there will be a layout that makes this wrong but for now this works.
     if (keySym >= XKB_KEY_space && keySym <= XKB_KEY_z) {
         // a printable or input key
-        keycode = (PalKeycode)g_WaylandKeyboard.keycodes[keySym];
+        keycode = (PalKeycode)g_WlKeyboard.keycodes[keySym];
 
     } else {
         // Since PalKeycode and PalScancode have the same integers
@@ -689,20 +689,20 @@ static void keyboardHandleKey(
     // check for key repeats
     if (pressed) {
         if (g_Wl.xkbKeymapKeyRepeats(g_Wl.keymap, key + 8)) {
-            g_WaylandKeyboard.repeatKey = (int)keycode;
-            g_WaylandKeyboard.repeatScancode = (int)scancode;
-            g_WaylandKeyboard.timer = getCurrentTime() + (uint64_t)g_WaylandKeyboard.repeatDelay;
+            g_WlKeyboard.repeatKey = (int)keycode;
+            g_WlKeyboard.repeatScancode = (int)scancode;
+            g_WlKeyboard.timer = getCurrentTime() + (uint64_t)g_WlKeyboard.repeatDelay;
 
         } else {
-            g_WaylandKeyboard.repeatKey = 0;
+            g_WlKeyboard.repeatKey = 0;
         }
 
         type = PAL_EVENT_TYPE_KEYDOWN;
 
     } else {
         // key release
-        if (g_WaylandKeyboard.repeatKey == (int)keycode) {
-            g_WaylandKeyboard.repeatKey = 0;
+        if (g_WlKeyboard.repeatKey == (int)keycode) {
+            g_WlKeyboard.repeatKey = 0;
         }
     }
 
@@ -748,13 +748,13 @@ static void keyboardHandleRepeatInfo(
     (void)userData;
 
     if (g_Wl.keyboard == keyboard) {
-        g_WaylandKeyboard.repeatDelay = delay;
-        g_WaylandKeyboard.repeatRate = rate;
+        g_WlKeyboard.repeatDelay = delay;
+        g_WlKeyboard.repeatRate = rate;
 
     } else {
-        if (g_WaylandKeyboard.repeatDelay == 0) {
-            g_WaylandKeyboard.repeatDelay = 500;
-            g_WaylandKeyboard.repeatRate = 30;
+        if (g_WlKeyboard.repeatDelay == 0) {
+            g_WlKeyboard.repeatDelay = 500;
+            g_WlKeyboard.repeatRate = 30;
         }
     }
 }

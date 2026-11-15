@@ -43,8 +43,8 @@
 #include <poll.h>
 
 Wayland g_Wl = {0};
-WaylandKeyboard g_WaylandKeyboard = {0};
-WaylandMouse g_WaylandMouse = {0};
+WaylandKeyboard g_WlKeyboard = {0};
+WaylandMouse g_WlMouse = {0};
 VideoEGL g_VideoEgl = {0};
 
 extern struct wl_interface xdgWmBaseInterface;
@@ -250,124 +250,124 @@ static void loadProcs(PalBool loadAll)
 void createScancodeTable(void)
 {
     // Letters
-    g_WaylandKeyboard.scancodes[0x01E] = PAL_SCANCODE_A;
-    g_WaylandKeyboard.scancodes[0x030] = PAL_SCANCODE_B;
-    g_WaylandKeyboard.scancodes[0x02E] = PAL_SCANCODE_C;
-    g_WaylandKeyboard.scancodes[0x020] = PAL_SCANCODE_D;
-    g_WaylandKeyboard.scancodes[0x012] = PAL_SCANCODE_E;
-    g_WaylandKeyboard.scancodes[0x021] = PAL_SCANCODE_F;
-    g_WaylandKeyboard.scancodes[0x022] = PAL_SCANCODE_G;
-    g_WaylandKeyboard.scancodes[0x023] = PAL_SCANCODE_H;
-    g_WaylandKeyboard.scancodes[0x017] = PAL_SCANCODE_I;
-    g_WaylandKeyboard.scancodes[0x024] = PAL_SCANCODE_J;
-    g_WaylandKeyboard.scancodes[0x025] = PAL_SCANCODE_K;
-    g_WaylandKeyboard.scancodes[0x026] = PAL_SCANCODE_L;
-    g_WaylandKeyboard.scancodes[0x032] = PAL_SCANCODE_M;
-    g_WaylandKeyboard.scancodes[0x031] = PAL_SCANCODE_N;
-    g_WaylandKeyboard.scancodes[0x018] = PAL_SCANCODE_O;
-    g_WaylandKeyboard.scancodes[0x019] = PAL_SCANCODE_P;
-    g_WaylandKeyboard.scancodes[0x010] = PAL_SCANCODE_Q;
-    g_WaylandKeyboard.scancodes[0x013] = PAL_SCANCODE_R;
-    g_WaylandKeyboard.scancodes[0x01F] = PAL_SCANCODE_S;
-    g_WaylandKeyboard.scancodes[0x014] = PAL_SCANCODE_T;
-    g_WaylandKeyboard.scancodes[0x016] = PAL_SCANCODE_U;
-    g_WaylandKeyboard.scancodes[0x02F] = PAL_SCANCODE_V;
-    g_WaylandKeyboard.scancodes[0x011] = PAL_SCANCODE_W;
-    g_WaylandKeyboard.scancodes[0x02D] = PAL_SCANCODE_X;
-    g_WaylandKeyboard.scancodes[0x015] = PAL_SCANCODE_Y;
-    g_WaylandKeyboard.scancodes[0x02C] = PAL_SCANCODE_Z;
+    g_WlKeyboard.scancodes[0x01E] = PAL_SCANCODE_A;
+    g_WlKeyboard.scancodes[0x030] = PAL_SCANCODE_B;
+    g_WlKeyboard.scancodes[0x02E] = PAL_SCANCODE_C;
+    g_WlKeyboard.scancodes[0x020] = PAL_SCANCODE_D;
+    g_WlKeyboard.scancodes[0x012] = PAL_SCANCODE_E;
+    g_WlKeyboard.scancodes[0x021] = PAL_SCANCODE_F;
+    g_WlKeyboard.scancodes[0x022] = PAL_SCANCODE_G;
+    g_WlKeyboard.scancodes[0x023] = PAL_SCANCODE_H;
+    g_WlKeyboard.scancodes[0x017] = PAL_SCANCODE_I;
+    g_WlKeyboard.scancodes[0x024] = PAL_SCANCODE_J;
+    g_WlKeyboard.scancodes[0x025] = PAL_SCANCODE_K;
+    g_WlKeyboard.scancodes[0x026] = PAL_SCANCODE_L;
+    g_WlKeyboard.scancodes[0x032] = PAL_SCANCODE_M;
+    g_WlKeyboard.scancodes[0x031] = PAL_SCANCODE_N;
+    g_WlKeyboard.scancodes[0x018] = PAL_SCANCODE_O;
+    g_WlKeyboard.scancodes[0x019] = PAL_SCANCODE_P;
+    g_WlKeyboard.scancodes[0x010] = PAL_SCANCODE_Q;
+    g_WlKeyboard.scancodes[0x013] = PAL_SCANCODE_R;
+    g_WlKeyboard.scancodes[0x01F] = PAL_SCANCODE_S;
+    g_WlKeyboard.scancodes[0x014] = PAL_SCANCODE_T;
+    g_WlKeyboard.scancodes[0x016] = PAL_SCANCODE_U;
+    g_WlKeyboard.scancodes[0x02F] = PAL_SCANCODE_V;
+    g_WlKeyboard.scancodes[0x011] = PAL_SCANCODE_W;
+    g_WlKeyboard.scancodes[0x02D] = PAL_SCANCODE_X;
+    g_WlKeyboard.scancodes[0x015] = PAL_SCANCODE_Y;
+    g_WlKeyboard.scancodes[0x02C] = PAL_SCANCODE_Z;
 
     // Numbers (top row)
-    g_WaylandKeyboard.scancodes[0x00B] = PAL_SCANCODE_0;
-    g_WaylandKeyboard.scancodes[0x002] = PAL_SCANCODE_1;
-    g_WaylandKeyboard.scancodes[0x003] = PAL_SCANCODE_2;
-    g_WaylandKeyboard.scancodes[0x004] = PAL_SCANCODE_3;
-    g_WaylandKeyboard.scancodes[0x005] = PAL_SCANCODE_4;
-    g_WaylandKeyboard.scancodes[0x006] = PAL_SCANCODE_5;
-    g_WaylandKeyboard.scancodes[0x007] = PAL_SCANCODE_6;
-    g_WaylandKeyboard.scancodes[0x008] = PAL_SCANCODE_7;
-    g_WaylandKeyboard.scancodes[0x009] = PAL_SCANCODE_8;
-    g_WaylandKeyboard.scancodes[0x00A] = PAL_SCANCODE_9;
+    g_WlKeyboard.scancodes[0x00B] = PAL_SCANCODE_0;
+    g_WlKeyboard.scancodes[0x002] = PAL_SCANCODE_1;
+    g_WlKeyboard.scancodes[0x003] = PAL_SCANCODE_2;
+    g_WlKeyboard.scancodes[0x004] = PAL_SCANCODE_3;
+    g_WlKeyboard.scancodes[0x005] = PAL_SCANCODE_4;
+    g_WlKeyboard.scancodes[0x006] = PAL_SCANCODE_5;
+    g_WlKeyboard.scancodes[0x007] = PAL_SCANCODE_6;
+    g_WlKeyboard.scancodes[0x008] = PAL_SCANCODE_7;
+    g_WlKeyboard.scancodes[0x009] = PAL_SCANCODE_8;
+    g_WlKeyboard.scancodes[0x00A] = PAL_SCANCODE_9;
 
     // Function
-    g_WaylandKeyboard.scancodes[0x03B] = PAL_SCANCODE_F1;
-    g_WaylandKeyboard.scancodes[0x03C] = PAL_SCANCODE_F2;
-    g_WaylandKeyboard.scancodes[0x03D] = PAL_SCANCODE_F3;
-    g_WaylandKeyboard.scancodes[0x03E] = PAL_SCANCODE_F4;
-    g_WaylandKeyboard.scancodes[0x03F] = PAL_SCANCODE_F5;
-    g_WaylandKeyboard.scancodes[0x040] = PAL_SCANCODE_F6;
-    g_WaylandKeyboard.scancodes[0x041] = PAL_SCANCODE_F7;
-    g_WaylandKeyboard.scancodes[0x042] = PAL_SCANCODE_F8;
-    g_WaylandKeyboard.scancodes[0x043] = PAL_SCANCODE_F9;
-    g_WaylandKeyboard.scancodes[0x044] = PAL_SCANCODE_F10;
-    g_WaylandKeyboard.scancodes[0x057] = PAL_SCANCODE_F11;
-    g_WaylandKeyboard.scancodes[0x058] = PAL_SCANCODE_F12;
+    g_WlKeyboard.scancodes[0x03B] = PAL_SCANCODE_F1;
+    g_WlKeyboard.scancodes[0x03C] = PAL_SCANCODE_F2;
+    g_WlKeyboard.scancodes[0x03D] = PAL_SCANCODE_F3;
+    g_WlKeyboard.scancodes[0x03E] = PAL_SCANCODE_F4;
+    g_WlKeyboard.scancodes[0x03F] = PAL_SCANCODE_F5;
+    g_WlKeyboard.scancodes[0x040] = PAL_SCANCODE_F6;
+    g_WlKeyboard.scancodes[0x041] = PAL_SCANCODE_F7;
+    g_WlKeyboard.scancodes[0x042] = PAL_SCANCODE_F8;
+    g_WlKeyboard.scancodes[0x043] = PAL_SCANCODE_F9;
+    g_WlKeyboard.scancodes[0x044] = PAL_SCANCODE_F10;
+    g_WlKeyboard.scancodes[0x057] = PAL_SCANCODE_F11;
+    g_WlKeyboard.scancodes[0x058] = PAL_SCANCODE_F12;
 
     // Control
-    g_WaylandKeyboard.scancodes[0x001] = PAL_SCANCODE_ESCAPE;
-    g_WaylandKeyboard.scancodes[0x01C] = PAL_SCANCODE_ENTER;
-    g_WaylandKeyboard.scancodes[0x00F] = PAL_SCANCODE_TAB;
-    g_WaylandKeyboard.scancodes[0x00E] = PAL_SCANCODE_BACKSPACE;
-    g_WaylandKeyboard.scancodes[0x039] = PAL_SCANCODE_SPACE;
-    g_WaylandKeyboard.scancodes[0x03A] = PAL_SCANCODE_CAPSLOCK;
-    g_WaylandKeyboard.scancodes[0x045] = PAL_SCANCODE_NUMLOCK;
-    g_WaylandKeyboard.scancodes[0x046] = PAL_SCANCODE_SCROLLLOCK;
-    g_WaylandKeyboard.scancodes[0x02A] = PAL_SCANCODE_LSHIFT;
-    g_WaylandKeyboard.scancodes[0x036] = PAL_SCANCODE_RSHIFT;
-    g_WaylandKeyboard.scancodes[0x01D] = PAL_SCANCODE_LCTRL;
-    g_WaylandKeyboard.scancodes[0x061] = PAL_SCANCODE_RCTRL;
-    g_WaylandKeyboard.scancodes[0x038] = PAL_SCANCODE_LALT;
-    g_WaylandKeyboard.scancodes[0x064] = PAL_SCANCODE_RALT;
+    g_WlKeyboard.scancodes[0x001] = PAL_SCANCODE_ESCAPE;
+    g_WlKeyboard.scancodes[0x01C] = PAL_SCANCODE_ENTER;
+    g_WlKeyboard.scancodes[0x00F] = PAL_SCANCODE_TAB;
+    g_WlKeyboard.scancodes[0x00E] = PAL_SCANCODE_BACKSPACE;
+    g_WlKeyboard.scancodes[0x039] = PAL_SCANCODE_SPACE;
+    g_WlKeyboard.scancodes[0x03A] = PAL_SCANCODE_CAPSLOCK;
+    g_WlKeyboard.scancodes[0x045] = PAL_SCANCODE_NUMLOCK;
+    g_WlKeyboard.scancodes[0x046] = PAL_SCANCODE_SCROLLLOCK;
+    g_WlKeyboard.scancodes[0x02A] = PAL_SCANCODE_LSHIFT;
+    g_WlKeyboard.scancodes[0x036] = PAL_SCANCODE_RSHIFT;
+    g_WlKeyboard.scancodes[0x01D] = PAL_SCANCODE_LCTRL;
+    g_WlKeyboard.scancodes[0x061] = PAL_SCANCODE_RCTRL;
+    g_WlKeyboard.scancodes[0x038] = PAL_SCANCODE_LALT;
+    g_WlKeyboard.scancodes[0x064] = PAL_SCANCODE_RALT;
 
     // Arrows
-    g_WaylandKeyboard.scancodes[0x069] = PAL_SCANCODE_LEFT;
-    g_WaylandKeyboard.scancodes[0x06A] = PAL_SCANCODE_RIGHT;
-    g_WaylandKeyboard.scancodes[0x067] = PAL_SCANCODE_UP;
-    g_WaylandKeyboard.scancodes[0x06C] = PAL_SCANCODE_DOWN;
+    g_WlKeyboard.scancodes[0x069] = PAL_SCANCODE_LEFT;
+    g_WlKeyboard.scancodes[0x06A] = PAL_SCANCODE_RIGHT;
+    g_WlKeyboard.scancodes[0x067] = PAL_SCANCODE_UP;
+    g_WlKeyboard.scancodes[0x06C] = PAL_SCANCODE_DOWN;
 
     // Navigation
-    g_WaylandKeyboard.scancodes[0x06E] = PAL_SCANCODE_INSERT;
-    g_WaylandKeyboard.scancodes[0x06F] = PAL_SCANCODE_DELETE;
-    g_WaylandKeyboard.scancodes[0x066] = PAL_SCANCODE_HOME;
-    g_WaylandKeyboard.scancodes[0x067] = PAL_SCANCODE_END;
-    g_WaylandKeyboard.scancodes[0x068] = PAL_SCANCODE_PAGEUP;
-    g_WaylandKeyboard.scancodes[0x06D] = PAL_SCANCODE_PAGEDOWN;
+    g_WlKeyboard.scancodes[0x06E] = PAL_SCANCODE_INSERT;
+    g_WlKeyboard.scancodes[0x06F] = PAL_SCANCODE_DELETE;
+    g_WlKeyboard.scancodes[0x066] = PAL_SCANCODE_HOME;
+    g_WlKeyboard.scancodes[0x067] = PAL_SCANCODE_END;
+    g_WlKeyboard.scancodes[0x068] = PAL_SCANCODE_PAGEUP;
+    g_WlKeyboard.scancodes[0x06D] = PAL_SCANCODE_PAGEDOWN;
 
     // Keypad
-    g_WaylandKeyboard.scancodes[0x052] = PAL_SCANCODE_KP_0;
-    g_WaylandKeyboard.scancodes[0x04F] = PAL_SCANCODE_KP_1;
-    g_WaylandKeyboard.scancodes[0x050] = PAL_SCANCODE_KP_2;
-    g_WaylandKeyboard.scancodes[0x051] = PAL_SCANCODE_KP_3;
-    g_WaylandKeyboard.scancodes[0x04B] = PAL_SCANCODE_KP_4;
-    g_WaylandKeyboard.scancodes[0x04C] = PAL_SCANCODE_KP_5;
-    g_WaylandKeyboard.scancodes[0x04D] = PAL_SCANCODE_KP_6;
-    g_WaylandKeyboard.scancodes[0x047] = PAL_SCANCODE_KP_7;
-    g_WaylandKeyboard.scancodes[0x048] = PAL_SCANCODE_KP_8;
-    g_WaylandKeyboard.scancodes[0x049] = PAL_SCANCODE_KP_9;
-    g_WaylandKeyboard.scancodes[0x060] = PAL_SCANCODE_KP_ENTER;
-    g_WaylandKeyboard.scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
-    g_WaylandKeyboard.scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
-    g_WaylandKeyboard.scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
-    g_WaylandKeyboard.scancodes[0x062] = PAL_SCANCODE_KP_DIVIDE;
-    g_WaylandKeyboard.scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
+    g_WlKeyboard.scancodes[0x052] = PAL_SCANCODE_KP_0;
+    g_WlKeyboard.scancodes[0x04F] = PAL_SCANCODE_KP_1;
+    g_WlKeyboard.scancodes[0x050] = PAL_SCANCODE_KP_2;
+    g_WlKeyboard.scancodes[0x051] = PAL_SCANCODE_KP_3;
+    g_WlKeyboard.scancodes[0x04B] = PAL_SCANCODE_KP_4;
+    g_WlKeyboard.scancodes[0x04C] = PAL_SCANCODE_KP_5;
+    g_WlKeyboard.scancodes[0x04D] = PAL_SCANCODE_KP_6;
+    g_WlKeyboard.scancodes[0x047] = PAL_SCANCODE_KP_7;
+    g_WlKeyboard.scancodes[0x048] = PAL_SCANCODE_KP_8;
+    g_WlKeyboard.scancodes[0x049] = PAL_SCANCODE_KP_9;
+    g_WlKeyboard.scancodes[0x060] = PAL_SCANCODE_KP_ENTER;
+    g_WlKeyboard.scancodes[0x04E] = PAL_SCANCODE_KP_ADD;
+    g_WlKeyboard.scancodes[0x04A] = PAL_SCANCODE_KP_SUBTRACT;
+    g_WlKeyboard.scancodes[0x037] = PAL_SCANCODE_KP_MULTIPLY;
+    g_WlKeyboard.scancodes[0x062] = PAL_SCANCODE_KP_DIVIDE;
+    g_WlKeyboard.scancodes[0x053] = PAL_SCANCODE_KP_DECIMAL;
 
     // Misc
-    g_WaylandKeyboard.scancodes[0x063] = PAL_SCANCODE_PRINTSCREEN;
-    g_WaylandKeyboard.scancodes[0x066] = PAL_SCANCODE_PAUSE;
-    g_WaylandKeyboard.scancodes[0x07F] = PAL_SCANCODE_MENU;
-    g_WaylandKeyboard.scancodes[0x028] = PAL_SCANCODE_APOSTROPHE;
-    g_WaylandKeyboard.scancodes[0x02B] = PAL_SCANCODE_BACKSLASH;
-    g_WaylandKeyboard.scancodes[0x033] = PAL_SCANCODE_COMMA;
-    g_WaylandKeyboard.scancodes[0x00D] = PAL_SCANCODE_EQUAL;
-    g_WaylandKeyboard.scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
-    g_WaylandKeyboard.scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
-    g_WaylandKeyboard.scancodes[0x034] = PAL_SCANCODE_PERIOD;
-    g_WaylandKeyboard.scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
-    g_WaylandKeyboard.scancodes[0x035] = PAL_SCANCODE_SLASH;
-    g_WaylandKeyboard.scancodes[0x01A] = PAL_SCANCODE_LBRACKET;
-    g_WaylandKeyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
-    g_WaylandKeyboard.scancodes[0x07D] = PAL_SCANCODE_LSUPER;
-    g_WaylandKeyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
+    g_WlKeyboard.scancodes[0x063] = PAL_SCANCODE_PRINTSCREEN;
+    g_WlKeyboard.scancodes[0x066] = PAL_SCANCODE_PAUSE;
+    g_WlKeyboard.scancodes[0x07F] = PAL_SCANCODE_MENU;
+    g_WlKeyboard.scancodes[0x028] = PAL_SCANCODE_APOSTROPHE;
+    g_WlKeyboard.scancodes[0x02B] = PAL_SCANCODE_BACKSLASH;
+    g_WlKeyboard.scancodes[0x033] = PAL_SCANCODE_COMMA;
+    g_WlKeyboard.scancodes[0x00D] = PAL_SCANCODE_EQUAL;
+    g_WlKeyboard.scancodes[0x029] = PAL_SCANCODE_GRAVEACCENT;
+    g_WlKeyboard.scancodes[0x00C] = PAL_SCANCODE_SUBTRACT;
+    g_WlKeyboard.scancodes[0x034] = PAL_SCANCODE_PERIOD;
+    g_WlKeyboard.scancodes[0x027] = PAL_SCANCODE_SEMICOLON;
+    g_WlKeyboard.scancodes[0x035] = PAL_SCANCODE_SLASH;
+    g_WlKeyboard.scancodes[0x01A] = PAL_SCANCODE_LBRACKET;
+    g_WlKeyboard.scancodes[0x01B] = PAL_SCANCODE_RBRACKET;
+    g_WlKeyboard.scancodes[0x07D] = PAL_SCANCODE_LSUPER;
+    g_WlKeyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
 }
 
 void createKeycodeTable(void)
@@ -375,54 +375,54 @@ void createKeycodeTable(void)
     // Tis is for only printable and text input keys
 
     // Letters
-    g_WaylandKeyboard.keycodes[XKB_KEY_a] = PAL_KEYCODE_A;
-    g_WaylandKeyboard.keycodes[XKB_KEY_b] = PAL_KEYCODE_B;
-    g_WaylandKeyboard.keycodes[XKB_KEY_c] = PAL_KEYCODE_C;
-    g_WaylandKeyboard.keycodes[XKB_KEY_d] = PAL_KEYCODE_D;
-    g_WaylandKeyboard.keycodes[XKB_KEY_e] = PAL_KEYCODE_E;
-    g_WaylandKeyboard.keycodes[XKB_KEY_f] = PAL_KEYCODE_F;
-    g_WaylandKeyboard.keycodes[XKB_KEY_g] = PAL_KEYCODE_G;
-    g_WaylandKeyboard.keycodes[XKB_KEY_h] = PAL_KEYCODE_H;
-    g_WaylandKeyboard.keycodes[XKB_KEY_i] = PAL_KEYCODE_I;
-    g_WaylandKeyboard.keycodes[XKB_KEY_j] = PAL_KEYCODE_J;
-    g_WaylandKeyboard.keycodes[XKB_KEY_k] = PAL_KEYCODE_K;
-    g_WaylandKeyboard.keycodes[XKB_KEY_l] = PAL_KEYCODE_L;
-    g_WaylandKeyboard.keycodes[XKB_KEY_m] = PAL_KEYCODE_M;
-    g_WaylandKeyboard.keycodes[XKB_KEY_n] = PAL_KEYCODE_N;
-    g_WaylandKeyboard.keycodes[XKB_KEY_o] = PAL_KEYCODE_O;
-    g_WaylandKeyboard.keycodes[XKB_KEY_p] = PAL_KEYCODE_P;
-    g_WaylandKeyboard.keycodes[XKB_KEY_q] = PAL_KEYCODE_Q;
-    g_WaylandKeyboard.keycodes[XKB_KEY_r] = PAL_KEYCODE_R;
-    g_WaylandKeyboard.keycodes[XKB_KEY_s] = PAL_KEYCODE_S;
-    g_WaylandKeyboard.keycodes[XKB_KEY_t] = PAL_KEYCODE_T;
-    g_WaylandKeyboard.keycodes[XKB_KEY_u] = PAL_KEYCODE_U;
-    g_WaylandKeyboard.keycodes[XKB_KEY_v] = PAL_KEYCODE_V;
-    g_WaylandKeyboard.keycodes[XKB_KEY_w] = PAL_KEYCODE_W;
-    g_WaylandKeyboard.keycodes[XKB_KEY_x] = PAL_KEYCODE_X;
-    g_WaylandKeyboard.keycodes[XKB_KEY_y] = PAL_KEYCODE_Y;
-    g_WaylandKeyboard.keycodes[XKB_KEY_z] = PAL_KEYCODE_Z;
+    g_WlKeyboard.keycodes[XKB_KEY_a] = PAL_KEYCODE_A;
+    g_WlKeyboard.keycodes[XKB_KEY_b] = PAL_KEYCODE_B;
+    g_WlKeyboard.keycodes[XKB_KEY_c] = PAL_KEYCODE_C;
+    g_WlKeyboard.keycodes[XKB_KEY_d] = PAL_KEYCODE_D;
+    g_WlKeyboard.keycodes[XKB_KEY_e] = PAL_KEYCODE_E;
+    g_WlKeyboard.keycodes[XKB_KEY_f] = PAL_KEYCODE_F;
+    g_WlKeyboard.keycodes[XKB_KEY_g] = PAL_KEYCODE_G;
+    g_WlKeyboard.keycodes[XKB_KEY_h] = PAL_KEYCODE_H;
+    g_WlKeyboard.keycodes[XKB_KEY_i] = PAL_KEYCODE_I;
+    g_WlKeyboard.keycodes[XKB_KEY_j] = PAL_KEYCODE_J;
+    g_WlKeyboard.keycodes[XKB_KEY_k] = PAL_KEYCODE_K;
+    g_WlKeyboard.keycodes[XKB_KEY_l] = PAL_KEYCODE_L;
+    g_WlKeyboard.keycodes[XKB_KEY_m] = PAL_KEYCODE_M;
+    g_WlKeyboard.keycodes[XKB_KEY_n] = PAL_KEYCODE_N;
+    g_WlKeyboard.keycodes[XKB_KEY_o] = PAL_KEYCODE_O;
+    g_WlKeyboard.keycodes[XKB_KEY_p] = PAL_KEYCODE_P;
+    g_WlKeyboard.keycodes[XKB_KEY_q] = PAL_KEYCODE_Q;
+    g_WlKeyboard.keycodes[XKB_KEY_r] = PAL_KEYCODE_R;
+    g_WlKeyboard.keycodes[XKB_KEY_s] = PAL_KEYCODE_S;
+    g_WlKeyboard.keycodes[XKB_KEY_t] = PAL_KEYCODE_T;
+    g_WlKeyboard.keycodes[XKB_KEY_u] = PAL_KEYCODE_U;
+    g_WlKeyboard.keycodes[XKB_KEY_v] = PAL_KEYCODE_V;
+    g_WlKeyboard.keycodes[XKB_KEY_w] = PAL_KEYCODE_W;
+    g_WlKeyboard.keycodes[XKB_KEY_x] = PAL_KEYCODE_X;
+    g_WlKeyboard.keycodes[XKB_KEY_y] = PAL_KEYCODE_Y;
+    g_WlKeyboard.keycodes[XKB_KEY_z] = PAL_KEYCODE_Z;
 
     // Control
-    g_WaylandKeyboard.keycodes[XKB_KEY_space] = PAL_KEYCODE_SPACE;
+    g_WlKeyboard.keycodes[XKB_KEY_space] = PAL_KEYCODE_SPACE;
 
     // Misc
-    g_WaylandKeyboard.keycodes[XKB_KEY_apostrophe] = PAL_KEYCODE_APOSTROPHE;
-    g_WaylandKeyboard.keycodes[XKB_KEY_backslash] = PAL_KEYCODE_BACKSLASH;
-    g_WaylandKeyboard.keycodes[XKB_KEY_comma] = PAL_KEYCODE_COMMA;
-    g_WaylandKeyboard.keycodes[XKB_KEY_equal] = PAL_KEYCODE_EQUAL;
-    g_WaylandKeyboard.keycodes[XKB_KEY_grave] = PAL_KEYCODE_GRAVEACCENT;
-    g_WaylandKeyboard.keycodes[XKB_KEY_minus] = PAL_KEYCODE_SUBTRACT;
-    g_WaylandKeyboard.keycodes[XKB_KEY_period] = PAL_KEYCODE_PERIOD;
-    g_WaylandKeyboard.keycodes[XKB_KEY_semicolon] = PAL_KEYCODE_SEMICOLON;
-    g_WaylandKeyboard.keycodes[XKB_KEY_slash] = PAL_KEYCODE_SLASH;
-    g_WaylandKeyboard.keycodes[XKB_KEY_bracketleft] = PAL_KEYCODE_LBRACKET;
-    g_WaylandKeyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
+    g_WlKeyboard.keycodes[XKB_KEY_apostrophe] = PAL_KEYCODE_APOSTROPHE;
+    g_WlKeyboard.keycodes[XKB_KEY_backslash] = PAL_KEYCODE_BACKSLASH;
+    g_WlKeyboard.keycodes[XKB_KEY_comma] = PAL_KEYCODE_COMMA;
+    g_WlKeyboard.keycodes[XKB_KEY_equal] = PAL_KEYCODE_EQUAL;
+    g_WlKeyboard.keycodes[XKB_KEY_grave] = PAL_KEYCODE_GRAVEACCENT;
+    g_WlKeyboard.keycodes[XKB_KEY_minus] = PAL_KEYCODE_SUBTRACT;
+    g_WlKeyboard.keycodes[XKB_KEY_period] = PAL_KEYCODE_PERIOD;
+    g_WlKeyboard.keycodes[XKB_KEY_semicolon] = PAL_KEYCODE_SEMICOLON;
+    g_WlKeyboard.keycodes[XKB_KEY_slash] = PAL_KEYCODE_SLASH;
+    g_WlKeyboard.keycodes[XKB_KEY_bracketleft] = PAL_KEYCODE_LBRACKET;
+    g_WlKeyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
 static inline uint64_t getCurrentTime()
 {
     uint64_t now = palGetPerformanceCounter();
-    return (now * 1000) / g_WaylandKeyboard.frequency;
+    return (now * 1000) / g_WlKeyboard.frequency;
 }
 
 static void driverGlobalHandle(
@@ -724,29 +724,29 @@ void waylandShutdownVideo(void)
 void waylandUpdateVideo(void)
 {
     // flush pending requests
-    g_WaylandMouse.tmpScrollX = 0;
-    g_WaylandMouse.tmpScrollY = 0;
+    g_WlMouse.tmpScrollX = 0;
+    g_WlMouse.tmpScrollY = 0;
 
 #if PAL_HAS_EVENT_MODULE
     // key repeats. we only do this if the user wants key repeat events
-    if (g_WaylandKeyboard.repeatKey != 0 && g_Wl.eventDriver) {
+    if (g_WlKeyboard.repeatKey != 0 && g_Wl.eventDriver) {
         PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_KEYREPEAT);
         if (mode != PAL_DISPATCH_MODE_NONE) {
             // get now time and check with the key repeat time
             uint64_t now = getCurrentTime();
-            if (now >= g_WaylandKeyboard.timer) {
+            if (now >= g_WlKeyboard.timer) {
                 PalWindow* window = (PalWindow*)g_Wl.keyboardSurface;
-                PalKeycode key = (PalKeycode)g_WaylandKeyboard.repeatKey;
-                PalScancode scancode = (PalScancode)g_WaylandKeyboard.repeatScancode;
+                PalKeycode key = (PalKeycode)g_WlKeyboard.repeatKey;
+                PalScancode scancode = (PalScancode)g_WlKeyboard.repeatScancode;
 
                 PalEvent event = {0};
                 event.type = PAL_EVENT_TYPE_KEYREPEAT;
                 event.data = palPackUint32(key, scancode);
                 event.data2 = palPackPointer(window);
                 palPushEvent(driver, &event);
-                g_WaylandKeyboard.timer += (uint64_t)g_WaylandKeyboard.repeatRate;
+                g_WlKeyboard.timer += (uint64_t)g_WlKeyboard.repeatRate;
             }
         }
     }
