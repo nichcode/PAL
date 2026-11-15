@@ -27,8 +27,6 @@
 
 #include "wayland_helper.h"
 
-#define procs g_Wayland.procs
-
 struct zxdg_decoration_manager_v1;
 struct zxdg_toplevel_decoration_v1;
 
@@ -45,11 +43,11 @@ extern const struct wl_interface zxdg_toplevel_decoration_v1_interface;
 static inline void
 zxdgDecorationManagerV1Destroy(struct zxdg_decoration_manager_v1* zxdg_decoration_manager_v1)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_decoration_manager_v1,
         0, // ZXDG_DECORATION_MANAGER_V1_DESTROY
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
         WL_MARSHAL_FLAG_DESTROY);
 }
 
@@ -58,11 +56,11 @@ static inline struct zxdg_toplevel_decoration_v1* zxdgGetToplevelDecoration(
     struct xdg_toplevel* toplevel)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_decoration_manager_v1,
         1, // ZXDG_DECORATION_MANAGER_V1_GET_TOPLEVEL_DECORATION,
         &zxdg_toplevel_decoration_v1_interface,
-        procs.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
         0,
         NULL,
         toplevel);
@@ -75,7 +73,7 @@ static inline int zxdgToplevelDecorationV1AddListener(
     const struct zxdg_toplevel_decoration_v1_listener* listener,
     void* data)
 {
-    return procs.proxyAddListener(
+    return g_Wayland.proxyAddListener(
         (struct wl_proxy*)zxdg_toplevel_decoration_v1,
         (void (**)(void))listener,
         data);
@@ -84,11 +82,11 @@ static inline int zxdgToplevelDecorationV1AddListener(
 static inline void
 zxdgToplevelDecorationV1Destroy(struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_toplevel_decoration_v1,
         0, // ZXDG_TOPLEVEL_DECORATION_V1_DESTROY
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
         WL_MARSHAL_FLAG_DESTROY);
 }
 
@@ -96,16 +94,14 @@ static inline void zxdgToplevelDecorationV1SetMode(
     struct zxdg_toplevel_decoration_v1* zxdg_toplevel_decoration_v1,
     uint32_t mode)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_toplevel_decoration_v1,
         1, // ZXDG_TOPLEVEL_DECORATION_V1_SET_MODE,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
         0,
         mode);
 }
-
-#undef procs
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 #endif // WAYLAND_PROTOCOL_ZXDG_H

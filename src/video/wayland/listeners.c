@@ -591,7 +591,7 @@ static void keyboardHandleRemap(
         return;
     }
 
-    keymap = g_Wayland.xkbProcs.keymapNewFromString(
+    keymap = g_Wayland.xkbKeymapNewFromString(
         g_Wayland.inputContext,
         keymapStr,
         XKB_KEYMAP_FORMAT_TEXT_V1,
@@ -604,15 +604,15 @@ static void keyboardHandleRemap(
     munmap(keymapStr, size);
     close(fd);
 
-    state = g_Wayland.xkbProcs.stateNew(keymap);
+    state = g_Wayland.xkbStateNew(keymap);
     if (!state) {
         return;
     }
 
     // check if we have old keymap and state
     if (g_Wayland.state) {
-        g_Wayland.xkbProcs.stateUnref(g_Wayland.state);
-        g_Wayland.xkbProcs.keymapUnref(g_Wayland.keymap);
+        g_Wayland.xkbStateUnref(g_Wayland.state);
+        g_Wayland.xkbKeymapUnref(g_Wayland.keymap);
     }
 
     g_Wayland.state = state;
@@ -647,7 +647,7 @@ static void keyboardHandleKey(
     PalBool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
     PalEventType type = PAL_EVENT_TYPE_KEYUP;
     PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
-    xkb_keysym_t keySym = g_Wayland.xkbProcs.stateKeyGetOneSym(g_Wayland.state, key + 8);
+    xkb_keysym_t keySym = g_Wayland.xkbStateKeyGetOneSym(g_Wayland.state, key + 8);
 
     // special handling
     if (key == 119) {
@@ -688,7 +688,7 @@ static void keyboardHandleKey(
 
     // check for key repeats
     if (pressed) {
-        if (g_Wayland.xkbProcs.keymapKeyRepeats(g_Wayland.keymap, key + 8)) {
+        if (g_Wayland.xkbKeymapKeyRepeats(g_Wayland.keymap, key + 8)) {
             g_WaylandKeyboard.repeatKey = (int)keycode;
             g_WaylandKeyboard.repeatScancode = (int)scancode;
             g_WaylandKeyboard.timer = getCurrentTime() + (uint64_t)g_WaylandKeyboard.repeatDelay;
@@ -725,7 +725,7 @@ static void keyboardHandleKey(
             return;
         }
 
-        uint32_t codepoint = g_Wayland.xkbProcs.keysymToUtf32(keySym);
+        uint32_t codepoint = g_Wayland.xkbKeysymToUtf32(keySym);
         if (codepoint <= 0) {
             return;
         }
@@ -776,7 +776,7 @@ static void keyboardHandleModifiers(
     (void)mods_locked;
 
     if (g_Wayland.state) {
-        g_Wayland.xkbProcs.stateUpdateMask(
+        g_Wayland.xkbStateUpdateMask(
             g_Wayland.state, 
             mods_depressed, 
             mods_latched, 
@@ -845,7 +845,7 @@ static void xdgSurfaceHandleConfigure(
     if (!winData->skipConfigure) {
         if (winData->pushConfigureEvent) {
             if (winData->eglWindow) {
-                g_Wayland.eglProcs.resizeWindow(
+                g_Wayland.eglWindowResize(
                     winData->eglWindow, 
                     (int)winData->w, 
                     (int)winData->h, 

@@ -26,8 +26,6 @@
 #include "xdg_protocol.h"
 #include "zxdg_protocol.h"
 
-#define interfaces g_Wayland.interfaces
-
 /* =========================================================================
  * Xdg Shell
  * ========================================================================= */
@@ -206,28 +204,26 @@ void setupProtocols()
     xdg_shell_types[3] = NULL;
     xdg_shell_types[4] = &xdg_positioner_interface;
     xdg_shell_types[5] = &xdg_surface_interface;
-    xdg_shell_types[6] = interfaces.surface;
+    xdg_shell_types[6] = g_Wayland.surfaceInterface;
     xdg_shell_types[7] = &xdg_toplevel_interface;
     xdg_shell_types[8] = &xdg_popup_interface;
     xdg_shell_types[9] = &xdg_surface_interface;
     xdg_shell_types[10] = &xdg_positioner_interface;
     xdg_shell_types[11] = &xdg_toplevel_interface;
-    xdg_shell_types[12] = interfaces.seat;
+    xdg_shell_types[12] = g_Wayland.seatInterface;
     xdg_shell_types[13] = NULL;
     xdg_shell_types[14] = NULL;
     xdg_shell_types[15] = NULL;
-    xdg_shell_types[16] = interfaces.seat;
+    xdg_shell_types[16] = g_Wayland.seatInterface;
     xdg_shell_types[17] = NULL;
-    xdg_shell_types[18] = interfaces.seat;
+    xdg_shell_types[18] = g_Wayland.seatInterface;
     xdg_shell_types[19] = NULL;
     xdg_shell_types[20] = NULL;
-    xdg_shell_types[21] = interfaces.output;
-    xdg_shell_types[22] = interfaces.seat;
+    xdg_shell_types[21] = g_Wayland.outputInterface;
+    xdg_shell_types[22] = g_Wayland.seatInterface;
     xdg_shell_types[23] = NULL;
     xdg_shell_types[24] = &xdg_positioner_interface;
     xdg_shell_types[25] = NULL;
 }
-
-#undef interfaces
 
 #endif // PAL_HAS_WAYLAND_BACKEND

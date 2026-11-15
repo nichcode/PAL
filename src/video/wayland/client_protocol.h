@@ -27,9 +27,6 @@
 
 #include "wayland_helper.h"
 
-#define procs g_Wayland.procs
-#define interfaces g_Wayland.interfaces
-
 static inline void* wlRegistryBind(
     struct wl_registry* wl_registry,
     uint32_t name,
@@ -37,7 +34,7 @@ static inline void* wlRegistryBind(
     uint32_t version)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_registry,
         WL_REGISTRY_BIND,
         interface,
@@ -56,17 +53,17 @@ static inline int wlRegistryAddListener(
     const struct wl_registry_listener* listener,
     void* data)
 {
-    return procs.proxyAddListener((struct wl_proxy*)wl_registry, (void (**)(void))listener, data);
+    return g_Wayland.proxyAddListener((struct wl_proxy*)wl_registry, (void (**)(void))listener, data);
 }
 
 static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_display)
 {
     struct wl_proxy* registry;
-    registry = procs.proxyMarshalFlags(
+    registry = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_display,
         WL_DISPLAY_GET_REGISTRY,
-        interfaces.registry,
-        procs.proxyGetVersion((struct wl_proxy*)wl_display),
+        g_Wayland.registryInterface,
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_display),
         0,
         NULL);
 
@@ -78,17 +75,17 @@ static inline int wlOutputAddListener(
     const struct wl_output_listener* listener,
     void* data)
 {
-    return procs.proxyAddListener((struct wl_proxy*)wl_output, (void (**)(void))listener, data);
+    return g_Wayland.proxyAddListener((struct wl_proxy*)wl_output, (void (**)(void))listener, data);
 }
 
 static inline struct wl_surface* wlCompositorCreateSurface(struct wl_compositor* wl_compositor)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_compositor,
         WL_COMPOSITOR_CREATE_SURFACE,
-        interfaces.surface,
-        procs.proxyGetVersion((struct wl_proxy*)wl_compositor),
+        g_Wayland.surfaceInterface,
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_compositor),
         0,
         NULL);
 
@@ -97,21 +94,21 @@ static inline struct wl_surface* wlCompositorCreateSurface(struct wl_compositor*
 
 static inline void wlSurfaceCommit(struct wl_surface* wl_surface)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_COMMIT,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_surface),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_surface),
         0);
 }
 
 static inline void wlSurfaceDestroy(struct wl_surface* wl_surface)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_DESTROY,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_surface),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_surface),
         WL_MARSHAL_FLAG_DESTROY);
 }
 
@@ -121,11 +118,11 @@ static inline struct wl_shm_pool* wlShmCreatePool(
     int32_t size)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_shm,
         WL_SHM_CREATE_POOL,
-        interfaces.shmPool,
-        procs.proxyGetVersion((struct wl_proxy*)wl_shm),
+        g_Wayland.shmPoolInterface,
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_shm),
         0,
         NULL,
         fd,
@@ -136,11 +133,11 @@ static inline struct wl_shm_pool* wlShmCreatePool(
 
 static inline void wlShmPoolDestroy(struct wl_shm_pool* wl_shm_pool)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_shm_pool,
         WL_SHM_POOL_DESTROY,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
         WL_MARSHAL_FLAG_DESTROY);
 }
 
@@ -153,11 +150,11 @@ static inline struct wl_buffer* wlShmPoolCreateBuffer(
     uint32_t format)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_shm_pool,
         WL_SHM_POOL_CREATE_BUFFER,
-        interfaces.buffer,
-        procs.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
+        g_Wayland.bufferInterface,
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
         0,
         NULL,
         offset,
@@ -171,11 +168,11 @@ static inline struct wl_buffer* wlShmPoolCreateBuffer(
 
 static inline void wlBufferDestroy(struct wl_buffer* wl_buffer)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_buffer,
         WL_BUFFER_DESTROY,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_buffer),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_buffer),
         WL_MARSHAL_FLAG_DESTROY);
 }
 
@@ -185,11 +182,11 @@ static inline void wlSurfaceAttach(
     int32_t x,
     int32_t y)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_ATTACH,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_surface),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_surface),
         0,
         buffer,
         x,
@@ -203,11 +200,11 @@ static inline void wlSurfaceDamageBuffer(
     int32_t width,
     int32_t height)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_DAMAGE_BUFFER,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_surface),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_surface),
         0,
         x,
         y,
@@ -220,7 +217,7 @@ static inline int wlSurfaceAddListener(
     const struct wl_surface_listener* listener,
     void* data)
 {
-    return procs.proxyAddListener((struct wl_proxy*)wl_surface, (void (**)(void))listener, data);
+    return g_Wayland.proxyAddListener((struct wl_proxy*)wl_surface, (void (**)(void))listener, data);
 }
 
 static inline int wlSeatAddListener(
@@ -228,17 +225,17 @@ static inline int wlSeatAddListener(
     const struct wl_seat_listener* listener,
     void* data)
 {
-    return procs.proxyAddListener((struct wl_proxy*)wl_seat, (void (**)(void))listener, data);
+    return g_Wayland.proxyAddListener((struct wl_proxy*)wl_seat, (void (**)(void))listener, data);
 }
 
 static inline struct wl_pointer* wlSeatGetPointer(struct wl_seat* wl_seat)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_seat,
         WL_SEAT_GET_POINTER,
-        interfaces.pointer,
-        procs.proxyGetVersion((struct wl_proxy*)wl_seat),
+        g_Wayland.pointerInterface,
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_seat),
         0,
         NULL);
 
@@ -248,11 +245,11 @@ static inline struct wl_pointer* wlSeatGetPointer(struct wl_seat* wl_seat)
 static inline struct wl_keyboard* wlSeatGetKeyboard(struct wl_seat* wl_seat)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_seat,
         WL_SEAT_GET_KEYBOARD,
-        interfaces.keyboard,
-        procs.proxyGetVersion((struct wl_proxy*)wl_seat),
+        g_Wayland.keyboardInterface,
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_seat),
         0,
         NULL);
 
@@ -264,7 +261,7 @@ static inline int wlPointerAddListener(
     const struct wl_pointer_listener* listener,
     void* data)
 {
-    return procs.proxyAddListener((struct wl_proxy*)wl_pointer, (void (**)(void))listener, data);
+    return g_Wayland.proxyAddListener((struct wl_proxy*)wl_pointer, (void (**)(void))listener, data);
 }
 
 static inline void wlPointerSetCursor(
@@ -274,11 +271,11 @@ static inline void wlPointerSetCursor(
     int32_t hotspot_x,
     int32_t hotspot_y)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_pointer,
         WL_POINTER_SET_CURSOR,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_pointer),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_pointer),
         0,
         serial,
         surface,
@@ -291,17 +288,17 @@ static inline int wlKeyboardAddListener(
     const struct wl_keyboard_listener* listener,
     void* data)
 {
-    return procs.proxyAddListener((struct wl_proxy*)wl_keyboard, (void (**)(void))listener, data);
+    return g_Wayland.proxyAddListener((struct wl_proxy*)wl_keyboard, (void (**)(void))listener, data);
 }
 
 static inline struct wl_region* wlCompositorCreateRegion(struct wl_compositor* wl_compositor)
 {
     struct wl_proxy* id;
-    id = procs.proxyMarshalFlags(
+    id = g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_compositor,
         WL_COMPOSITOR_CREATE_REGION,
-        interfaces.region,
-        procs.proxyGetVersion((struct wl_proxy*)wl_compositor),
+        g_Wayland.regionInterface,
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_compositor),
         0,
         NULL);
 
@@ -315,11 +312,11 @@ static inline void wlRegionAdd(
     int32_t width,
     int32_t height)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_region,
         WL_REGION_ADD,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_region),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_region),
         0,
         x,
         y,
@@ -331,27 +328,24 @@ static inline void wlSurfaceSetOpaqueRegion(
     struct wl_surface* wl_surface,
     struct wl_region* region)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_SET_OPAQUE_REGION,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_surface),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_surface),
         0,
         region);
 }
 
 static inline void wlRegionDestroy(struct wl_region* wl_region)
 {
-    procs.proxyMarshalFlags(
+    g_Wayland.proxyMarshalFlags(
         (struct wl_proxy*)wl_region,
         WL_REGION_DESTROY,
         NULL,
-        procs.proxyGetVersion((struct wl_proxy*)wl_region),
+        g_Wayland.proxyGetVersion((struct wl_proxy*)wl_region),
         WL_MARSHAL_FLAG_DESTROY);
 }
-
-#undef procs
-#undef interfaces
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 #endif // WAYLAND_PROTOCOL_CLIENT_H

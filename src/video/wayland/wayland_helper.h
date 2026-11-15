@@ -131,68 +131,6 @@ typedef struct {
     uint32_t dpi;
 } SpanMonitor;
 
-typedef struct WaylandInterfaces {
-    const struct wl_interface* output;
-    const struct wl_interface* seat;
-    const struct wl_interface* compositor;
-    const struct wl_interface* registry;
-    const struct wl_interface* surface;
-    const struct wl_interface* shm;
-    const struct wl_interface* buffer;
-    const struct wl_interface* shmPool;
-    const struct wl_interface* region;
-    const struct wl_interface* pointer;
-    const struct wl_interface* keyboard;
-} WaylandInterfaces;
-
-typedef struct WaylandProcs {
-    PalLibrary* handle;
-    wlDisplayConnectFn displayConnect;
-    wlDisplayDisconnectFn displayDisconnect;
-    wlDisplayRoundtripFn displayRoundtrip;
-    wlDisplayDispatchFn displayDispatch;
-    wlProxyDestroyFn proxyDestroy;
-    wlProxyAddListenerFn proxyAddListener;
-    wlProxyMarshalConstructorVFn proxyMarshalConstructor;
-    wlProxyMarshalFlagsFn proxyMarshalFlags;
-    wlProxyGetVersionFn proxyGetVersion;
-    wlDisplayGetErrorFn getError;
-    wlDisplayDispatchPendingFn dispatchPending;
-    wlDisplayFlushFn displayFlush;
-    wlDisplayPrepareReadFn prepareRead;
-    wlDisplayReadEventsFn readEvents;
-    wlDisplayGetFdFn displayGetFd;
-    wlDisplayCancelReadFn cancelRead;
-} WaylandProcs;
-
-typedef struct XkbProcs {
-    PalLibrary* handle;
-    xkbKeymapUnrefFn keymapUnref;
-    xkbStateNewFn stateNew;
-    xkbStateUnrefFn stateUnref;
-    xkbContextUnrefFn contextUnref;
-    xkbContextNewFn contextNew;
-    xkbStateKeyGetOneSymFn stateKeyGetOneSym;
-    xkbKeymapNewFromStringFn keymapNewFromString;
-    xkbKeysymToUtf32Fn keysymToUtf32;
-    xkbStateUpdateMaskFn stateUpdateMask;
-    xkbKeymapKeyRepeatsFn keymapKeyRepeats;
-} XkbProcs;
-
-typedef struct WaylandCursorProcs {
-    PalLibrary* handle;
-    wlCursorThemeLoadFn loadTheme;
-    wlCursorThemeGetCursorFn getCursorTheme;
-    wlCursorImageGetBufferFn getImageBuffer;
-} WaylandCursorProcs;
-
-typedef struct WaylandEglProcs {
-    PalLibrary* handle;
-    wlEglWindowCreateFn createWindow;
-    wlEglWindowDestroyFn destroyWindow;
-    wlEglWindowResizeFn resizeWindow;
-} WaylandEglProcs;
-
 typedef struct MonitorData {
     PalBool used;
     uint32_t dpi;
@@ -240,6 +178,11 @@ typedef struct Wayland {
     uint32_t maxWindowData;
     uint32_t maxMonitorData;
 
+    PalLibrary* libwayland;
+    PalLibrary* xkbcommon;
+    PalLibrary* libegl;
+    PalLibrary* libcursor;
+
     WindowData* windowData;
     MonitorData* monitorData;
     const PalAllocator* allocator;
@@ -263,11 +206,53 @@ typedef struct Wayland {
     struct xkb_keymap* keymap;
     struct xkb_state* state;
 
-    WaylandInterfaces interfaces;
-    WaylandProcs procs;
-    XkbProcs xkbProcs;
-    WaylandCursorProcs cursorProcs;
-    WaylandEglProcs eglProcs;
+    wlDisplayConnectFn displayConnect;
+    wlDisplayDisconnectFn displayDisconnect;
+    wlDisplayRoundtripFn displayRoundtrip;
+    wlDisplayDispatchFn displayDispatch;
+    wlProxyDestroyFn proxyDestroy;
+    wlProxyAddListenerFn proxyAddListener;
+    wlProxyMarshalConstructorVFn proxyMarshalConstructor;
+    wlProxyMarshalFlagsFn proxyMarshalFlags;
+    wlProxyGetVersionFn proxyGetVersion;
+    wlDisplayGetErrorFn getError;
+    wlDisplayDispatchPendingFn dispatchPending;
+    wlDisplayFlushFn displayFlush;
+    wlDisplayPrepareReadFn prepareRead;
+    wlDisplayReadEventsFn readEvents;
+    wlDisplayGetFdFn displayGetFd;
+    wlDisplayCancelReadFn cancelRead;
+
+    xkbKeymapUnrefFn xkbKeymapUnref;
+    xkbStateNewFn xkbStateNew;
+    xkbStateUnrefFn xkbStateUnref;
+    xkbContextUnrefFn xkbContextUnref;
+    xkbContextNewFn xkbContextNew;
+    xkbStateKeyGetOneSymFn xkbStateKeyGetOneSym;
+    xkbKeymapNewFromStringFn xkbKeymapNewFromString;
+    xkbKeysymToUtf32Fn xkbKeysymToUtf32;
+    xkbStateUpdateMaskFn xkbStateUpdateMask;
+    xkbKeymapKeyRepeatsFn xkbKeymapKeyRepeats;
+
+    wlEglWindowCreateFn eglWindowCreate;
+    wlEglWindowDestroyFn eglWindowDestroy;
+    wlEglWindowResizeFn eglWindowResize;
+
+    wlCursorThemeLoadFn cursorThemeLoad;
+    wlCursorThemeGetCursorFn cursorThemeGetCursor;
+    wlCursorImageGetBufferFn cursorImageGetBuffer;
+
+    const struct wl_interface* outputInterface;
+    const struct wl_interface* seatInterface;
+    const struct wl_interface* compositorInterface;
+    const struct wl_interface* registryInterface;
+    const struct wl_interface* surfaceInterface;
+    const struct wl_interface* shmInterface;
+    const struct wl_interface* bufferInterface;
+    const struct wl_interface* shmPoolInterface;
+    const struct wl_interface* regionInterface;
+    const struct wl_interface* pointerInterface;
+    const struct wl_interface* keyboardInterface;
 } Wayland;
 
 typedef struct WaylandKeyboard {
