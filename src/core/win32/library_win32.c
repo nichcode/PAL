@@ -54,6 +54,11 @@ PalLibrarySymbol platformGetSymbol(
     return sym.symbol;
 }
 
+void* platformGetGlobal(PalLibrary* library, const char* name)
+{
+    // TODO:
+}
+
 void platformFreeLibrary(PalLibrary* library)
 {
     FreeLibrary((HMODULE)library);

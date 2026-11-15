@@ -39,6 +39,16 @@ PalLibrarySymbol PAL_CALL palGetSymbol(
     return platformGetSymbol(library, name);
 }
 
+void* PAL_CALL palGetGlobal(
+    PalLibrary* library,
+    const char* name)
+{
+    ASSERT(library != nullptr, "The specified library is null");
+    ASSERT(name != nullptr, "The specified global is null");
+
+    return platformGetGlobal(library, name);
+}
+
 void PAL_CALL palFreeLibrary(PalLibrary* library)
 {
     ASSERT(library != nullptr, "The specified library is null");

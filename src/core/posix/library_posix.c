@@ -50,6 +50,11 @@ PalLibrarySymbol platformGetSymbol(
     return sym.symbol;
 }
 
+void* platformGetGlobal(PalLibrary* library, const char* name)
+{
+    return dlsym((void*)library, name);
+}
+
 void platformFreeLibrary(PalLibrary* library)
 {
     dlclose((void*)library);

@@ -75,31 +75,6 @@ typedef struct PalLibrary PalLibrary;
 PAL_API PalLibrary* PAL_CALL palLoadLibrary(const char* path);
 
 /**
- * @brief Retrieves a global from a library.
- *
- * This function retrieves a global from the specified library. `library` must be
- * loaded into address space before this call.
- *
- * Exported globals are returned as @ref `void*`; a cast is required to use
- * the global as its declared type.
- *
- * @param[in] library Library to retrieve the global from.
- * @param[in] name Null-terminated UTF-8 encoded name of the global.
- * @return The global on success or `nullptr` if the global was not found.
- *
- * @thread-safety Thread safe.
- *
- * @since Added in version 2.2
- * @ingroup pal_core
- *
- * @sa palLoadLibrary
- * @sa palFreeLibrary
- */
-PAL_API void* PAL_CALL palGetGlobal(
-    PalLibrary* library,
-    const char* name);
-
-/**
  * @brief Retrieves a symbol from a library.
  *
  * This function retrieves a symbol from the specified library. `library` must be
@@ -121,6 +96,31 @@ PAL_API void* PAL_CALL palGetGlobal(
  * @sa palFreeLibrary
  */
 PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
+    PalLibrary* library,
+    const char* name);
+
+/**
+ * @brief Retrieves a global from a library.
+ *
+ * This function retrieves a global from the specified library. `library` must be
+ * loaded into address space before this call.
+ *
+ * Exported globals are returned as @ref `void*`; a cast is required to use
+ * the global as its declared type.
+ *
+ * @param[in] library Library to retrieve the global from.
+ * @param[in] name Null-terminated UTF-8 encoded name of the global.
+ * @return The global on success or `nullptr` if the global was not found.
+ *
+ * @thread-safety Thread safe.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_core
+ *
+ * @sa palLoadLibrary
+ * @sa palFreeLibrary
+ */
+PAL_API void* PAL_CALL palGetGlobal(
     PalLibrary* library,
     const char* name);
 

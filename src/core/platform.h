@@ -128,6 +128,9 @@ PalLibrary* platformLoadLibrary(const char* path);
 /** This function has the same semantics and rules as palGetSymbol(). */
 PalLibrarySymbol platformGetSymbol(PalLibrary* library, const char* name);
 
+/** This function has the same semantics and rules as palGetGlobal(). */
+void* platformGetGlobal(PalLibrary* library, const char* name);
+
 /** This function has the same semantics and rules as palFreeLibrary(). */
 void platformFreeLibrary(PalLibrary* library);
 
