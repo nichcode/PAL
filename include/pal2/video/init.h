@@ -242,8 +242,8 @@ PAL_API void PAL_CALL palGetVideoDriver(PalVideoDriver* driver);
  */
 PAL_API PalResult PAL_CALL palInitVideo(
     const PalAllocator* allocator,
-    PalEventDriver* eventDriver,
-    void* preferredInstance);
+    const PalEventDriver* eventDriver,
+    const void* preferredInstance);
 
 /**
  * @brief Shuts down the video system.
@@ -311,6 +311,6 @@ PAL_API PalVideoFeatures PAL_CALL palGetVideoFeatures(void);
  * @since Added in version 2.0
  * @ingroup pal_video
  */
-PAL_API void* PAL_CALL palGetInstance(void);
+PAL_API const void* PAL_CALL palGetInstance(void);
 
 #endif // PAL_VIDEO_INIT_H

@@ -24,6 +24,8 @@
 #include "video/platform.h"
 #include "pal2/video/init.h"
 
+#ifdef PAL_HAS_X11_BACKEND
+
 static PalVideoDriver s_X11Driver = {0};
 
 PalVideoDriver* x11GetVideoDriver()
@@ -34,6 +36,30 @@ PalVideoDriver* x11GetVideoDriver()
     return &s_X11Driver;
 }
 
+PalResult x11InitVideo(
+    const PalAllocator* allocator,
+    PalEventDriver* eventDriver,
+    void* preferredInstance,
+    void** selectedInstance)
+{
+
+}
+
+void x11ShutdownVideo(void)
+{
+
+}
+
+void x11UpdateVideo(void)
+{
+
+}
+
 const VideoBackend g_X11Backend = {
-    .getDriver = x11GetVideoDriver
+    .getDriver = x11GetVideoDriver,
+    .init = x11InitVideo,
+    .shutdown = x11UpdateVideo,
+    .update = x11UpdateVideo
 };
+
+#endif // PAL_HAS_X11_BACKEND

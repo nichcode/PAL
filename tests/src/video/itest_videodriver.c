@@ -26,6 +26,7 @@ void logDriverInfo(PalVideoDriver* driver)
     }
 
     palLog(nullptr, "Driver Type: %s", driverType);
+    palLog(nullptr, "Driver Id: %u", driver->id);
     palLog(nullptr, "");
 }
 

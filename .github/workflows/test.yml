@@ -24,7 +24,8 @@ jobs:
             libxcursor-dev \
             libwayland-dev \
             libxkbcommon-dev \
-            libvulkan-dev
+            libvulkan-dev \ 
+            libxkbcommon-dev
 
       - name: Generate
         run: ./premake/premake5 gmake --override

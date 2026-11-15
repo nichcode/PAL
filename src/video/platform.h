@@ -54,15 +54,41 @@
  * Additional rules:
  * - The fucntion must exist before the backend is initialized
 */
-typedef PalVideoDriver* (*getVideoDriverFn)();
+typedef PalVideoDriver* (*GetVideoDriverFn)(void);
+
+/** Initializes the video backend. 
+ * 
+ * Additional rules:
+ * - `preferredInstance` is the users requested instance. It may be nullptr.
+ * - `selectedInstance` is the actual instance used. This may be the same as `preferredInstance`.
+*/
+typedef PalResult (*InitVideoFn)(
+    const PalAllocator* allocator,
+    const PalEventDriver* eventDriver,
+    const void* preferredInstance,
+    void** selectedInstance);
+
+/** Shutdowns the video backend. */
+typedef void (*ShutdownVideoFn)(void);
+
+/** Updates the video backend. 
+ * 
+ * Additional rules:
+ * This function must not block.
+*/
+typedef void (*UpdateVideoFn)(void);
 
 
 /** A video backend. */
 typedef struct VideoBackend {
-    getVideoDriverFn getDriver;
+    GetVideoDriverFn getDriver;
+    InitVideoFn init;
+    ShutdownVideoFn shutdown;
+    UpdateVideoFn update;
 } VideoBackend;
 
-extern VideoBackend* s_VideoBackend; /**< Active video backend. */
+extern const VideoBackend* g_VideoBackend; /**< Active video backend. */
+extern PalBool g_VideoInitialized;
 
 /** Gets all supported backends per platform. */
 const VideoBackend* const* platformGetVideoBackends(uint32_t* count);

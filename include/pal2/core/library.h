@@ -69,9 +69,35 @@ typedef struct PalLibrary PalLibrary;
  * @ingroup pal_core
  *
  * @sa palGetSymbol
+ * @sa palGetGlobal
  * @sa palFreeLibrary
  */
 PAL_API PalLibrary* PAL_CALL palLoadLibrary(const char* path);
+
+/**
+ * @brief Retrieves a global from a library.
+ *
+ * This function retrieves a global from the specified library. `library` must be
+ * loaded into address space before this call.
+ *
+ * Exported globals are returned as @ref `void*`; a cast is required to use
+ * the global as its declared type.
+ *
+ * @param[in] library Library to retrieve the global from.
+ * @param[in] name Null-terminated UTF-8 encoded name of the global.
+ * @return The global on success or `nullptr` if the global was not found.
+ *
+ * @thread-safety Thread safe.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_core
+ *
+ * @sa palLoadLibrary
+ * @sa palFreeLibrary
+ */
+PAL_API void* PAL_CALL palGetGlobal(
+    PalLibrary* library,
+    const char* name);
 
 /**
  * @brief Retrieves a symbol from a library.
@@ -102,7 +128,7 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  * @brief Unloads the specified library from address space.
  *
  * This function unloads the specified library from address space and
- * invalidates all symbols retrieved from it.
+ * invalidates all symbols and globals retrieved from it.
  *
  * @param[in] library Library to free.
  *
@@ -112,7 +138,6 @@ PAL_API PalLibrarySymbol PAL_CALL palGetSymbol(
  * @ingroup pal_core
  *
  * @sa palLoadLibrary
- * @sa palGetSymbol
  */
 PAL_API void PAL_CALL palFreeLibrary(PalLibrary* library);
 

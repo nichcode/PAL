@@ -83,21 +83,22 @@ project "PAL2"
                 "/usr/include/x86_64-linux-gnu/X11/Xlib.h"
             }
 
-            found = false
-            for _, path in ipairs(XPaths) do
-                local file = io.open(path, "r")
-                if file then
-                    file:close()
-                    found = true
-                    break
-                end
-            end
+            -- Remove X11 until wayland is done
+            -- found = false
+            -- for _, path in ipairs(XPaths) do
+            --     local file = io.open(path, "r")
+            --     if file then
+            --         file:close()
+            --         found = true
+            --         break
+            --     end
+            -- end
 
-            if found then
-                defines { "PAL_HAS_X11_BACKEND=1" }
-            else
-                defines { "PAL_HAS_X11_BACKEND=0" }
-            end
+            -- if found then
+            --     defines { "PAL_HAS_X11_BACKEND=1" }
+            -- else
+            --     defines { "PAL_HAS_X11_BACKEND=0" }
+            -- end
         end
 
         filter {"system:windows", "configurations:*"}

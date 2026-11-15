@@ -10,6 +10,7 @@ PAL_LOG_MSG_SIZE
 PalLibrary
 palLoadLibrary()
 palGetSymbol()
+palGetGlobal()
 palFreeLibrary()
 PalVideoDriver
 palEnumerateVideoDrivers()

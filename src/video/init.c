@@ -25,9 +25,10 @@
 #include "pal2/video/init.h"
 #include <string.h>
 
-VideoBackend* s_VideoBackend = nullptr;
-static PalBool s_Initialized = PAL_FALSE;
-static PalVideoDriver s_VideoDriver; /**< Active video driver. */
+const VideoBackend* g_VideoBackend = nullptr;
+PalBool g_VideoInitialized = PAL_FALSE;
+static const void* s_Instance = nullptr;
+static PalVideoDriver s_Driver = {0}; /**< Active video driver. */
 
 void PAL_CALL palEnumerateVideoDrivers(
     uint32_t* count,
@@ -60,10 +61,10 @@ void PAL_CALL palSetVideoDriver(PalVideoDriver* driver)
 {
     ASSERT(driver != nullptr, "driver parameter is null");
 
-    if (!s_Initialized) {
-        s_VideoDriver.type = driver->type;
-        s_VideoDriver.features = driver->features;
-        s_VideoDriver.id = driver->id;
+    if (!g_VideoInitialized) {
+        s_Driver.type = driver->type;
+        s_Driver.features = driver->features;
+        s_Driver.id = driver->id;
     }
 }
 
@@ -71,9 +72,103 @@ void PAL_CALL palGetVideoDriver(PalVideoDriver* driver)
 {
     ASSERT(driver != nullptr, "driver parameter is null");
 
-    if (s_Initialized) {
-        driver->type = s_VideoDriver.type;
-        driver->features = s_VideoDriver.features;
-        driver->id = s_VideoDriver.id;
+    if (g_VideoInitialized) {
+        driver->type = s_Driver.type;
+        driver->features = s_Driver.features;
+        driver->id = s_Driver.id;
     }
+}
+
+PalResult PAL_CALL palInitVideo(
+    const PalAllocator* allocator,
+    const PalEventDriver* eventDriver,
+    const void* preferredInstance)
+{
+    if (g_VideoInitialized) {
+        return PAL_RESULT_SUCCESS;
+    }
+
+    uint32_t backendCount = 0;
+    const VideoBackend* const* backends = platformGetVideoBackends(&backendCount);
+
+    // The default driver is always the first video driver so a direct lookup
+    // will work even if a user does not select a driver.
+    void* selectedInstance = nullptr;
+    const VideoBackend* backend = backends[s_Driver.id];
+    PalResult result = backend->init(
+        allocator, 
+        eventDriver, 
+        preferredInstance, 
+        &selectedInstance);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        // Check if there are more drivers and use that rather
+        if (backendCount == 1) {
+            return palMakeResult(
+                PAL_RESULT_CODE_PLATFORM_FAILURE, 
+                PAL_RESULT_SOURCE_NONE, 
+                0);
+        }
+
+        for (uint32_t i = 1; i < backendCount; i++) {
+            const VideoBackend* backend = backends[i];
+            result = backend->init(
+                allocator, 
+                eventDriver, 
+                preferredInstance, 
+                &selectedInstance);
+
+            if (result == PAL_RESULT_SUCCESS) {
+                PalVideoDriver* driver = backend->getDriver();
+                s_Driver.features = driver->features;
+                s_Driver.id = driver->id;
+                s_Driver.type = driver->type;
+
+                break;
+            }
+
+            continue;
+        }
+    }
+
+    g_VideoBackend = backend;
+    g_VideoInitialized = PAL_TRUE;
+    s_Instance = selectedInstance;
+
+    return PAL_RESULT_SUCCESS;
+}
+
+void PAL_CALL palShutdownVideo(void)
+{
+    ASSERT(g_VideoInitialized != PAL_FALSE, "Video system not initialized");
+
+    g_VideoBackend->shutdown();
+    g_VideoBackend = nullptr;
+    s_Instance = nullptr;
+    g_VideoInitialized = PAL_FALSE;
+}
+
+void PAL_CALL palUpdateVideo(void)
+{
+    ASSERT(g_VideoInitialized != PAL_FALSE, "Video system not initialized");
+
+    g_VideoBackend->update();
+}
+
+PalVideoFeatures PAL_CALL palGetVideoFeatures(void)
+{
+    if (g_VideoInitialized) {
+        return s_Driver.features;
+    }
+
+    return 0;
+}
+
+const void* PAL_CALL palGetInstance(void)
+{
+    if (g_VideoInitialized) {
+        return s_Instance;
+    }
+
+    return nullptr;
 }

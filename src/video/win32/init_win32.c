@@ -24,6 +24,8 @@
 #include "video/platform.h"
 #include "pal2/video/init.h"
 
+#ifdef _WIN32
+
 static PalVideoDriver s_Win32Driver = {0};
 
 PalVideoDriver* win32GetVideoDriver()
@@ -34,6 +36,30 @@ PalVideoDriver* win32GetVideoDriver()
     return &s_Win32Driver;
 }
 
+PalResult win32InitVideo(
+    const PalAllocator* allocator,
+    PalEventDriver* eventDriver,
+    void* preferredInstance,
+    void** selectedInstance)
+{
+
+}
+
+void win32ShutdownVideo(void)
+{
+
+}
+
+void win32UpdateVideo(void)
+{
+
+}
+
 const VideoBackend g_Win32Backend = {
-    .getDriver = win32GetVideoDriver
+    .getDriver = win32GetVideoDriver,
+    .init = win32InitVideo,
+    .shutdown = win32UpdateVideo,
+    .update = win32UpdateVideo
 };
+
+#endif // _WIN32
