@@ -23,6 +23,8 @@
 
 #include "video/platform.h"
 
+#if PAL_HAS_WAYLAND_BACKEND
+
 PalVideoDriver* waylandGetVideoDriver(void);
 PalResult waylandInitVideo(const PalAllocator*, struct PalEventDriver*, const void*, void**);
 void waylandShutdownVideo(void);
@@ -30,6 +32,14 @@ void waylandUpdateVideo(void);
 PalResult wlCreateIcon(const PalIconCreateInfo*, PalIcon**);
 void wlDestroyIcon(PalIcon*);
 void wlSetWindowIcon(PalWindow*, PalIcon*);
+PalResult wlCreateCursor(const PalCursorCreateInfo*, PalCursor**);
+PalResult wlCreateCursorFrom(PalCursorType, PalCursor**);
+void wlDestroyCursor(PalCursor*);
+void wlShowCursor(PalBool);
+void wlClipCursor(PalWindow*, PalBool);
+void wlGetCursorPos(PalWindow*, int32_t*, int32_t*);
+void wlSetCursorPos(PalWindow*, int32_t, int32_t);
+void wlSetWindowCursor(PalWindow*, PalCursor*);
 
 const VideoBackend g_WaylandBackend = {
     .getDriver = waylandGetVideoDriver,
@@ -38,5 +48,15 @@ const VideoBackend g_WaylandBackend = {
     .update = waylandUpdateVideo,
     .createIcon = wlCreateIcon,
     .destroyIcon = wlDestroyIcon,
-    .setWindowIcon = wlSetWindowIcon
+    .setWindowIcon = wlSetWindowIcon,
+    .createCursor = wlCreateCursor,
+    .createCursorFrom = wlCreateCursorFrom,
+    .destroyCursor = wlDestroyCursor,
+    .showCursor = wlShowCursor,
+    .clipCursor = wlClipCursor,
+    .getCursorPos = wlGetCursorPos,
+    .setCursorPos = wlSetCursorPos,
+    .setWindowCursor = wlSetWindowCursor
 };
+
+#endif // PAL_HAS_WAYLAND_BACKEND

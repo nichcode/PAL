@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#if PAL_HAS_WAYLAND_BACKEND
+
 #include "wayland_helper.h"
 #include "pal2/video/icon.h"
 
@@ -45,3 +47,5 @@ void wlSetWindowIcon(
     (void)window;
     (void)icon;
 }
+
+#endif // PAL_HAS_WAYLAND_BACKEND

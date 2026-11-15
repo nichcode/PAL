@@ -22,6 +22,7 @@
  */
 
 #if PAL_HAS_WAYLAND_BACKEND
+
 #include "client_protocol.h"
 #include "xdg_protocol.h"
 #include "zxdg_protocol.h"

@@ -28,9 +28,13 @@ PalResult PAL_CALL palCreateIcon(
     const PalIconCreateInfo* info,
     PalIcon** icon)
 {
-    ASSERT(g_VideoInitialized != PAL_FALSE, "Video system not initialized");
-    ASSERT(info != nullptr, "info parameter is nullptr");
-    ASSERT(icon != nullptr, "icon parameter is nullptr");
+    if (!g_VideoInitialized) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
+    if (!info || !icon) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
 
     return g_VideoBackend->createIcon(info, icon);
 }

@@ -100,6 +100,49 @@ typedef void (*SetWindowIconFn)(
 
 
 /* =========================================================================
+ * Cursor
+ * ========================================================================= */
+
+/** This function has the same semantics and rules as palCreateCursor(). */
+typedef PalResult (*CreateCursorFn)(
+    const PalCursorCreateInfo* info,
+    PalCursor** cursor);
+
+/** This function has the same semantics and rules as palCreateCursorFrom(). */
+typedef PalResult (*CreateCursorFromFn)(
+    PalCursorType type,
+    PalCursor** cursor);
+
+/** This function has the same semantics and rules as palDestroyCursor(). */
+typedef void (*DestroyCursorFn)(PalCursor* cursor);
+
+/** This function has the same semantics and rules as palShowCursor(). */
+typedef void (*ShowCursorFn)(PalBool show);
+
+/** This function has the same semantics and rules as palClipCursor(). */
+typedef void (*ClipCursorFn)(
+    PalWindow* window,
+    PalBool clip);
+
+/** This function has the same semantics and rules as palGetCursorPos(). */
+typedef void (*GetCursorPosFn)(
+    PalWindow* window,
+    int32_t* x,
+    int32_t* y);
+
+/** This function has the same semantics and rules as palSetCursorPos(). */
+typedef void (*SetCursorPosFn)(
+    PalWindow* window,
+    int32_t x,
+    int32_t y);
+
+/** This function has the same semantics and rules as palSetWindowCursor(). */
+typedef void (*SetWindowCursorFn)(
+    PalWindow* window,
+    PalCursor* cursor);
+
+
+/* =========================================================================
  * Keyboard
  * ========================================================================= */
 
@@ -131,6 +174,14 @@ typedef struct VideoBackend {
     CreateIconFn createIcon;
     DestroyIconFn destroyIcon;
     SetWindowIconFn setWindowIcon;
+    CreateCursorFn createCursor;
+    CreateCursorFromFn createCursorFrom;
+    DestroyCursorFn destroyCursor;
+    ShowCursorFn showCursor;
+    ClipCursorFn clipCursor;
+    GetCursorPosFn getCursorPos;
+    SetCursorPosFn setCursorPos;
+    SetWindowCursorFn setWindowCursor;
 } VideoBackend;
 
 extern const VideoBackend* g_VideoBackend; /**< Active video backend. */
