@@ -276,7 +276,7 @@ typedef struct WaylandMouse {
     double accumScrollY;
 } WaylandMouse;
 
-extern Wayland g_Wayland;
+extern Wayland g_Wl;
 extern WaylandKeyboard g_WaylandKeyboard;
 extern WaylandMouse g_WaylandMouse;
 

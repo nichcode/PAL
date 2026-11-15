@@ -33,12 +33,12 @@ PalResult wlCreateCursor(
     PalCursor** cursor)
 {
     WaylandCursor* _cursor = nullptr;
-    cursor = palAllocate(g_Wayland.allocator, sizeof(WaylandCursor), 0);
+    cursor = palAllocate(g_Wl.allocator, sizeof(WaylandCursor), 0);
     if (!cursor) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    _cursor->surface = wlCompositorCreateSurface(g_Wayland.compositor);
+    _cursor->surface = wlCompositorCreateSurface(g_Wl.compositor);
     if (!_cursor->surface) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
@@ -93,7 +93,7 @@ PalResult wlCreateCursorFrom(
     }
 
     struct wl_cursor* wlCursor = nullptr;
-    wlCursor = g_Wayland.cursorThemeGetCursor(g_Wayland.cursorTheme, cursorType);
+    wlCursor = g_Wl.cursorThemeGetCursor(g_Wl.cursorTheme, cursorType);
     if (!wlCursor) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE, 
@@ -102,12 +102,12 @@ PalResult wlCreateCursorFrom(
     }
 
     WaylandCursor* _cursor = nullptr;
-    _cursor = palAllocate(g_Wayland.allocator, sizeof(WaylandCursor), 0);
+    _cursor = palAllocate(g_Wl.allocator, sizeof(WaylandCursor), 0);
     if (!_cursor) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    _cursor->surface = wlCompositorCreateSurface(g_Wayland.compositor);
+    _cursor->surface = wlCompositorCreateSurface(g_Wl.compositor);
     if (!_cursor->surface) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE, 
@@ -115,7 +115,7 @@ PalResult wlCreateCursorFrom(
             (uint32_t)errno);
     }
 
-    _cursor->buffer = g_Wayland.cursorImageGetBuffer(wlCursor->images[0]);
+    _cursor->buffer = g_Wl.cursorImageGetBuffer(wlCursor->images[0]);
     wlSurfaceAttach(_cursor->surface, _cursor->buffer, 0, 0);
     wlSurfaceCommit(_cursor->surface);
     _cursor->hotspotX = (int)wlCursor->images[0]->hotspot_x;
@@ -130,7 +130,7 @@ void wlDestroyCursor(PalCursor* cursor)
     WaylandCursor* waylandCursor = (WaylandCursor*)cursor;
     wlBufferDestroy(waylandCursor->buffer);
     wlSurfaceDestroy(waylandCursor->surface);
-    palFree(g_Wayland.allocator, waylandCursor);
+    palFree(g_Wl.allocator, waylandCursor);
 }
 
 void wlShowCursor(PalBool show)

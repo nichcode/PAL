@@ -192,11 +192,11 @@ static void surfaceHandleEnter(
     // the code below should be skipped if users are not interested in DPI changed events
     PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
     PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
-    if (!g_Wayland.eventDriver) {
+    if (!g_Wl.eventDriver) {
         return;
     }
 
-    PalEventDriver* driver = g_Wayland.eventDriver;
+    PalEventDriver* driver = g_Wl.eventDriver;
     mode = palGetEventDispatchMode(driver, type);
     if (mode == PAL_DISPATCH_MODE_NONE) {
         return;
@@ -279,7 +279,7 @@ static void pointerHandleEnter(
         wlPointerSetCursor(pointer, serial, cursor->surface, cursor->hotspotX, cursor->hotspotY);
     }
 
-    g_Wayland.pointerSurface = surface;
+    g_Wl.pointerSurface = surface;
 }
 
 static void pointerHandleLeave(
@@ -292,8 +292,8 @@ static void pointerHandleLeave(
     (void)pointer;
     (void)serial;
 
-    if (g_Wayland.pointerSurface == surface) {
-        g_Wayland.pointerSurface = nullptr;
+    if (g_Wl.pointerSurface == surface) {
+        g_Wl.pointerSurface = nullptr;
     }
 }
 
@@ -320,10 +320,10 @@ static void pointerHandleMotion(
 
 #if PAL_HAS_EVENT_MODULE
     PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
-    PalWindow* window = (PalWindow*)g_Wayland.pointerSurface;
-    if (g_Wayland.eventDriver && window) {
+    PalWindow* window = (PalWindow*)g_Wl.pointerSurface;
+    if (g_Wl.eventDriver && window) {
         // we only push a mouse move only if we are on a window
-        PalEventDriver* driver = g_Wayland.eventDriver;
+        PalEventDriver* driver = g_Wl.eventDriver;
         PalEventType type = PAL_EVENT_TYPE_MOUSE_MOVE;
         mode = palGetEventDispatchMode(driver, type);
         if (mode != PAL_DISPATCH_MODE_NONE) {
@@ -362,8 +362,8 @@ static void pointerHandleButton(
     (void)time;
 
     PalWindow* window = nullptr;
-    if (g_Wayland.pointerSurface) {
-        window = (PalWindow*)g_Wayland.pointerSurface;
+    if (g_Wl.pointerSurface) {
+        window = (PalWindow*)g_Wl.pointerSurface;
 
     } else {
         // cannot recieve events without a focused surface
@@ -397,8 +397,8 @@ static void pointerHandleButton(
     g_Mouse.state[_button] = pressed;
 
 #if PAL_HAS_EVENT_MODULE
-    if (g_Wayland.eventDriver) {
-        PalEventDriver* driver = g_Wayland.eventDriver;
+    if (g_Wl.eventDriver) {
+        PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, type);
         if (mode != PAL_DISPATCH_MODE_NONE) {
@@ -475,8 +475,8 @@ static void pointerHandleFrame(
     }
 
     PalWindow* window = nullptr;
-    if (g_Wayland.pointerSurface) {
-        window = (PalWindow*)g_Wayland.pointerSurface;
+    if (g_Wl.pointerSurface) {
+        window = (PalWindow*)g_Wl.pointerSurface;
 
     } else {
         // cannot recieve events without a focused surface
@@ -493,9 +493,9 @@ static void pointerHandleFrame(
     g_WaylandMouse.pendingScroll = PAL_FALSE;
 
 #if PAL_HAS_EVENT_MODULE
-    if (g_Wayland.eventDriver) {
+    if (g_Wl.eventDriver) {
         PalEventType type = PAL_EVENT_TYPE_MOUSE_WHEEL;
-        PalEventDriver* driver = g_Wayland.eventDriver;
+        PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, type);
         if (mode != PAL_DISPATCH_MODE_NONE) {
@@ -547,7 +547,7 @@ static void keyboardHandleEnter(
     (void)serial;
     (void)keys;
 
-    g_Wayland.keyboardSurface = surface;
+    g_Wl.keyboardSurface = surface;
 }
 
 static void keyboardHandleLeave(
@@ -561,8 +561,8 @@ static void keyboardHandleLeave(
     (void)serial;
     (void)surface;
 
-    if (g_Wayland.keyboardSurface == surface) {
-        g_Wayland.keyboardSurface = nullptr;
+    if (g_Wl.keyboardSurface == surface) {
+        g_Wl.keyboardSurface = nullptr;
     }
 }
 
@@ -591,8 +591,8 @@ static void keyboardHandleRemap(
         return;
     }
 
-    keymap = g_Wayland.xkbKeymapNewFromString(
-        g_Wayland.inputContext,
+    keymap = g_Wl.xkbKeymapNewFromString(
+        g_Wl.inputContext,
         keymapStr,
         XKB_KEYMAP_FORMAT_TEXT_V1,
         XKB_KEYMAP_COMPILE_NO_FLAGS);
@@ -604,19 +604,19 @@ static void keyboardHandleRemap(
     munmap(keymapStr, size);
     close(fd);
 
-    state = g_Wayland.xkbStateNew(keymap);
+    state = g_Wl.xkbStateNew(keymap);
     if (!state) {
         return;
     }
 
     // check if we have old keymap and state
-    if (g_Wayland.state) {
-        g_Wayland.xkbStateUnref(g_Wayland.state);
-        g_Wayland.xkbKeymapUnref(g_Wayland.keymap);
+    if (g_Wl.state) {
+        g_Wl.xkbStateUnref(g_Wl.state);
+        g_Wl.xkbKeymapUnref(g_Wl.keymap);
     }
 
-    g_Wayland.state = state;
-    g_Wayland.keymap = keymap;
+    g_Wl.state = state;
+    g_Wl.keymap = keymap;
     g_WaylandKeyboard.frequency = palGetPerformanceFrequency();
 }
 
@@ -634,8 +634,8 @@ static void keyboardHandleKey(
     (void)time;
 
     PalWindow* window = nullptr;
-    if (g_Wayland.keyboardSurface) {
-        window = (PalWindow*)g_Wayland.keyboardSurface;
+    if (g_Wl.keyboardSurface) {
+        window = (PalWindow*)g_Wl.keyboardSurface;
 
     } else {
         // cannot recieve events without a focused surface
@@ -647,7 +647,7 @@ static void keyboardHandleKey(
     PalBool pressed = (state == WL_KEYBOARD_KEY_STATE_PRESSED);
     PalEventType type = PAL_EVENT_TYPE_KEYUP;
     PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
-    xkb_keysym_t keySym = g_Wayland.xkbStateKeyGetOneSym(g_Wayland.state, key + 8);
+    xkb_keysym_t keySym = g_Wl.xkbStateKeyGetOneSym(g_Wl.state, key + 8);
 
     // special handling
     if (key == 119) {
@@ -688,7 +688,7 @@ static void keyboardHandleKey(
 
     // check for key repeats
     if (pressed) {
-        if (g_Wayland.xkbKeymapKeyRepeats(g_Wayland.keymap, key + 8)) {
+        if (g_Wl.xkbKeymapKeyRepeats(g_Wl.keymap, key + 8)) {
             g_WaylandKeyboard.repeatKey = (int)keycode;
             g_WaylandKeyboard.repeatScancode = (int)scancode;
             g_WaylandKeyboard.timer = getCurrentTime() + (uint64_t)g_WaylandKeyboard.repeatDelay;
@@ -707,8 +707,8 @@ static void keyboardHandleKey(
     }
 
 #if PAL_HAS_EVENT_MODULE
-    if (g_Wayland.eventDriver) {
-        PalEventDriver* driver = g_Wayland.eventDriver;
+    if (g_Wl.eventDriver) {
+        PalEventDriver* driver = g_Wl.eventDriver;
         mode = palGetEventDispatchMode(driver, type);
         if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
@@ -725,7 +725,7 @@ static void keyboardHandleKey(
             return;
         }
 
-        uint32_t codepoint = g_Wayland.xkbKeysymToUtf32(keySym);
+        uint32_t codepoint = g_Wl.xkbKeysymToUtf32(keySym);
         if (codepoint <= 0) {
             return;
         }
@@ -747,7 +747,7 @@ static void keyboardHandleRepeatInfo(
 {
     (void)userData;
 
-    if (g_Wayland.keyboard == keyboard) {
+    if (g_Wl.keyboard == keyboard) {
         g_WaylandKeyboard.repeatDelay = delay;
         g_WaylandKeyboard.repeatRate = rate;
 
@@ -775,9 +775,9 @@ static void keyboardHandleModifiers(
     (void)mods_latched;
     (void)mods_locked;
 
-    if (g_Wayland.state) {
-        g_Wayland.xkbStateUpdateMask(
-            g_Wayland.state, 
+    if (g_Wl.state) {
+        g_Wl.xkbStateUpdateMask(
+            g_Wl.state, 
             mods_depressed, 
             mods_latched, 
             mods_locked, 
@@ -799,13 +799,13 @@ static void seatHandleCapabilities(
     (void)userData;
 
     if (caps & WL_SEAT_CAPABILITY_KEYBOARD) {
-        g_Wayland.keyboard = wlSeatGetKeyboard(seat);
-        wlKeyboardAddListener(g_Wayland.keyboard, &g_KeyboardListener, nullptr);
+        g_Wl.keyboard = wlSeatGetKeyboard(seat);
+        wlKeyboardAddListener(g_Wl.keyboard, &g_KeyboardListener, nullptr);
     }
 
     if (caps & WL_SEAT_CAPABILITY_POINTER) {
-        g_Wayland.pointer = wlSeatGetPointer(seat);
-        wlPointerAddListener(g_Wayland.pointer, &g_PointerListener, nullptr);
+        g_Wl.pointer = wlSeatGetPointer(seat);
+        wlPointerAddListener(g_Wl.pointer, &g_PointerListener, nullptr);
     }
 }
 
@@ -845,7 +845,7 @@ static void xdgSurfaceHandleConfigure(
     if (!winData->skipConfigure) {
         if (winData->pushConfigureEvent) {
             if (winData->eglWindow) {
-                g_Wayland.eglWindowResize(
+                g_Wl.eglWindowResize(
                     winData->eglWindow, 
                     (int)winData->w, 
                     (int)winData->h, 
@@ -878,16 +878,16 @@ static void xdgSurfaceHandleConfigure(
 
 #if PAL_HAS_EVENT_MODULE
             // push a window resize event
-            if (g_Wayland.eventDriver) {
+            if (g_Wl.eventDriver) {
                 PalEventType type = PAL_EVENT_TYPE_WINDOW_SIZE;
                 PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
-                mode = palGetEventDispatchMode(g_Wayland.eventDriver, type);
+                mode = palGetEventDispatchMode(g_Wl.eventDriver, type);
                 if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = type;
                     event.data = palPackUint32(winData->w, winData->h);
                     event.data2 = palPackPointer(winData->window);
-                    palPushEvent(g_Wayland.eventDriver, &event);
+                    palPushEvent(g_Wl.eventDriver, &event);
                 }
             }
 #endif // PAL_HAS_EVENT_MODULE
@@ -905,16 +905,16 @@ static void xdgSurfaceHandleConfigure(
 #if PAL_HAS_EVENT_MODULE
         // push a window state event we dont recreate buffers over here
         // since we already create the buffer with the new size
-        if (g_Wayland.eventDriver) {
+        if (g_Wl.eventDriver) {
             PalEventType type = PAL_EVENT_TYPE_WINDOW_STATE;
             PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
-            mode = palGetEventDispatchMode(g_Wayland.eventDriver, type);
+            mode = palGetEventDispatchMode(g_Wl.eventDriver, type);
             if (mode != PAL_DISPATCH_MODE_NONE) {
                 PalEvent event = {0};
                 event.type = type;
                 event.data = winData->state;
                 event.data2 = palPackPointer(winData->window);
-                palPushEvent(g_Wayland.eventDriver, &event);
+                palPushEvent(g_Wl.eventDriver, &event);
             }
         }
 #endif // PAL_HAS_EVENT_MODULE
@@ -973,8 +973,8 @@ static void xdgToplevelHandleConfigure(
     }
 
 #if PAL_HAS_EVENT_MODULE
-    if (g_Wayland.eventDriver) {
-        PalEventDriver* driver = g_Wayland.eventDriver;
+    if (g_Wl.eventDriver) {
+        PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         PalEventType type = PAL_EVENT_TYPE_WINDOW_FOCUS;
         mode = palGetEventDispatchMode(driver, type);
@@ -999,15 +999,15 @@ static void xdgToplevelHandleClose(
     WindowData* winData = (WindowData*)data;
 
 #if PAL_HAS_EVENT_MODULE
-    if (g_Wayland.eventDriver) {
+    if (g_Wl.eventDriver) {
         PalEventType type = PAL_EVENT_TYPE_WINDOW_CLOSE;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
-        mode = palGetEventDispatchMode(g_Wayland.eventDriver, type);
+        mode = palGetEventDispatchMode(g_Wl.eventDriver, type);
         if (mode != PAL_DISPATCH_MODE_NONE) {
             PalEvent event = {0};
             event.type = type;
             event.data2 = palPackPointer(winData->window);
-            palPushEvent(g_Wayland.eventDriver, &event);
+            palPushEvent(g_Wl.eventDriver, &event);
         }
     }
 #endif // PAL_HAS_EVENT_MODULE
@@ -1025,8 +1025,8 @@ void zxdgDecorationHandleConfigure(
     (void)dec;
 
 #if PAL_HAS_EVENT_MODULE
-    if (g_Wayland.eventDriver) {
-        PalEventDriver* driver = g_Wayland.eventDriver;
+    if (g_Wl.eventDriver) {
+        PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode dispatchMode = PAL_DISPATCH_MODE_NONE;
         PalEventType type = PAL_EVENT_TYPE_WINDOW_DECORATION_MODE;
         dispatchMode = palGetEventDispatchMode(driver, type);

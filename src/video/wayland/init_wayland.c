@@ -42,7 +42,7 @@
 #include <string.h>
 #include <poll.h>
 
-Wayland g_Wayland = {0};
+Wayland g_Wl = {0};
 WaylandKeyboard g_WaylandKeyboard = {0};
 WaylandMouse g_WaylandMouse = {0};
 VideoEGL g_VideoEgl = {0};
@@ -58,48 +58,48 @@ static void loadGlobals(void)
 {
     // clang-format off
 
-    g_Wayland.outputInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.outputInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_output_interface");
 
-    g_Wayland.seatInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.seatInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_seat_interface");
 
-    g_Wayland.compositorInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.compositorInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_compositor_interface");
 
-    g_Wayland.surfaceInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.surfaceInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_surface_interface");
 
-    g_Wayland.registryInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.registryInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_registry_interface");
 
-    g_Wayland.shmInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.shmInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_shm_interface");
 
-    g_Wayland.bufferInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.bufferInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_buffer_interface");
 
-    g_Wayland.shmPoolInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.shmPoolInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_shm_pool_interface");
 
-    g_Wayland.regionInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.regionInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_region_interface");
 
-    g_Wayland.pointerInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.pointerInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_pointer_interface");
 
-    g_Wayland.keyboardInterface = palGetGlobal(
-        g_Wayland.libwayland, 
+    g_Wl.keyboardInterface = palGetGlobal(
+        g_Wl.libwayland, 
         "wl_keyboard_interface");
 
     // clang-format on
@@ -109,68 +109,68 @@ static void loadProcs(PalBool loadAll)
 {
     // clang-format off
 
-    g_Wayland.displayConnect = (wlDisplayConnectFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.displayConnect = (wlDisplayConnectFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_connect");
 
-    g_Wayland.displayDisconnect = (wlDisplayDisconnectFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.displayDisconnect = (wlDisplayDisconnectFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_disconnect");
 
-    g_Wayland.displayRoundtrip = (wlDisplayRoundtripFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.displayRoundtrip = (wlDisplayRoundtripFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_roundtrip");
 
-    g_Wayland.displayDispatch = (wlDisplayDispatchFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.displayDispatch = (wlDisplayDispatchFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_dispatch");
 
-    g_Wayland.proxyAddListener = (wlProxyAddListenerFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.proxyAddListener = (wlProxyAddListenerFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_proxy_add_listener");
         
-    g_Wayland.proxyDestroy = (wlProxyDestroyFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.proxyDestroy = (wlProxyDestroyFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_proxy_destroy");
 
-    g_Wayland.proxyMarshalFlags = (wlProxyMarshalFlagsFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.proxyMarshalFlags = (wlProxyMarshalFlagsFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_proxy_marshal_flags");
 
-    g_Wayland.proxyGetVersion = (wlProxyGetVersionFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.proxyGetVersion = (wlProxyGetVersionFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_proxy_get_version");
 
-    g_Wayland.getError = (wlDisplayGetErrorFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.getError = (wlDisplayGetErrorFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_get_error");
 
-    g_Wayland.dispatchPending = (wlDisplayDispatchPendingFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.dispatchPending = (wlDisplayDispatchPendingFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_dispatch_pending");
 
-    g_Wayland.displayFlush = (wlDisplayFlushFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.displayFlush = (wlDisplayFlushFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_flush");
 
-    g_Wayland.prepareRead = (wlDisplayPrepareReadFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.prepareRead = (wlDisplayPrepareReadFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_prepare_read");
 
-    g_Wayland.readEvents = (wlDisplayReadEventsFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.readEvents = (wlDisplayReadEventsFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_read_events");
 
-    g_Wayland.displayGetFd = (wlDisplayGetFdFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.displayGetFd = (wlDisplayGetFdFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_get_fd");
 
-    g_Wayland.cancelRead = (wlDisplayCancelReadFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.cancelRead = (wlDisplayCancelReadFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_display_cancel_read");
 
-    g_Wayland.proxyMarshalConstructor = (wlProxyMarshalConstructorVFn)palGetSymbol(
-        g_Wayland.libwayland, 
+    g_Wl.proxyMarshalConstructor = (wlProxyMarshalConstructorVFn)palGetSymbol(
+        g_Wl.libwayland, 
         "wl_proxy_marshal_constructor_versioned");
 
     if (!loadAll) {
@@ -178,70 +178,70 @@ static void loadProcs(PalBool loadAll)
     }
 
     // xkbcommon
-    g_Wayland.xkbKeymapUnref = (xkbKeymapUnrefFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbKeymapUnref = (xkbKeymapUnrefFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_keymap_unref");
 
-    g_Wayland.xkbStateKeyGetOneSym = (xkbStateKeyGetOneSymFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbStateKeyGetOneSym = (xkbStateKeyGetOneSymFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_state_key_get_one_sym");
 
-    g_Wayland.xkbStateNew = (xkbStateNewFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbStateNew = (xkbStateNewFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_state_new");
 
-    g_Wayland.xkbStateUnref = (xkbStateUnrefFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbStateUnref = (xkbStateUnrefFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_state_unref");
 
-    g_Wayland.xkbContextUnref = (xkbContextUnrefFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbContextUnref = (xkbContextUnrefFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_context_unref");
 
-    g_Wayland.xkbContextNew = (xkbContextNewFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbContextNew = (xkbContextNewFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_context_new");
 
-    g_Wayland.xkbKeymapNewFromString = (xkbKeymapNewFromStringFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbKeymapNewFromString = (xkbKeymapNewFromStringFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_keymap_new_from_string");
 
-    g_Wayland.xkbKeysymToUtf32 = (xkbKeysymToUtf32Fn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbKeysymToUtf32 = (xkbKeysymToUtf32Fn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_keysym_to_utf32");
 
-    g_Wayland.xkbStateUpdateMask = (xkbStateUpdateMaskFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbStateUpdateMask = (xkbStateUpdateMaskFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_state_update_mask");
 
-    g_Wayland.xkbKeymapKeyRepeats = (xkbKeymapKeyRepeatsFn)palGetSymbol(
-        g_Wayland.xkbcommon, 
+    g_Wl.xkbKeymapKeyRepeats = (xkbKeymapKeyRepeatsFn)palGetSymbol(
+        g_Wl.xkbcommon, 
         "xkb_keymap_key_repeats");
 
     // wayland-cursor
-    g_Wayland.cursorImageGetBuffer = (wlCursorImageGetBufferFn)palGetSymbol(
-        g_Wayland.libcursor, 
+    g_Wl.cursorImageGetBuffer = (wlCursorImageGetBufferFn)palGetSymbol(
+        g_Wl.libcursor, 
         "wl_cursor_image_get_buffer");
 
-    g_Wayland.cursorThemeLoad = (wlCursorThemeLoadFn)palGetSymbol(
-        g_Wayland.libcursor, 
+    g_Wl.cursorThemeLoad = (wlCursorThemeLoadFn)palGetSymbol(
+        g_Wl.libcursor, 
         "wl_cursor_theme_load");
 
-    g_Wayland.cursorThemeGetCursor = (wlCursorThemeGetCursorFn)palGetSymbol(
-        g_Wayland.libcursor, 
+    g_Wl.cursorThemeGetCursor = (wlCursorThemeGetCursorFn)palGetSymbol(
+        g_Wl.libcursor, 
         "wl_cursor_theme_get_cursor");
 
     // wl-egl-window
-    g_Wayland.eglWindowCreate = (wlEglWindowCreateFn)palGetSymbol(
-        g_Wayland.libegl, 
+    g_Wl.eglWindowCreate = (wlEglWindowCreateFn)palGetSymbol(
+        g_Wl.libegl, 
         "wl_egl_window_create");
 
-    g_Wayland.eglWindowDestroy = (wlEglWindowDestroyFn)palGetSymbol(
-        g_Wayland.libegl, 
+    g_Wl.eglWindowDestroy = (wlEglWindowDestroyFn)palGetSymbol(
+        g_Wl.libegl, 
         "wl_egl_window_destroy");
 
-    g_Wayland.eglWindowResize = (wlEglWindowResizeFn)palGetSymbol(
-        g_Wayland.libegl, 
+    g_Wl.eglWindowResize = (wlEglWindowResizeFn)palGetSymbol(
+        g_Wl.libegl, 
         "wl_egl_window_resize");
 
     // clang-format on
@@ -478,25 +478,25 @@ static void globalHandle(
     (void)version;
 
     if (strcmp(interface, "wl_compositor") == 0) {
-        g_Wayland.compositor = wlRegistryBind(
+        g_Wl.compositor = wlRegistryBind(
             registry, 
             name, 
-            g_Wayland.compositorInterface, 
+            g_Wl.compositorInterface, 
             4);
 
     } else if (strcmp(interface, "xdg_wm_base") == 0) {
-        g_Wayland.xdgBase = wlRegistryBind(registry, name, &xdgWmBaseInterface, 1);
-        xdgWmBaseAddListener(g_Wayland.xdgBase, &g_WmBaseListener, nullptr);
+        g_Wl.xdgBase = wlRegistryBind(registry, name, &xdgWmBaseInterface, 1);
+        xdgWmBaseAddListener(g_Wl.xdgBase, &g_WmBaseListener, nullptr);
 
     } else if (strcmp(interface, "wl_shm") == 0) {
-        g_Wayland.shm = wlRegistryBind(registry, name, g_Wayland.shmInterface, 1);
+        g_Wl.shm = wlRegistryBind(registry, name, g_Wl.shmInterface, 1);
 
     } else if (strcmp(interface, "wl_seat") == 0) {
-        g_Wayland.seat = wlRegistryBind(registry, name, g_Wayland.seatInterface, 5);
-        wlSeatAddListener(g_Wayland.seat, &g_SeatListener, nullptr);
+        g_Wl.seat = wlRegistryBind(registry, name, g_Wl.seatInterface, 5);
+        wlSeatAddListener(g_Wl.seat, &g_SeatListener, nullptr);
 
     } else if (strcmp(interface, "zxdg_decoration_manager_v1") == 0) {
-        g_Wayland.decorationManager = wlRegistryBind(
+        g_Wl.decorationManager = wlRegistryBind(
             registry, 
             name, 
             &zxdg_decoration_manager_v1_interface, 
@@ -511,12 +511,12 @@ static void globalHandle(
         }
 
         struct wl_output* output = nullptr;
-        output = wlRegistryBind(g_Wayland.registry, name, g_Wayland.outputInterface, 3);
+        output = wlRegistryBind(g_Wl.registry, name, g_Wl.outputInterface, 3);
         wlOutputAddListener(output, &g_OutputListener, monitorData);
 
         monitorData->wlName = name;
         monitorData->monitor = (PalMonitor*)output;
-        g_Wayland.monitorCount++;
+        g_Wl.monitorCount++;
     }
 }
 
@@ -528,13 +528,13 @@ static void globalRemove(
     (void)data;
     (void)registry;
 
-    for (uint32_t i = 0; i < g_Wayland.maxMonitorData; ++i) {
-        if (g_Wayland.monitorData[i].used && g_Wayland.monitorData[i].wlName == name) {
-            MonitorData* data = &g_Wayland.monitorData[i];
+    for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
+        if (g_Wl.monitorData[i].used && g_Wl.monitorData[i].wlName == name) {
+            MonitorData* data = &g_Wl.monitorData[i];
             data->used = PAL_FALSE;
 
-            g_Wayland.proxyDestroy((struct wl_proxy*)data->monitor);
-            g_Wayland.monitorCount--;
+            g_Wl.proxyDestroy((struct wl_proxy*)data->monitor);
+            g_Wl.monitorCount--;
         }
     }
 }
@@ -558,23 +558,23 @@ PalVideoDriver* waylandGetVideoDriver(void)
         return &s_WaylandDriver;
     }
 
-    g_Wayland.libwayland = palLoadLibrary("libwayland-client.so.0");
-    if (g_Wayland.libwayland) {
+    g_Wl.libwayland = palLoadLibrary("libwayland-client.so.0");
+    if (g_Wl.libwayland) {
         loadGlobals();
         loadProcs(PAL_FALSE);
         setupProtocols();
 
-        g_Wayland.display = g_Wayland.displayConnect(nullptr);
-        if (g_Wayland.display) {
-            g_Wayland.registry = wlDisplayGetRegistry(g_Wayland.display);
-            wlRegistryAddListener(g_Wayland.registry, &s_DriverRegistryListener, nullptr);
+        g_Wl.display = g_Wl.displayConnect(nullptr);
+        if (g_Wl.display) {
+            g_Wl.registry = wlDisplayGetRegistry(g_Wl.display);
+            wlRegistryAddListener(g_Wl.registry, &s_DriverRegistryListener, nullptr);
 
-            g_Wayland.displayRoundtrip(g_Wayland.display);
-            g_Wayland.displayDisconnect(g_Wayland.display);
+            g_Wl.displayRoundtrip(g_Wl.display);
+            g_Wl.displayDisconnect(g_Wl.display);
         }
 
-        palFreeLibrary(g_Wayland.libwayland);
-        memset(&g_Wayland, 0, sizeof(Wayland));
+        palFreeLibrary(g_Wl.libwayland);
+        memset(&g_Wl, 0, sizeof(Wayland));
     }
 
     s_WaylandDriver.type = PAL_VIDEO_DRIVER_TYPE_WAYLAND;
@@ -590,16 +590,16 @@ PalResult waylandInitVideo(
     (void)allocator;
     (void)eventDriver;
 
-    g_Wayland.libwayland = palLoadLibrary("libwayland-client.so.0");
-    g_Wayland.xkbcommon = palLoadLibrary("libxkbcommon.so");
-    g_Wayland.libcursor = palLoadLibrary("libwayland-cursor.so");
-    g_Wayland.libegl = palLoadLibrary("libwayland-egl.so");
+    g_Wl.libwayland = palLoadLibrary("libwayland-client.so.0");
+    g_Wl.xkbcommon = palLoadLibrary("libxkbcommon.so");
+    g_Wl.libcursor = palLoadLibrary("libwayland-cursor.so");
+    g_Wl.libegl = palLoadLibrary("libwayland-egl.so");
 
     // clang-format off
-    if (!g_Wayland.libwayland ||
-        !g_Wayland.xkbcommon||
-        !g_Wayland.libcursor ||
-        !g_Wayland.libegl) {
+    if (!g_Wl.libwayland ||
+        !g_Wl.xkbcommon||
+        !g_Wl.libcursor ||
+        !g_Wl.libegl) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE, 
             PAL_RESULT_SOURCE_POSIX, 
@@ -614,111 +614,111 @@ PalResult waylandInitVideo(
     createKeycodeTable();
 
     PalResult result;
-    g_Wayland.maxMonitorData = 16;
-    g_Wayland.maxWindowData = 32;
+    g_Wl.maxMonitorData = 16;
+    g_Wl.maxWindowData = 32;
 
-    g_Wayland.windowData = palAllocate(
+    g_Wl.windowData = palAllocate(
         allocator, 
-        sizeof(WindowData) * g_Wayland.maxWindowData, 
+        sizeof(WindowData) * g_Wl.maxWindowData, 
         0);
 
-    g_Wayland.monitorData = palAllocate(
+    g_Wl.monitorData = palAllocate(
         allocator, 
-        sizeof(MonitorData) * g_Wayland.maxMonitorData, 
+        sizeof(MonitorData) * g_Wl.maxMonitorData, 
         0);
 
-    if (!g_Wayland.monitorData || !g_Wayland.windowData) {
+    if (!g_Wl.monitorData || !g_Wl.windowData) {
         result = PAL_RESULT_CODE_OUT_OF_MEMORY;
         goto cleanup;
     }
 
-    g_Wayland.monitorCount = 0;
+    g_Wl.monitorCount = 0;
     if (preferredInstance) {
-        g_Wayland.display = (struct wl_display*)preferredInstance;
+        g_Wl.display = (struct wl_display*)preferredInstance;
         *selectedInstance = (void*)preferredInstance;
 
     } else {
-        g_Wayland.display = g_Wayland.displayConnect(nullptr);
-        if (!g_Wayland.display) {
+        g_Wl.display = g_Wl.displayConnect(nullptr);
+        if (!g_Wl.display) {
             result = PAL_RESULT_CODE_PLATFORM_FAILURE;
             goto cleanup;
         }
 
-        *selectedInstance = (void*)g_Wayland.display;
+        *selectedInstance = (void*)g_Wl.display;
     }
 
-    g_Wayland.registry = wlDisplayGetRegistry(g_Wayland.display);
-    wlRegistryAddListener(g_Wayland.registry, &s_RegistryListener, nullptr);
-    g_Wayland.displayRoundtrip(g_Wayland.display);
-    g_Wayland.displayRoundtrip(g_Wayland.display); // do a roundtrip again to get remaining handles
+    g_Wl.registry = wlDisplayGetRegistry(g_Wl.display);
+    wlRegistryAddListener(g_Wl.registry, &s_RegistryListener, nullptr);
+    g_Wl.displayRoundtrip(g_Wl.display);
+    g_Wl.displayRoundtrip(g_Wl.display); // do a roundtrip again to get remaining handles
 
-    if (!g_Wayland.compositor || !g_Wayland.xdgBase || !g_Wayland.shm) {
+    if (!g_Wl.compositor || !g_Wl.xdgBase || !g_Wl.shm) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    g_Wayland.inputContext = g_Wayland.xkbContextNew(XKB_CONTEXT_NO_FLAGS);
-    if (!g_Wayland.inputContext) {
+    g_Wl.inputContext = g_Wl.xkbContextNew(XKB_CONTEXT_NO_FLAGS);
+    if (!g_Wl.inputContext) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    g_Wayland.cursorTheme = g_Wayland.cursorThemeLoad(nullptr, 32, g_Wayland.shm);
-    if (!g_Wayland.cursorTheme) {
+    g_Wl.cursorTheme = g_Wl.cursorThemeLoad(nullptr, 32, g_Wl.shm);
+    if (!g_Wl.cursorTheme) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    g_Wayland.allocator = allocator;
-    g_Wayland.eventDriver = eventDriver;
+    g_Wl.allocator = allocator;
+    g_Wl.eventDriver = eventDriver;
     return PAL_RESULT_SUCCESS;
 
     cleanup:
-        palFreeLibrary(g_Wayland.libwayland);
-        palFreeLibrary(g_Wayland.xkbcommon);
-        palFreeLibrary(g_Wayland.libcursor);
-        palFreeLibrary(g_Wayland.libegl);
+        palFreeLibrary(g_Wl.libwayland);
+        palFreeLibrary(g_Wl.xkbcommon);
+        palFreeLibrary(g_Wl.libcursor);
+        palFreeLibrary(g_Wl.libegl);
 
-        if (g_Wayland.monitorData) {
-            palFree(allocator, g_Wayland.monitorData);
+        if (g_Wl.monitorData) {
+            palFree(allocator, g_Wl.monitorData);
         }
 
-        if (g_Wayland.windowData) {
-            palFree(allocator, g_Wayland.windowData);
+        if (g_Wl.windowData) {
+            palFree(allocator, g_Wl.windowData);
         }
 
-        memset(&g_Wayland, 0, sizeof(Wayland));
+        memset(&g_Wl, 0, sizeof(Wayland));
         return result;
 }
 
 void waylandShutdownVideo(void)
 {
-    if (g_Wayland.state) {
-        g_Wayland.xkbStateUnref(g_Wayland.state);
-        g_Wayland.xkbKeymapUnref(g_Wayland.keymap);
+    if (g_Wl.state) {
+        g_Wl.xkbStateUnref(g_Wl.state);
+        g_Wl.xkbKeymapUnref(g_Wl.keymap);
     }
 
-    g_Wayland.xkbContextUnref(g_Wayland.inputContext);
-    if (g_Wayland.compositor) {
+    g_Wl.xkbContextUnref(g_Wl.inputContext);
+    if (g_Wl.compositor) {
         // if compositor was found, all this will be as well since we check all at init
-        g_Wayland.proxyDestroy((struct wl_proxy*)g_Wayland.compositor);
-        g_Wayland.proxyDestroy((struct wl_proxy*)g_Wayland.xdgBase);
-        g_Wayland.proxyDestroy((struct wl_proxy*)g_Wayland.shm);
-        g_Wayland.proxyDestroy((struct wl_proxy*)g_Wayland.seat);
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.compositor);
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.xdgBase);
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.shm);
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.seat);
     }
 
-    if (!g_Wayland.display) {
+    if (!g_Wl.display) {
         // opened by PAL
-        g_Wayland.displayDisconnect(g_Wayland.display);
+        g_Wl.displayDisconnect(g_Wl.display);
 
-        palFreeLibrary(g_Wayland.libcursor);
-        palFreeLibrary(g_Wayland.xkbcommon);
-        palFreeLibrary(g_Wayland.libegl);
-        palFreeLibrary(g_Wayland.libwayland);
+        palFreeLibrary(g_Wl.libcursor);
+        palFreeLibrary(g_Wl.xkbcommon);
+        palFreeLibrary(g_Wl.libegl);
+        palFreeLibrary(g_Wl.libwayland);
     }
 
-    palFree(g_Wayland.allocator, g_Wayland.windowData);
-    palFree(g_Wayland.allocator, g_Wayland.monitorData);
+    palFree(g_Wl.allocator, g_Wl.windowData);
+    palFree(g_Wl.allocator, g_Wl.monitorData);
     unloadVideoEGL();
 
-    memset(&g_Wayland, 0, sizeof(Wayland));
+    memset(&g_Wl, 0, sizeof(Wayland));
 }
 
 void waylandUpdateVideo(void)
@@ -729,15 +729,15 @@ void waylandUpdateVideo(void)
 
 #if PAL_HAS_EVENT_MODULE
     // key repeats. we only do this if the user wants key repeat events
-    if (g_WaylandKeyboard.repeatKey != 0 && g_Wayland.eventDriver) {
-        PalEventDriver* driver = g_Wayland.eventDriver;
+    if (g_WaylandKeyboard.repeatKey != 0 && g_Wl.eventDriver) {
+        PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_KEYREPEAT);
         if (mode != PAL_DISPATCH_MODE_NONE) {
             // get now time and check with the key repeat time
             uint64_t now = getCurrentTime();
             if (now >= g_WaylandKeyboard.timer) {
-                PalWindow* window = (PalWindow*)g_Wayland.keyboardSurface;
+                PalWindow* window = (PalWindow*)g_Wl.keyboardSurface;
                 PalKeycode key = (PalKeycode)g_WaylandKeyboard.repeatKey;
                 PalScancode scancode = (PalScancode)g_WaylandKeyboard.repeatScancode;
 
@@ -752,23 +752,23 @@ void waylandUpdateVideo(void)
     }
 #endif // PAL_HAS_EVENT_MODULE
 
-    while (g_Wayland.prepareRead(g_Wayland.display) != 0) {
-        g_Wayland.dispatchPending(g_Wayland.display);
+    while (g_Wl.prepareRead(g_Wl.display) != 0) {
+        g_Wl.dispatchPending(g_Wl.display);
     }
 
-    g_Wayland.displayFlush(g_Wayland.display);
-    int fd = g_Wayland.displayGetFd(g_Wayland.display);
+    g_Wl.displayFlush(g_Wl.display);
+    int fd = g_Wl.displayGetFd(g_Wl.display);
     struct pollfd pfd = {fd, POLLIN, 0};
     if (poll(&pfd, 1, 0) > 0) {
         // there are events ready to be read
-        g_Wayland.readEvents(g_Wayland.display);
+        g_Wl.readEvents(g_Wl.display);
 
     } else {
-        g_Wayland.cancelRead(g_Wayland.display);
+        g_Wl.cancelRead(g_Wl.display);
     }
 
     // dispatch events that were read
-    g_Wayland.dispatchPending(g_Wayland.display);
+    g_Wl.dispatchPending(g_Wl.display);
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND

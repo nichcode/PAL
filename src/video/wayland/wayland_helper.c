@@ -94,7 +94,7 @@ struct wl_buffer* createShmBuffer(
         memset(data, 0xFF, size); // white
     }
 
-    pool = wlShmCreatePool(g_Wayland.shm, fd, (int32_t)size);
+    pool = wlShmCreatePool(g_Wl.shm, fd, (int32_t)size);
     if (!pool) {
         return nullptr;
     }
@@ -112,36 +112,36 @@ struct wl_buffer* createShmBuffer(
 
 MonitorData* getFreeMonitorData(void)
 {
-    for (uint32_t i = 0; i < g_Wayland.maxMonitorData; ++i) {
-        if (!g_Wayland.monitorData[i].used) {
-            g_Wayland.monitorData[i].used = PAL_TRUE;
-            return &g_Wayland.monitorData[i];
+    for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
+        if (!g_Wl.monitorData[i].used) {
+            g_Wl.monitorData[i].used = PAL_TRUE;
+            return &g_Wl.monitorData[i];
         }
     }
 
     // resize the data array
     MonitorData* data = nullptr;
-    uint32_t count = g_Wayland.maxMonitorData * 2; // double the size
-    uint32_t freeIndex = g_Wayland.maxMonitorData + 1;
-    data = palAllocate(g_Wayland.allocator, sizeof(MonitorData) * count, 0);
+    uint32_t count = g_Wl.maxMonitorData * 2; // double the size
+    uint32_t freeIndex = g_Wl.maxMonitorData + 1;
+    data = palAllocate(g_Wl.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
-        memcpy(data, g_Wayland.monitorData, g_Wayland.maxMonitorData * sizeof(MonitorData));
+        memcpy(data, g_Wl.monitorData, g_Wl.maxMonitorData * sizeof(MonitorData));
 
-        palFree(g_Wayland.allocator, g_Wayland.monitorData);
-        g_Wayland.monitorData = data;
-        g_Wayland.maxWindowData = count;
+        palFree(g_Wl.allocator, g_Wl.monitorData);
+        g_Wl.monitorData = data;
+        g_Wl.maxWindowData = count;
 
-        g_Wayland.monitorData[freeIndex].used = PAL_TRUE;
-        return &g_Wayland.monitorData[freeIndex];
+        g_Wl.monitorData[freeIndex].used = PAL_TRUE;
+        return &g_Wl.monitorData[freeIndex];
     }
     return nullptr;
 }
 
 MonitorData* findMonitorData(PalMonitor* monitor)
 {
-    for (uint32_t i = 0; i < g_Wayland.maxMonitorData; ++i) {
-        if (g_Wayland.monitorData[i].used && g_Wayland.monitorData[i].monitor == monitor) {
-            return &g_Wayland.monitorData[i];
+    for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
+        if (g_Wl.monitorData[i].used && g_Wl.monitorData[i].monitor == monitor) {
+            return &g_Wl.monitorData[i];
         }
     }
     return nullptr;
@@ -149,45 +149,45 @@ MonitorData* findMonitorData(PalMonitor* monitor)
 
 void freeMonitorData(PalMonitor* monitor)
 {
-    for (uint32_t i = 0; i < g_Wayland.maxMonitorData; ++i) {
-        if (g_Wayland.monitorData[i].used && g_Wayland.monitorData[i].monitor == monitor) {
-            g_Wayland.monitorData[i].used = PAL_FALSE;
+    for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
+        if (g_Wl.monitorData[i].used && g_Wl.monitorData[i].monitor == monitor) {
+            g_Wl.monitorData[i].used = PAL_FALSE;
         }
     }
 }
 
 WindowData* getFreeWindowData(void)
 {
-    for (uint32_t i = 0; i < g_Wayland.maxWindowData; ++i) {
-        if (!g_Wayland.windowData[i].used) {
-            g_Wayland.windowData[i].used = PAL_TRUE;
-            return &g_Wayland.windowData[i];
+    for (uint32_t i = 0; i < g_Wl.maxWindowData; ++i) {
+        if (!g_Wl.windowData[i].used) {
+            g_Wl.windowData[i].used = PAL_TRUE;
+            return &g_Wl.windowData[i];
         }
     }
 
     // resize the data array
     WindowData* data = nullptr;
-    uint32_t count = g_Wayland.maxWindowData * 2; // double the size
-    uint32_t freeIndex = g_Wayland.maxWindowData + 1;
-    data = palAllocate(g_Wayland.allocator, sizeof(WindowData) * count, 0);
+    uint32_t count = g_Wl.maxWindowData * 2; // double the size
+    uint32_t freeIndex = g_Wl.maxWindowData + 1;
+    data = palAllocate(g_Wl.allocator, sizeof(WindowData) * count, 0);
     if (data) {
-        memcpy(data, g_Wayland.windowData, g_Wayland.maxWindowData * sizeof(WindowData));
+        memcpy(data, g_Wl.windowData, g_Wl.maxWindowData * sizeof(WindowData));
 
-        palFree(g_Wayland.allocator, g_Wayland.windowData);
-        g_Wayland.windowData = data;
-        g_Wayland.maxWindowData = count;
+        palFree(g_Wl.allocator, g_Wl.windowData);
+        g_Wl.windowData = data;
+        g_Wl.maxWindowData = count;
 
-        g_Wayland.windowData[freeIndex].used = PAL_TRUE;
-        return &g_Wayland.windowData[freeIndex];
+        g_Wl.windowData[freeIndex].used = PAL_TRUE;
+        return &g_Wl.windowData[freeIndex];
     }
     return nullptr;
 }
 
 WindowData* findWindowData(PalWindow* window)
 {
-    for (uint32_t i = 0; i < g_Wayland.maxWindowData; ++i) {
-        if (g_Wayland.windowData[i].used && g_Wayland.windowData[i].window == window) {
-            return &g_Wayland.windowData[i];
+    for (uint32_t i = 0; i < g_Wl.maxWindowData; ++i) {
+        if (g_Wl.windowData[i].used && g_Wl.windowData[i].window == window) {
+            return &g_Wl.windowData[i];
         }
     }
     return nullptr;
