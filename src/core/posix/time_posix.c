@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -21,13 +20,15 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include "core/platform.h"
 #include "pal2/core/time.h"
 
 #if PLATFORM_POSIX
 #include <time.h>
 
-#define FREQUENCY 1000000000LL
+#define FREQUENCY 1000000000ULL
 
 uint64_t platformGetPerformanceCounter(void)
 {

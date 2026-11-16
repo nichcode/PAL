@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -29,7 +28,8 @@
 #include <pthread.h>
 
 static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
-static pthread_key_t s_TLSID = 0;
+static pthread_key_t s_TLSID;
+static bool s_TLSCreated = false;
 
 static void destroyTLSData(void* data)
 {
@@ -41,8 +41,8 @@ static void destroyTLSData(void* data)
 
 static void createTLSID(void)
 {
-    if (pthread_key_create(&s_TLSID, destroyTLSData) != 0) {
-        return;
+    if (pthread_key_create(&s_TLSID, destroyTLSData) == 0) {
+        s_TLSCreated = true;
     }
 }
 
@@ -53,11 +53,17 @@ void platformCreateLogTLS(void)
 
 LogTLSData* platformGetLogTLSData(void)
 {
+    if (!s_TLSCreated) {
+        return nullptr;
+    }
     return pthread_getspecific(s_TLSID);
 }
 
 void platformSetLogTLSData(LogTLSData* data)
 {
+    if (!s_TLSCreated) {
+        return;
+    }
     pthread_setspecific(s_TLSID, data);
 }
 

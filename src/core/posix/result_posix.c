@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -21,6 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include "core/platform.h"
 #include "pal2/core/result.h"
 #include <string.h>
@@ -31,11 +32,24 @@ void platformFormatResult(
     PalResult result,
     char* buffer)
 {
+    buffer[0] = '\0';
+
     uint32_t code = palGetResultNativeCode(result);
     PalResultSource source = palGetResultSource(result);
 
     if (code != 0 && source == PAL_RESULT_SOURCE_POSIX) {
-        strerror_r((int)code, buffer, FORMAT_BUFFER_SIZE);
+#if defined(__GLIBC__) && defined(_GNU_SOURCE)
+        const char* msg = strerror_r((int)code, buffer, FORMAT_BUFFER_SIZE);
+        if (msg && msg != buffer) {
+            (void)strncpy(buffer, msg, FORMAT_BUFFER_SIZE - 1);
+            buffer[FORMAT_BUFFER_SIZE - 1] = '\0';
+        }
+#else
+        if (strerror_r((int)code, buffer, FORMAT_BUFFER_SIZE) != 0) {
+            buffer[0] = '\0';
+        }
+#endif
+        buffer[FORMAT_BUFFER_SIZE - 1] = '\0';
     }
 }
 
