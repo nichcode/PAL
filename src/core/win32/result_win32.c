@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -35,15 +34,17 @@ void platformFormatResult(
     PalResult result,
     char* buffer)
 {
+    buffer[0] = '\0';
+
     PalResultSource source = palGetResultSource(result);
-    if (source != PAL_RESULT_SOURCE_WIN32 ||
+    if (source != PAL_RESULT_SOURCE_WIN32 &&
         source != PAL_RESULT_SOURCE_D3D12) {
         return;
     }
 
     uint32_t code = palGetResultNativeCode(result);
     if (code != 0) {
-        FormatMessageA(
+        DWORD len = FormatMessageA(
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
             nullptr,
             code,
@@ -51,6 +52,10 @@ void platformFormatResult(
             buffer,
             FORMAT_BUFFER_SIZE,
             nullptr);
+
+        while (len > 0 && (buffer[len - 1] == '\r' || buffer[len - 1] == '\n')) {
+            buffer[--len] = '\0';
+        }
     }
 }
 

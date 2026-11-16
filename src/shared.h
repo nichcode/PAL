@@ -23,11 +23,11 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
 #define PLATFORM_POSIX 1
 #else
 #define PLATFORM_POSIX 0
-#endif // __linux__
+#endif // POSIX detection
 
 #include <stdarg.h>
 #include <stdint.h>

@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -32,9 +31,9 @@
 
 #include <windows.h>
 
-static volatile LONG s_TLSID = 0;
+static volatile LONG s_TLSID = (LONG)FLS_OUT_OF_INDEXES;
 
-static void destroyTLSData(void* data)
+static void WINAPI destroyTLSData(void* data)
 {
     LogTLSData* tlsData = data;
     if (tlsData) {
@@ -44,26 +43,42 @@ static void destroyTLSData(void* data)
 
 void platformCreateLogTLS(void)
 {
-    /** Create the TLS using atomic operations to avoid thread race.*/
-    DWORD TLSIndex = FlsAlloc(destroyTLSData);
-    LONG prev = InterlockedCompareExchange(
-        (volatile LONG*)&s_TLSID,
-        (LONG)TLSIndex,
-        0);
+    if (s_TLSID != (LONG)FLS_OUT_OF_INDEXES) {
+        return;
+    }
 
-    if (prev != 0) {
+    /** Create the TLS using atomic operations to avoid thread race. */
+    DWORD TLSIndex = FlsAlloc(destroyTLSData);
+    if (TLSIndex == FLS_OUT_OF_INDEXES) {
+        return;
+    }
+
+    LONG prev = InterlockedCompareExchange(
+        &s_TLSID,
+        (LONG)TLSIndex,
+        (LONG)FLS_OUT_OF_INDEXES);
+
+    if (prev != (LONG)FLS_OUT_OF_INDEXES) {
         FlsFree(TLSIndex);
     }
 }
 
 LogTLSData* platformGetLogTLSData(void)
 {
-    return FlsGetValue((DWORD)s_TLSID);
+    DWORD index = (DWORD)s_TLSID;
+    if (index == FLS_OUT_OF_INDEXES) {
+        return nullptr;
+    }
+    return FlsGetValue(index);
 }
 
 void platformSetLogTLSData(LogTLSData* data)
 {
-    FlsSetValue((DWORD)s_TLSID, data);
+    DWORD index = (DWORD)s_TLSID;
+    if (index == FLS_OUT_OF_INDEXES) {
+        return;
+    }
+    FlsSetValue(index, data);
 }
 
 #endif // _WIN32

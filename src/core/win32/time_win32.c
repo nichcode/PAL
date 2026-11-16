@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -31,14 +30,14 @@
 
 #include <windows.h>
 
-uint64_t PAL_CALL platformGetPerformanceCounter(void)
+uint64_t platformGetPerformanceCounter(void)
 {
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return (uint64_t)counter.QuadPart;
 }
 
-uint64_t PAL_CALL platformGetPerformanceFrequency(void)
+uint64_t platformGetPerformanceFrequency(void)
 {
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);

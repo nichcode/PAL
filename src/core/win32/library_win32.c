@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -42,7 +41,22 @@ typedef union Symbol
 
 PalLibrary* platformLoadLibrary(const char* path)
 {
-    return (PalLibrary*)LoadLibraryA(path);
+    if (!path) {
+        return (PalLibrary*)LoadLibraryW(nullptr);
+    }
+
+    int len = MultiByteToWideChar(CP_UTF8, 0, path, -1, nullptr, 0);
+    if (len <= 0) {
+        return nullptr;
+    }
+
+    wchar_t widePath[MAX_PATH];
+    if (len > MAX_PATH) {
+        return nullptr;
+    }
+
+    MultiByteToWideChar(CP_UTF8, 0, path, -1, widePath, len);
+    return (PalLibrary*)LoadLibraryW(widePath);
 }
 
 PalLibrarySymbol platformGetSymbol(
@@ -56,7 +70,7 @@ PalLibrarySymbol platformGetSymbol(
 
 void* platformGetGlobal(PalLibrary* library, const char* name)
 {
-    // TODO:
+    return (void*)GetProcAddress((HMODULE)library, name);
 }
 
 void platformFreeLibrary(PalLibrary* library)
