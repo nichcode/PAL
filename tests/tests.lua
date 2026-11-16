@@ -21,25 +21,33 @@ for _, file in ipairs(coreFiles) do
 end
 
 
-local eventFiles = os.matchfiles("src/event/*.c")
-for _, file in ipairs(eventFiles) do
-    addTest(file)
+if (PAL_BUILD_EVENT_MODULE) then
+    local eventFiles = os.matchfiles("src/event/*.c")
+    for _, file in ipairs(eventFiles) do
+        addTest(file)
+    end
 end
 
 
-local systemFiles = os.matchfiles("src/system/*.c")
-for _, file in ipairs(systemFiles) do
-    addTest(file)
+if (PAL_BUILD_SYSTEM_MODULE) then
+    local systemFiles = os.matchfiles("src/system/*.c")
+    for _, file in ipairs(systemFiles) do
+        addTest(file)
+    end
 end
 
 
-local threadFiles = os.matchfiles("src/thread/*.c")
-for _, file in ipairs(threadFiles) do
-    addTest(file)
+if (PAL_BUILD_THREAD_MODULE) then
+    local threadFiles = os.matchfiles("src/thread/*.c")
+    for _, file in ipairs(threadFiles) do
+        addTest(file)
+    end
 end
 
 
-local videoFiles = os.matchfiles("src/video/*.c")
-for _, file in ipairs(videoFiles) do
-    addTest(file)
+if (PAL_BUILD_VIDEO_MODULE) then
+    local videoFiles = os.matchfiles("src/video/*.c")
+    for _, file in ipairs(videoFiles) do
+        addTest(file)
+    end
 end

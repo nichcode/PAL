@@ -124,6 +124,7 @@ int main(int argc, char** argv)
         }
     }
 
+#if PAL_HAS_EVENT_MODULE
     if (dumps & ABI_DUMP_EVENT) {
         status = eventStructs();
         if (status) {
@@ -136,7 +137,9 @@ int main(int argc, char** argv)
             }
         }
     }
+#endif // PAL_HAS_EVENT_MODULE
 
+#if PAL_HAS_THREAD_MODULE
     if (dumps & ABI_DUMP_THREAD) {
         status = threadStructs();
         if (status) {
@@ -149,7 +152,9 @@ int main(int argc, char** argv)
             }
         }
     }
+#endif // PAL_HAS_THREAD_MODULE
 
+#if PAL_HAS_SYSTEM_MODULE
     if (dumps & ABI_DUMP_SYSTEM) {
         status = systemStructs();
         if (status) {
@@ -162,7 +167,9 @@ int main(int argc, char** argv)
             }
         }
     }
+#endif // PAL_HAS_SYSTEM_MODULE
 
+#if PAL_HAS_VIDEO_MODULE
     if (dumps & ABI_DUMP_VIDEO) {
         status = videoStructs();
         if (status) {
@@ -175,7 +182,9 @@ int main(int argc, char** argv)
             }
         }
     }
+#endif // PAL_HAS_VIDEO_MODULE
 
+#if PAL_HAS_OPENGL_MODULE
     if (dumps & ABI_DUMP_OPENGL) {
         if (status) {
             status = openglStructs();
@@ -188,7 +197,9 @@ int main(int argc, char** argv)
             }
         }
     }
+#endif // PAL_HAS_OPENGL_MODULE
 
+#if PAL_HAS_GRAPHICS_MODULE
     if (dumps & ABI_DUMP_GRAPHICS) {
         status = graphicsStructs();
         if (status) {
@@ -201,6 +212,7 @@ int main(int argc, char** argv)
             }
         }
     }
+#endif // PAL_HAS_GRAPHICS_MODULE
 
     if (dumpVersion) {
         palLog(nullptr, "%s %s", LOG_NAME, VERSION);
