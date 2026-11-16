@@ -38,6 +38,30 @@ PalResult wlSetMonitorMode(PalMonitor*, const PalMonitorMode*);
 PalResult wlValidateMonitorMode(PalMonitor*, const PalMonitorMode*);
 PalResult wlSetMonitorOrientation(PalMonitor*, PalOrientation);
 
+PalResult wlCreateWindow(const PalWindowCreateInfo*, PalWindow**);
+void wlDestroyWindow(PalWindow*);
+void wlMaximizeWindow(PalWindow*);
+void wlMinimizeWindow(PalWindow*);
+void wlRestoreWindow(PalWindow*);
+void wlShowWindow(PalWindow*);
+void wlHideWindow(PalWindow*);
+void wlFlashWindow(PalWindow*, const PalFlashInfo*);
+void wlGetWindowStyle(PalWindow*, PalWindowStyle*);
+void wlGetWindowMonitor(PalWindow*, PalMonitor**);
+void wlGetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
+void wlGetWindowPos(PalWindow*, int32_t*, int32_t*);
+void wlGetWindowSize(PalWindow*, uint32_t*, uint32_t*);
+void wlGetWindowState(PalWindow*, PalWindowState*);
+PalBool wlIsWindowVisible(PalWindow*);
+PalWindow* wlGetFocusWindow();
+void wlGetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
+void wlSetWindowOpacity(PalWindow*, float);
+void wlSetWindowStyle(PalWindow*, PalWindowStyle);
+void wlSetWindowTitle(PalWindow*, const char*);
+void wlSetWindowPos(PalWindow*, int32_t, int32_t);
+void wlSetWindowSize(PalWindow*, uint32_t, uint32_t);
+void wlSetFocusWindow(PalWindow*);
+
 PalResult wlCreateIcon(const PalIconCreateInfo*, PalIcon**);
 void wlDestroyIcon(PalIcon*);
 void wlSetWindowIcon(PalWindow*, PalIcon*);
@@ -63,6 +87,30 @@ const VideoBackend g_WaylandBackend = {
     .setMonitorMode = wlSetMonitorMode,
     .validateMonitorMode = wlValidateMonitorMode,
     .setMonitorOrientation = wlSetMonitorOrientation,
+
+    .createWindow = wlCreateWindow,
+    .destroyWindow = wlDestroyWindow,
+    .maximizeWindow = wlMaximizeWindow,
+    .minimizeWindow = wlMinimizeWindow,
+    .restoreWindow = wlRestoreWindow,
+    .showWindow = wlShowWindow,
+    .hideWindow = wlHideWindow,
+    .flashWindow = wlFlashWindow,
+    .getWindowStyle = wlGetWindowStyle,
+    .getWindowMonitor = wlGetWindowMonitor,
+    .getWindowTitle = wlGetWindowTitle,
+    .getWindowPos = wlGetWindowPos,
+    .getWindowSize = wlGetWindowSize,
+    .getWindowState = wlGetWindowState,
+    .isWindowVisible = wlIsWindowVisible,
+    .getFocusWindow = wlGetFocusWindow,
+    .getWindowHandleInfo = wlGetWindowHandleInfo,
+    .setWindowOpacity = wlSetWindowOpacity,
+    .setWindowStyle = wlSetWindowStyle,
+    .setWindowTitle = wlSetWindowTitle,
+    .setWindowPos = wlSetWindowPos,
+    .setWindowSize = wlSetWindowSize,
+    .setFocusWindow = wlSetFocusWindow,
 
     .createIcon = wlCreateIcon,
     .destroyIcon = wlDestroyIcon,

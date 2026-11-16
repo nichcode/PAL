@@ -139,6 +139,114 @@ typedef PalResult (*SetMonitorOrientationFn)(
 
 
 /* =========================================================================
+ * Window
+ * ========================================================================= */
+
+/** This function has the same semantics and rules as palCreateWindow(). */
+typedef PalResult (*CreateWindowFn)(
+    const PalWindowCreateInfo* info, 
+    PalWindow** outWindow);
+
+/** This function has the same semantics and rules as palDestroyWindow(). */
+typedef void (*DestroyWindowFn)(PalWindow* window);
+
+/** This function has the same semantics and rules as palMaximizeWindow(). */
+typedef void (*MaximizeWindowFn)(PalWindow* window);
+
+/** This function has the same semantics and rules as palMinimizeWindow(). */
+typedef void (*MinimizeWindowFn)(PalWindow* window);
+
+/** This function has the same semantics and rules as palRestoreWindow(). */
+typedef void (*RestoreWindowFn)(PalWindow* window);
+
+/** This function has the same semantics and rules as palShowWindow(). */
+typedef void (*ShowWindowFn)(PalWindow* window);
+
+/** This function has the same semantics and rules as palHideWindow(). */
+typedef void (*HideWindowFn)(PalWindow* window);
+
+/** This function has the same semantics and rules as palFlashWindow(). */
+typedef void (*FlashWindowFn)(
+    PalWindow* window, 
+    const PalFlashInfo* info);
+
+/** This function has the same semantics and rules as palGetWindowStyle(). */
+typedef void (*GetWindowStyleFn)(
+    PalWindow* window, 
+    PalWindowStyle* style);
+
+/** This function has the same semantics and rules as palGetWindowMonitor(). */
+typedef void (*GetWindowMonitorFn)(
+    PalWindow* window, 
+    PalMonitor** outMonitor);
+
+/** This function has the same semantics and rules as palGetWindowTitle(). */
+typedef void (*GetWindowTitleFn)(
+    PalWindow* window, 
+    uint64_t bufferSize, 
+    uint64_t* outSize, 
+    char* outBuffer);
+
+/** This function has the same semantics and rules as palGetWindowPos(). */
+typedef void (*GetWindowPosFn)(
+    PalWindow* window, 
+    int32_t* x, 
+    int32_t* y);
+
+/** This function has the same semantics and rules as palGetWindowSize(). */
+typedef void (*GetWindowSizeFn)(
+    PalWindow* window, 
+    uint32_t* width, 
+    uint32_t* height);
+
+/** This function has the same semantics and rules as palGetWindowState(). */
+typedef void (*GetWindowStateFn)(
+    PalWindow* window, 
+    PalWindowState* state);
+
+/** This function has the same semantics and rules as palIsWindowVisible(). */
+typedef PalBool (*IsWindowVisibleFn)(PalWindow* window);
+
+/** This function has the same semantics and rules as palGetFocusWindow(). */
+typedef PalWindow* (*GetFocusWindowFn)(void);
+
+/** This function has the same semantics and rules as palGetWindowHandleInfo(). */
+typedef void (*GetWindowHandleInfoFn)(
+    PalWindow* window, 
+    PalWindowHandleInfo* info);
+
+/** This function has the same semantics and rules as palSetWindowOpacity(). */
+typedef void (*SetWindowOpacityFn)(
+    PalWindow* window, 
+    float opacity);
+
+/** This function has the same semantics and rules as palSetWindowStyle(). */
+typedef void (*SetWindowStyleFn)(
+    PalWindow* window, 
+    PalWindowStyle style);
+
+/** This function has the same semantics and rules as palSetWindowTitle(). */
+typedef void (*SetWindowTitleFn)(
+    PalWindow* window, 
+    const char* title);
+
+/** This function has the same semantics and rules as palSetWindowPos(). */
+typedef void (*SetWindowPosFn)(
+    PalWindow* window, 
+    int32_t x, 
+    int32_t y);
+
+/** This function has the same semantics and rules as palSetWindowSize(). */
+typedef void (*SetWindowSizeFn)(
+    PalWindow* window, 
+    uint32_t width, 
+    uint32_t height);
+
+/** This function has the same semantics and rules as palSetFocusWindow(). */
+typedef void (*SetFocusWindowFn)(PalWindow* window);
+
+
+/* =========================================================================
  * Icon
  * ========================================================================= */
 
@@ -214,6 +322,30 @@ typedef struct VideoBackend {
     ValidateMonitorModeFn validateMonitorMode;
     SetMonitorOrientationFn setMonitorOrientation;
 
+    CreateWindowFn createWindow;
+    DestroyWindowFn destroyWindow;
+    MaximizeWindowFn maximizeWindow;
+    MinimizeWindowFn minimizeWindow;
+    RestoreWindowFn restoreWindow;
+    ShowWindowFn showWindow;
+    HideWindowFn hideWindow;
+    FlashWindowFn flashWindow;
+    GetWindowStyleFn getWindowStyle;
+    GetWindowMonitorFn getWindowMonitor;
+    GetWindowTitleFn getWindowTitle;
+    GetWindowPosFn getWindowPos;
+    GetWindowSizeFn getWindowSize;
+    GetWindowStateFn getWindowState;
+    IsWindowVisibleFn isWindowVisible;
+    GetFocusWindowFn getFocusWindow;
+    GetWindowHandleInfoFn getWindowHandleInfo;
+    SetWindowOpacityFn setWindowOpacity;
+    SetWindowStyleFn setWindowStyle;
+    SetWindowTitleFn setWindowTitle;
+    SetWindowPosFn setWindowPos;
+    SetWindowSizeFn setWindowSize;
+    SetFocusWindowFn setFocusWindow;
+
     CreateIconFn createIcon;
     DestroyIconFn destroyIcon;
     SetWindowIconFn setWindowIcon;
@@ -226,6 +358,7 @@ typedef struct VideoBackend {
     SetCursorPosFn setCursorPos;
     SetWindowCursorFn setWindowCursor;
 } VideoBackend;
+
 
 extern const VideoBackend* g_VideoBackend; /**< Active video backend. */
 extern Keyboard g_Keyboard;

@@ -23,6 +23,58 @@
 
 #include "platform.h"
 #include "pal2/video/monitor.h"
+#include <stdlib.h>
+
+/* =========================================================================
+ * Helper
+ * ========================================================================= */
+
+static int compareModes(
+    const void* a,
+    const void* b)
+{
+    const PalMonitorMode* mode1 = (const PalMonitorMode*)a;
+    const PalMonitorMode* mode2 = (const PalMonitorMode*)b;
+
+    if (mode1->width > mode2->width) {
+        return -1;
+    }
+
+    if (mode1->width < mode2->width) {
+        return 1;
+    }
+
+    if (mode1->height > mode2->height) {
+        return -1;
+    }
+
+    if (mode1->height < mode2->height) {
+        return 1;
+    }
+
+    if (mode1->refreshRate > mode2->refreshRate) {
+        return -1;
+    }
+
+    if (mode1->refreshRate < mode2->refreshRate) {
+        return 1;
+    }
+
+    if (mode1->bpp > mode2->bpp) {
+        return -1;
+    }
+
+    if (mode1->bpp < mode2->bpp) {
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/* =========================================================================
+ * API
+ * ========================================================================= */
 
 PalResult PAL_CALL palEnumerateMonitors(
     uint32_t* count,
@@ -62,6 +114,9 @@ void PAL_CALL palEnumerateMonitorModes(
     ASSERT(modes == nullptr || *count > 0, "modes parameter is not nullptr but *count is 0");
 
     g_VideoBackend->enumerateMonitorModes(monitor, count, modes);
+    if (modes) {
+        qsort(modes, *count, sizeof(PalMonitorMode), compareModes);
+    }
 }
 
 void PAL_CALL palGetCurrentMonitorMode(
