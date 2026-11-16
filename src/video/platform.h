@@ -80,6 +80,63 @@ typedef void (*ShutdownVideoFn)(void);
 */
 typedef void (*UpdateVideoFn)(void);
 
+typedef struct Keyboard {
+    PalBool scancodeState[PAL_SCANCODE_COUNT];
+    PalBool keycodeState[PAL_KEYCODE_COUNT];
+} Keyboard;
+
+typedef struct Mouse {
+    PalBool state[PAL_MOUSE_BUTTON_COUNT];
+    int32_t dx;
+    int32_t dy;
+    int32_t WheelX;
+    int32_t WheelY;
+} Mouse;
+
+
+/* =========================================================================
+ * Monitor
+ * ========================================================================= */
+
+/** This function has the same semantics and rules as palEnumerateMonitors(). */
+typedef PalResult (*EnumerateMonitorsFn)(
+    uint32_t* count,
+    PalMonitor** monitors);
+
+/** This function has the same semantics and rules as palGetPrimaryMonitor(). */
+typedef void (*GetPrimaryMonitorFn)(PalMonitor** monitor);
+
+/** This function has the same semantics and rules as palGetMonitorInfo(). */
+typedef void (*GetMonitorInfoFn)(
+    PalMonitor* monitor,
+    PalMonitorInfo* info);
+
+/** This function has the same semantics and rules as palEnumerateMonitorModes(). */
+typedef void (*EnumerateMonitorModesFn)(
+    PalMonitor* monitor,
+    uint32_t* count,
+    PalMonitorMode* modes);
+
+/** This function has the same semantics and rules as palGetCurrentMonitorMode(). */
+typedef void (*GetCurrentMonitorModeFn)(
+    PalMonitor* monitor,
+    PalMonitorMode* mode);
+
+/** This function has the same semantics and rules as palSetMonitorMode(). */
+typedef PalResult (*SetMonitorModeFn)(
+    PalMonitor* monitor,
+    const PalMonitorMode* mode);
+
+/** This function has the same semantics and rules as palValidateMonitorMode(). */
+typedef PalResult (*ValidateMonitorModeFn)(
+    PalMonitor* monitor,
+    const PalMonitorMode* mode);
+
+/** This function has the same semantics and rules as palSetMonitorOrientation(). */
+typedef PalResult (*SetMonitorOrientationFn)(
+    PalMonitor* monitor,
+    PalOrientation orientation);
+
 
 /* =========================================================================
  * Icon
@@ -97,19 +154,6 @@ typedef void (*DestroyIconFn)(PalIcon* icon);
 typedef void (*SetWindowIconFn)(
     PalWindow* window,
     PalIcon* icon);
-
-typedef struct Keyboard {
-    PalBool scancodeState[PAL_SCANCODE_COUNT];
-    PalBool keycodeState[PAL_KEYCODE_COUNT];
-} Keyboard;
-
-typedef struct Mouse {
-    PalBool state[PAL_MOUSE_BUTTON_COUNT];
-    int32_t dx;
-    int32_t dy;
-    int32_t WheelX;
-    int32_t WheelY;
-} Mouse;
 
 
 /* =========================================================================
@@ -161,6 +205,15 @@ typedef struct VideoBackend {
     InitVideoFn init;
     ShutdownVideoFn shutdown;
     UpdateVideoFn update;
+    EnumerateMonitorsFn enumerateMonitors;
+    GetPrimaryMonitorFn getPrimaryMonitor;
+    GetMonitorInfoFn getMonitorInfo;
+    EnumerateMonitorModesFn enumerateMonitorModes;
+    GetCurrentMonitorModeFn getCurrentMonitorMode;
+    SetMonitorModeFn setMonitorMode;
+    ValidateMonitorModeFn validateMonitorMode;
+    SetMonitorOrientationFn setMonitorOrientation;
+
     CreateIconFn createIcon;
     DestroyIconFn destroyIcon;
     SetWindowIconFn setWindowIcon;

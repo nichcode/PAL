@@ -552,7 +552,7 @@ struct wl_registry_listener s_RegistryListener = {
  * API
  * ========================================================================= */
 
-PalVideoDriver* waylandGetVideoDriver(void)
+PalVideoDriver* wlGetVideoDriver(void)
 {
     if (s_WaylandDriver.features != 0) {
         return &s_WaylandDriver;
@@ -581,7 +581,7 @@ PalVideoDriver* waylandGetVideoDriver(void)
     return &s_WaylandDriver;
 }
 
-PalResult waylandInitVideo(
+PalResult wlInitVideo(
     const PalAllocator* allocator,
     struct PalEventDriver* eventDriver,
     const void* preferredInstance,
@@ -688,7 +688,7 @@ PalResult waylandInitVideo(
         return result;
 }
 
-void waylandShutdownVideo(void)
+void wlShutdownVideo(void)
 {
     if (g_Wl.state) {
         g_Wl.xkbStateUnref(g_Wl.state);
@@ -721,7 +721,7 @@ void waylandShutdownVideo(void)
     memset(&g_Wl, 0, sizeof(Wayland));
 }
 
-void waylandUpdateVideo(void)
+void wlUpdateVideo(void)
 {
     // flush pending requests
     g_WlMouse.tmpScrollX = 0;

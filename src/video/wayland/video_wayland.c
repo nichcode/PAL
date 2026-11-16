@@ -25,10 +25,19 @@
 
 #if PAL_HAS_WAYLAND_BACKEND
 
-PalVideoDriver* waylandGetVideoDriver(void);
-PalResult waylandInitVideo(const PalAllocator*, struct PalEventDriver*, const void*, void**);
-void waylandShutdownVideo(void);
-void waylandUpdateVideo(void);
+PalVideoDriver* wlGetVideoDriver(void);
+PalResult wlInitVideo(const PalAllocator*, struct PalEventDriver*, const void*, void**);
+void wlShutdownVideo(void);
+void wlUpdateVideo(void);
+PalResult wlEnumerateMonitors(uint32_t*, PalMonitor**);
+void wlGetPrimaryMonitor(PalMonitor**);
+void wlGetMonitorInfo(PalMonitor*, PalMonitorInfo*);
+void wlEnumerateMonitorModes(PalMonitor*, uint32_t*, PalMonitorMode*);
+void wlGetCurrentMonitorMode(PalMonitor*, PalMonitorMode*);
+PalResult wlSetMonitorMode(PalMonitor*, const PalMonitorMode*);
+PalResult wlValidateMonitorMode(PalMonitor*, const PalMonitorMode*);
+PalResult wlSetMonitorOrientation(PalMonitor*, PalOrientation);
+
 PalResult wlCreateIcon(const PalIconCreateInfo*, PalIcon**);
 void wlDestroyIcon(PalIcon*);
 void wlSetWindowIcon(PalWindow*, PalIcon*);
@@ -42,10 +51,19 @@ void wlSetCursorPos(PalWindow*, int32_t, int32_t);
 void wlSetWindowCursor(PalWindow*, PalCursor*);
 
 const VideoBackend g_WaylandBackend = {
-    .getDriver = waylandGetVideoDriver,
-    .init = waylandInitVideo,
-    .shutdown = waylandUpdateVideo,
-    .update = waylandUpdateVideo,
+    .getDriver = wlGetVideoDriver,
+    .init = wlInitVideo,
+    .shutdown = wlUpdateVideo,
+    .update = wlUpdateVideo,
+    .enumerateMonitors = wlEnumerateMonitors,
+    .getPrimaryMonitor = wlGetPrimaryMonitor,
+    .getMonitorInfo = wlGetMonitorInfo,
+    .enumerateMonitorModes = wlEnumerateMonitorModes,
+    .getCurrentMonitorMode = wlGetCurrentMonitorMode,
+    .setMonitorMode = wlSetMonitorMode,
+    .validateMonitorMode = wlValidateMonitorMode,
+    .setMonitorOrientation = wlSetMonitorOrientation,
+
     .createIcon = wlCreateIcon,
     .destroyIcon = wlDestroyIcon,
     .setWindowIcon = wlSetWindowIcon,
