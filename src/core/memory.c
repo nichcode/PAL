@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -32,16 +31,37 @@ void* PAL_CALL palAllocate(
 {
     uint64_t align = alignment;
     if (align == 0) {
-        /** The implementation-defined default for the default allocator.*/
+        /** The implementation-defined default for the default allocator. */
         align = 16;
+    }
+
+    if ((align & (align - 1)) != 0) {
+        return nullptr;
     }
 
     if (allocator) {
         return allocator->allocate(allocator->userData, size, align);
     }
 
-    uint64_t totalSize = (size + align - 1) * sizeof(void*);
-    void* block = malloc(totalSize);
+    if (size == 0) {
+        size = 1;
+    }
+
+    if (align < sizeof(void*)) {
+        align = sizeof(void*);
+    }
+
+    uint64_t overhead = (align - 1) + sizeof(void*);
+    if (size > UINT64_MAX - overhead) {
+        return nullptr;
+    }
+
+    uint64_t totalSize = size + overhead;
+    if (totalSize > SIZE_MAX) {
+        return nullptr;
+    }
+
+    void* block = malloc((size_t)totalSize);
     if (!block) {
         return nullptr;
     }
@@ -57,8 +77,7 @@ void PAL_CALL palFree(
     const PalAllocator* allocator,
     void* ptr)
 {
-    /** explicit behavior. the free function does not expect nullptr 
-     * memory pointers*/
+    /** Explicit behavior: the free function does not expect nullptr memory pointers. */
     if (ptr == nullptr) {
         return;
     }

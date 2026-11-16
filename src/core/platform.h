@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -58,7 +57,6 @@
 typedef struct LogTLSData
 {
     char tmp[PAL_LOG_MSG_SIZE];
-    char buffer[PAL_LOG_MSG_SIZE];
     bool isLogging;
 } LogTLSData;
 
@@ -73,7 +71,7 @@ void platformCreateLogTLS(void);
  */
 LogTLSData* platformGetLogTLSData(void);
 
-/** Sets the Log TLS data for the TLS handle created from  platformCreateLogTLS().
+/** Sets the Log TLS data for the TLS handle created from platformCreateLogTLS().
  * The platform only stores the pointer. It must not allocate, copy or free the data.
  */
 void platformSetLogTLSData(LogTLSData* data);

@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -25,6 +24,7 @@
 #include "pal2/core/base.h"
 #include "pal2/core/log.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,11 +36,11 @@ void handleAssert(
 {
     palLog(
         nullptr, 
-        "ASSERTION:\n File:    %s\n Line:    %d\n Expr:    %s\n Message: %s",
-        file, 
+        "ASSERTION:\n File:    %s\n Line:    %" PRIu32 "\n Expr:    %s\n Message: %s",
+        file ? file : "unknown", 
         line, 
-        expr, 
-        msg);
+        expr ? expr : "unknown", 
+        msg ? msg : "");
 
     abort();
 }
@@ -51,13 +51,15 @@ void formatMsgArgs(
     char* buffer, 
     uint64_t bufferSize)
 {
+    if (!buffer || bufferSize == 0 || !fmt) {
+        return;
+    }
+
+    size_t maxLen = (bufferSize > SIZE_MAX) ? SIZE_MAX : (size_t)bufferSize;
+
     va_list argsListCopy;
     va_copy(argsListCopy, argsList);
-    (void)vsnprintf(nullptr, 0, fmt, argsListCopy);
-    va_end(argsListCopy);
-
-    va_copy(argsListCopy, argsList);
-    (void)vsnprintf(buffer, bufferSize, fmt, argsListCopy);
+    (void)vsnprintf(buffer, maxLen, fmt, argsListCopy);
     va_end(argsListCopy);
 }
 

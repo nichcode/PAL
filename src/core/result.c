@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -92,7 +91,7 @@ static const char* resultCodeToDescription(PalResult result)
         return "Out of date";
     }
 
-    return nullptr;
+    return "";
 }
 
 static const char* resultSourceToString(PalResult result)
@@ -134,12 +133,9 @@ void PAL_CALL palFormatResult(
     const char* baseDescription = resultCodeToDescription(result);
     uint32_t nativeCode = palGetResultNativeCode(result);
 
-    const char* description = "\n";
+    const char* description = "";
     char tmp[FORMAT_BUFFER_SIZE];
     memset(tmp, 0, FORMAT_BUFFER_SIZE);
-
-    char formatted[FORMAT_BUFFER_SIZE * 2];
-    memset(formatted, 0, FORMAT_BUFFER_SIZE * 2);
 
     platformFormatResult(result, tmp);
     if (tmp[0] != 0) {
@@ -147,16 +143,13 @@ void PAL_CALL palFormatResult(
     }
 
     formatMsg(
-        formatted,
-        FORMAT_BUFFER_SIZE,
+        buffer,
+        bufferSize,
         "Source: %s\n PAL Code: %s\n Native Code: 0x%08X\n PAL Description: "
-        "%s\n Native "
-        "Description: %s",
+        "%s\n Native Description: %s",
         sourceString,
         baseString,
         nativeCode,
         baseDescription,
         description);
-
-    (void)strncpy(buffer, formatted, bufferSize);
 }

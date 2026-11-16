@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -23,6 +22,7 @@
 
 #include "platform.h"
 #include "pal2/core/memory.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -31,14 +31,24 @@ void PAL_CALL palLog(
     const char* fmt,
     ...)
 {
-    ASSERT(fmt != nullptr, "fmt parameter is null");
+    if (!fmt) {
+        return;
+    }
+
+    platformCreateLogTLS();
 
     LogTLSData* data = platformGetLogTLSData();
     if (!data) {
         data = palAllocate(nullptr, sizeof(LogTLSData), 0);
+        if (!data) {
+            return;
+        }
         memset(data, 0, sizeof(LogTLSData));
-        platformCreateLogTLS();
         platformSetLogTLSData(data);
+    }
+
+    if (data->isLogging) {
+        return;
     }
 
     va_list argPtr;
@@ -47,21 +57,12 @@ void PAL_CALL palLog(
     va_end(argPtr);
 
     if (logger && logger->callback) {
-        if (data->isLogging) {
-            return;
-        }
-
-        (void)memcpy(data->buffer, data->tmp, PAL_LOG_MSG_SIZE);
-        data->isLogging = PAL_TRUE;
-        platformSetLogTLSData(data);
-        logger->callback(logger->userData, data->buffer);
+        data->isLogging = true;
+        logger->callback(logger->userData, data->tmp);
+        data->isLogging = false;
 
     } else {
-        formatMsg(data->buffer, PAL_LOG_MSG_SIZE, "%s\n", data->tmp);
-        (void)fprintf(stdout, "%s", data->buffer);
+        (void)fprintf(stdout, "%s\n", data->tmp);
         (void)fflush(stdout);
     }
-
-    data->isLogging = PAL_FALSE;
-    platformSetLogTLSData(data);
 }

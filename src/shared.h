@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,7 +25,6 @@
 
 #ifdef __linux__
 #define PLATFORM_POSIX 1
-#define _POSIX_C_SOURCE 200112L
 #else
 #define PLATFORM_POSIX 0
 #endif // __linux__
@@ -34,31 +32,35 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#ifdef __clang__
-#if __has_feature(attribute_analyzer_noreturn)
-#define ATTR_NORETURN __attribute__((analyzer_noreturn))
-#endif // __has_feature
+#if defined(__cplusplus)
+    #define ATTR_NORETURN [[noreturn]]
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    #define ATTR_NORETURN _Noreturn
+#elif defined(__GNUC__) || defined(__clang__)
+    #define ATTR_NORETURN __attribute__((noreturn))
 #else
-#define ATTR_NORETURN
-#endif // __clang__
+    #define ATTR_NORETURN
+#endif
 
-void handleAssert(
+ATTR_NORETURN void handleAssert(
     const char* file, 
     uint32_t line, 
     const char* expr, 
-    const char* msg) ATTR_NORETURN;
+    const char* msg);
 
 #ifndef NDEBUG
-#define ASSERT(expr, msg) if (!(expr)) { \
-    handleAssert(__FILE__, __LINE__, #expr, msg); \
-}
+#define ASSERT(expr, msg) do { \
+    if (!(expr)) { \
+        handleAssert(__FILE__, __LINE__, #expr, msg); \
+    } \
+} while (0)
 #else
-    #define ASSERT(expr, msg) ((void)0)
+#define ASSERT(expr, msg) ((void)0)
 #endif // NDEBUG
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-#define ALIGN_UP(value, alignment)                                            \
-    (((value) + (alignment) - 1) & ~((alignment) - 1))
+#define ALIGN_UP(value, alignment) \
+    (((value) + ((alignment) - 1)) & ~(((value) - (value)) + ((alignment) - 1)))
 
 void formatMsgArgs(
     const char* fmt, 
