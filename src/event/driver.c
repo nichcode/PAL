@@ -32,7 +32,7 @@ struct PalEventDriver
     const PalAllocator* allocator;
     PalEventCallback callback;
     void* userData;
-    PalDispatchMode modes[PAL_DEFAULT_QUEUE_EVENT_COUNT];
+    PalDispatchMode modes[PAL_EVENT_TYPE_COUNT];
 };
 
 PalEventQueue* createDefaultQueue(const PalAllocator* allocator);
@@ -46,6 +46,10 @@ PalResult PAL_CALL palCreateEventDriver(
     PalEventDriver** eventDriver)
 {
     if (!info || !eventDriver) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
+    if (info->queue && (!info->queue->push || !info->queue->poll)) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -102,6 +106,7 @@ void PAL_CALL palSetEventDispatchMode(
     PalDispatchMode mode)
 {
     ASSERT(eventDriver != nullptr, "The specified event driver is null");
+    ASSERT(type < PAL_EVENT_TYPE_COUNT, "Invalid event type");
 
     eventDriver->modes[type] = mode;
 }
@@ -111,6 +116,7 @@ PalDispatchMode PAL_CALL palGetEventDispatchMode(
     PalEventType type)
 {
     ASSERT(eventDriver != nullptr, "The specified event driver is null");
+    ASSERT(type < PAL_EVENT_TYPE_COUNT, "Invalid event type");
 
     return eventDriver->modes[type];
 }
@@ -121,6 +127,7 @@ void PAL_CALL palPushEvent(
 {
     ASSERT(eventDriver != nullptr, "The specified event driver is null");
     ASSERT(event != nullptr, "The specified event is null");
+    ASSERT(event->type < PAL_EVENT_TYPE_COUNT, "Invalid event type");
     ASSERT(
         eventDriver->modes[event->type] != PAL_DISPATCH_MODE_NONE, 
         "There is no dispatch mode for the specified event");

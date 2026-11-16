@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -38,6 +37,11 @@ static void PAL_CALL eventPush(
 {
     PalEventQueue* eventQueue = queue;
     QueueData* data = eventQueue->userData;
+
+    if ((data->tail - data->head) >= PAL_DEFAULT_QUEUE_EVENT_COUNT) {
+        data->head++;
+    }
+
     data->data[data->tail++ % PAL_DEFAULT_QUEUE_EVENT_COUNT] = *event;
 }
 
