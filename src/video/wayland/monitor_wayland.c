@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -31,28 +30,32 @@ PalResult wlEnumerateMonitors(
     uint32_t* count,
     PalMonitor** monitors)
 {
-    if (monitors) {
-        uint32_t index = 0;
-        uint32_t maxCount = g_Wl.maxMonitorData;
-        for (uint32_t i = 0; i < maxCount && index < *count; i++) {
-            if (g_Wl.monitorData[i].used) {
-                // found a monitor
-                PalMonitor* monitor = g_Wl.monitorData[index].monitor;
-                monitors[index++] = monitor;
-            }
+    if (!monitors) {
+        *count = g_Wl.monitorCount;
+        return PAL_RESULT_SUCCESS;
+    }
+
+    uint32_t index = 0;
+    uint32_t maxCount = g_Wl.maxMonitorData;
+    for (uint32_t i = 0; i < maxCount && index < *count; i++) {
+        if (g_Wl.monitorData[i].used) {
+            monitors[index++] = g_Wl.monitorData[i].monitor;
         }
     }
 
-    if (!monitors) {
-        *count = g_Wl.monitorCount;
-    }
-
+    *count = index;
     return PAL_RESULT_SUCCESS;
 }
 
 void wlGetPrimaryMonitor(PalMonitor** monitor)
 {
-    (void)monitor;
+    *monitor = nullptr;
+    for (uint32_t i = 0; i < g_Wl.maxMonitorData; i++) {
+        if (g_Wl.monitorData[i].used) {
+            *monitor = g_Wl.monitorData[i].monitor;
+            return;
+        }
+    }
 }
 
 void wlGetMonitorInfo(
@@ -60,6 +63,10 @@ void wlGetMonitorInfo(
     PalMonitorInfo* info)
 {
     MonitorData* monitorData = findMonitorData(monitor);
+    if (!monitorData) {
+        return;
+    }
+
     info->dpi = monitorData->dpi;
     info->x = monitorData->x;
     info->y = monitorData->y;
@@ -78,12 +85,18 @@ void wlEnumerateMonitorModes(
     PalMonitorMode* modes)
 {
     MonitorData* monitorData = findMonitorData(monitor);
+    if (!monitorData) {
+        *count = 0;
+        return;
+    }
+
     if (modes && *count > 0) {
         PalMonitorMode* mode = &modes[0];
         mode->bpp = monitorData->mode.bpp;
         mode->width = monitorData->mode.width;
         mode->height = monitorData->mode.height;
         mode->refreshRate = monitorData->mode.refreshRate;
+        *count = 1;
     }
 
     if (!modes) {
@@ -95,8 +108,11 @@ void wlGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    // this is the same as the current mode
     MonitorData* monitorData = findMonitorData(monitor);
+    if (!monitorData) {
+        return;
+    }
+
     mode->bpp = monitorData->mode.bpp;
     mode->width = monitorData->mode.width;
     mode->height = monitorData->mode.height;

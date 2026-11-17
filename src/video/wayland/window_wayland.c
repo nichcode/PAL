@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -44,32 +43,31 @@
 
 static PalBool eglWlBackend(const int fbConfigIndex)
 {
-    EGLDisplay display = EGL_NO_DISPLAY;
-    display = g_VideoEgl.getDisplay((EGLNativeDisplayType)g_Wl.display);
+    if (fbConfigIndex <= 0) {
+        return PAL_FALSE;
+    }
+
+    EGLDisplay display = g_VideoEgl.getDisplay((EGLNativeDisplayType)g_Wl.display);
     if (display == EGL_NO_DISPLAY) {
         return PAL_FALSE;
     }
 
     EGLint numConfigs = 0;
-    if (!g_VideoEgl.getConfigs(display, nullptr, 0, &numConfigs)) {
+    if (!g_VideoEgl.getConfigs(display, nullptr, 0, &numConfigs) || fbConfigIndex > numConfigs) {
         return PAL_FALSE;
     }
 
-    EGLint configSize = (EGLint)sizeof(EGLConfig) * numConfigs;
-    EGLConfig* eglConfigs = palAllocate(g_Wl.allocator, (uint64_t)configSize, 0);
+    uint64_t configSize = sizeof(EGLConfig) * (uint64_t)numConfigs;
+    EGLConfig* eglConfigs = palAllocate(g_Wl.allocator, configSize, 0);
     if (!eglConfigs) {
         return PAL_FALSE;
     }
 
     g_VideoEgl.getConfigs(display, eglConfigs, numConfigs, &numConfigs);
-    EGLConfig* config = eglConfigs[fbConfigIndex];
-    if (config) {
-        palFree(g_Wl.allocator, eglConfigs);
-        return PAL_TRUE;
-    }
-
+    EGLConfig config = eglConfigs[fbConfigIndex - 1];
     palFree(g_Wl.allocator, eglConfigs);
-    return PAL_FALSE;
+
+    return (config != nullptr) ? PAL_TRUE : PAL_FALSE;
 }
 
 
@@ -81,9 +79,14 @@ PalResult wlCreateWindow(
     const PalWindowCreateInfo* info, 
     PalWindow** window)
 {
+    PalResult result = PAL_RESULT_CODE_PLATFORM_FAILURE;
     struct wl_surface* surface = nullptr;
     struct xdg_surface* xdgSurface = nullptr;
     struct xdg_toplevel* xdgToplevel = nullptr;
+
+    struct zxdg_toplevel_decoration_v1* decoration = nullptr;
+    struct wl_buffer* buffer = nullptr;
+    struct wl_egl_window* eglWindow = nullptr;
 
     if (info->style & PAL_WINDOW_STYLE_TOPMOST) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
@@ -99,7 +102,6 @@ PalResult wlCreateWindow(
 
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
         if (!g_Wl.decorationManager) {
-            // user wants decorated window but its not supported
             return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }
     }
@@ -112,22 +114,23 @@ PalResult wlCreateWindow(
     memset(data, 0, sizeof(WindowData));
     data->used = PAL_TRUE;
     data->focused = PAL_FALSE;
+    data->state = PAL_WINDOW_STATE_RESTORED;
 
     // create surface
     surface = wlCompositorCreateSurface(g_Wl.compositor);
     if (!surface) {
-        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        goto cleanup;
     }
 
     wlSurfaceAddListener(surface, &g_SurfaceListener, data);
     xdgSurface = xdgWmBaseGetXdgSurface(g_Wl.xdgBase, surface);
     if (!xdgSurface) {
-        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        goto cleanup;
     }
 
     xdgToplevel = xdgSurfaceGetToplevel(xdgSurface);
-    if (!xdgSurface) {
-        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+    if (!xdgToplevel) {
+        goto cleanup;
     }
 
     // set APP id
@@ -149,11 +152,12 @@ PalResult wlCreateWindow(
 
     // decorated window
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
-        struct zxdg_toplevel_decoration_v1* decoration = nullptr;
         decoration = zxdgGetToplevelDecoration(g_Wl.decorationManager, xdgToplevel);
-        zxdgToplevelDecorationV1AddListener(decoration, &g_DecorationListener, surface);
-        zxdgToplevelDecorationV1SetMode(decoration, 2);
-        data->decoration = decoration;
+        if (decoration) {
+            zxdgToplevelDecorationV1AddListener(decoration, &g_DecorationListener, surface);
+            zxdgToplevelDecorationV1SetMode(decoration, 2);
+            data->decoration = decoration;
+        }
     }
 
     data->skipState = PAL_TRUE;
@@ -162,8 +166,6 @@ PalResult wlCreateWindow(
     g_Wl.displayRoundtrip(g_Wl.display);
 
     if (info->state == PAL_WINDOW_STATE_MAXIMIZED && info->show) {
-        // we need the maximized size the compositor will use
-        // and use that to create the buffer
         xdgToplevelSetMaximized(xdgToplevel);
         wlSurfaceCommit(surface);
         g_Wl.displayRoundtrip(g_Wl.display);
@@ -179,10 +181,8 @@ PalResult wlCreateWindow(
     data->window = (PalWindow*)surface;
     data->buffer = nullptr;
     data->isAttached = PAL_FALSE;
-    data->state = PAL_WINDOW_STATE_RESTORED;
 
     // minimize
-    // This is just a requeest, the compositor might ignore it
     if (info->state == PAL_WINDOW_STATE_MINIMIZED) {
         xdgToplevelSetMinimized(xdgToplevel);
         wlSurfaceCommit(surface);
@@ -198,29 +198,35 @@ PalResult wlCreateWindow(
 
         if (backend == PAL_FBCONFIG_BACKEND_EGL) {
             if (!eglWlBackend(info->fbConfigIndex)) {
-                return PAL_RESULT_CODE_INVALID_ARGUMENT;
+                result = PAL_RESULT_CODE_INVALID_ARGUMENT;
+                goto cleanup;
             }
         } else {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
+            result = PAL_RESULT_CODE_INVALID_ARGUMENT;
+            goto cleanup;
         }
 
-        data->eglWindow = g_Wl.eglWindowCreate(surface, (int)data->w, (int)data->h);
-        if (!data->eglWindow) {
-            return palMakeResult(
+        eglWindow = g_Wl.eglWindowCreate(surface, (int)data->w, (int)data->h);
+        if (!eglWindow) {
+            result = palMakeResult(
                 PAL_RESULT_CODE_PLATFORM_FAILURE,
                 PAL_RESULT_SOURCE_EGL,
                 (uint32_t)g_VideoEgl.getError());
+
+            goto cleanup;
         }
+        data->eglWindow = eglWindow;
 
     } else {
         // create a white buffer for the surface
-        struct wl_buffer* buffer = nullptr;
         buffer = createShmBuffer((int)data->w, (int)data->h, nullptr, PAL_FALSE);
         if (!buffer) {
-            return palMakeResult(
+            result = palMakeResult(
                 PAL_RESULT_CODE_PLATFORM_FAILURE, 
                 PAL_RESULT_SOURCE_POSIX, 
                 (uint32_t)errno);
+
+            goto cleanup;
         }
 
         wlSurfaceAttach(surface, buffer, 0, 0);
@@ -256,20 +262,45 @@ PalResult wlCreateWindow(
     }
 #endif // PAL_HAS_EVENT_MODULE
 
-    // Since wayland does not have a way to set unique data to a surface without
-    // taking control from users we might implement a simple hash map to do that
-    // but at the moment a linear search is fine
     data->skipState = PAL_FALSE;
     data->skipConfigure = PAL_FALSE;
-    
+
     *window = data->window;
     return PAL_RESULT_SUCCESS;
+
+cleanup:
+    if (decoration) {
+        zxdgToplevelDecorationV1Destroy(decoration);
+    }
+
+    if (eglWindow) {
+        g_Wl.eglWindowDestroy(eglWindow);
+    }
+
+    if (buffer) {
+        wlBufferDestroy(buffer);
+    }
+
+    if (xdgToplevel) {
+        xdgToplevelDestroy(xdgToplevel);
+    }
+
+    if (xdgSurface) {
+        xdgSurfaceDestroy(xdgSurface);
+    }
+
+    if (surface) {
+        wlSurfaceDestroy(surface);
+    }
+
+    data->used = PAL_FALSE;
+    return result;
 }
 
 void wlDestroyWindow(PalWindow* window)
 {
     WindowData* data = findWindowData(window);
-    if (!data || (data && data->isAttached)) {
+    if (!data || data->isAttached) {
         return;
     }
 
@@ -279,13 +310,14 @@ void wlDestroyWindow(PalWindow* window)
 
     if (data->eglWindow) {
         g_Wl.eglWindowDestroy(data->eglWindow);
-    } else {
+    } else if (data->buffer) {
         wlBufferDestroy(data->buffer);
     }
 
     xdgToplevelDestroy(data->xdgToplevel);
     xdgSurfaceDestroy(data->xdgSurface);
     wlSurfaceDestroy((struct wl_surface*)window);
+    
     g_Wl.displayFlush(g_Wl.display);
     data->used = PAL_FALSE;
 }

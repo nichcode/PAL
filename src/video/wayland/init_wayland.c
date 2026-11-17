@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -29,18 +28,18 @@
 #endif // PAL_HAS_EVENT_MODULE
 
 #include "pal2/core/library.h"
-#include "video/platform.h"
-#include "pal2/video/init.h"
 #include "pal2/core/time.h"
+#include "pal2/video/init.h"
+#include "video/platform.h"
 
-#include "wayland_helper.h"
 #include "listeners.h"
 #include "video/video_egl.h"
+#include "wayland_helper.h"
 
 #include <dlfcn.h>
 #include <errno.h>
-#include <string.h>
 #include <poll.h>
+#include <string.h>
 
 Wayland g_Wl = {0};
 WaylandKeyboard g_WlKeyboard = {0};
@@ -477,11 +476,7 @@ static void globalHandle(
     (void)version;
 
     if (strcmp(interface, "wl_compositor") == 0) {
-        g_Wl.compositor = wlRegistryBind(
-            registry, 
-            name, 
-            g_Wl.compositorInterface, 
-            4);
+        g_Wl.compositor = wlRegistryBind(registry, name, g_Wl.compositorInterface, 4);
 
     } else if (strcmp(interface, "xdg_wm_base") == 0) {
         g_Wl.xdgBase = wlRegistryBind(registry, name, &xdgWmBaseInterface, 1);
@@ -495,11 +490,7 @@ static void globalHandle(
         wlSeatAddListener(g_Wl.seat, &g_SeatListener, nullptr);
 
     } else if (strcmp(interface, "zxdg_decoration_manager_v1") == 0) {
-        g_Wl.decorationManager = wlRegistryBind(
-            registry, 
-            name, 
-            &zxdg_decoration_manager_v1_interface, 
-            1);
+        g_Wl.decorationManager = wlRegistryBind(registry, name, &zxdg_decoration_manager_v1_interface, 1);
 
     } else if (strcmp(interface, "wl_output") == 0) {
         // wayland does not let use query monitors directly so we enumerate and store
@@ -542,14 +533,13 @@ struct wl_registry_listener s_DriverRegistryListener = {
     .global = driverGlobalHandle,
     .global_remove = driverGlobalRemove};
 
-struct wl_registry_listener s_RegistryListener = {
-    .global = globalHandle,
-    .global_remove = globalRemove};
-
+struct wl_registry_listener s_RegistryListener = {.global = globalHandle, .global_remove = globalRemove};
 
 /* =========================================================================
  * API
  * ========================================================================= */
+
+void wlShutdownVideo(void);
 
 PalVideoDriver* wlGetVideoDriver(void)
 {
@@ -586,25 +576,18 @@ PalResult wlInitVideo(
     const void* preferredInstance,
     void** selectedInstance)
 {
-    (void)allocator;
-    (void)eventDriver;
+    PalResult result = PAL_RESULT_CODE_PLATFORM_FAILURE;
+    g_Wl.allocator = allocator;
+    g_Wl.eventDriver = eventDriver;
 
     g_Wl.libwayland = palLoadLibrary("libwayland-client.so.0");
     g_Wl.xkbcommon = palLoadLibrary("libxkbcommon.so");
     g_Wl.libcursor = palLoadLibrary("libwayland-cursor.so");
     g_Wl.libegl = palLoadLibrary("libwayland-egl.so");
-
-    // clang-format off
-    if (!g_Wl.libwayland ||
-        !g_Wl.xkbcommon||
-        !g_Wl.libcursor ||
-        !g_Wl.libegl) {
-        return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_POSIX, 
-            (uint32_t)errno);
+    if (!g_Wl.libwayland || !g_Wl.xkbcommon || !g_Wl.libcursor || !g_Wl.libegl) {
+        result = palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_POSIX, (uint32_t)errno);
+        goto cleanup;
     }
-    // clang-format on
 
     loadGlobals();
     loadProcs(PAL_TRUE);
@@ -612,28 +595,23 @@ PalResult wlInitVideo(
     createScancodeTable();
     createKeycodeTable();
 
-    PalResult result;
     g_Wl.maxMonitorData = 16;
     g_Wl.maxWindowData = 32;
-
-    g_Wl.windowData = palAllocate(
-        allocator, 
-        sizeof(WindowData) * g_Wl.maxWindowData, 
-        0);
-
-    g_Wl.monitorData = palAllocate(
-        allocator, 
-        sizeof(MonitorData) * g_Wl.maxMonitorData, 
-        0);
+    g_Wl.windowData = palAllocate(allocator, sizeof(WindowData) * g_Wl.maxWindowData, 0);
+    g_Wl.monitorData = palAllocate(allocator, sizeof(MonitorData) * g_Wl.maxMonitorData, 0);
 
     if (!g_Wl.monitorData || !g_Wl.windowData) {
         result = PAL_RESULT_CODE_OUT_OF_MEMORY;
         goto cleanup;
     }
 
+    memset(g_Wl.windowData, 0, sizeof(WindowData) * g_Wl.maxWindowData);
+    memset(g_Wl.monitorData, 0, sizeof(MonitorData) * g_Wl.maxMonitorData);
+
     g_Wl.monitorCount = 0;
     if (preferredInstance) {
         g_Wl.display = (struct wl_display*)preferredInstance;
+        g_Wl.ownsDisplay = PAL_FALSE;
         *selectedInstance = (void*)preferredInstance;
 
     } else {
@@ -642,7 +620,7 @@ PalResult wlInitVideo(
             result = PAL_RESULT_CODE_PLATFORM_FAILURE;
             goto cleanup;
         }
-
+        g_Wl.ownsDisplay = PAL_TRUE;
         *selectedInstance = (void*)g_Wl.display;
     }
 
@@ -652,72 +630,113 @@ PalResult wlInitVideo(
     g_Wl.displayRoundtrip(g_Wl.display); // do a roundtrip again to get remaining handles
 
     if (!g_Wl.compositor || !g_Wl.xdgBase || !g_Wl.shm) {
-        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        result = PAL_RESULT_CODE_PLATFORM_FAILURE;
+        goto cleanup;
     }
 
     g_Wl.inputContext = g_Wl.xkbContextNew(XKB_CONTEXT_NO_FLAGS);
     if (!g_Wl.inputContext) {
-        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        result = PAL_RESULT_CODE_PLATFORM_FAILURE;
+        goto cleanup;
     }
 
     g_Wl.cursorTheme = g_Wl.cursorThemeLoad(nullptr, 32, g_Wl.shm);
     if (!g_Wl.cursorTheme) {
-        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+        result = PAL_RESULT_CODE_PLATFORM_FAILURE;
+        goto cleanup;
     }
 
-    g_Wl.allocator = allocator;
-    g_Wl.eventDriver = eventDriver;
     return PAL_RESULT_SUCCESS;
 
-    cleanup:
-        palFreeLibrary(g_Wl.libwayland);
-        palFreeLibrary(g_Wl.xkbcommon);
-        palFreeLibrary(g_Wl.libcursor);
-        palFreeLibrary(g_Wl.libegl);
-
-        if (g_Wl.monitorData) {
-            palFree(allocator, g_Wl.monitorData);
-        }
-
-        if (g_Wl.windowData) {
-            palFree(allocator, g_Wl.windowData);
-        }
-
-        memset(&g_Wl, 0, sizeof(Wayland));
-        return result;
+cleanup:
+    wlShutdownVideo();
+    return result;
 }
 
 void wlShutdownVideo(void)
 {
     if (g_Wl.state) {
         g_Wl.xkbStateUnref(g_Wl.state);
+    }
+
+    if (g_Wl.keymap) {
         g_Wl.xkbKeymapUnref(g_Wl.keymap);
     }
 
-    g_Wl.xkbContextUnref(g_Wl.inputContext);
-    if (g_Wl.compositor) {
-        // if compositor was found, all this will be as well since we check all at init
-        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.compositor);
-        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.xdgBase);
-        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.shm);
+    if (g_Wl.inputContext) {
+        g_Wl.xkbContextUnref(g_Wl.inputContext);
+    }
+
+    if (g_Wl.monitorData) {
+        for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
+            if (g_Wl.monitorData[i].used && g_Wl.monitorData[i].monitor) {
+                g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.monitorData[i].monitor);
+            }
+        }
+
+        palFree(g_Wl.allocator, g_Wl.monitorData);
+    }
+
+    if (g_Wl.windowData) {
+        palFree(g_Wl.allocator, g_Wl.windowData);
+    }
+
+    if (g_Wl.pointer) {
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.pointer);
+    }
+
+    if (g_Wl.keyboard) {
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.keyboard);
+    }
+
+    if (g_Wl.seat) {
         g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.seat);
     }
 
-    if (!g_Wl.display) {
-        // opened by PAL
-        g_Wl.displayDisconnect(g_Wl.display);
+    if (g_Wl.decorationManager) {
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.decorationManager);
+    }
 
+    if (g_Wl.shm) {
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.shm);
+    }
+
+    if (g_Wl.xdgBase) {
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.xdgBase);
+    }
+
+    if (g_Wl.compositor) {
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.compositor);
+    }
+
+    if (g_Wl.registry) {
+        g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.registry);
+    }
+
+    if (g_Wl.ownsDisplay && g_Wl.display) {
+        g_Wl.displayDisconnect(g_Wl.display);
+    }
+
+    if (g_Wl.libcursor) {
         palFreeLibrary(g_Wl.libcursor);
+    }
+
+    if (g_Wl.xkbcommon) {
         palFreeLibrary(g_Wl.xkbcommon);
+    }
+
+    if (g_Wl.libegl) {
         palFreeLibrary(g_Wl.libegl);
+    }
+
+    if (g_Wl.libwayland) {
         palFreeLibrary(g_Wl.libwayland);
     }
 
-    palFree(g_Wl.allocator, g_Wl.windowData);
-    palFree(g_Wl.allocator, g_Wl.monitorData);
     unloadVideoEGL();
-
     memset(&g_Wl, 0, sizeof(Wayland));
+    memset(&g_WlKeyboard, 0, sizeof(WaylandKeyboard));
+    memset(&g_WlMouse, 0, sizeof(WaylandMouse));
 }
 
 void wlUpdateVideo(void)
@@ -728,24 +747,22 @@ void wlUpdateVideo(void)
 
 #if PAL_HAS_EVENT_MODULE
     // key repeats. we only do this if the user wants key repeat events
-    if (g_WlKeyboard.repeatKey != 0 && g_Wl.eventDriver) {
+    if (g_WlKeyboard.repeatKey != 0 && g_WlKeyboard.repeatRate > 0 && g_Wl.eventDriver) {
         PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_KEYREPEAT);
         if (mode != PAL_DISPATCH_MODE_NONE) {
-            // get now time and check with the key repeat time
             uint64_t now = getCurrentTime();
             if (now >= g_WlKeyboard.timer) {
                 PalWindow* window = (PalWindow*)g_Wl.keyboardSurface;
                 PalKeycode key = (PalKeycode)g_WlKeyboard.repeatKey;
                 PalScancode scancode = (PalScancode)g_WlKeyboard.repeatScancode;
-
                 PalEvent event = {0};
                 event.type = PAL_EVENT_TYPE_KEYREPEAT;
                 event.data = palPackUint32(key, scancode);
                 event.data2 = palPackPointer(window);
                 palPushEvent(driver, &event);
-                g_WlKeyboard.timer += (uint64_t)g_WlKeyboard.repeatRate;
+                g_WlKeyboard.timer += 1000UL / (uint64_t)g_WlKeyboard.repeatRate;
             }
         }
     }
@@ -758,14 +775,13 @@ void wlUpdateVideo(void)
     g_Wl.displayFlush(g_Wl.display);
     int fd = g_Wl.displayGetFd(g_Wl.display);
     struct pollfd pfd = {fd, POLLIN, 0};
-    if (poll(&pfd, 1, 0) > 0) {
-        // there are events ready to be read
-        g_Wl.readEvents(g_Wl.display);
 
+    if (poll(&pfd, 1, 0) > 0) {
+        g_Wl.readEvents(g_Wl.display);
     } else {
         g_Wl.cancelRead(g_Wl.display);
     }
-
+    
     // dispatch events that were read
     g_Wl.dispatchPending(g_Wl.display);
 }

@@ -63,7 +63,7 @@ void loadVideoEGL(void)
     }
 
     if (g_VideoEgl.handle) {
-        s_Load = (eglGetProcAddressFn)(void*)palGetSymbol(g_VideoEgl.handle, "eglGetProcAddress");
+        s_Load = (eglGetProcAddressFn)palGetSymbol(g_VideoEgl.handle, "eglGetProcAddress");
 
         g_VideoEgl.initialize = (eglInitializeFn)loadEGLProc("eglInitialize");
         g_VideoEgl.terminate = (eglTerminateFn)loadEGLProc("eglTerminate");

@@ -123,6 +123,7 @@ typedef struct {
     struct wl_surface* surface;
     int hotspotX;
     int hotspotY;
+    PalBool isCustom;
 } WaylandCursor;
 
 typedef struct {
@@ -173,6 +174,7 @@ typedef struct WindowData {
 } WindowData;
 
 typedef struct Wayland {
+    PalBool ownsDisplay;
     uint32_t monitorCount;
     uint32_t maxWindowData;
     uint32_t maxMonitorData;
