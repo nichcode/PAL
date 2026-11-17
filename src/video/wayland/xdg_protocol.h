@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -245,8 +244,6 @@ static inline void xdgToplevelUnsetMaximized(struct xdg_toplevel* xdg_toplevel)
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0);
 }
-
-#undef g_Wl
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 #endif // WAYLAND_PROTOCOL_XDG_H

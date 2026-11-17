@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -34,6 +33,7 @@
 #include <linux/input-event-codes.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <stdio.h>
 
 static inline uint64_t getCurrentTime()
 {
@@ -156,62 +156,38 @@ static void surfaceHandleEnter(
         return;
     }
 
-    // wayland sends multiple surface enter events if the surface spans multiple monitors
-    // we get all and return the highest dpi this assumes a surface can only span 4 monitors
-    // at the sametime but this might be wrong
+    SpanMonitor* existing = nullptr;
+    SpanMonitor* emptySlot = nullptr;
 
-    // wayland will trigger this event if the window gains focus so we check if the output
-    // is the same
-    SpanMonitor* span = nullptr;
-    if (data->monitorCount > 0) {
-        for (uint32_t i = 0; i < data->monitorCount; i++) {
-            if (data->monitors[i].monitor == (void*)output) {
-                // the monitor already exist in our array so we just update it
-                span = &data->monitors[i];
-                span->dpi = monitorData->dpi;
-                break;
-            }
+    for (uint32_t i = 0; i < MAX_SPAN_MONITORS; i++) {
+        if (data->monitors[i].monitor == (void*)output) {
+            existing = &data->monitors[i];
+            break;
+        }
+        if (!emptySlot && data->monitors[i].monitor == nullptr) {
+            emptySlot = &data->monitors[i];
         }
     }
 
-    if (span == nullptr) {
-        // new entry
-        span = &data->monitors[data->monitorCount];
-        span->monitor = output;
-        span->dpi = monitorData->dpi;
+    if (existing) {
+        existing->dpi = monitorData->dpi;
+    } else if (emptySlot) {
+        emptySlot->monitor = output;
+        emptySlot->dpi = monitorData->dpi;
         data->monitorCount++;
+    } else {
+        // Already tracking MAX_SPAN_MONITORS
+        return;
     }
 
     if (data->dpi == 0) {
-        // this is triggered when the window is created we cache the DPI and skip the event
         data->dpi = monitorData->dpi;
         return;
     }
 
-#if PAL_HAS_EVENT_MODULE
-    // the code below should be skipped if users are not interested in DPI changed events
-    PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
-    PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
-    if (!g_Wl.eventDriver) {
-        return;
-    }
-
-    PalEventDriver* driver = g_Wl.eventDriver;
-    mode = palGetEventDispatchMode(driver, type);
-    if (mode == PAL_DISPATCH_MODE_NONE) {
-        return;
-    }
-
-    // get the highest dpi and check if the it has changed
-    uint32_t maxDPI = 96; // baseline
-    for (uint32_t i = 0; i < data->monitorCount; i++) {
-        if (!data->monitors[i].monitor) {
-            // not a valid index. continue
-            continue;
-        }
-
-        if (data->monitors[i].dpi > maxDPI) {
-            // new highest
+    uint32_t maxDPI = 96;
+    for (uint32_t i = 0; i < MAX_SPAN_MONITORS; i++) {
+        if (data->monitors[i].monitor && data->monitors[i].dpi > maxDPI) {
             maxDPI = data->monitors[i].dpi;
         }
     }
@@ -219,13 +195,25 @@ static void surfaceHandleEnter(
     if (maxDPI != data->dpi) {
         data->dpi = maxDPI;
 
+#if PAL_HAS_EVENT_MODULE
+        if (!g_Wl.eventDriver) {
+            return;
+        }
+
+        PalEventDriver* driver = g_Wl.eventDriver;
+        PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
+        PalDispatchMode mode = palGetEventDispatchMode(driver, type);
+        if (mode == PAL_DISPATCH_MODE_NONE) {
+            return;
+        }
+
         PalEvent event = {0};
         event.type = type;
         event.data = (uint64_t)maxDPI;
         event.data2 = palPackPointer((void*)data->window);
         palPushEvent(driver, &event);
-    }
 #endif // PAL_HAS_EVENT_MODULE
+    }
 }
 
 static void surfaceHandleLeave(
@@ -235,21 +223,54 @@ static void surfaceHandleLeave(
 {
     (void)surface;
 
-    // remove the monitor from our span monitor list
     WindowData* data = userData;
     MonitorData* monitorData = findMonitorData((PalMonitor*)output);
     if (!monitorData) {
         return;
     }
 
-    for (uint32_t i = 0; i < data->monitorCount; i++) {
+    for (uint32_t i = 0; i < MAX_SPAN_MONITORS; i++) {
         if (data->monitors[i].monitor == (void*)output) {
-            // found our monitor we might want to pack the array but its just 4 monitors
-            // so we leave it like that
             data->monitors[i].monitor = nullptr;
+            data->monitors[i].dpi = 0;
             data->monitorCount--;
             break;
         }
+    }
+
+    // Keep cached DPI intact if the surface is hidden/unmapped (0 active outputs)
+    if (data->monitorCount == 0) {
+        return;
+    }
+
+    uint32_t maxDPI = 96;
+    for (uint32_t i = 0; i < MAX_SPAN_MONITORS; i++) {
+        if (data->monitors[i].monitor && data->monitors[i].dpi > maxDPI) {
+            maxDPI = data->monitors[i].dpi;
+        }
+    }
+
+    if (maxDPI != data->dpi) {
+        data->dpi = maxDPI;
+
+#if PAL_HAS_EVENT_MODULE
+        if (!g_Wl.eventDriver) {
+            return;
+        }
+
+        PalEventDriver* driver = g_Wl.eventDriver;
+        PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
+        PalDispatchMode mode = palGetEventDispatchMode(driver, type);
+        if (mode == PAL_DISPATCH_MODE_NONE) {
+            return;
+        }
+
+        PalEvent event = {0};
+        event.type = type;
+        event.data = (uint64_t)maxDPI;
+        event.data2 = palPackPointer((void*)data->window);
+        palPushEvent(driver, &event);
+#endif // PAL_HAS_EVENT_MODULE
     }
 }
 
@@ -597,15 +618,16 @@ static void keyboardHandleRemap(
         XKB_KEYMAP_FORMAT_TEXT_V1,
         XKB_KEYMAP_COMPILE_NO_FLAGS);
 
+    munmap(keymapStr, size);
+    close(fd);
+
     if (!keymap) {
         return;
     }
 
-    munmap(keymapStr, size);
-    close(fd);
-
     state = g_Wl.xkbStateNew(keymap);
     if (!state) {
+        g_Wl.xkbKeymapUnref(keymap);
         return;
     }
 
@@ -632,6 +654,10 @@ static void keyboardHandleKey(
     (void)keyboard;
     (void)serial;
     (void)time;
+
+    if (!g_Wl.state || !g_Wl.keymap) {
+        return;
+    }
 
     PalWindow* window = nullptr;
     if (g_Wl.keyboardSurface) {
@@ -660,7 +686,7 @@ static void keyboardHandleKey(
         scancode = PAL_SCANCODE_HOME;
 
     } else {
-        scancode = (PalScancode)g_WlKeyboard.scancodes[key];
+        scancode = (key < 512) ? (PalScancode)g_WlKeyboard.scancodes[key] : PAL_SCANCODE_UNKNOWN;
     }
 
     // printable and text input keys are from the range 32 (PAL_KEYCODE_SPACE) and
@@ -935,18 +961,24 @@ static void xdgToplevelHandleConfigure(
     WindowData* winData = (WindowData*)data;
     uint32_t* state;
     PalBool activated = PAL_FALSE;
+    PalBool maximized = PAL_FALSE;
+
     wl_array_for_each(state, states)
     {
-        // we need only maximized
         if (*state == 1) { // XDG_TOPLEVEL_STATE_MAXIMIZED
-            if (winData->state != PAL_WINDOW_STATE_MAXIMIZED) {
-                winData->state = PAL_WINDOW_STATE_MAXIMIZED;
-                winData->pushStateEvent = PAL_TRUE;
-            }
-
+            maximized = PAL_TRUE;
         } else if (*state == 4) { // XDG_TOPLEVEL_STATE_ACTIVATED
             activated = PAL_TRUE;
         }
+    }
+
+    if (maximized && winData->state != PAL_WINDOW_STATE_MAXIMIZED) {
+        winData->state = PAL_WINDOW_STATE_MAXIMIZED;
+        winData->pushStateEvent = PAL_TRUE;
+
+    } else if (!maximized && winData->state == PAL_WINDOW_STATE_MAXIMIZED) {
+        winData->state = PAL_WINDOW_STATE_NORMAL;
+        winData->pushStateEvent = PAL_TRUE;
     }
 
     if (width > 0 && height > 0) {

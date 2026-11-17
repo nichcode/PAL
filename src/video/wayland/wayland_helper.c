@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,11 +25,12 @@
 
 #include "wayland_helper.h"
 #include "client_protocol.h"
+#include "pal2/core/memory.h"
 
-#include <unistd.h>
-#include <sys/mman.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 static int createShmFile(uint64_t size)
 {
@@ -42,6 +42,7 @@ static int createShmFile(uint64_t size)
 
     unlink(template);
     if (ftruncate(fd, (off_t)size) < 0) {
+        close(fd);
         return -1;
     }
 
@@ -55,10 +56,10 @@ struct wl_buffer* createShmBuffer(
     PalBool cursor)
 {
     int stride = width * 4;
-    uint64_t size = (uint64_t)(stride * height);
+    uint64_t size = (uint64_t)stride * (uint64_t)height;
     struct wl_buffer* buffer = nullptr;
     struct wl_shm_pool* pool = nullptr;
-    void* data = nullptr;
+    void* data = MAP_FAILED;
 
     int fd = createShmFile(size);
     if (fd == -1) {
@@ -67,6 +68,7 @@ struct wl_buffer* createShmBuffer(
 
     data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (data == MAP_FAILED) {
+        close(fd);
         return nullptr;
     }
 
@@ -83,30 +85,28 @@ struct wl_buffer* createShmBuffer(
             uint8_t a = pixels[i * 4 + 3]; // Alpha
 
             // clang-format off
-            dataPixels[i] = ((unsigned long)a << 24) |
-                            ((unsigned long)r << 16) |
-                            ((unsigned long)g << 8) |
-                            ((unsigned long)b);
+            dataPixels[i] = ((uint32_t)a << 24) |
+                            ((uint32_t)r << 16) |
+                            ((uint32_t)g << 8) |
+                            ((uint32_t)b);
             // clang-format on
         }
-
     } else {
         memset(data, 0xFF, size); // white
     }
 
     pool = wlShmCreatePool(g_Wl.shm, fd, (int32_t)size);
     if (!pool) {
+        munmap(data, size);
+        close(fd);
         return nullptr;
     }
 
     buffer = wlShmPoolCreateBuffer(pool, 0, width, height, stride, format);
-    if (!buffer) {
-        return nullptr;
-    }
-
     wlShmPoolDestroy(pool);
     munmap(data, size);
     close(fd);
+
     return buffer;
 }
 
@@ -114,25 +114,27 @@ MonitorData* getFreeMonitorData(void)
 {
     for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
         if (!g_Wl.monitorData[i].used) {
+            memset(&g_Wl.monitorData[i], 0, sizeof(MonitorData));
             g_Wl.monitorData[i].used = PAL_TRUE;
             return &g_Wl.monitorData[i];
         }
     }
 
-    // resize the data array
-    MonitorData* data = nullptr;
-    uint32_t count = g_Wl.maxMonitorData * 2; // double the size
-    uint32_t freeIndex = g_Wl.maxMonitorData + 1;
-    data = palAllocate(g_Wl.allocator, sizeof(MonitorData) * count, 0);
+    uint32_t oldCount = g_Wl.maxMonitorData;
+    uint32_t count = (oldCount > 0) ? (oldCount * 2) : 4;
+    MonitorData* data = palAllocate(g_Wl.allocator, sizeof(MonitorData) * count, 0);
     if (data) {
-        memcpy(data, g_Wl.monitorData, g_Wl.maxMonitorData * sizeof(MonitorData));
+        memset(data, 0, sizeof(MonitorData) * count);
+        if (g_Wl.monitorData && oldCount > 0) {
+            memcpy(data, g_Wl.monitorData, oldCount * sizeof(MonitorData));
+            palFree(g_Wl.allocator, g_Wl.monitorData);
+        }
 
-        palFree(g_Wl.allocator, g_Wl.monitorData);
         g_Wl.monitorData = data;
-        g_Wl.maxWindowData = count;
+        g_Wl.maxMonitorData = count;
 
-        g_Wl.monitorData[freeIndex].used = PAL_TRUE;
-        return &g_Wl.monitorData[freeIndex];
+        g_Wl.monitorData[oldCount].used = PAL_TRUE;
+        return &g_Wl.monitorData[oldCount];
     }
     return nullptr;
 }
@@ -160,25 +162,27 @@ WindowData* getFreeWindowData(void)
 {
     for (uint32_t i = 0; i < g_Wl.maxWindowData; ++i) {
         if (!g_Wl.windowData[i].used) {
+            memset(&g_Wl.windowData[i], 0, sizeof(WindowData));
             g_Wl.windowData[i].used = PAL_TRUE;
             return &g_Wl.windowData[i];
         }
     }
 
-    // resize the data array
-    WindowData* data = nullptr;
-    uint32_t count = g_Wl.maxWindowData * 2; // double the size
-    uint32_t freeIndex = g_Wl.maxWindowData + 1;
-    data = palAllocate(g_Wl.allocator, sizeof(WindowData) * count, 0);
+    uint32_t oldCount = g_Wl.maxWindowData;
+    uint32_t count = (oldCount > 0) ? (oldCount * 2) : 4;
+    WindowData* data = palAllocate(g_Wl.allocator, sizeof(WindowData) * count, 0);
     if (data) {
-        memcpy(data, g_Wl.windowData, g_Wl.maxWindowData * sizeof(WindowData));
+        memset(data, 0, sizeof(WindowData) * count);
+        if (g_Wl.windowData && oldCount > 0) {
+            memcpy(data, g_Wl.windowData, oldCount * sizeof(WindowData));
+            palFree(g_Wl.allocator, g_Wl.windowData);
+        }
 
-        palFree(g_Wl.allocator, g_Wl.windowData);
         g_Wl.windowData = data;
         g_Wl.maxWindowData = count;
 
-        g_Wl.windowData[freeIndex].used = PAL_TRUE;
-        return &g_Wl.windowData[freeIndex];
+        g_Wl.windowData[oldCount].used = PAL_TRUE;
+        return &g_Wl.windowData[oldCount];
     }
     return nullptr;
 }

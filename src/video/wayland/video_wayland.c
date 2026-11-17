@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -77,7 +76,7 @@ void wlSetWindowCursor(PalWindow*, PalCursor*);
 const VideoBackend g_WaylandBackend = {
     .getDriver = wlGetVideoDriver,
     .init = wlInitVideo,
-    .shutdown = wlUpdateVideo,
+    .shutdown = wlShutdownVideo,
     .update = wlUpdateVideo,
     .enumerateMonitors = wlEnumerateMonitors,
     .getPrimaryMonitor = wlGetPrimaryMonitor,
