@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -30,12 +29,6 @@ PalResult PAL_CALL palCreateCondVar(
 {
     if (!condVar) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    if (allocator) {
-        if (!allocator->allocate && !allocator->free) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
     }
 
     return platformCreateCondVar(allocator, condVar);

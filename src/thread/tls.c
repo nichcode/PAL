@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -48,7 +47,6 @@ void PAL_CALL palSetTLS(
     void* data)
 {
     ASSERT(Tls != 0, "The specified TLS is invalid");
-    ASSERT(data != nullptr, "The specified data is null");
 
     platformSetTLS(Tls, data);
 }

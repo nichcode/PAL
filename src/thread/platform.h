@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -87,7 +86,7 @@ void platformSleep(uint64_t milliseconds);
  * Additional rules:
  * - It can do nothing if the platform has no implementation.
  */
-void platformYield();
+void platformYield(void);
 
 /**
  * This function has the same semantics and rules as palGetCurrentThread().
@@ -95,10 +94,10 @@ void platformYield();
  * Additional rules:
  * - The returned handle must be valid and one that other threads can use.
  */
-PalThread* platformGetCurrentThread();
+PalThread* platformGetCurrentThread(void);
 
 /** This function has the same semantics and rules as palGetThreadFeatures(). */
-PalThreadFeatures platformGetThreadFeatures();
+PalThreadFeatures platformGetThreadFeatures(void);
 
 /** This function has the same semantics and rules as palGetThreadPriority(). */
 PalThreadPriority platformGetThreadPriority(PalThread* thread);

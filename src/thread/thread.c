@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -28,14 +27,8 @@ PalResult PAL_CALL palCreateThread(
     const PalThreadCreateInfo* info,
     PalThread** thread)
 {
-    if (!info || !thread) {
+    if (!info || !thread || !info->entry) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
-    }
-
-    if (info->allocator) {
-        if (!info->allocator->allocate && !info->allocator->free) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
-        }
     }
 
     return platformCreateThread(info, thread);
@@ -62,17 +55,17 @@ void PAL_CALL palSleep(uint64_t milliseconds)
     platformSleep(milliseconds);
 }
 
-void PAL_CALL palYield()
+void PAL_CALL palYield(void)
 {
     platformYield();
 }
 
-PalThread* PAL_CALL palGetCurrentThread()
+PalThread* PAL_CALL palGetCurrentThread(void)
 {
     return platformGetCurrentThread();
 }
 
-PalThreadFeatures PAL_CALL palGetThreadFeatures()
+PalThreadFeatures PAL_CALL palGetThreadFeatures(void)
 {
     return platformGetThreadFeatures();
 }
@@ -100,7 +93,7 @@ void PAL_CALL palGetThreadName(
     ASSERT(thread != nullptr, "The specified thread is null");
     ASSERT(
         buffer != nullptr && bufferSize != 0, 
-        "The specified thread is null");
+        "The specified buffer is invalid");
 
     platformGetThreadName(thread, bufferSize, size, buffer);
 }
@@ -128,6 +121,7 @@ PalResult PAL_CALL palSetThreadName(
     const char* name)
 {
     ASSERT(thread != nullptr, "The specified thread is null");
+    ASSERT(name != nullptr, "The specified name is null");
 
     return platformSetThreadName(thread, name);
 }
