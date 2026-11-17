@@ -144,6 +144,7 @@ PalResult platformSetThreadName(
  * Additional rules:
  * - A platform without native destructors must use an alternative that has them
  *   or any other way to avoid memory leaks.
+ * - PalTLSId(0) is not a valid id.
  */
 PalTLSId platformCreateTLS(PaTlsDestructorFn destructor);
 

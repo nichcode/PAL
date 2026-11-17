@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -33,29 +32,30 @@
 
 PalTLSId platformCreateTLS(PaTlsDestructorFn destructor)
 {
-    DWORD tlsid = FlsAlloc(destructor);
+    DWORD tlsid = FlsAlloc((PFLS_CALLBACK_FUNCTION)(void*)destructor);
     if (tlsid == FLS_OUT_OF_INDEXES) {
         return 0;
     }
 
-    return tlsid;
+    // Offset by +1 so FLS index 0 does not collide with invalid PalTLSId (0).
+    return (PalTLSId)(tlsid + 1);
 }
 
 void platformDestroyTLS(PalTLSId Tls)
 {
-    FlsFree((DWORD)Tls);
+    FlsFree((DWORD)(Tls - 1));
 }
 
 void* platformGetTLS(PalTLSId Tls)
 {
-    return FlsGetValue((DWORD)Tls);
+    return FlsGetValue((DWORD)(Tls - 1));
 }
 
 void platformSetTLS(
     PalTLSId Tls,
     void* data)
 {
-    FlsSetValue((DWORD)Tls, data);
+    FlsSetValue((DWORD)(Tls - 1), data);
 }
 
 #endif // _WIN32

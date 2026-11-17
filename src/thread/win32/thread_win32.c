@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,6 +21,7 @@
  */
 
 #include "thread/platform.h"
+#include "pal2/core/memory.h"
 #include "pal2/thread/thread.h"
 
 #ifdef _WIN32
@@ -44,60 +44,116 @@ typedef struct ThreadData
     const PalAllocator* allocator;
     PalThreadFn func;
     void* arg;
+    void* retval;
+    HANDLE handle;
+    volatile LONG refCount;
 } ThreadData;
 
-static DWORD WINAPI threadEntryWrapper(LPVOID arg)
+static volatile LONG s_CurrentThreadTLS = (LONG)FLS_OUT_OF_INDEXES;
+
+/* =========================================================================
+ * Helper
+ * ========================================================================= */
+
+static void releaseThreadData(ThreadData* data)
 {
-    ThreadData* data = arg;
+    if (InterlockedDecrement(&data->refCount) == 0) {
+        CloseHandle(data->handle);
+        palFree(data->allocator, data);
+    }
+}
 
-    void* ret = data->func(data->arg);
-    palFree(data->allocator, data);
+static void WINAPI destroyCurrentThreadTLS(void* ptr)
+{
+    if (ptr) {
+        releaseThreadData((ThreadData*)ptr);
+    }
+}
 
-    return (DWORD)(uintptr_t)ret;
+static DWORD getCurrentThreadTLS(void)
+{
+    if (s_CurrentThreadTLS == (LONG)FLS_OUT_OF_INDEXES) {
+        DWORD index = FlsAlloc(destroyCurrentThreadTLS);
+        if (index == FLS_OUT_OF_INDEXES) {
+            return FLS_OUT_OF_INDEXES;
+        }
+
+        LONG prev = InterlockedCompareExchange(
+            &s_CurrentThreadTLS,
+            (LONG)index,
+            (LONG)FLS_OUT_OF_INDEXES);
+
+        if (prev != (LONG)FLS_OUT_OF_INDEXES) {
+            FlsFree(index);
+        }
+    }
+
+    return (DWORD)s_CurrentThreadTLS;
+}
+
+static FARPROC getKernel32Proc(const char* name)
+{
+    HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+    return kernel32 ? GetProcAddress(kernel32, name) : nullptr;
 }
 
 static PalResult makeResult(DWORD error)
 {
     switch (error) {
     case ERROR_NOT_ENOUGH_MEMORY:
-    {
         return palMakeResult(
-            PAL_RESULT_CODE_OUT_OF_MEMORY, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_OUT_OF_MEMORY,
+            PAL_RESULT_SOURCE_WIN32,
             error);
-    }
 
     case ERROR_INVALID_PARAMETER:
-    {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_ARGUMENT, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_WIN32,
             error);
-    }
 
     case ERROR_ACCESS_DENIED:
-    {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_OPERATION, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_WIN32,
             error);
-    }
 
     case ERROR_INVALID_HANDLE:
-    {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_WIN32, 
+            PAL_RESULT_CODE_INVALID_HANDLE,
+            PAL_RESULT_SOURCE_WIN32,
             error);
-    }
     }
 
     return palMakeResult(
-        PAL_RESULT_CODE_PLATFORM_FAILURE, 
-        PAL_RESULT_SOURCE_WIN32, 
+        PAL_RESULT_CODE_PLATFORM_FAILURE,
+        PAL_RESULT_SOURCE_WIN32,
         error);
-
 }
+
+static DWORD WINAPI threadEntryWrapper(LPVOID arg)
+{
+    ThreadData* data = arg;
+    DWORD tls = getCurrentThreadTLS();
+
+    if (tls != FLS_OUT_OF_INDEXES) {
+        FlsSetValue(tls, data);
+    }
+
+    data->retval = data->func(data->arg);
+
+    // If TLS wasn't available, release manually; otherwise FLS destructor handles it
+    if (tls == FLS_OUT_OF_INDEXES) {
+        releaseThreadData(data);
+    }
+
+    return 0;
+}
+
+
+/* =========================================================================
+ * API
+ * ========================================================================= */
 
 PalResult platformCreateThread(
     const PalThreadCreateInfo* info,
@@ -108,23 +164,28 @@ PalResult platformCreateThread(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    data->arg = info->arg;
-    data->func = info->entry;
     data->allocator = info->allocator;
+    data->func = info->entry;
+    data->arg = info->arg;
+    data->retval = nullptr;
+    data->refCount = 2; // 1 for worker thread, 1 for join/detach
 
-    HANDLE handle = CreateThread(
-        nullptr, 
-        info->stackSize, 
-        threadEntryWrapper, 
-        data, 
-        0, 
+    data->handle = CreateThread(
+        nullptr,
+        info->stackSize,
+        threadEntryWrapper,
+        data,
+        CREATE_SUSPENDED,
         nullptr);
 
-    if (!thread) {
-        return makeResult(GetLastError());
+    if (!data->handle) {
+        DWORD error = GetLastError();
+        palFree(info->allocator, data);
+        return makeResult(error);
     }
 
-    *thread = (PalThread*)handle;
+    *thread = (PalThread*)data;
+    ResumeThread(data->handle);
 
     return PAL_RESULT_SUCCESS;
 }
@@ -133,60 +194,57 @@ PalResult platformJoinThread(
     PalThread* thread,
     void** retval)
 {
-    DWORD wait = WaitForSingleObject((HANDLE)thread, INFINITE);
-
-    if (wait == WAIT_OBJECT_0) {
-        if (retval) {
-            uintptr_t ret;
-            GetExitCodeThread((HANDLE)thread, (LPDWORD)&ret);
-            *retval = (void*)ret;
-        }
-
-        CloseHandle((HANDLE)thread);
-
-    } else if (wait == WAIT_FAILED) {
-        return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE,
-            PAL_RESULT_SOURCE_WIN32,
-            GetLastError());
+    ThreadData* data = (ThreadData*)thread;
+    if (WaitForSingleObject(data->handle, INFINITE) != WAIT_OBJECT_0) {
+        return makeResult(GetLastError());
     }
 
+    if (retval) {
+        *retval = data->retval;
+    }
+
+    releaseThreadData(data);
     return PAL_RESULT_SUCCESS;
 }
 
 void platformDetachThread(PalThread* thread)
 {
-    CloseHandle((HANDLE)thread);
+    releaseThreadData((ThreadData*)thread);
 }
 
 void platformSleep(uint64_t milliseconds)
 {
-    Sleep((DWORD)milliseconds);
+    while (milliseconds > 0) {
+        DWORD chunk = (milliseconds >= INFINITE) ? (INFINITE - 1) : (DWORD)milliseconds;
+        Sleep(chunk);
+        milliseconds -= chunk;
+    }
 }
 
-void platformYield()
+void platformYield(void)
 {
     SwitchToThread();
 }
 
-PalThread* platformGetCurrentThread()
+PalThread* platformGetCurrentThread(void)
 {
-    return (PalThread*)GetCurrentThread();
+    DWORD tls = getCurrentThreadTLS();
+    if (tls == FLS_OUT_OF_INDEXES) {
+        return nullptr;
+    }
+
+    return FlsGetValue(tls);
 }
 
-PalThreadFeatures platformGetThreadFeatures()
+PalThreadFeatures platformGetThreadFeatures(void)
 {
-    PalThreadFeatures features = 0;
-    features |= PAL_THREAD_FEATURE_STACK_SIZE;
-    features |= PAL_THREAD_FEATURE_PRIORITY;
-    features |= PAL_THREAD_FEATURE_AFFINITY;
+    PalThreadFeatures features =
+        PAL_THREAD_FEATURE_STACK_SIZE |
+        PAL_THREAD_FEATURE_PRIORITY |
+        PAL_THREAD_FEATURE_AFFINITY;
 
-    HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
-    if (kernel32) {
-        FARPROC setThreadDesc = GetProcAddress(kernel32, "SetThreadDescription");
-        if (setThreadDesc) {
-            features |= PAL_THREAD_FEATURE_NAME;
-        }
+    if (getKernel32Proc("SetThreadDescription")) {
+        features |= PAL_THREAD_FEATURE_NAME;
     }
 
     return features;
@@ -194,34 +252,32 @@ PalThreadFeatures platformGetThreadFeatures()
 
 PalThreadPriority platformGetThreadPriority(PalThread* thread)
 {
-    int priority = GetThreadPriority((HANDLE)thread);
-
-    switch (priority) {
+    ThreadData* data = (ThreadData*)thread;
+    switch (GetThreadPriority(data->handle)) {
     case THREAD_PRIORITY_LOWEST:
+    case THREAD_PRIORITY_BELOW_NORMAL:
+    case THREAD_PRIORITY_IDLE:
         return PAL_THREAD_PRIORITY_LOW;
 
-    case THREAD_PRIORITY_NORMAL:
-        return PAL_THREAD_PRIORITY_NORMAL;
-
     case THREAD_PRIORITY_HIGHEST:
+    case THREAD_PRIORITY_ABOVE_NORMAL:
+    case THREAD_PRIORITY_TIME_CRITICAL:
         return PAL_THREAD_PRIORITY_HIGH;
-    }
 
-    return 0;
+    default:
+        return PAL_THREAD_PRIORITY_NORMAL;
+    }
 }
 
 uint64_t platformGetThreadAffinity(PalThread* thread)
 {
-    /** We set an invalid mask which gives us the correct mask, store it and
-     * set it back. This is done because win32 has no way to get the affinity.
-    */
-    DWORD_PTR mask = SetThreadAffinityMask((HANDLE)thread, ~0ull);
+    ThreadData* data = (ThreadData*)thread;
+    DWORD_PTR mask = SetThreadAffinityMask(data->handle, ~0ull);
     if (mask == 0) {
         return 0;
     }
 
-    SetThreadAffinityMask((HANDLE)thread, mask);
-
+    SetThreadAffinityMask(data->handle, mask);
     return mask;
 }
 
@@ -231,52 +287,60 @@ void platformGetThreadName(
     uint64_t* size,
     char* buffer)
 {
-    GetThreadDescriptionFn getThreadDesc = nullptr;
-    HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
-    FARPROC proc = GetProcAddress(kernel32, "GetThreadDescription");
-    getThreadDesc = (GetThreadDescriptionFn)proc;
-
-    wchar_t* tmp = nullptr;
-    getThreadDesc((HANDLE)thread, &tmp);
-
-    int len = WideCharToMultiByte(CP_UTF8, 0, tmp, -1, nullptr, 0, 0, 0);
     if (size) {
-        *size = (uint64_t)len - 1;
+        *size = 0;
     }
-
     if (buffer && bufferSize > 0) {
-        int write = (int)bufferSize - 1;
-        WideCharToMultiByte(CP_UTF8, 0, tmp, -1, buffer, write + 1, 0, 0);
-        buffer[write < len - 1 ? write : len - 1] = '\0';
-
-        LocalFree(tmp);
+        buffer[0] = '\0';
     }
+
+    GetThreadDescriptionFn getThreadDesc =
+        (GetThreadDescriptionFn)(void*)getKernel32Proc("GetThreadDescription");
+    if (!getThreadDesc) {
+        return;
+    }
+
+    ThreadData* data = (ThreadData*)thread;
+    wchar_t* tmp = nullptr;
+    if (FAILED(getThreadDesc(data->handle, &tmp)) || !tmp) {
+        return;
+    }
+
+    int len = WideCharToMultiByte(CP_UTF8, 0, tmp, -1, nullptr, 0, nullptr, nullptr);
+    if (len > 0) {
+        if (size) {
+            *size = (uint64_t)len;
+        }
+        if (buffer && bufferSize > 0) {
+            WideCharToMultiByte(CP_UTF8, 0, tmp, -1, buffer, (int)bufferSize, nullptr, nullptr);
+            buffer[bufferSize - 1] = '\0';
+        }
+    }
+
+    LocalFree(tmp);
 }
 
 PalResult platformSetThreadPriority(
     PalThread* thread,
     PalThreadPriority priority)
 {
-    int tmp = 0;
-
+    int nativePriority = THREAD_PRIORITY_NORMAL;
     switch (priority) {
-    case PAL_THREAD_PRIORITY_LOW: {
-        tmp = THREAD_PRIORITY_LOWEST;
+    case PAL_THREAD_PRIORITY_LOW:
+        nativePriority = THREAD_PRIORITY_LOWEST;
         break;
-    }
-    
-    case PAL_THREAD_PRIORITY_NORMAL: {
-        tmp = THREAD_PRIORITY_NORMAL;
+
+    case PAL_THREAD_PRIORITY_NORMAL:
+        nativePriority = THREAD_PRIORITY_NORMAL;
         break;
-    }
-        
-    case PAL_THREAD_PRIORITY_HIGH: {
-        tmp = THREAD_PRIORITY_HIGHEST;
+
+    case PAL_THREAD_PRIORITY_HIGH:
+        nativePriority = THREAD_PRIORITY_HIGHEST;
         break;
-    }
     }
 
-    if (!SetThreadPriority((HANDLE)thread, tmp)) {
+    ThreadData* data = (ThreadData*)thread;
+    if (!SetThreadPriority(data->handle, nativePriority)) {
         return makeResult(GetLastError());
     }
 
@@ -287,7 +351,8 @@ PalResult platformSetThreadAffinity(
     PalThread* thread,
     uint64_t mask)
 {
-    if (!SetThreadAffinityMask((HANDLE)thread, mask)) {
+    ThreadData* data = (ThreadData*)thread;
+    if (!SetThreadAffinityMask(data->handle, mask)) {
         return makeResult(GetLastError());
     }
 
@@ -298,43 +363,34 @@ PalResult platformSetThreadName(
     PalThread* thread,
     const char* name)
 {
-    HINSTANCE kernel32 = GetModuleHandleW(L"kernel32.dll");
-    SetThreadDescriptionFn setThreadDesc = nullptr;
-    FARPROC proc = GetProcAddress(kernel32, "SetThreadDescription");
-    setThreadDesc = (SetThreadDescriptionFn)proc;
+    SetThreadDescriptionFn setThreadDesc =
+        (SetThreadDescriptionFn)(void*)getKernel32Proc("SetThreadDescription");
+    if (!setThreadDesc) {
+        return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+    }
 
     wchar_t buffer[128] = {0};
-    MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 128);
-    HRESULT hr = setThreadDesc((HANDLE)thread, buffer);
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, buffer, 127);
 
+    ThreadData* data = (ThreadData*)thread;
+    HRESULT hr = setThreadDesc(data->handle, buffer);
     if (FAILED(hr)) {
         switch (hr) {
-        case E_INVALIDARG: {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_HANDLE, 
-                PAL_RESULT_SOURCE_WIN32, 
-                ERROR_INVALID_PARAMETER);
-        }
+        case E_INVALIDARG:
+            return makeResult(ERROR_INVALID_PARAMETER);
 
-        case E_OUTOFMEMORY: {
-            return palMakeResult(
-                PAL_RESULT_CODE_OUT_OF_MEMORY, 
-                PAL_RESULT_SOURCE_WIN32, 
-                ERROR_NOT_ENOUGH_MEMORY);
-        }
+        case E_OUTOFMEMORY:
+            return makeResult(ERROR_NOT_ENOUGH_MEMORY);
 
-        case E_ACCESSDENIED: {
-            return palMakeResult(
-                PAL_RESULT_CODE_INVALID_OPERATION, 
-                PAL_RESULT_SOURCE_WIN32, 
-                ERROR_ACCESS_DENIED);
-        }
-        }
+        case E_ACCESSDENIED:
+            return makeResult(ERROR_ACCESS_DENIED);
 
-        return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_WIN32, 
-            GetLastError());
+        default:
+            return palMakeResult(
+                PAL_RESULT_CODE_PLATFORM_FAILURE,
+                PAL_RESULT_SOURCE_WIN32,
+                (DWORD)hr);
+        }
     }
 
     return PAL_RESULT_SUCCESS;
