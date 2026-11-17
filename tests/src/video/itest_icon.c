@@ -80,6 +80,10 @@ int main(void)
     windowCreateInfo.show = PAL_TRUE;
     windowCreateInfo.title = "Icon Window";
 
+    if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
+        windowCreateInfo.style = PAL_WINDOW_STYLE_BORDERLESS;
+    }
+
     result = palCreateWindow(&windowCreateInfo, &window);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to create window");
