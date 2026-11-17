@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,7 +21,9 @@
  */
 
 #include "system/platform.h"
+#include "pal2/core/memory.h"
 #include "pal2/system/cpu.h"
+#include <string.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -50,7 +51,7 @@ static inline void cpuid(
                            "=c"(regs[2]),
                            "=d"(regs[3])
                          : "a"(leaf),
-                           "b"(subLeaf));
+                           "c"(subLeaf));
     // clang-format on
 #endif // _MSC_VER
 }
@@ -84,6 +85,7 @@ void platformGetCPUInfo(
     GetSystemInfo(&sysInfo);
     info->numLogicalProcessors = sysInfo.dwNumberOfProcessors;
 
+    info->architecture = PAL_CPU_ARCH_UNKNOWN;
     switch (sysInfo.wProcessorArchitecture) {
     case PROCESSOR_ARCHITECTURE_INTEL: {
         info->architecture = PAL_CPU_ARCH_X86;
@@ -104,49 +106,42 @@ void platformGetCPUInfo(
         info->architecture = PAL_CPU_ARCH_ARM64;
         break;
     }
-
-    info->architecture = PAL_CPU_ARCH_UNKNOWN;
     }
 
     DWORD len = 0;
     GetLogicalProcessorInformationEx(RelationAll, nullptr, &len);
-    SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer = nullptr;
+    if (len > 0) {
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer = palAllocate(allocator, len, 16);
+        if (buffer) {
+            if (GetLogicalProcessorInformationEx(RelationAll, buffer, &len)) {
+                char* ptr = (char*)buffer;
+                while (ptr < (char*)buffer + len) {
+                    SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* item = (void*)ptr;
+                    if (item->Relationship == RelationProcessorCore) {
+                        info->numCores++;
 
-    buffer = palAllocate(allocator, len, 16);
-    if (!buffer) {
-        return;
-    }
-
-    BOOL ret = GetLogicalProcessorInformationEx(RelationAll, buffer, &len);
-    if (!ret) {
-        palFree(allocator, buffer);
-        return;
-    }
-
-    char* ptr = (char*)buffer;
-    while (ptr < (char*)buffer + len) {
-        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* tmp = (void*)ptr;
-        if (tmp->Relationship == RelationProcessorCore) {
-            info->numCores++;
-
-        } else if (tmp->Relationship == RelationCache) {
-            CACHE_RELATIONSHIP cache = tmp->Cache;
-            if (cache.Level == 1) {
-                info->cacheL1 = cache.CacheSize / 1024;
+                    } else if (item->Relationship == RelationCache) {
+                        CACHE_RELATIONSHIP cache = item->Cache;
+                        if (cache.Type == CacheData || cache.Type == CacheUnified) {
+                            if (cache.Level == 1) {
+                                info->cacheL1 = cache.CacheSize / 1024;
+                            } else if (cache.Level == 2) {
+                                info->cacheL2 = cache.CacheSize / 1024;
+                            } else if (cache.Level == 3) {
+                                info->cacheL3 = cache.CacheSize / 1024;
+                            }
+                        }
+                    }
+                    ptr += item->Size;
+                }
             }
-
-            if (cache.Level == 2) {
-                info->cacheL2 = cache.CacheSize / 1024;
-            }
-
-            if (cache.Level == 3) {
-                info->cacheL3 = cache.CacheSize / 1024;
-            }
+            palFree(allocator, buffer);
         }
-        ptr += tmp->Size;
     }
 
-    palFree(allocator, buffer);
+    if (info->numCores == 0) {
+        info->numCores = info->numLogicalProcessors;
+    }
 
     cpuid(regs, 1, 0);
     int ecx = regs[2];

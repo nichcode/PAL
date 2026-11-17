@@ -22,9 +22,10 @@
  */
 
 #include "system/platform.h"
-#include "pal2/system/platform.h"
 #include "pal2/core/library.h"
+#include "pal2/system/platform.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -55,7 +56,7 @@ static bool getPlatformVersion(PalVersion* version)
         return false;
     }
 
-    if (getVersion((PRTL_OSVERSIONINFOW)&info)) {
+    if (getVersion((PRTL_OSVERSIONINFOW)&info) != 0) {
         palFreeLibrary(ntdll);
         return false;
     }
@@ -70,7 +71,7 @@ static bool getPlatformVersion(PalVersion* version)
 }
 
 static bool isVersion(
-    PalVersion* osVersion,
+    const PalVersion* osVersion,
     uint32_t major,
     uint32_t minor,
     uint32_t build)
@@ -102,21 +103,21 @@ void platformGetPlatformInfo(PalPlatformInfo* info)
     /** We follow the rules of system_platform.h to only get C drive size.*/
     ULARGE_INTEGER free, total, available;
     if (GetDiskFreeSpaceExW(L"C:\\", &available, &total, &free)) {
-        info->totalMemory = (uint32_t)(total.QuadPart / (1024 * 1024 * 1024));
+        info->totalMemory = (uint32_t)(total.QuadPart / (1024ULL * 1024ULL * 1024ULL));
     }
 
     MEMORYSTATUSEX status = {0};
     status.dwLength = sizeof(MEMORYSTATUSEX);
     if (GlobalMemoryStatusEx(&status)) {
-        info->totalRAM = (uint32_t)(status.ullTotalPhys / (1024 * 1024));
+        info->totalRAM = (uint32_t)(status.ullTotalPhys / (1024ULL * 1024ULL));
     }
 
     if (!getPlatformVersion(&info->version)) {
+        snprintf(info->name, PAL_PLATFORM_NAME_SIZE, "Windows");
         return;
     }
 
-    const char* name = nullptr;
-    const char* build = nullptr;
+    const char* name = "Windows";
 
     if (isVersion(&info->version, 5, 1, 0)) {
         name = "Windows XP";
@@ -144,13 +145,9 @@ void platformGetPlatformInfo(PalPlatformInfo* info)
 
     if (isVersion(&info->version, 10, 0, 22000)) {
         name = "Windows 11";
-        build = ".22000";
     }
 
-    strcpy(info->name, name);
-    if (build) {
-        strcat(info->name, build);
-    }
+    snprintf(info->name, PAL_PLATFORM_NAME_SIZE, "%s", name);
 }
 
 #endif // _WIN32

@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -27,58 +26,80 @@
 #ifdef __linux__
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/statvfs.h>
 #include <sys/sysinfo.h>
-#include <string.h>
+
+static void parseOSReleaseValue(const char* src, char* dst, size_t dstSize)
+{
+    if (dstSize == 0) {
+        return;
+    }
+
+    if (*src == '"') {
+        src++;
+    }
+
+    size_t i = 0;
+    while (src[i] != '\0' && src[i] != '"' && src[i] != '\n' && i < dstSize - 1) {
+        dst[i] = src[i];
+        i++;
+    }
+    dst[i] = '\0';
+}
 
 void platformGetPlatformInfo(PalPlatformInfo* info)
 {
     info->type = PAL_PLATFORM_TYPE_LINUX;
 
     const char* session = getenv("XDG_SESSION_TYPE");
-    if (session) {
-        if (strcmp(session, "wayland") == 0) {
-            info->apiType = PAL_PLATFORM_API_TYPE_WAYLAND;
-        } else {
-            info->apiType = PAL_PLATFORM_API_TYPE_X11;
-        }
+    if (session && strcmp(session, "wayland") == 0) {
+        info->apiType = PAL_PLATFORM_API_TYPE_WAYLAND;
+    } else if (!session && getenv("WAYLAND_DISPLAY") != nullptr) {
+        info->apiType = PAL_PLATFORM_API_TYPE_WAYLAND;
     } else {
         info->apiType = PAL_PLATFORM_API_TYPE_X11;
     }
 
+    char name[32] = {0};
+    char version[16] = {0};
+
     FILE* file = fopen("/etc/os-release", "r");
-    if (!file) {
-        return;
-    }
-
-    char line[256];
-    char name[16];
-    char version[16];
-    while (fgets(line, sizeof(line), file)) {
-        if (strncmp(line, "NAME=", 5) == 0) {
-            sscanf(line, "NAME=\"%15[^\"]", name);
-
-        } else if (strncmp(line, "VERSION_ID=", 11) == 0) {
-            sscanf(line, "VERSION_ID=\"%15[^\"]", version);
+    if (file) {
+        char line[256];
+        while (fgets(line, sizeof(line), file)) {
+            if (strncmp(line, "NAME=", 5) == 0) {
+                parseOSReleaseValue(line + 5, name, sizeof(name));
+            } else if (strncmp(line, "VERSION_ID=", 11) == 0) {
+                parseOSReleaseValue(line + 11, version, sizeof(version));
+            }
         }
+        fclose(file);
     }
 
-    snprintf(info->name, PAL_PLATFORM_NAME_SIZE, "%s %s", name, version);
-    sscanf(version, "%u.%u", &info->version.major, &info->version.minor);
+    if (name[0] != '\0' && version[0] != '\0') {
+        snprintf(info->name, PAL_PLATFORM_NAME_SIZE, "%.15s %.15s", name, version);
+    } else if (name[0] != '\0') {
+        snprintf(info->name, PAL_PLATFORM_NAME_SIZE, "%s", name);
+    } else {
+        snprintf(info->name, PAL_PLATFORM_NAME_SIZE, "Linux");
+    }
 
-    fclose(file);
+    if (version[0] != '\0') {
+        sscanf(version, "%u.%u", &info->version.major, &info->version.minor);
+    }
 
     struct sysinfo sysInfo;
-    sysinfo(&sysInfo);
-    info->totalRAM = (uint32_t)(sysInfo.totalram / (1024 * 1024));
-
-    struct statvfs stats;
-    if (statvfs("/", &stats) != 0) {
-        return;
+    if (sysinfo(&sysInfo) == 0) {
+        uint64_t totalBytes = (uint64_t)sysInfo.totalram * (uint64_t)sysInfo.mem_unit;
+        info->totalRAM = (uint32_t)(totalBytes / (1024ULL * 1024ULL));
     }
 
-    uint64_t size = (stats.f_blocks * stats.f_frsize) / (1024 * 1024 * 1024);
-    info->totalMemory = (uint32_t)size;
+    struct statvfs stats;
+    if (statvfs("/", &stats) == 0) {
+        uint64_t size = ((uint64_t)stats.f_blocks * (uint64_t)stats.f_frsize) / (1024ULL * 1024ULL * 1024ULL);
+        info->totalMemory = (uint32_t)size;
+    }
 }
 
 #endif // __linux__
