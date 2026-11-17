@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -80,6 +79,10 @@ PalResult PAL_CALL palEnumerateMonitors(
     uint32_t* count,
     PalMonitor** monitors)
 {
+    if (!g_VideoInitialized) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
     if (!count || (!monitors && *count > 0)) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }

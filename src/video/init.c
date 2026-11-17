@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -48,6 +47,10 @@ void PAL_CALL palEnumerateVideoDrivers(
         return;
     }
 
+    if (*count > backendCount) {
+        *count = backendCount;
+    }
+
     for (uint32_t i = 0; i < *count; i++) {
         const VideoBackend* backend = backends[i];
         PalVideoDriver* backendDriver = backend->getDriver();
@@ -93,48 +96,54 @@ PalResult PAL_CALL palInitVideo(
 
     uint32_t backendCount = 0;
     const VideoBackend* const* backends = platformGetVideoBackends(&backendCount);
+    if (backendCount == 0) {
+        return palMakeResult(
+            PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED,
+            PAL_RESULT_SOURCE_NONE,
+            0);
+    }
 
-    // The default driver is always the first video driver so a direct lookup
-    // will work even if a user does not select a driver.
+    uint32_t selectedIndex = (s_Driver.id < backendCount) ? s_Driver.id : 0;
     void* selectedInstance = nullptr;
-    const VideoBackend* backend = backends[s_Driver.id];
-    PalResult result = backend->init(
-        allocator, 
-        eventDriver, 
-        preferredInstance, 
+    const VideoBackend* selectedBackend = backends[selectedIndex];
+
+    PalResult result = selectedBackend->init(
+        allocator,
+        eventDriver,
+        preferredInstance,
         &selectedInstance);
 
     if (result != PAL_RESULT_SUCCESS) {
-        // Check if there are more drivers and use that rather
-        if (backendCount == 1) {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_NONE, 
-                0);
-        }
+        for (uint32_t i = 0; i < backendCount; i++) {
+            if (i == selectedIndex) {
+                continue;
+            }
 
-        for (uint32_t i = 1; i < backendCount; i++) {
-            const VideoBackend* backend = backends[i];
-            result = backend->init(
-                allocator, 
-                eventDriver, 
-                preferredInstance, 
+            const VideoBackend* candidate = backends[i];
+            result = candidate->init(
+                allocator,
+                eventDriver,
+                preferredInstance,
                 &selectedInstance);
 
             if (result == PAL_RESULT_SUCCESS) {
-                PalVideoDriver* driver = backend->getDriver();
-                s_Driver.features = driver->features;
-                s_Driver.id = driver->id;
-                s_Driver.type = driver->type;
-
+                selectedBackend = candidate;
+                selectedIndex = i;
                 break;
             }
-
-            continue;
         }
     }
 
-    g_VideoBackend = backend;
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    PalVideoDriver* activeDriver = selectedBackend->getDriver();
+    s_Driver.features = activeDriver->features;
+    s_Driver.type = activeDriver->type;
+    s_Driver.id = selectedIndex;
+
+    g_VideoBackend = selectedBackend;
     g_VideoInitialized = PAL_TRUE;
     s_Instance = selectedInstance;
 
@@ -151,6 +160,7 @@ void PAL_CALL palShutdownVideo(void)
 
     memset(&g_Keyboard, 0, sizeof(Keyboard));
     memset(&g_Mouse, 0, sizeof(Mouse));
+    memset(&s_Driver, 0, sizeof(PalVideoDriver));
     g_VideoInitialized = PAL_FALSE;
 }
 

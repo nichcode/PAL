@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -22,9 +21,11 @@
  */
 
 #include "video_egl.h"
+#include <string.h>
 
 #ifndef _WIN32
 
+VideoEGL g_VideoEgl = {0};
 static eglGetProcAddressFn s_Load = nullptr;
 
 typedef union EGLSymbol
@@ -35,16 +36,34 @@ typedef union EGLSymbol
 
 PalLibrarySymbol loadEGLProc(const char* name)
 {
-    EGLSymbol sym;
-    sym.raw = s_Load(name);
-    return sym.symbol;
+    if (s_Load) {
+        EGLSymbol sym;
+        sym.raw = s_Load(name);
+        if (sym.raw) {
+            return sym.symbol;
+        }
+    }
+
+    if (g_VideoEgl.handle) {
+        return palGetSymbol(g_VideoEgl.handle, name);
+    }
+
+    return nullptr;
 }
 
-void loadVideoEGL()
+void loadVideoEGL(void)
 {
-    g_VideoEgl.handle = palLoadLibrary("libEGL.so");
     if (g_VideoEgl.handle) {
-        s_Load = (eglGetProcAddressFn)palGetSymbol(g_VideoEgl.handle, "eglGetProcAddress");
+        return;
+    }
+
+    g_VideoEgl.handle = palLoadLibrary("libEGL.so.1");
+    if (!g_VideoEgl.handle) {
+        g_VideoEgl.handle = palLoadLibrary("libEGL.so");
+    }
+
+    if (g_VideoEgl.handle) {
+        s_Load = (eglGetProcAddressFn)(void*)palGetSymbol(g_VideoEgl.handle, "eglGetProcAddress");
 
         g_VideoEgl.initialize = (eglInitializeFn)loadEGLProc("eglInitialize");
         g_VideoEgl.terminate = (eglTerminateFn)loadEGLProc("eglTerminate");
@@ -57,9 +76,14 @@ void loadVideoEGL()
     }
 }
 
-void unloadVideoEGL()
+void unloadVideoEGL(void)
 {
-    palFreeLibrary(g_VideoEgl.handle);
+    if (g_VideoEgl.handle) {
+        palFreeLibrary(g_VideoEgl.handle);
+    }
+
+    memset(&g_VideoEgl, 0, sizeof(VideoEGL));
+    s_Load = nullptr;
 }
 
 #endif // _WIN32

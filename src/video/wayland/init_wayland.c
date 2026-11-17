@@ -45,7 +45,6 @@
 Wayland g_Wl = {0};
 WaylandKeyboard g_WlKeyboard = {0};
 WaylandMouse g_WlMouse = {0};
-VideoEGL g_VideoEgl = {0};
 
 extern struct wl_interface xdgWmBaseInterface;
 static PalVideoDriver s_WaylandDriver = {0};

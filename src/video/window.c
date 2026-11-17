@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -50,14 +49,14 @@ void PAL_CALL palMinimizeWindow(PalWindow* window)
 {
     ASSERT(window != nullptr, "window parameter is nullptr");
 
-    g_VideoBackend->maximizeWindow(window);
+    g_VideoBackend->minimizeWindow(window);
 }
 
 void PAL_CALL palMaximizeWindow(PalWindow* window)
 {
     ASSERT(window != nullptr, "window parameter is nullptr");
 
-    g_VideoBackend->minimizeWindow(window);
+    g_VideoBackend->maximizeWindow(window);
 }
 
 void PAL_CALL palRestoreWindow(PalWindow* window)
@@ -106,7 +105,7 @@ void PAL_CALL palGetWindowMonitor(
     PalMonitor** monitor)
 {
     ASSERT(window != nullptr, "window parameter is nullptr");
-    ASSERT(monitor != nullptr, "window parameter is nullptr");
+    ASSERT(monitor != nullptr, "monitor parameter is nullptr");
 
     g_VideoBackend->getWindowMonitor(window, monitor);
 }
@@ -159,8 +158,12 @@ PalBool PAL_CALL palIsWindowVisible(PalWindow* window)
     return g_VideoBackend->isWindowVisible(window);
 }
 
-PalWindow* PAL_CALL palGetFocusWindow()
+PalWindow* PAL_CALL palGetFocusWindow(void)
 {
+    if (!g_VideoInitialized) {
+        return nullptr;
+    }
+
     return g_VideoBackend->getFocusWindow();
 }
 
