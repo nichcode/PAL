@@ -21,7 +21,7 @@ PAL_BUILD_EVENT_MODULE = true
 PAL_BUILD_SYSTEM_MODULE = true
 
 -- Build thread module
-PAL_BUILD_THREAD_MODULE = false
+PAL_BUILD_THREAD_MODULE = true
 
 -- Build video module
 PAL_BUILD_VIDEO_MODULE = false
