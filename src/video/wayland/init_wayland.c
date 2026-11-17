@@ -245,7 +245,7 @@ static void loadProcs(PalBool loadAll)
     // clang-format on
 }
 
-void createScancodeTable(void)
+static void createScancodeTable(void)
 {
     // Letters
     g_WlKeyboard.scancodes[0x01E] = PAL_SCANCODE_A;
@@ -368,7 +368,7 @@ void createScancodeTable(void)
     g_WlKeyboard.scancodes[0x07E] = PAL_SCANCODE_RSUPER;
 }
 
-void createKeycodeTable(void)
+static void createKeycodeTable(void)
 {
     // Tis is for only printable and text input keys
 
@@ -423,19 +423,8 @@ static inline uint64_t getCurrentTime()
     return (now * 1000) / g_WlKeyboard.frequency;
 }
 
-static void driverGlobalHandle(
-    void* data,
-    struct wl_registry* registry,
-    uint32_t name,
-    const char* interface,
-    uint32_t version)
+static void getDriverFeatures(const char* interface)
 {
-    (void)data;
-    (void)registry;
-    (void)name;
-    (void)interface;
-    (void)version;
-
     PalVideoFeatures features = 0;
     features |= PAL_VIDEO_FEATURE_HIGH_DPI;
     features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
@@ -452,6 +441,21 @@ static void driverGlobalHandle(
     }
 
     s_WaylandDriver.features = features;
+}
+
+static void driverGlobalHandle(
+    void* data,
+    struct wl_registry* registry,
+    uint32_t name,
+    const char* interface,
+    uint32_t version)
+{
+    (void)data;
+    (void)registry;
+    (void)name;
+    (void)version;
+
+    getDriverFeatures(interface);
 }
 
 static void driverGlobalRemove(
@@ -474,6 +478,11 @@ static void globalHandle(
     (void)data;
     (void)interface;
     (void)version;
+
+    // wlGetVideoDriver() has not been called
+    if (s_WaylandDriver.features == 0) {
+        getDriverFeatures(interface);
+    }
 
     if (strcmp(interface, "wl_compositor") == 0) {
         g_Wl.compositor = wlRegistryBind(registry, name, g_Wl.compositorInterface, 4);
@@ -547,23 +556,26 @@ PalVideoDriver* wlGetVideoDriver(void)
         return &s_WaylandDriver;
     }
 
-    g_Wl.libwayland = palLoadLibrary("libwayland-client.so.0");
-    if (g_Wl.libwayland) {
-        loadGlobals();
-        loadProcs(PAL_FALSE);
-        setupProtocols();
+    // if wlInitVideo() has been called, we dont want to load again
+    if (!g_Wl.libwayland) {
+        g_Wl.libwayland = palLoadLibrary("libwayland-client.so.0");
+        if (g_Wl.libwayland) {
+            loadGlobals();
+            loadProcs(PAL_FALSE);
+            setupProtocols();
 
-        g_Wl.display = g_Wl.displayConnect(nullptr);
-        if (g_Wl.display) {
-            g_Wl.registry = wlDisplayGetRegistry(g_Wl.display);
-            wlRegistryAddListener(g_Wl.registry, &s_DriverRegistryListener, nullptr);
+            g_Wl.display = g_Wl.displayConnect(nullptr);
+            if (g_Wl.display) {
+                g_Wl.registry = wlDisplayGetRegistry(g_Wl.display);
+                wlRegistryAddListener(g_Wl.registry, &s_DriverRegistryListener, nullptr);
 
-            g_Wl.displayRoundtrip(g_Wl.display);
-            g_Wl.displayDisconnect(g_Wl.display);
+                g_Wl.displayRoundtrip(g_Wl.display);
+                g_Wl.displayDisconnect(g_Wl.display);
+            }
+
+            palFreeLibrary(g_Wl.libwayland);
+            memset(&g_Wl, 0, sizeof(Wayland));
         }
-
-        palFreeLibrary(g_Wl.libwayland);
-        memset(&g_Wl, 0, sizeof(Wayland));
     }
 
     s_WaylandDriver.type = PAL_VIDEO_DRIVER_TYPE_WAYLAND;
