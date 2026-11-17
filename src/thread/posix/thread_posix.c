@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -26,13 +25,13 @@
 #include "pal2/thread/thread.h"
 
 #if PLATFORM_POSIX
-#include <sched.h>
-#include <sys/resource.h>
-#include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
-
+#include <sched.h>
 #include <string.h>
+#include <sys/resource.h>
+#include <time.h>
+#include <unistd.h>
 
 #define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
@@ -42,31 +41,26 @@ PalResult platformCreateThread(
     PalThread** thread)
 {
     pthread_t pthread;
-    if (info->stackSize == 0) {
-        if (pthread_create(&pthread, nullptr, info->entry, info->arg) != 0) {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_POSIX, 
-                (uint32_t)errno);
-        }
+    int ret = 0;
 
+    if (info->stackSize == 0) {
+        ret = pthread_create(&pthread, nullptr, info->entry, info->arg);
     } else {
         pthread_attr_t attr;
         pthread_attr_init(&attr);
         pthread_attr_setstacksize(&attr, info->stackSize);
-
-        if (pthread_create(&pthread, nullptr, info->entry, info->arg) != 0) {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_POSIX, 
-                (uint32_t)errno);
-        }
-
+        ret = pthread_create(&pthread, &attr, info->entry, info->arg);
         pthread_attr_destroy(&attr);
     }
 
-    *thread = TO_PAL_HANDLE(PalThread, pthread);
+    if (ret != 0) {
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
+    }
 
+    *thread = TO_PAL_HANDLE(PalThread, pthread);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -74,20 +68,13 @@ PalResult platformJoinThread(
     PalThread* thread,
     void** retval)
 {
-    int ret = 0;
     pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
-    if (retval) {
-        ret = pthread_join(pthread, retval);
-
-    } else {
-        ret = pthread_join(pthread, nullptr);
-    }
-
+    int ret = pthread_join(pthread, retval);
     if (ret != 0) {
         return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_POSIX, 
-            (uint32_t)errno);
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -100,20 +87,27 @@ void platformDetachThread(PalThread* thread)
 
 void platformSleep(uint64_t milliseconds)
 {
-    usleep((useconds_t)milliseconds * 1000);
+    struct timespec req;
+    req.tv_sec = (time_t)(milliseconds / 1000ULL);
+    req.tv_nsec = (long)(milliseconds % 1000ULL) * 1000000L;
+
+    struct timespec rem;
+    while (nanosleep(&req, &rem) == -1 && errno == EINTR) {
+        req = rem;
+    }
 }
 
-void platformYield()
+void platformYield(void)
 {
     sched_yield();
 }
 
-PalThread* platformGetCurrentThread()
+PalThread* platformGetCurrentThread(void)
 {
     return TO_PAL_HANDLE(PalThread, pthread_self());
 }
 
-PalThreadFeatures platformGetThreadFeatures()
+PalThreadFeatures platformGetThreadFeatures(void)
 {
     PalThreadFeatures features = 0;
     features |= PAL_THREAD_FEATURE_STACK_SIZE;
@@ -134,15 +128,20 @@ PalThreadPriority platformGetThreadPriority(PalThread* thread)
 
     pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
     if (pthread_getschedparam(pthread, &policy, &param) != 0) {
-        return 0;
+        return PAL_THREAD_PRIORITY_NORMAL;
     }
 
-    if (policy == SCHED_OTHER || policy == SCHED_RR) {
-        if (param.sched_priority == 10) {
-            return PAL_THREAD_PRIORITY_LOW;
+    if (policy == SCHED_FIFO || policy == SCHED_RR) {
+        if (param.sched_priority > 0) {
+            return PAL_THREAD_PRIORITY_HIGH;
+        }
+    }
 
-        } else if (param.sched_priority == 0) {
-            return PAL_THREAD_PRIORITY_NORMAL;
+    if (pthread_equal(pthread, pthread_self())) {
+        errno = 0;
+        int niceVal = getpriority(PRIO_PROCESS, 0);
+        if (errno == 0 && niceVal > 0) {
+            return PAL_THREAD_PRIORITY_LOW;
         }
     }
 
@@ -163,13 +162,14 @@ uint64_t platformGetThreadAffinity(PalThread* thread)
     uint64_t mask = 0;
     for (int i = 0; i < 64; ++i) {
         if (CPU_ISSET((size_t)i, &cpuset)) {
-            mask |= (1ULL << 1);
+            mask |= (1ULL << i);
         }
     }
     return mask;
-#endif // __linux__
-
+#else
+    (void)thread;
     return 0;
+#endif // __linux__
 }
 
 void platformGetThreadName(
@@ -180,14 +180,35 @@ void platformGetThreadName(
 {
 #ifdef __linux__
     pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
+    char tmp[16] = {0};
+
+    if (pthread_getname_np(pthread, tmp, sizeof(tmp)) != 0) {
+        if (size) {
+            *size = 0;
+        }
+        if (buffer && bufferSize > 0) {
+            buffer[0] = '\0';
+        }
+        return;
+    }
+
+    size_t len = strlen(tmp) + 1;
+    if (size) {
+        *size = (uint64_t)len;
+    }
 
     if (buffer && bufferSize > 0) {
-        pthread_getname_np(pthread, buffer, bufferSize);
-
-    } else {
-        char tmp[16];
-        pthread_getname_np(pthread, tmp, 16);
-        *size = strlen(tmp) + 1;
+        size_t copyLen = (len < bufferSize) ? (len - 1) : (size_t)(bufferSize - 1);
+        memcpy(buffer, tmp, copyLen);
+        buffer[copyLen] = '\0';
+    }
+#else
+    (void)thread;
+    if (size) {
+        *size = 0;
+    }
+    if (buffer && bufferSize > 0) {
+        buffer[0] = '\0';
     }
 #endif // __linux__
 }
@@ -196,29 +217,50 @@ PalResult platformSetThreadPriority(
     PalThread* thread,
     PalThreadPriority priority)
 {
+    pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
+
     switch (priority) {
     case PAL_THREAD_PRIORITY_LOW: {
-        setpriority(PRIO_PROCESS, 0, 10);
+        struct sched_param param = {0};
+        (void)pthread_setschedparam(pthread, SCHED_OTHER, &param);
+        if (pthread_equal(pthread, pthread_self())) {
+            if (setpriority(PRIO_PROCESS, 0, 10) != 0) {
+                return palMakeResult(
+                    PAL_RESULT_CODE_INVALID_OPERATION,
+                    PAL_RESULT_SOURCE_POSIX,
+                    (uint32_t)errno);
+            }
+        }
         break;
     }
 
     case PAL_THREAD_PRIORITY_NORMAL: {
-        setpriority(PRIO_PROCESS, 0, 0);
+        struct sched_param param = {0};
+        int ret = pthread_setschedparam(pthread, SCHED_OTHER, &param);
+        if (ret != 0) {
+            return palMakeResult(
+                PAL_RESULT_CODE_INVALID_OPERATION,
+                PAL_RESULT_SOURCE_POSIX,
+                (uint32_t)ret);
+        }
+        if (pthread_equal(pthread, pthread_self())) {
+            (void)setpriority(PRIO_PROCESS, 0, 0);
+        }
         break;
     }
 
     case PAL_THREAD_PRIORITY_HIGH: {
-        struct sched_param param;
+        struct sched_param param = {0};
         param.sched_priority = 10;
 
-        pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
         int ret = pthread_setschedparam(pthread, SCHED_FIFO, &param);
-        if (ret == EPERM) {
+        if (ret != 0) {
             return palMakeResult(
                 PAL_RESULT_CODE_INVALID_OPERATION,
                 PAL_RESULT_SOURCE_POSIX,
-                (uint32_t)errno);
+                (uint32_t)ret);
         }
+        break;
     }
     }
 
@@ -229,7 +271,7 @@ PalResult platformSetThreadAffinity(
     PalThread* thread,
     uint64_t mask)
 {
-    #ifdef __linux__
+#ifdef __linux__
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
 
@@ -243,35 +285,47 @@ PalResult platformSetThreadAffinity(
     int ret = pthread_setaffinity_np(pthread, sizeof(cpuset), &cpuset);
     if (ret != 0) {
         return palMakeResult(
-            PAL_RESULT_CODE_INVALID_HANDLE, 
-            PAL_RESULT_SOURCE_POSIX, 
-            (uint32_t)errno);
+            PAL_RESULT_CODE_INVALID_HANDLE,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
     }
 
     return PAL_RESULT_SUCCESS;
-#endif // __linux__
-
+#else
+    (void)thread;
+    (void)mask;
     return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+#endif // __linux__
 }
 
 PalResult platformSetThreadName(
     PalThread* thread,
     const char* name)
 {
-    #ifdef __linux__
+#ifdef __linux__
+    char truncated[16];
+    size_t i = 0;
+    while (name[i] != '\0' && i < sizeof(truncated) - 1) {
+        truncated[i] = name[i];
+        i++;
+    }
+    truncated[i] = '\0';
+
     pthread_t pthread = FROM_PAL_HANDLE(pthread_t, thread);
-    int ret = pthread_setname_np(pthread, name);
+    int ret = pthread_setname_np(pthread, truncated);
     if (ret != 0) {
         return palMakeResult(
             PAL_RESULT_CODE_INVALID_HANDLE,
-            PAL_RESULT_SOURCE_POSIX, 
-            (uint32_t)errno);
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
     }
 
     return PAL_RESULT_SUCCESS;
-#endif // __linux__
-
+#else
+    (void)thread;
+    (void)name;
     return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+#endif // __linux__
 }
 
 #endif // PLATFORM_POSIX

@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -21,12 +20,15 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include "thread/platform.h"
 #include "pal2/thread/condvar.h"
 
 #if PLATFORM_POSIX
 #include "thread_posix.h"
 #include <errno.h>
+#include <time.h>
 
 PalResult platformCreateCondVar(
     const PalAllocator* allocator,
@@ -37,11 +39,39 @@ PalResult platformCreateCondVar(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    pthread_cond_init(&pcondVar->handle, nullptr);
+    pthread_condattr_t attr;
+    int ret = pthread_condattr_init(&attr);
+    if (ret != 0) {
+        palFree(allocator, pcondVar);
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
+    }
+
+    ret = pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+    if (ret != 0) {
+        pthread_condattr_destroy(&attr);
+        palFree(allocator, pcondVar);
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
+    }
+
+    ret = pthread_cond_init(&pcondVar->handle, &attr);
+    pthread_condattr_destroy(&attr);
+    if (ret != 0) {
+        palFree(allocator, pcondVar);
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
+    }
+
     pcondVar->allocator = allocator;
-    
     *condVar = pcondVar;
-    
+
     return PAL_RESULT_SUCCESS;
 }
 
@@ -60,18 +90,10 @@ PalResult platformWaitCondVar(
         return PAL_RESULT_SUCCESS;
     }
 
-    if (ret == ETIMEDOUT) {
-        return palMakeResult(
-            PAL_RESULT_CODE_TIMEOUT, 
-            PAL_RESULT_SOURCE_POSIX, 
-            (uint32_t)errno);
-
-    } else {
-        return palMakeResult(
-            PAL_RESULT_CODE_PLATFORM_FAILURE, 
-            PAL_RESULT_SOURCE_POSIX, 
-            (uint32_t)errno);
-    }
+    return palMakeResult(
+        PAL_RESULT_CODE_PLATFORM_FAILURE,
+        PAL_RESULT_SOURCE_POSIX,
+        (uint32_t)ret);
 }
 
 PalResult platformWaitCondVarTimeout(
@@ -80,23 +102,31 @@ PalResult platformWaitCondVarTimeout(
     uint64_t milliseconds)
 {
     struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += (time_t)milliseconds / 1000;
-    ts.tv_nsec += (long)(milliseconds % 1000) * 1000000;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    ts.tv_sec += (time_t)(milliseconds / 1000ULL);
+    ts.tv_nsec += (long)(milliseconds % 1000ULL) * 1000000L;
 
-    if (ts.tv_nsec >= 1000000000) {
+    if (ts.tv_nsec >= 1000000000L) {
         ts.tv_sec++;
-        ts.tv_nsec -= 1000000000;
+        ts.tv_nsec -= 1000000000L;
     }
 
-    if (pthread_cond_timedwait(&condVar->handle, &mutex->handle, &ts) != 0) {
+    int ret = pthread_cond_timedwait(&condVar->handle, &mutex->handle, &ts);
+    if (ret == 0) {
+        return PAL_RESULT_SUCCESS;
+    }
+
+    if (ret == ETIMEDOUT) {
         return palMakeResult(
-            PAL_RESULT_CODE_TIMEOUT, 
-            PAL_RESULT_SOURCE_POSIX, 
-            (uint32_t)errno);
+            PAL_RESULT_CODE_TIMEOUT,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
     }
 
-    return PAL_RESULT_SUCCESS;
+    return palMakeResult(
+        PAL_RESULT_CODE_PLATFORM_FAILURE,
+        PAL_RESULT_SOURCE_POSIX,
+        (uint32_t)ret);
 }
 
 void platformSignalCondVar(PalCondVar* condVar)

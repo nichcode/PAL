@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -34,24 +33,25 @@ PalTLSId platformCreateTLS(PaTlsDestructorFn destructor)
         return 0;
     }
 
-    return (PalTLSId)key;
+    // Offset by +1 so key 0 does not collide with invalid PalTLSId (0).
+    return (PalTLSId)(key + 1);
 }
 
 void platformDestroyTLS(PalTLSId Tls)
 {
-    pthread_key_delete((pthread_key_t)Tls);
+    pthread_key_delete((pthread_key_t)(Tls - 1));
 }
 
 void* platformGetTLS(PalTLSId Tls)
 {
-    return pthread_getspecific((pthread_key_t)Tls);
+    return pthread_getspecific((pthread_key_t)(Tls - 1));
 }
 
 void platformSetTLS(
     PalTLSId Tls,
     void* data)
 {
-    pthread_setspecific((pthread_key_t)Tls, data);
+    pthread_setspecific((pthread_key_t)(Tls - 1), data);
 }
 
 #endif // PLATFORM_POSIX
