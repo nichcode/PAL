@@ -27,13 +27,13 @@
 #include "pal2/event/driver.h"
 #endif // PAL_HAS_EVENT_MODULE
 
+#include "listeners.h"
 #include "pal2/core/time.h"
 #include "video/platform.h"
-#include "listeners.h"
 #include <linux/input-event-codes.h>
+#include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <stdio.h>
 
 static inline uint64_t getCurrentTime()
 {
@@ -67,29 +67,29 @@ static void outputGeometry(
     monitorData->y = y;
 
     switch (transform) {
-        case WL_OUTPUT_TRANSFORM_NORMAL:
-        case WL_OUTPUT_TRANSFORM_180: {
-            monitorData->orientation = PAL_ORIENTATION_LANDSCAPE;
-            break;
-        }
+    case WL_OUTPUT_TRANSFORM_NORMAL:
+    case WL_OUTPUT_TRANSFORM_180: {
+        monitorData->orientation = PAL_ORIENTATION_LANDSCAPE;
+        break;
+    }
 
-        case WL_OUTPUT_TRANSFORM_90:
-        case WL_OUTPUT_TRANSFORM_270: {
-            monitorData->orientation = PAL_ORIENTATION_PORTRAIT;
-            break;
-        }
+    case WL_OUTPUT_TRANSFORM_90:
+    case WL_OUTPUT_TRANSFORM_270: {
+        monitorData->orientation = PAL_ORIENTATION_PORTRAIT;
+        break;
+    }
 
-        case WL_OUTPUT_TRANSFORM_FLIPPED:
-        case WL_OUTPUT_TRANSFORM_FLIPPED_180: {
-            monitorData->orientation = PAL_ORIENTATION_LANDSCAPE_FLIPPED;
-            break;
-        }
+    case WL_OUTPUT_TRANSFORM_FLIPPED:
+    case WL_OUTPUT_TRANSFORM_FLIPPED_180: {
+        monitorData->orientation = PAL_ORIENTATION_LANDSCAPE_FLIPPED;
+        break;
+    }
 
-        case WL_OUTPUT_TRANSFORM_FLIPPED_90:
-        case WL_OUTPUT_TRANSFORM_FLIPPED_270: {
-            monitorData->orientation = PAL_ORIENTATION_PORTRAIT_FLIPPED;
-            break;
-        }
+    case WL_OUTPUT_TRANSFORM_FLIPPED_90:
+    case WL_OUTPUT_TRANSFORM_FLIPPED_270: {
+        monitorData->orientation = PAL_ORIENTATION_PORTRAIT_FLIPPED;
+        break;
+    }
     }
 
     snprintf(monitorData->name, 32, "%s %s", make, model);
@@ -295,11 +295,9 @@ static void pointerHandleEnter(
         return;
     }
 
-    if (data->cursor) {
-        WaylandCursor* cursor = data->cursor;
-        wlPointerSetCursor(pointer, serial, cursor->surface, cursor->hotspotX, cursor->hotspotY);
-    }
-
+    data->pointer = pointer;
+    data->pointerEnterSerial = serial;
+    applyWindowCursor(data);
     g_Wl.pointerSurface = surface;
 }
 
@@ -313,8 +311,15 @@ static void pointerHandleLeave(
     (void)pointer;
     (void)serial;
 
+    WindowData* data = findWindowData((PalWindow*)surface);
+    if (!data) {
+        return;
+    }
+
     if (g_Wl.pointerSurface == surface) {
         g_Wl.pointerSurface = nullptr;
+        data->pointer = nullptr;
+        data->pointerEnterSerial = 0;
     }
 }
 
@@ -427,7 +432,7 @@ static void pointerHandleButton(
             event.type = type;
 
             // since we are not drawing decorations for users they need the serial
-            // in order to draw their decorations we put the serial at the upper 32 so 
+            // in order to draw their decorations we put the serial at the upper 32 so
             // ABI is preserved
             event.data = palPackUint32(_button, serial);
             event.data2 = palPackPointer(window);
@@ -802,14 +807,7 @@ static void keyboardHandleModifiers(
     (void)mods_locked;
 
     if (g_Wl.state) {
-        g_Wl.xkbStateUpdateMask(
-            g_Wl.state, 
-            mods_depressed, 
-            mods_latched, 
-            mods_locked, 
-            group, 
-            0, 
-            0);
+        g_Wl.xkbStateUpdateMask(g_Wl.state, mods_depressed, mods_latched, mods_locked, group, 0, 0);
     }
 }
 
@@ -871,21 +869,12 @@ static void xdgSurfaceHandleConfigure(
     if (!winData->skipConfigure) {
         if (winData->pushConfigureEvent) {
             if (winData->eglWindow) {
-                g_Wl.eglWindowResize(
-                    winData->eglWindow, 
-                    (int)winData->w, 
-                    (int)winData->h, 
-                    0, 
-                    0);
+                g_Wl.eglWindowResize(winData->eglWindow, (int)winData->w, (int)winData->h, 0, 0);
 
             } else {
                 // create a new buffer with the new size
                 struct wl_buffer* buffer = nullptr;
-                buffer = createShmBuffer(
-                    (int)winData->w, 
-                    (int)winData->h, 
-                    nullptr, 
-                    PAL_FALSE);
+                buffer = createShmBuffer((int)winData->w, (int)winData->h, nullptr, PAL_FALSE);
 
                 if (!buffer) {
                     return;
@@ -1081,20 +1070,23 @@ void zxdgDecorationHandleConfigure(
 }
 
 struct wl_output_listener g_OutputListener = {
-    .geometry = outputGeometry, 
-    .mode = outputMode, 
-    .done = outputDone, 
-    .scale = outputScale};
+    .geometry = outputGeometry,
+    .mode = outputMode,
+    .done = outputDone,
+    .scale = outputScale,
+};
 
 struct wl_output_listener g_DefaultModeListener = {
-    .geometry = outputGeometry, 
-    .mode = outputMode, 
-    .done = outputDone, 
-    .scale = outputScale};
+    .geometry = outputGeometry,
+    .mode = outputMode,
+    .done = outputDone,
+    .scale = outputScale,
+};
 
 struct wl_surface_listener g_SurfaceListener = {
     .enter = surfaceHandleEnter,
-    .leave = surfaceHandleLeave};
+    .leave = surfaceHandleLeave,
+};
 
 struct wl_pointer_listener g_PointerListener = {
     .enter = pointerHandleEnter,
@@ -1105,7 +1097,8 @@ struct wl_pointer_listener g_PointerListener = {
     .axis_discrete = pointerHandleAxisDiscrete,
     .frame = pointerHandleFrame,
     .axis_source = pointerHandleAxisSource,
-    .axis_stop = pointerHandleAxisStop};
+    .axis_stop = pointerHandleAxisStop,
+};
 
 struct wl_keyboard_listener g_KeyboardListener = {
     .enter = keyboardHandleEnter,
@@ -1113,25 +1106,31 @@ struct wl_keyboard_listener g_KeyboardListener = {
     .keymap = keyboardHandleRemap,
     .key = keyboardHandleKey,
     .repeat_info = keyboardHandleRepeatInfo,
-    .modifiers = keyboardHandleModifiers};
+    .modifiers = keyboardHandleModifiers,
+};
 
 struct zxdg_toplevel_decoration_v1_listener g_DecorationListener = {
-    .configure = zxdgDecorationHandleConfigure};
+    .configure = zxdgDecorationHandleConfigure,
+};
 
 struct wl_seat_listener g_SeatListener = {
     .capabilities = seatHandleCapabilities,
-    .name = seatHandleName};
+    .name = seatHandleName,
+};
 
 struct xdg_wm_base_listener g_WmBaseListener = {
-    .ping = wmBaseHandlePing};
+    .ping = wmBaseHandlePing,
+};
 
 struct xdg_surface_listener g_XdgSurfaceListener = {
-    .configure = xdgSurfaceHandleConfigure};
+    .configure = xdgSurfaceHandleConfigure,
+};
 
 struct xdg_toplevel_listener g_XdgToplevelListener = {
     .configure = xdgToplevelHandleConfigure,
     .close = xdgToplevelHandleClose,
     .configure_bounds = nullptr,
-    .wm_capabilities = nullptr};
+    .wm_capabilities = nullptr,
+};
 
 #endif // PAL_HAS_WAYLAND_BACKEND

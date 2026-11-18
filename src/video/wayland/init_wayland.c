@@ -40,6 +40,7 @@
 #include <errno.h>
 #include <poll.h>
 #include <string.h>
+#include <stdlib.h>
 
 Wayland g_Wl = {0};
 WaylandKeyboard g_WlKeyboard = {0};
@@ -443,6 +444,26 @@ static void getDriverFeatures(const char* interface)
     s_WaylandDriver.features = features;
 }
 
+static void getCursorTheme()
+{
+    const char* theme = getenv("XCURSOR_THEME");
+    if (theme && theme[0] == '\0') {
+        theme = nullptr;
+    }
+
+    int themeSize = 24;
+    const char* tmp = getenv("XCURSOR_SIZE");
+    if (tmp && tmp[0] != '\0') {
+        char* end = nullptr;
+        long parsed = strtol(tmp, &end, 10);
+        if (end != tmp && parsed > 0 && parsed <= 256) {
+            themeSize = (int)parsed;
+        }
+    }
+
+    g_Wl.cursorTheme = g_Wl.cursorThemeLoad(theme, themeSize, g_Wl.shm);
+}
+
 static void driverGlobalHandle(
     void* data,
     struct wl_registry* registry,
@@ -540,15 +561,24 @@ static void globalRemove(
 
 struct wl_registry_listener s_DriverRegistryListener = {
     .global = driverGlobalHandle,
-    .global_remove = driverGlobalRemove};
+    .global_remove = driverGlobalRemove,
+};
 
-struct wl_registry_listener s_RegistryListener = {.global = globalHandle, .global_remove = globalRemove};
+struct wl_registry_listener s_RegistryListener = {
+    .global = globalHandle,
+    .global_remove = globalRemove,
+};
 
 /* =========================================================================
  * API
  * ========================================================================= */
 
 void wlShutdownVideo(void);
+void wlDestroyCursor(PalCursor* cursor);
+
+PalResult wlCreateCursorFrom(
+    PalCursorType type,
+    PalCursor** cursor);
 
 PalVideoDriver* wlGetVideoDriver(void)
 {
@@ -652,11 +682,19 @@ PalResult wlInitVideo(
         goto cleanup;
     }
 
-    g_Wl.cursorTheme = g_Wl.cursorThemeLoad(nullptr, 32, g_Wl.shm);
+    getCursorTheme();
     if (!g_Wl.cursorTheme) {
         result = PAL_RESULT_CODE_PLATFORM_FAILURE;
         goto cleanup;
     }
+
+    // create a default arrow cursor for revert
+    PalCursor* tmp = nullptr;
+    result = wlCreateCursorFrom(PAL_CURSOR_TYPE_ARROW, &tmp);
+    if (result != PAL_RESULT_SUCCESS) {
+        goto cleanup;
+    }
+    g_Wl.defaultCursor = (WaylandCursor*)tmp;
 
     return PAL_RESULT_SUCCESS;
 
@@ -691,6 +729,10 @@ void wlShutdownVideo(void)
 
     if (g_Wl.windowData) {
         palFree(g_Wl.allocator, g_Wl.windowData);
+    }
+
+    if (g_Wl.defaultCursor) {
+        wlDestroyCursor((PalCursor*)g_Wl.defaultCursor);
     }
 
     if (g_Wl.pointer) {
@@ -793,7 +835,7 @@ void wlUpdateVideo(void)
     } else {
         g_Wl.cancelRead(g_Wl.display);
     }
-    
+
     // dispatch events that were read
     g_Wl.dispatchPending(g_Wl.display);
 }

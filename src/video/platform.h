@@ -300,7 +300,12 @@ typedef void (*SetCursorPosFn)(
     int32_t x,
     int32_t y);
 
-/** This function has the same semantics and rules as palSetWindowCursor(). */
+/** This function has the same semantics and rules as palSetWindowCursor(). 
+ * 
+ * Additional rules:
+ * - This function must update the cursor immediately, even if the pointer
+ *   is already in a hovered state over the window.
+*/
 typedef void (*SetWindowCursorFn)(
     PalWindow* window,
     PalCursor* cursor);

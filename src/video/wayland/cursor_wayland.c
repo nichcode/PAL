@@ -28,6 +28,36 @@
 #include "client_protocol.h"
 #include <errno.h>
 
+/* =========================================================================
+ * Helper
+ * ========================================================================= */
+
+void applyWindowCursor(WindowData* data)
+{
+    if (!data->pointer) {
+        return;
+    }
+
+    // revert to default "left_ptr" if user passed nullptr
+    WaylandCursor* active = data->cursor ? data->cursor : g_Wl.defaultCursor;
+
+    if (active) {
+        wlPointerSetCursor(
+            data->pointer,
+            data->pointerEnterSerial,
+            active->surface,
+            active->hotspotX,
+            active->hotspotY);
+    }
+
+    g_Wl.displayFlush(g_Wl.display);
+}
+
+
+/* =========================================================================
+ * API
+ * ========================================================================= */
+
 PalResult wlCreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** cursor)
@@ -67,26 +97,38 @@ PalResult wlCreateCursorFrom(
     PalCursorType type,
     PalCursor** cursor)
 {
-    const char* cursorType = "left_ptr";
+    const char *names[3] = { "left_ptr", nullptr, nullptr };
     switch (type) {
     case PAL_CURSOR_TYPE_HAND:
-        cursorType = "hand1";
+        names[0] = "pointer";
+        names[1] = "hand2";
+        names[2] = "hand1";
         break;
 
     case PAL_CURSOR_TYPE_CROSS:
-        cursorType = "crosshair";
+        names[0] = "crosshair";
+        names[1] = "cross";
         break;
 
     case PAL_CURSOR_TYPE_IBEAM:
-        cursorType = "text";
+        names[0] = "text";
+        names[1] = "xterm";
         break;
 
     case PAL_CURSOR_TYPE_WAIT:
-        cursorType = "wait";
+        names[0] = "wait";
+        names[1] = "watch";
         break;
     }
 
-    struct wl_cursor* wlCursor = g_Wl.cursorThemeGetCursor(g_Wl.cursorTheme, cursorType);
+    struct wl_cursor* wlCursor = nullptr;
+    for (int i = 0; names[i] != NULL; i++) {
+        wlCursor = g_Wl.cursorThemeGetCursor(g_Wl.cursorTheme, names[i]);
+        if (wlCursor) {
+            break;
+        }
+    }
+
     if (!wlCursor || wlCursor->image_count == 0) {
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE,
@@ -169,7 +211,8 @@ void wlSetWindowCursor(
 {
     WindowData* data = findWindowData(window);
     if (data) {
-        data->cursor = cursor;
+        data->cursor = (WaylandCursor*)cursor;
+        applyWindowCursor(data);
     }
 }
 

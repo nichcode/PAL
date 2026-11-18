@@ -168,7 +168,9 @@ typedef struct WindowData {
     struct xdg_toplevel* xdgToplevel;
     struct wl_buffer* buffer;
     struct zxdg_toplevel_decoration_v1* decoration;
-    void* cursor;
+    WaylandCursor* cursor;
+    struct wl_pointer* pointer;
+    uint32_t pointerEnterSerial;
     struct wl_egl_window* eglWindow;
     SpanMonitor monitors[MAX_SPAN_MONITORS];
 } WindowData;
@@ -184,6 +186,7 @@ typedef struct Wayland {
     PalLibrary* libegl;
     PalLibrary* libcursor;
 
+    WaylandCursor* defaultCursor;
     WindowData* windowData;
     MonitorData* monitorData;
     const PalAllocator* allocator;
@@ -295,6 +298,9 @@ WindowData* findWindowData(PalWindow* window);
 
 /** Defined in protocols.c */
 void setupProtocols();
+
+/** Defined in cursor_wayland.c */
+void applyWindowCursor(WindowData* data);
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 #endif // WAYLAND_HELPER_H
