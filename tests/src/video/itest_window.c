@@ -73,15 +73,6 @@ int main(void)
                     break;
                 }
 
-                case PAL_EVENT_TYPE_KEYDOWN: {
-                    PalKeycode keycode = 0;
-                    palUnpackUint32(event.data, &keycode, nullptr);
-                    if (keycode == PAL_KEYCODE_ESCAPE) {
-                        running = PAL_FALSE;
-                    }
-                    break;
-                }
-
                 case PAL_EVENT_TYPE_WINDOW_SIZE: {
                     uint32_t width, height;
                     palUnpackUint32(event.data, &width, &height);
@@ -157,6 +148,79 @@ int main(void)
                 case PAL_EVENT_TYPE_KEYCHAR: {
                     uint32_t codepoint = (uint32_t)event.data;
                     palLog(nullptr, "U+%04X", codepoint);
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_KEYDOWN: {
+                    uint32_t keycode, scancode;
+                    palUnpackUint32(event.data, &keycode, &scancode);
+
+                    const char* keyName = palGetKeycodeName(keycode);
+                    const char* scancodeName = palGetScancodeName(scancode);
+                    palLog(nullptr, "Key pressed: (%s, %s)", keyName, scancodeName);
+
+                    if (keycode == PAL_KEYCODE_ESCAPE) {
+                        running = PAL_FALSE;
+                    }
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_KEYREPEAT: {
+                    uint32_t keycode, scancode;
+                    palUnpackUint32(event.data, &keycode, &scancode);
+
+                    const char* keyName = palGetKeycodeName(keycode);
+                    const char* scancodeName = palGetScancodeName(scancode);
+                    palLog(nullptr, "Key repeat: (%s, %s)", keyName, scancodeName);
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_KEYUP: {
+                    uint32_t keycode, scancode;
+                    palUnpackUint32(event.data, &keycode, &scancode);
+
+                    const char* keyName = palGetKeycodeName(keycode);
+                    const char* scancodeName = palGetScancodeName(scancode);
+                    palLog(nullptr, "Key released: (%s, %s)", keyName, scancodeName);
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_MOUSE_BUTTONDOWN: {
+                    uint32_t button, serial;
+                    palUnpackUint32(event.data, &button, &serial);
+
+                    const char* name = palGetMouseButtonName(button);
+                    palLog(nullptr, "Mouse Button pressed: %s", name);
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_MOUSE_BUTTONUP: {
+                    uint32_t button, serial;
+                    palUnpackUint32(event.data, &button, &serial);
+
+                    const char* name = palGetMouseButtonName(button);
+                    palLog(nullptr, "Mouse Button released: %s", name);
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_MOUSE_MOVE: {
+                    int32_t x, y;
+                    palUnpackInt32(event.data, &x, &y);
+                    palLog(nullptr, "Mouse Moved: (%d, %d)", x, y);
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_MOUSE_DELTA: {
+                    float dx, dy;
+                    palUnpackFloat(event.data, &dx, &dy);
+                    palLog(nullptr, "Mouse Delta: (%.2f, %.2f)", dx, dy);
+                    break;
+                }
+
+                case PAL_EVENT_TYPE_MOUSE_WHEEL: {
+                    float dx, dy;
+                    palUnpackFloat(event.data, &dx, &dy);
+                    palLog(nullptr, "Mouse Wheel: (%.2f, %.2f)", dx, dy);
                     break;
                 }
             }
