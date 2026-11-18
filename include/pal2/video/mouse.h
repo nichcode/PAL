@@ -74,6 +74,21 @@ typedef uint32_t PalMouseButton;
 PAL_API const PalBool* PAL_CALL palGetMouseState(void);
 
 /**
+ * @brief Gets the name of a mouse button.
+ * 
+ * This function returns the name of a mouse button. The returned string must not be
+ * modified or freed by the user. The memory is owned by PAL.
+ * 
+ * @return UTF-8 Mouse button name on success or "" on failure.
+ *
+ * @thread-safety Thread safe.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ */
+PAL_API const char* PAL_CALL palGetMouseButtonName(PalMouseButton button);
+
+/**
  * @brief Gets the relative movement of the mouse.
  *
  * The relative movement will be updated when @ref palUpdateVideo() is called.

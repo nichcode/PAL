@@ -17,6 +17,9 @@ palEnumerateVideoDrivers()
 palSetVideoDriver()
 palGetVideoDriver()
 PAL_GL_EXTENSION_SWAP_CONTROL_TEAR
+palGetScancodeName()
+palGetKeycodeName()
+palGetMouseButtonName()
 
 #define PAL_VIDEO_DRIVER_TYPE_UNKNOWN 0
 #define PAL_VIDEO_DRIVER_TYPE_WIN32 1

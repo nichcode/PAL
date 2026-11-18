@@ -318,4 +318,34 @@ PAL_API const PalBool* PAL_CALL palGetKeycodeState(void);
  */
 PAL_API const PalBool* PAL_CALL palGetScancodeState(void);
 
+/**
+ * @brief Gets the name of a scancode.
+ * 
+ * This function returns the name of a scancode. The returned string must not be
+ * modified or freed by the user. The memory is owned by PAL.
+ * 
+ * @return UTF-8 Scancode name on success or "" on failure.
+ *
+ * @thread-safety Thread safe.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ */
+PAL_API const char* PAL_CALL palGetScancodeName(PalScancode scancode);
+
+/**
+ * @brief Gets the name of a keycode.
+ * 
+ * This function returns the name of a keycode. The returned string must not be
+ * modified or freed by the user. The memory is owned by PAL.
+ * 
+ * @return UTF-8 Keycode name on success or "" on failure.
+ *
+ * @thread-safety Thread safe.
+ *
+ * @since Added in version 2.2
+ * @ingroup pal_video
+ */
+PAL_API const char* PAL_CALL palGetKeycodeName(PalKeycode keycode);
+
 #endif // PAL_VIDEO_KEYBOARD_H
