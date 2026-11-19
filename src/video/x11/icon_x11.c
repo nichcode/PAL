@@ -72,6 +72,13 @@ void x11SetWindowIcon(
     PalIcon* icon)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
+
+    if (!icon) {
+        g_X11.deleteProperty(g_X11.display, xWin, g_X11Atoms._NET_WM_ICON);
+        g_X11.flush(g_X11.display);
+        return;
+    }
+
     unsigned long* iconData = FROM_PAL_HANDLE(unsigned long*, icon);
     uint64_t totalPixels = 2 + iconData[0] * iconData[1];
 

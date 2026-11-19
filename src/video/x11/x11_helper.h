@@ -71,6 +71,11 @@ typedef int (*XGetWindowPropertyFn)(
     unsigned long*,
     unsigned char**);
 
+typedef int (*XDeletePropertyFn)(
+    Display*,
+    Window,
+    Atom);
+
 typedef Atom (*XInternAtomFn)(
     Display*,
     _Xconst char*,
@@ -504,6 +509,7 @@ typedef struct X11 {
     XGetWindowAttributesFn getWindowAttributes;
     XTranslateCoordinatesFn translateCoordinates;
     XGetWindowPropertyFn getWindowProperty;
+    XDeletePropertyFn deleteProperty;
     XInternAtomFn internAtom;
     XGetSelectionOwnerFn getSelectionOwner;
     XFreeColormapFn freeColormap;

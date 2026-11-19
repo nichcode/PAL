@@ -71,6 +71,10 @@ static void loadProcs(PalBool loadAll)
         g_X11.libx11,
         "XGetWindowProperty");
 
+    g_X11.deleteProperty = (XDeletePropertyFn)palGetSymbol(
+        g_X11.libx11,
+        "XDeleteProperty");
+
     g_X11.getSelectionOwner = (XGetSelectionOwnerFn)palGetSymbol(
         g_X11.libx11,
         "XGetSelectionOwner");
@@ -475,7 +479,6 @@ static void checkFeatures(void)
     features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
     s_X11Driver.features = features;
-    g_X11.free(supportedAtoms);
 }
 
 static void createScancodeTable(void)
