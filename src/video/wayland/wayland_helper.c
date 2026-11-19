@@ -49,7 +49,7 @@ static int createShmFile(uint64_t size)
     return fd;
 }
 
-struct wl_buffer* createShmBuffer(
+struct wl_buffer* wlCreateShmBuffer(
     int width,
     int height,
     const uint8_t* pixels,
@@ -110,7 +110,7 @@ struct wl_buffer* createShmBuffer(
     return buffer;
 }
 
-MonitorData* getFreeMonitorData(void)
+MonitorData* wlGetFreeMonitorData(void)
 {
     for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
         if (!g_Wl.monitorData[i].used) {
@@ -139,7 +139,7 @@ MonitorData* getFreeMonitorData(void)
     return nullptr;
 }
 
-MonitorData* findMonitorData(PalMonitor* monitor)
+MonitorData* wlFindMonitorData(PalMonitor* monitor)
 {
     for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
         if (g_Wl.monitorData[i].used && g_Wl.monitorData[i].monitor == monitor) {
@@ -149,7 +149,7 @@ MonitorData* findMonitorData(PalMonitor* monitor)
     return nullptr;
 }
 
-void freeMonitorData(PalMonitor* monitor)
+void wlFreeMonitorData(PalMonitor* monitor)
 {
     for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
         if (g_Wl.monitorData[i].used && g_Wl.monitorData[i].monitor == monitor) {
@@ -158,7 +158,7 @@ void freeMonitorData(PalMonitor* monitor)
     }
 }
 
-WindowData* getFreeWindowData(void)
+WindowData* wlGetFreeWindowData(void)
 {
     for (uint32_t i = 0; i < g_Wl.maxWindowData; ++i) {
         if (!g_Wl.windowData[i].used) {
@@ -187,7 +187,7 @@ WindowData* getFreeWindowData(void)
     return nullptr;
 }
 
-WindowData* findWindowData(PalWindow* window)
+WindowData* wlFindWindowData(PalWindow* window)
 {
     for (uint32_t i = 0; i < g_Wl.maxWindowData; ++i) {
         if (g_Wl.windowData[i].used && g_Wl.windowData[i].window == window) {

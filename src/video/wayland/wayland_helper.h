@@ -284,23 +284,23 @@ extern Wayland g_Wl;
 extern WaylandKeyboard g_WlKeyboard;
 extern WaylandMouse g_WlMouse;
 
-struct wl_buffer* createShmBuffer(
+struct wl_buffer* wlCreateShmBuffer(
     int width,
     int height,
     const uint8_t* pixels,
     PalBool cursor);
 
-MonitorData* getFreeMonitorData();
-MonitorData* findMonitorData(PalMonitor* monitor);
-void freeMonitorData(PalMonitor* monitor);
-WindowData* getFreeWindowData();
-WindowData* findWindowData(PalWindow* window);
+MonitorData* wlGetFreeMonitorData();
+MonitorData* wlFindMonitorData(PalMonitor* monitor);
+void wlFreeMonitorData(PalMonitor* monitor);
+WindowData* wlGetFreeWindowData();
+WindowData* wlFindWindowData(PalWindow* window);
 
 /** Defined in protocols.c */
-void setupProtocols();
+void wlSetupProtocols();
 
 /** Defined in cursor_wayland.c */
-void applyWindowCursor(WindowData* data);
+void wlApplyWindowCursor(WindowData* data);
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 #endif // WAYLAND_HELPER_H

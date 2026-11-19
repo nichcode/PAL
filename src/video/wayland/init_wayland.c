@@ -525,7 +525,7 @@ static void globalHandle(
     } else if (strcmp(interface, "wl_output") == 0) {
         // wayland does not let use query monitors directly so we enumerate and store
         // at init and update the cache when a monitor is added or removed.
-        MonitorData* monitorData = getFreeMonitorData();
+        MonitorData* monitorData = wlGetFreeMonitorData();
         if (!monitorData) {
             return;
         }
@@ -592,7 +592,7 @@ PalVideoDriver* wlGetVideoDriver(void)
         if (g_Wl.libwayland) {
             loadGlobals();
             loadProcs(PAL_FALSE);
-            setupProtocols();
+            wlSetupProtocols();
 
             g_Wl.display = g_Wl.displayConnect(nullptr);
             if (g_Wl.display) {
@@ -633,7 +633,7 @@ PalResult wlInitVideo(
 
     loadGlobals();
     loadProcs(PAL_TRUE);
-    setupProtocols();
+    wlSetupProtocols();
     createScancodeTable();
     createKeycodeTable();
 

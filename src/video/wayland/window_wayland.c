@@ -106,7 +106,7 @@ PalResult wlCreateWindow(
         }
     }
 
-    WindowData* data = getFreeWindowData();
+    WindowData* data = wlGetFreeWindowData();
     if (!data) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
@@ -219,7 +219,7 @@ PalResult wlCreateWindow(
 
     } else {
         // create a white buffer for the surface
-        buffer = createShmBuffer((int)data->w, (int)data->h, nullptr, PAL_FALSE);
+        buffer = wlCreateShmBuffer((int)data->w, (int)data->h, nullptr, PAL_FALSE);
         if (!buffer) {
             result = palMakeResult(
                 PAL_RESULT_CODE_PLATFORM_FAILURE, 
@@ -299,7 +299,7 @@ cleanup:
 
 void wlDestroyWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (!data || data->isAttached) {
         return;
     }
@@ -324,19 +324,19 @@ void wlDestroyWindow(PalWindow* window)
 
 void wlMaximizeWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     xdgToplevelSetMaximized(data->xdgToplevel);
 }
 
 void wlMinimizeWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     xdgToplevelSetMinimized(data->xdgToplevel);
 }
 
 void wlRestoreWindow(PalWindow* window)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     // we can only restore from a maximized state
     xdgToplevelUnsetMaximized(data->xdgToplevel);
 }
@@ -431,7 +431,7 @@ void wlGetWindowHandleInfo(
     PalWindow* window, 
     PalWindowHandleInfo* info)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     info->nativeInstance = (void*)g_Wl.display;
     info->nativeWindow = (void*)window;
     info->nativeHandle1 = data->xdgSurface;
@@ -459,7 +459,7 @@ void wlSetWindowTitle(
     PalWindow* window, 
     const char* title)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     xdgToplevelSetTitle(data->xdgToplevel, title);
     g_Wl.displayFlush(g_Wl.display);
 }
@@ -479,7 +479,7 @@ void wlSetWindowSize(
     uint32_t width, 
     uint32_t height)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     xdgToplevelSetMinSize(data->xdgToplevel, (int)width, (int)height);
     xdgToplevelSetMaxSize(data->xdgToplevel, (int)width, (int)height);
     wlSurfaceCommit((struct wl_surface*)window);

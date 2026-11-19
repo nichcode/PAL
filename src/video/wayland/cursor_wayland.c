@@ -32,7 +32,7 @@
  * Helper
  * ========================================================================= */
 
-void applyWindowCursor(WindowData* data)
+void wlApplyWindowCursor(WindowData* data)
 {
     if (!data->pointer) {
         return;
@@ -73,7 +73,7 @@ PalResult wlCreateCursor(
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    _cursor->buffer = createShmBuffer((int)info->width, (int)info->height, info->pixels, PAL_TRUE);
+    _cursor->buffer = wlCreateShmBuffer((int)info->width, (int)info->height, info->pixels, PAL_TRUE);
     if (!_cursor->buffer) {
         wlSurfaceDestroy(_cursor->surface);
         palFree(g_Wl.allocator, _cursor);
@@ -209,10 +209,10 @@ void wlSetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
-    WindowData* data = findWindowData(window);
+    WindowData* data = wlFindWindowData(window);
     if (data) {
         data->cursor = (WaylandCursor*)cursor;
-        applyWindowCursor(data);
+        wlApplyWindowCursor(data);
     }
 }
 

@@ -196,7 +196,7 @@ const struct wl_interface zxdg_toplevel_decoration_v1_interface = {
 // Protocols
 // ==================================================
 
-void setupProtocols()
+void wlSetupProtocols()
 {
     xdg_shell_types[0] = NULL;
     xdg_shell_types[1] = NULL;

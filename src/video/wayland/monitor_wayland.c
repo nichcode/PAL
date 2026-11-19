@@ -62,7 +62,7 @@ void wlGetMonitorInfo(
     PalMonitor* monitor,
     PalMonitorInfo* info)
 {
-    MonitorData* monitorData = findMonitorData(monitor);
+    MonitorData* monitorData = wlFindMonitorData(monitor);
     if (!monitorData) {
         return;
     }
@@ -84,7 +84,7 @@ void wlEnumerateMonitorModes(
     uint32_t* count,
     PalMonitorMode* modes)
 {
-    MonitorData* monitorData = findMonitorData(monitor);
+    MonitorData* monitorData = wlFindMonitorData(monitor);
     if (!monitorData) {
         *count = 0;
         return;
@@ -108,7 +108,7 @@ void wlGetCurrentMonitorMode(
     PalMonitor* monitor,
     PalMonitorMode* mode)
 {
-    MonitorData* monitorData = findMonitorData(monitor);
+    MonitorData* monitorData = wlFindMonitorData(monitor);
     if (!monitorData) {
         return;
     }

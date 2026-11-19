@@ -151,7 +151,7 @@ static void surfaceHandleEnter(
     (void)surface;
 
     WindowData* data = userData;
-    MonitorData* monitorData = findMonitorData((PalMonitor*)output);
+    MonitorData* monitorData = wlFindMonitorData((PalMonitor*)output);
     if (!monitorData) {
         return;
     }
@@ -224,7 +224,7 @@ static void surfaceHandleLeave(
     (void)surface;
 
     WindowData* data = userData;
-    MonitorData* monitorData = findMonitorData((PalMonitor*)output);
+    MonitorData* monitorData = wlFindMonitorData((PalMonitor*)output);
     if (!monitorData) {
         return;
     }
@@ -290,14 +290,14 @@ static void pointerHandleEnter(
     (void)surface_x;
     (void)surface_y;
 
-    WindowData* data = findWindowData((PalWindow*)surface);
+    WindowData* data = wlFindWindowData((PalWindow*)surface);
     if (!data) {
         return;
     }
 
     data->pointer = pointer;
     data->pointerEnterSerial = serial;
-    applyWindowCursor(data);
+    wlApplyWindowCursor(data);
     g_Wl.pointerSurface = surface;
 }
 
@@ -311,7 +311,7 @@ static void pointerHandleLeave(
     (void)pointer;
     (void)serial;
 
-    WindowData* data = findWindowData((PalWindow*)surface);
+    WindowData* data = wlFindWindowData((PalWindow*)surface);
     if (!data) {
         return;
     }
@@ -874,7 +874,7 @@ static void xdgSurfaceHandleConfigure(
             } else {
                 // create a new buffer with the new size
                 struct wl_buffer* buffer = nullptr;
-                buffer = createShmBuffer((int)winData->w, (int)winData->h, nullptr, PAL_FALSE);
+                buffer = wlCreateShmBuffer((int)winData->w, (int)winData->h, nullptr, PAL_FALSE);
 
                 if (!buffer) {
                     return;
