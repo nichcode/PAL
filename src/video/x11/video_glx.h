@@ -35,7 +35,7 @@ typedef struct __GLXFBConfigRec* GLXFBConfig;
 typedef GLXFBConfig* (*GLXGetFBConfigsFn)(Display*, int, int*);
 typedef int (*GLXGetFBConfigAttribFn)(Display*, GLXFBConfig, int, int*);
 typedef XVisualInfo* (*GLXGetVisualFromFBConfigFn)(Display*, GLXFBConfig);
-typedef void (*GLXProc)();
+typedef void (*GLXProc)(void);
 
 typedef GLXProc (*GLXGetProcAddressFn)(const unsigned char*);
 
@@ -48,8 +48,8 @@ typedef struct VideoGLX {
 
 extern VideoGLX g_VideoGlx;
 
-void loadVideoGLX();
-void unloadVideoGLX();
+void loadVideoGLX(void);
+void unloadVideoGLX(void);
 
 #endif // PAL_HAS_X11_BACKEND
 #endif // VIDEO_GLX_H

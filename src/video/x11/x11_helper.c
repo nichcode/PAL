@@ -33,6 +33,10 @@ RRMode x11FindMode(
     for (int i = 0; i < resources->nmode; ++i) {
         XRRModeInfo* info = &resources->modes[i];
         double tmp = (double)info->hTotal * (double)info->vTotal;
+        if (tmp <= 0.0) {
+            continue;
+        }
+
         double rate = (double)info->dotClock / tmp;
 
         // compare with width, height and refresh rate

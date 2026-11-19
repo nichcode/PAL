@@ -34,9 +34,7 @@
 
 #include <X11/Xatom.h>
 #include <math.h>
-#include <unistd.h> 
-#include <stdlib.h>
-// #include <errno.h>
+#include <unistd.h>
 
 /* =========================================================================
  * Helper
@@ -44,63 +42,66 @@
 
 static XVisualInfo* glxBackend(const int fbConfigIndex)
 {
+    if (fbConfigIndex <= 0) {
+        return nullptr;
+    }
+
     int count = 0;
     GLXFBConfig* configs = g_VideoGlx.getFBConfigs(g_X11.display, g_X11.screen, &count);
-    GLXFBConfig fbConfig = configs[fbConfigIndex];
+    if (!configs || fbConfigIndex > count) {
+        if (configs) {
+            g_X11.free(configs);
+        }
+        return nullptr;
+    }
+
+    GLXFBConfig fbConfig = configs[fbConfigIndex - 1];
+    g_X11.free(configs);
+
     if (!fbConfig) {
         return nullptr;
     }
 
-    // get a matching visual
-    XVisualInfo* visualInfo = g_VideoGlx.getVisualFromFBConfig(g_X11.display, fbConfig);
-    if (!visualInfo) {
-        return nullptr;
-    }
-
-    return visualInfo;
+    return g_VideoGlx.getVisualFromFBConfig(g_X11.display, fbConfig);
 }
 
 static XVisualInfo* eglXBackend(int fbConfigIndex)
 {
-    EGLDisplay display = EGL_NO_DISPLAY;
-    display = g_VideoEgl.getDisplay((EGLNativeDisplayType)g_X11.display);
+    if (fbConfigIndex <= 0) {
+        return nullptr;
+    }
+
+    EGLDisplay display = g_VideoEgl.getDisplay((EGLNativeDisplayType)g_X11.display);
     if (display == EGL_NO_DISPLAY) {
         return nullptr;
     }
 
     EGLint numConfigs = 0;
-    if (!g_VideoEgl.getConfigs(display, nullptr, 0, &numConfigs)) {
+    if (!g_VideoEgl.getConfigs(display, nullptr, 0, &numConfigs) || fbConfigIndex > numConfigs) {
         return nullptr;
     }
 
-    uint64_t configSize = sizeof(EGLConfig) * (unsigned long)numConfigs;
+    uint64_t configSize = sizeof(EGLConfig) * (uint64_t)numConfigs;
     EGLConfig* eglConfigs = palAllocate(g_X11.allocator, configSize, 0);
     if (!eglConfigs) {
         return nullptr;
     }
 
     g_VideoEgl.getConfigs(display, eglConfigs, numConfigs, &numConfigs);
-    EGLConfig config = eglConfigs[fbConfigIndex];
+    EGLConfig config = eglConfigs[fbConfigIndex - 1];
+    palFree(g_X11.allocator, eglConfigs);
 
-    // we get a visual info from the config
-    EGLint visualID;
+    EGLint visualID = 0;
     g_VideoEgl.getConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visualID);
     if (visualID == 0) {
         return nullptr;
     }
 
     int numVisuals = 0;
-    XVisualInfo tmp;
+    XVisualInfo tmp = {0};
     tmp.visualid = (VisualID)visualID;
 
-    // get a matching visual info
-    XVisualInfo* visualInfo = g_X11.getVisualInfo(g_X11.display, VisualIDMask, &tmp, &numVisuals);
-    if (!visualInfo) {
-        return nullptr;
-    }
-
-    palFree(g_X11.allocator, eglConfigs);
-    return visualInfo;
+    return g_X11.getVisualInfo(g_X11.display, VisualIDMask, &tmp, &numVisuals);
 }
 
 
@@ -153,16 +154,24 @@ PalResult x11CreateWindow(
             visualInfo = glxBackend(info->fbConfigIndex);
 
         } else {
+            data->used = PAL_FALSE;
             return PAL_RESULT_CODE_INVALID_ARGUMENT;
         }
 
-        // create a colormap from the visual info
+        if (!visualInfo) {
+            data->used = PAL_FALSE;
+            return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        }
+
         visual = visualInfo->visual;
         depth = visualInfo->depth;
         bgPixel = 0;
         borderPixel = 0;
         colormap = g_X11.createColormap(g_X11.display, g_X11.root, visual, AllocNone);
+        g_X11.free(visualInfo);
+
         if (!colormap) {
+            data->used = PAL_FALSE;
             return PAL_RESULT_CODE_PLATFORM_FAILURE;
         }
 
@@ -585,40 +594,37 @@ void x11FlashWindow(
     const PalFlashInfo* info)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    PalBool add = PAL_FALSE;
-    if (info->flags & PAL_FLASH_FLAG_TRAY) {
-        add = PAL_TRUE;
-    }
+    PalBool add = (info->flags & PAL_FLASH_FLAG_TRAY) ? PAL_TRUE : PAL_FALSE;
 
-    // check if modern flashing is supported
-    if (g_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTIONS) {
+    if (g_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTION) {
         x11SendWMEvent(
             xWin,
             g_X11Atoms._NET_WM_STATE,
-            (long)g_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTIONS,
+            (long)g_X11Atoms._NET_WM_STATE_DEMANDS_ATTENTION,
             0,
             0,
             0,
-            add); // _NET_WM_STATE_ADD
+            add);
 
     } else {
-        // legacy mode
         XWMHints* hints = g_X11.getWMHints(g_X11.display, xWin);
         if (!hints) {
             hints = g_X11.allocWMHints();
             if (!hints) {
                 return;
             }
-
-            if (add) {
-                hints->flags |= XUrgencyHint;
-            } else {
-                hints->flags &= ~XUrgencyHint;
-            }
-            g_X11.setWMHints(g_X11.display, xWin, hints);
-            g_X11.free(hints);
         }
+
+        if (add) {
+            hints->flags |= XUrgencyHint;
+        } else {
+            hints->flags &= ~XUrgencyHint;
+        }
+        g_X11.setWMHints(g_X11.display, xWin, hints);
+        g_X11.free(hints);
     }
+
+    g_X11.flush(g_X11.display);
 }
 
 PalResult x11AttachWindow(
@@ -736,8 +742,10 @@ void x11GetWindowTitle(
     if (g_X11Atoms.unicodeTitle) {
         Atom type;
         int format;
-        unsigned long count, bytesAfter;
+        unsigned long count = 0;
+        unsigned long bytesAfter = 0;
         unsigned char* prop = nullptr;
+
         g_X11.getWindowProperty(
             g_X11.display,
             xWin,
@@ -752,47 +760,63 @@ void x11GetWindowTitle(
             &bytesAfter,
             &prop);
 
-        if (bufferSize >= count) {
-            strcpy(buffer, (const char*)prop);
-        } else {
-            // copy up to the limiit of the supplied buffer
-            strncpy(buffer, (const char*)prop, bufferSize);
+        if (size) {
+            *size = prop ? (uint64_t)(count + 1) : 0;
         }
-        g_X11.free(prop);
+
+        if (prop && buffer && bufferSize > 0) {
+            uint64_t copyLen = (count < bufferSize - 1) ? count : (bufferSize - 1);
+            memcpy(buffer, prop, (size_t)copyLen);
+            buffer[copyLen] = '\0';
+        }
+
+        if (prop) {
+            g_X11.free(prop);
+        }
 
     } else {
         XTextProperty text;
-        if (!g_X11.getWMName(g_X11.display, xWin, &text)) {
+        if (!g_X11.getWMName(g_X11.display, xWin, &text) || !text.value) {
+            if (size) {
+                *size = 0;
+            }
             return;
         }
 
-        if (bufferSize >= text.nitems) {
-            strcpy(buffer, (const char*)text.value);
-        } else {
-            // copy up to the limiit of the supplied buffer
-            strncpy(buffer, (const char*)text.value, bufferSize);
+        if (size) {
+            *size = (uint64_t)(text.nitems + 1);
         }
+
+        if (buffer && bufferSize > 0) {
+            uint64_t copyLen = (text.nitems < bufferSize - 1) ? text.nitems : (bufferSize - 1);
+            memcpy(buffer, text.value, (size_t)copyLen);
+            buffer[copyLen] = '\0';
+        }
+
         g_X11.free(text.value);
     }
 }
 
 void x11GetWindowPos(
-    PalWindow* window, 
-    int32_t* x, 
+    PalWindow* window,
+    int32_t* x,
     int32_t* y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    XWindowAttributes attr;
-    if (!g_X11.getWindowAttributes(g_X11.display, xWin, &attr)) {
+    Window child = None;
+    int winX = 0;
+    int winY = 0;
+
+    if (!g_X11.translateCoordinates(g_X11.display, xWin, g_X11.root, 0, 0, &winX, &winY, &child)) {
         return;
     }
 
     if (x) {
-        *x = attr.x;
+        *x = winX;
     }
 
     if (y) {
-        *y = attr.y;
+        *y = winY;
     }
 }
 
@@ -823,8 +847,9 @@ void x11GetWindowState(
     Window xWin = FROM_PAL_HANDLE(Window, window);
     Atom type;
     int format;
-    unsigned long count, bytesAfter;
-    unsigned char* props = nullptr;
+    unsigned long count = 0;
+    unsigned long bytesAfter = 0;
+    Atom* props = nullptr;
 
     g_X11.getWindowProperty(
         g_X11.display,
@@ -838,24 +863,23 @@ void x11GetWindowState(
         &format,
         &count,
         &bytesAfter,
-        &props);
+        (unsigned char**)&props);
 
     PalWindowState _state = PAL_WINDOW_STATE_RESTORED;
-    for (unsigned long i = 0; i < count; ++i) {
-        if (props[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ) {
-            _state = PAL_WINDOW_STATE_MAXIMIZED;
+    if (props) {
+        for (unsigned long i = 0; i < count; ++i) {
+            if (props[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ ||
+                props[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT) {
+                _state = PAL_WINDOW_STATE_MAXIMIZED;
+            }
+
+            if (props[i] == g_X11Atoms._NET_WM_STATE_HIDDEN) {
+                _state = PAL_WINDOW_STATE_MINIMIZED;
+            }
         }
 
-        if (props[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT) {
-            _state = PAL_WINDOW_STATE_MAXIMIZED;
-        }
-
-        if (props[i] == g_X11Atoms._NET_WM_STATE_HIDDEN) {
-            _state = PAL_WINDOW_STATE_MINIMIZED;
-        }
+        g_X11.free(props);
     }
-
-    g_X11.free(props);
 
     *state = _state;
 }
@@ -922,7 +946,7 @@ void x11SetWindowStyle(
     (void)style;
 }
 
-void wlSetWindowTitle(
+void x11SetWindowTitle(
     PalWindow* window, 
     const char* title)
 {
@@ -934,7 +958,7 @@ void wlSetWindowTitle(
             xWin,
             g_X11Atoms._NET_WM_NAME,
             g_X11Atoms.UTF8_STRING,
-            8, // unsigned char
+            8,
             PropModeReplace,
             (const unsigned char*)title,
             (int)strlen(title));
@@ -962,27 +986,23 @@ void x11SetWindowSize(
     uint32_t height)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    // X11 does not allow users resize programaticaly
-    // if the window is not resizable.
-    // so we hack it by making the window resizable and resizing
-    // then revert back.
-    XSizeHints hints;
-    long tmp;
+    XSizeHints hints = {0};
+    long tmp = 0;
+
     g_X11.getWMNormalHints(g_X11.display, xWin, &hints, &tmp);
     if ((hints.flags & PMinSize) && (hints.flags & PMaxSize)) {
-        hints.flags &= ~PMinSize;
-        hints.flags &= ~PMaxSize;
+        hints.flags &= ~(PMinSize | PMaxSize);
+        g_X11.setWMNormalHints(g_X11.display, xWin, &hints);
         g_X11.resizeWindow(g_X11.display, xWin, width, height);
         g_X11.flush(g_X11.display);
 
         // revert
-        hints.flags |= PMinSize;
-        hints.flags |= PMaxSize;
+        hints.flags |= (PMinSize | PMaxSize);
         hints.min_width = hints.max_width = (int)width;
         hints.min_height = hints.max_height = (int)height;
+        g_X11.setWMNormalHints(g_X11.display, xWin, &hints);
 
     } else {
-        // window is already resizable
         g_X11.resizeWindow(g_X11.display, xWin, width, height);
     }
 

@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef WAYLAND_HELPER_H
-#define WAYLAND_HELPER_H
+#ifndef X11_HELPER_H
+#define X11_HELPER_H
 #if PAL_HAS_X11_BACKEND
 
 #include "pal2/core/library.h"
@@ -46,6 +46,16 @@ typedef int (*XGetWindowAttributesFn)(
     Display*,
     Window,
     XWindowAttributes*);
+
+typedef Bool (*XTranslateCoordinatesFn)(
+    Display*,
+    Window,
+    Window,
+    int,
+    int,
+    int*,
+    int*,
+    Window*);
 
 typedef int (*XGetWindowPropertyFn)(
     Display*,
@@ -423,7 +433,7 @@ typedef struct X11Atoms {
     Atom _NET_WM_STATE_MAXIMIZED_HORZ;
     Atom _NET_WM_WINDOW_TYPE_UTILITY;
     Atom _NET_WM_DESKTOP;
-    Atom _NET_WM_STATE_DEMANDS_ATTENTIONS;
+    Atom _NET_WM_STATE_DEMANDS_ATTENTION;
     Atom _NET_WM_WINDOW_OPACITY;
 
     Atom _NET_WM_NAME;
@@ -492,6 +502,7 @@ typedef struct X11 {
     XOpenDisplayFn openDisplay;
     XCloseDisplayFn closeDisplay;
     XGetWindowAttributesFn getWindowAttributes;
+    XTranslateCoordinatesFn translateCoordinates;
     XGetWindowPropertyFn getWindowProperty;
     XInternAtomFn internAtom;
     XGetSelectionOwnerFn getSelectionOwner;
@@ -606,4 +617,4 @@ WindowData* x11GetFreeWindowData(void);
 WindowData* x11FindWindowData(PalWindow* window);
 
 #endif // PAL_HAS_X11_BACKEND
-#endif // WAYLAND_HELPER_H
+#endif // X11_HELPER_H

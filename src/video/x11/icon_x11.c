@@ -30,7 +30,8 @@ PalResult x11CreateIcon(
     const PalIconCreateInfo* info,
     PalIcon** icon)
 {
-    uint64_t totalPixels = 2 + (uint64_t)(info->width * info->height);
+    uint64_t pixelCount = (uint64_t)info->width * (uint64_t)info->height;
+    uint64_t totalPixels = 2 + pixelCount;
     uint64_t totalBytes = sizeof(unsigned long) * totalPixels;
     unsigned long* _icon = palAllocate(g_X11.allocator, totalBytes, 0);
     if (!_icon) {
@@ -43,7 +44,7 @@ PalResult x11CreateIcon(
     _icon[1] = (unsigned long)info->height;
 
     // convert from RGBA8 to ARGB32
-    for (uint32_t i = 0; i < info->width * info->height; i++) {
+    for (uint64_t i = 0; i < pixelCount; i++) {
         uint8_t r = info->pixels[i * 4 + 0]; // Red
         uint8_t g = info->pixels[i * 4 + 1]; // Green
         uint8_t b = info->pixels[i * 4 + 2]; // Blue
@@ -51,9 +52,9 @@ PalResult x11CreateIcon(
 
         // clang-format off
         _icon[2 + i] = ((unsigned long)a << 24) |
-                      ((unsigned long)r << 16) |
-                      ((unsigned long)g << 8) |
-                      ((unsigned long)b);
+                       ((unsigned long)r << 16) |
+                       ((unsigned long)g << 8) |
+                       ((unsigned long)b);
         // clang-format on
     }
 
@@ -70,12 +71,10 @@ void x11SetWindowIcon(
     PalWindow* window,
     PalIcon* icon)
 {
-    WindowData* winData = nullptr;
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    g_X11.findContext(g_X11.display, xWin, g_X11.dataID, (XPointer*)&winData);
-
     unsigned long* iconData = FROM_PAL_HANDLE(unsigned long*, icon);
     uint64_t totalPixels = 2 + iconData[0] * iconData[1];
+
     g_X11.changeProperty(
         g_X11.display,
         xWin,

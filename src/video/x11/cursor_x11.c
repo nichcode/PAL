@@ -33,30 +33,35 @@ PalResult x11CreateCursor(
     PalCursor** cursor)
 {
     XcursorImage* image = g_X11.cursorImageCreate((int)info->width, (int)info->height);
+    if (!image) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
     image->xhot = (XcursorDim)info->xHotspot;
     image->yhot = (XcursorDim)info->yHotspot;
 
     // convert from RGBA8 to ARGB32
-    for (uint32_t i = 0; i < info->width * info->height; i++) {
+    uint32_t pixelCount = info->width * info->height;
+    for (uint32_t i = 0; i < pixelCount; i++) {
         uint8_t r = info->pixels[i * 4 + 0]; // Red
         uint8_t g = info->pixels[i * 4 + 1]; // Green
         uint8_t b = info->pixels[i * 4 + 2]; // Blue
         uint8_t a = info->pixels[i * 4 + 3]; // Alpha
 
         // clang-format off
-        image->pixels[i] = ((unsigned long)a << 24) |
-                           ((unsigned long)r << 16) |
-                           ((unsigned long)g << 8) |
-                           ((unsigned long)b);
+        image->pixels[i] = ((XcursorPixel)a << 24) |
+                           ((XcursorPixel)r << 16) |
+                           ((XcursorPixel)g << 8) |
+                           ((XcursorPixel)b);
         // clang-format on
     }
 
     Cursor _cursor = g_X11.cursorImageLoadCursor(g_X11.display, image);
+    g_X11.cursorImageDestroy(image);
+
     if (!_cursor) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
-
-    g_X11.cursorImageDestroy(image);
 
     *cursor = TO_PAL_HANDLE(PalCursor, _cursor);
     return PAL_RESULT_SUCCESS;
@@ -66,38 +71,40 @@ PalResult x11CreateCursorFrom(
     PalCursorType type,
     PalCursor** cursor)
 {
-    uint32_t shape;
-    Cursor _cursor;
+    uint32_t shape = XC_left_ptr;
 
     switch (type) {
-        case PAL_CURSOR_TYPE_ARROW: {
-            shape = XC_left_ptr;
-            break;
-        }
-
-        case PAL_CURSOR_TYPE_HAND: {
-            shape = XC_hand2;
-            break;
-        }
-
-        case PAL_CURSOR_TYPE_CROSS: {
-            shape = XC_cross;
-            break;
-        }
-
-        case PAL_CURSOR_TYPE_IBEAM: {
-            shape = XC_xterm;
-            break;
-        }
-
-        case PAL_CURSOR_TYPE_WAIT: {
-            shape = XC_watch;
-            break;
-        }
+    case PAL_CURSOR_TYPE_ARROW: {
+        shape = XC_left_ptr;
+        break;
     }
 
-    _cursor = g_X11.createFontCursor(g_X11.display, shape);
-    
+    case PAL_CURSOR_TYPE_HAND: {
+        shape = XC_hand2;
+        break;
+    }
+
+    case PAL_CURSOR_TYPE_CROSS: {
+        shape = XC_cross;
+        break;
+    }
+
+    case PAL_CURSOR_TYPE_IBEAM: {
+        shape = XC_xterm;
+        break;
+    }
+
+    case PAL_CURSOR_TYPE_WAIT: {
+        shape = XC_watch;
+        break;
+    }
+    }
+
+    Cursor _cursor = g_X11.createFontCursor(g_X11.display, shape);
+    if (!_cursor) {
+        return PAL_RESULT_CODE_PLATFORM_FAILURE;
+    }
+
     *cursor = TO_PAL_HANDLE(PalCursor, _cursor);
     return PAL_RESULT_SUCCESS;
 }
@@ -133,6 +140,8 @@ void x11ClipCursor(
     } else {
         g_X11.ungrabPointer(g_X11.display, CurrentTime);
     }
+
+    g_X11.flush(g_X11.display);
 }
 
 void x11GetCursorPos(
@@ -170,7 +179,7 @@ void x11SetWindowCursor(
     PalCursor* cursor)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    Window xCursor = FROM_PAL_HANDLE(Cursor, cursor);
+    Cursor xCursor = FROM_PAL_HANDLE(Cursor, cursor);
 
     if (xCursor) {
         g_X11.defineCursor(g_X11.display, xWin, xCursor);

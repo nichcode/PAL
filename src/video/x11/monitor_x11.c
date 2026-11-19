@@ -153,9 +153,7 @@ PalResult x11EnumerateMonitors(
 
     XRRScreenResources* resources = g_X11.getScreenResources(g_X11.display, g_X11.root);
     if (!resources) {
-        if (!monitors) {
-            *count = 0;
-        }
+        *count = 0;
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
@@ -177,7 +175,9 @@ PalResult x11EnumerateMonitors(
 
     g_X11.freeScreenResources(resources);
 
-    if (!monitors) {
+    if (monitors) {
+        *count = (found < maxCount) ? found : maxCount;
+    } else {
         *count = found;
     }
 
@@ -186,8 +186,9 @@ PalResult x11EnumerateMonitors(
 
 void x11GetPrimaryMonitor(PalMonitor** monitor)
 {
+    *monitor = nullptr;
     RROutput primary = g_X11.getOutputPrimary(g_X11.display, g_X11.root);
-    if (primary && monitor) {
+    if (primary) {
         *monitor = TO_PAL_HANDLE(PalMonitor, primary);
     }
 }
@@ -258,7 +259,9 @@ void x11EnumerateMonitorModes(
         }
     }
 
-    if (!modes) {
+    if (modes) {
+        *count = (modeCount < maxModeCount) ? modeCount : maxModeCount;
+    } else {
         *count = modeCount;
     }
 

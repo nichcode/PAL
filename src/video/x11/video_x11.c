@@ -54,7 +54,7 @@ void x11GetWindowPos(PalWindow*, int32_t*, int32_t*);
 void x11GetWindowSize(PalWindow*, uint32_t*, uint32_t*);
 void x11GetWindowState(PalWindow*, PalWindowState*);
 PalBool x11IsWindowVisible(PalWindow*);
-PalWindow* x11GetFocusWindow();
+PalWindow* x11GetFocusWindow(void);
 void x11GetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
 void x11SetWindowOpacity(PalWindow*, float);
 void x11SetWindowStyle(PalWindow*, PalWindowStyle);
@@ -75,7 +75,7 @@ void x11GetCursorPos(PalWindow*, int32_t*, int32_t*);
 void x11SetCursorPos(PalWindow*, int32_t, int32_t);
 void x11SetWindowCursor(PalWindow*, PalCursor*);
 
-const VideoBackend g_WaylandBackend = {
+const VideoBackend g_X11Backend = {
     .getDriver = x11GetVideoDriver,
     .init = x11InitVideo,
     .shutdown = x11ShutdownVideo,

@@ -29,16 +29,17 @@
 #include "pal2/event/driver.h"
 #endif // PAL_HAS_EVENT_MODULE
 
-#include "x11_helper.h"
-#include "video_glx.h"
-#include "video/video_egl.h"
-#include "video/platform.h"
+#include "pal2/core/memory.h"
 #include "pal2/video/init.h"
+#include "video/platform.h"
+#include "video/video_egl.h"
+#include "video_glx.h"
+#include "x11_helper.h"
 
 #include <X11/Xatom.h>
-#include <string.h>
 #include <errno.h>
 #include <math.h>
+#include <string.h>
 
 X11 g_X11 = {0};
 X11Atoms g_X11Atoms = {0};
@@ -85,6 +86,10 @@ static void loadProcs(PalBool loadAll)
     g_X11.getWindowAttributes = (XGetWindowAttributesFn)palGetSymbol(
         g_X11.libx11,
         "XGetWindowAttributes");
+
+    g_X11.translateCoordinates = (XTranslateCoordinatesFn)palGetSymbol(
+        g_X11.libx11,
+        "XTranslateCoordinates");
 
     g_X11.setCrtcConfig = (XRRSetCrtcConfigFn)palGetSymbol(
         g_X11.libx11,
@@ -209,7 +214,7 @@ static void loadProcs(PalBool loadAll)
 
     g_X11.freeOutputInfo = (XRRFreeOutputInfoFn)palGetSymbol(
         g_X11.libxrandr,
-        "XRRFreeScreenResources");
+        "XRRFreeOutputInfo");
 
     g_X11.freeCrtcInfo = (XRRFreeCrtcInfoFn)palGetSymbol(
         g_X11.libxrandr,
@@ -311,6 +316,10 @@ static void loadProcs(PalBool loadAll)
         g_X11.libx11,
         "XSelectInput");
 
+    g_X11.lookupKeysym = (XLookupKeysymFn)palGetSymbol(
+        g_X11.libx11,
+        "XLookupKeysym");
+
     // libXcursor
     g_X11.cursorImageLoadCursor = (XcursorImageLoadCursorFn)palGetSymbol(
         g_X11.libcursor,
@@ -323,10 +332,6 @@ static void loadProcs(PalBool loadAll)
     g_X11.cursorImageDestroy = (XcursorImageDestroyFn)palGetSymbol(
         g_X11.libcursor,
         "XcursorImageDestroy");
-
-    g_X11.lookupKeysym = (XLookupKeysymFn)palGetSymbol(
-        g_X11.libcursor,
-        "XLookupKeysym");
 
     g_X11.setDetectableAutoRepeat = (XkbSetDetectableAutoRepeatFn)palGetSymbol(
         g_X11.libx11,
@@ -357,7 +362,6 @@ static void loadProcs(PalBool loadAll)
         "Xutf8LookupString");
 
     // clang-format on
-
 }
 
 static void checkFeatures(void)
@@ -374,7 +378,7 @@ static void checkFeatures(void)
     X11_INTERN_ATOM(UTF8_STRING);
     X11_INTERN_ATOM(_NET_WM_WINDOW_TYPE_UTILITY);
     X11_INTERN_ATOM(_NET_WM_DESKTOP);
-    X11_INTERN_ATOM(_NET_WM_STATE_DEMANDS_ATTENTIONS);
+    X11_INTERN_ATOM(_NET_WM_STATE_DEMANDS_ATTENTION);
     X11_INTERN_ATOM(_NET_WM_WINDOW_OPACITY);
     X11_INTERN_ATOM(_NET_WM_WINDOW_TYPE);
     X11_INTERN_ATOM(_NET_WM_WINDOW_TYPE_SPLASH);
@@ -403,33 +407,37 @@ static void checkFeatures(void)
         (unsigned char**)&supportedAtoms);
 
     PalVideoFeatures features = 0;
-    for (unsigned long i = 0; i < count; ++i) {
-        if (supportedAtoms[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT) {
-            features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
-            features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
+    if (supportedAtoms) {
+        for (unsigned long i = 0; i < count; ++i) {
+            if (supportedAtoms[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_VERT) {
+                features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
+                features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
+            }
+
+            if (supportedAtoms[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ) {
+                features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
+                features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
+            }
+
+            if (supportedAtoms[i] == g_X11Atoms._NET_WM_STATE_HIDDEN) {
+                features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
+                features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
+            }
+
+            if (supportedAtoms[i] == g_X11Atoms._NET_WM_WINDOW_TYPE_SPLASH) {
+                features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+            }
+
+            if (supportedAtoms[i] == g_X11Atoms._NET_WM_NAME) {
+                g_X11Atoms.unicodeTitle = PAL_TRUE;
+            }
+
+            if (supportedAtoms[i] == g_X11Atoms._NET_WM_WINDOW_TYPE_UTILITY) {
+                features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
+            }
         }
 
-        if (supportedAtoms[i] == g_X11Atoms._NET_WM_STATE_MAXIMIZED_HORZ) {
-            features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
-            features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
-        }
-
-        if (supportedAtoms[i] == g_X11Atoms._NET_WM_STATE_HIDDEN) {
-            features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
-            features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
-        }
-
-        if (supportedAtoms[i] == g_X11Atoms._NET_WM_WINDOW_TYPE_SPLASH) {
-            features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
-        }
-
-        if (supportedAtoms[i] == g_X11Atoms._NET_WM_NAME) {
-            g_X11Atoms.unicodeTitle = PAL_TRUE;
-        }
-
-        if (supportedAtoms[i] == g_X11Atoms._NET_WM_WINDOW_TYPE_UTILITY) {
-            features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
-        }
+        g_X11.free(supportedAtoms);
     }
 
     // check for transparent windows
@@ -740,17 +748,16 @@ static PalWindowState queryWindowState(Window xWin)
 static uint32_t getWindowMonitorDPI(WindowData* data)
 {
     int winX = data->x + (int)data->w / 2;
-    int winY = data->y + (int)data->w / 2;
+    int winY = data->y + (int)data->h / 2;
 
     for (uint32_t i = 0; i < g_X11.maxMonitorData; i++) {
-        if (!g_X11.monitorData->used) {
+        if (!g_X11.monitorData[i].used) {
             continue;
         }
 
-        // we found a monitor, check the monitor bounds with the window
         MonitorData* info = &g_X11.monitorData[i];
-        if (winX >= info->x && winX < info->x + (int)info->w && winY >= info->y &&
-            winY < info->y + (int)info->h) {
+        if (winX >= info->x && winX < info->x + (int)info->w &&
+            winY >= info->y && winY < info->y + (int)info->h) {
             return info->dpi;
         }
     }
@@ -765,13 +772,12 @@ static uint32_t getWindowMonitorDPI(WindowData* data)
 
 void x11ShutdownVideo(void);
 
-PalVideoDriver* x11GetVideoDriver()
+PalVideoDriver* x11GetVideoDriver(void)
 {
     if (s_X11Driver.features != 0) {
         return &s_X11Driver;
     }
 
-    // if x11InitVideo() has been called, we dont want to load again
     if (!g_X11.libx11) {
         g_X11.libx11 = palLoadLibrary("libX11.so");
         if (g_X11.libx11) {
@@ -782,6 +788,7 @@ PalVideoDriver* x11GetVideoDriver()
                 g_X11.root = DefaultRootWindow(g_X11.display);
                 g_X11.screen = DefaultScreen(g_X11.display);
                 checkFeatures();
+                g_X11.closeDisplay(g_X11.display);
             }
 
             palFreeLibrary(g_X11.libx11);
@@ -874,13 +881,15 @@ PalResult x11InitVideo(
 
     int supported;
     g_X11.setDetectableAutoRepeat(g_X11.display, True, &supported);
-    
+
     g_X11.setLocaleModifiers("");
     g_X11.im = g_X11.openIM(g_X11.display, nullptr, nullptr, nullptr);
     if (g_X11.im == None) {
         result = PAL_RESULT_CODE_PLATFORM_FAILURE;
         goto cleanup;
     }
+
+    return PAL_RESULT_SUCCESS;
 
 cleanup:
     x11ShutdownVideo();
@@ -969,6 +978,10 @@ void x11UpdateVideo(void)
             }
 
             case ConfigureNotify: {
+                if (!data) {
+                    break;
+                }
+
                 // skip the first configure event
                 if (data->skipConfigure) {
                     data->skipConfigure = PAL_FALSE;
@@ -979,77 +992,74 @@ void x11UpdateVideo(void)
                     break;
                 }
 
-                // real configure event
-                if (g_X11.eventDriver) {
-                    uint32_t tmpWidth = (uint32_t)event.xconfigure.width;
-                    uint32_t tmpHeight = (uint32_t)event.xconfigure.height;
+                uint32_t tmpWidth = (uint32_t)event.xconfigure.width;
+                uint32_t tmpHeight = (uint32_t)event.xconfigure.height;
 
-                    if (data->w != tmpWidth || data->h != tmpHeight) {
-                        data->w = tmpWidth;
-                        data->h = tmpHeight;
+                if (data->w != tmpWidth || data->h != tmpHeight) {
+                    data->w = tmpWidth;
+                    data->h = tmpHeight;
 
 #if PAL_HAS_EVENT_MODULE
+                    if (g_X11.eventDriver) {
                         PalEventDriver* driver = g_X11.eventDriver;
                         PalEventType type = PAL_EVENT_TYPE_WINDOW_SIZE;
                         mode = palGetEventDispatchMode(driver, type);
 
                         if (mode != PAL_DISPATCH_MODE_NONE) {
-                            PalEvent event = {0};
-                            event.type = type;
-                            event.data = palPackUint32(data->w, data->h);
-                            event.data2 = palPackPointer(window);
-                            palPushEvent(driver, &event);
+                            PalEvent outEvent = {0};
+                            outEvent.type = type;
+                            outEvent.data = palPackUint32(data->w, data->h);
+                            outEvent.data2 = palPackPointer(window);
+                            palPushEvent(driver, &outEvent);
                         }
+                    }
 #endif // PAL_HAS_EVENT_MODULE
-                    }
+                }
 
-                    // attach windows sometimes bypass skipConfgure an still send an initial move event
-                    if (data->isAttached) {
-                        if (data->skipIfAttached) {
-                            data->skipIfAttached = PAL_FALSE;
-                            break;
-                        }
-                    }
+                if (data->isAttached && data->skipIfAttached) {
+                    data->skipIfAttached = PAL_FALSE;
+                    break;
+                }
 
-                    // check if its a move event
-                    if (data->x != event.xconfigure.x || data->y != event.xconfigure.y) {
-                        data->x = event.xconfigure.x;
-                        data->y = event.xconfigure.y;
+                if (data->x != event.xconfigure.x || data->y != event.xconfigure.y) {
+                    data->x = event.xconfigure.x;
+                    data->y = event.xconfigure.y;
 
 #if PAL_HAS_EVENT_MODULE
+                    if (g_X11.eventDriver) {
                         PalEventDriver* driver = g_X11.eventDriver;
                         PalEventType type = PAL_EVENT_TYPE_WINDOW_MOVE;
                         mode = palGetEventDispatchMode(driver, type);
 
                         if (mode != PAL_DISPATCH_MODE_NONE) {
-                            PalEvent event = {0};
-                            event.type = type;
-                            event.data = palPackInt32(data->x, data->y);
-                            event.data2 = palPackPointer(window);
-                            palPushEvent(driver, &event);
+                            PalEvent outEvent = {0};
+                            outEvent.type = type;
+                            outEvent.data = palPackInt32(data->x, data->y);
+                            outEvent.data2 = palPackPointer(window);
+                            palPushEvent(driver, &outEvent);
                         }
+                    }
 #endif // PAL_HAS_EVENT_MODULE
 
-                        // A window has to be moved before its can change monitors.
-                        // We get the monitor the moved window is on and check if the dpi is
-                        // different from the one it was created on.
-                        uint32_t monitorDPI = getWindowMonitorDPI(data);
-                        if (monitorDPI != data->dpi) {
-                            data->dpi = monitorDPI;
+                    uint32_t monitorDPI = getWindowMonitorDPI(data);
+                    if (monitorDPI != data->dpi) {
+                        data->dpi = monitorDPI;
 
 #if PAL_HAS_EVENT_MODULE
-                            type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
+                        if (g_X11.eventDriver) {
+                            PalEventDriver* driver = g_X11.eventDriver;
+                            PalEventType type = PAL_EVENT_TYPE_MONITOR_DPI_CHANGED;
                             mode = palGetEventDispatchMode(driver, type);
 
                             if (mode != PAL_DISPATCH_MODE_NONE) {
-                                PalEvent event = {0};
-                                event.type = type;
-                                event.data = monitorDPI;
-                                event.data2 = palPackPointer(window);
-                                palPushEvent(driver, &event);
+                                PalEvent outEvent = {0};
+                                outEvent.type = type;
+                                outEvent.data = monitorDPI;
+                                outEvent.data2 = palPackPointer(window);
+                                palPushEvent(driver, &outEvent);
                             }
-#endif // PAL_HAS_EVENT_MODULE
                         }
+#endif // PAL_HAS_EVENT_MODULE
                     }
                 }
 
@@ -1107,6 +1117,10 @@ void x11UpdateVideo(void)
             }
 
             case PropertyNotify: {
+                if (!data) {
+                    break;
+                }
+
                 // check window state (maximize, minimize)
                 if (event.xproperty.atom == g_X11Atoms._NET_WM_STATE) {
                     PalWindowState state;
@@ -1216,70 +1230,75 @@ void x11UpdateVideo(void)
                 int xButton = (int)event.xbutton.button;
                 PalBool pressed = (event.xbutton.type == ButtonPress);
                 PalMouseButton button = 0;
-                PalEventType type;
+                PalBool validButton = PAL_FALSE;
 
                 if (xButton == 1) {
                     button = PAL_MOUSE_BUTTON_LEFT;
+                    validButton = PAL_TRUE;
                 } else if (xButton == 3) {
                     button = PAL_MOUSE_BUTTON_RIGHT;
+                    validButton = PAL_TRUE;
                 } else if (xButton == 2) {
                     button = PAL_MOUSE_BUTTON_MIDDLE;
+                    validButton = PAL_TRUE;
+                } else if (xButton == 8) {
+                    button = PAL_MOUSE_BUTTON_X1;
+                    validButton = PAL_TRUE;
+                } else if (xButton == 9) {
+                    button = PAL_MOUSE_BUTTON_X2;
+                    validButton = PAL_TRUE;
                 }
 
-                g_Mouse.state[button] = pressed;
+                if (validButton) {
+                    g_Mouse.state[button] = pressed;
 
 #if PAL_HAS_EVENT_MODULE
-                if (g_X11.eventDriver && button != 0) {
-                    PalEventDriver* driver = g_X11.eventDriver;
-                    if (pressed) {
-                        type = PAL_EVENT_TYPE_MOUSE_BUTTONDOWN;
-                    } else {
-                        type = PAL_EVENT_TYPE_MOUSE_BUTTONUP;
-                    }
+                    if (g_X11.eventDriver) {
+                        PalEventDriver* driver = g_X11.eventDriver;
+                        PalEventType type = pressed ? PAL_EVENT_TYPE_MOUSE_BUTTONDOWN : PAL_EVENT_TYPE_MOUSE_BUTTONUP;
 
-                    mode = palGetEventDispatchMode(driver, type);
-                    if (mode != PAL_DISPATCH_MODE_NONE) {
-                        PalEvent event = {0};
-                        event.type = type;
-                        event.data = palPackUint32(button, NULL_BUTTON_SERIAL);
-                        event.data2 = palPackPointer(window);
-                        palPushEvent(driver, &event);
+                        mode = palGetEventDispatchMode(driver, type);
+                        if (mode != PAL_DISPATCH_MODE_NONE) {
+                            PalEvent outEvent = {0};
+                            outEvent.type = type;
+                            outEvent.data = palPackUint32(button, NULL_BUTTON_SERIAL);
+                            outEvent.data2 = palPackPointer(window);
+                            palPushEvent(driver, &outEvent);
+                        }
                     }
-                }
 #endif // PAL_HAS_EVENT_MODULE
+                }
 
                 int scrollX = 0;
                 int scrollY = 0;
                 if (xButton == 4) {
-                    // scroll up
                     scrollY = 1;
                 } else if (xButton == 5) {
-                    // scroll down
                     scrollY = -1;
                 } else if (xButton == 6) {
-                    // scroll left
                     scrollX = -1;
                 } else if (xButton == 7) {
-                    // scroll right
                     scrollX = 1;
                 }
 
-                g_Mouse.WheelX = scrollX;
-                g_Mouse.WheelY = scrollY;
+                if (scrollX || scrollY) {
+                    g_Mouse.WheelX = scrollX;
+                    g_Mouse.WheelY = scrollY;
 
 #if PAL_HAS_EVENT_MODULE
-                if (g_X11.eventDriver && (scrollX || scrollY)) {
-                    PalEventDriver* driver = g_X11.eventDriver;
-                    mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_MOUSE_WHEEL);
-                    if (mode != PAL_DISPATCH_MODE_NONE) {
-                        PalEvent event = {0};
-                        event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
-                        event.data = palPackFloat((float)scrollX, (float)scrollY);
-                        event.data2 = palPackPointer(window);
-                        palPushEvent(driver, &event);
+                    if (g_X11.eventDriver) {
+                        PalEventDriver* driver = g_X11.eventDriver;
+                        mode = palGetEventDispatchMode(driver, PAL_EVENT_TYPE_MOUSE_WHEEL);
+                        if (mode != PAL_DISPATCH_MODE_NONE) {
+                            PalEvent outEvent = {0};
+                            outEvent.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
+                            outEvent.data = palPackFloat((float)scrollX, (float)scrollY);
+                            outEvent.data2 = palPackPointer(window);
+                            palPushEvent(driver, &outEvent);
+                        }
                     }
-                }
 #endif // PAL_HAS_EVENT_MODULE
+                }
 
                 break;
             }
@@ -1287,39 +1306,31 @@ void x11UpdateVideo(void)
             case KeyPress:
             case KeyRelease: {
                 int xScancode = (int)event.xkey.keycode;
-                PalBool pressed = (event.xbutton.type == KeyPress);
+                PalBool pressed = (event.xkey.type == KeyPress);
                 PalScancode scancode = PAL_SCANCODE_UNKNOWN;
                 PalKeycode keycode = PAL_KEYCODE_UNKNOWN;
                 PalEventType type;
                 KeySym keySym = g_X11.lookupKeysym(&event.xkey, 0);
 
-                // special handling for Pause/break with Home
                 if (xScancode == 110) {
                     if (keySym == XK_Pause) {
                         scancode = PAL_SCANCODE_PAUSE;
                     } else {
                         scancode = PAL_SCANCODE_HOME;
                     }
-
                 } else {
                     int index = xScancode - 8;
-                    scancode = (PalScancode)g_X11Keyboard.scancodes[index];
+                    if (index >= 0 && index < 512) {
+                        scancode = (PalScancode)g_X11Keyboard.scancodes[index];
+                    }
                 }
 
-                // Printable and text input keys are from the range 32 (PAL_KEYCODE_SPACE) and 122 (PAL_KEYCODE_Z).
-                // The rest are almost the same as their scancode
                 if (keySym >= XK_space && keySym <= XK_z) {
                     keycode = (PalKeycode)g_X11Keyboard.keycodes[keySym];
-
                 } else {
-                    // Since PalKeycode and PalScancode have the same integers
-                    // we can make a direct cast without a table
-                    // Examle: PAL_KEYCODE_A(int 0) == PAL_SCANCODE_A(int 0)
                     keycode = (PalKeycode)(uint32_t)scancode;
                 }
 
-                // If we got a keySym but its not mapped into our keycode array we do a
-                // direct cast as well.
                 if (keycode == PAL_KEYCODE_UNKNOWN) {
                     keycode = (PalKeycode)(uint32_t)scancode;
                 }
@@ -1329,11 +1340,7 @@ void x11UpdateVideo(void)
                 g_Keyboard.keycodeState[keycode] = pressed;
 
                 if (pressed) {
-                    if (repeat) {
-                        type = PAL_EVENT_TYPE_KEYREPEAT;
-                    } else {
-                        type = PAL_EVENT_TYPE_KEYDOWN;
-                    }
+                    type = repeat ? PAL_EVENT_TYPE_KEYREPEAT : PAL_EVENT_TYPE_KEYDOWN;
                 } else {
                     type = PAL_EVENT_TYPE_KEYUP;
                 }
@@ -1343,66 +1350,63 @@ void x11UpdateVideo(void)
                     PalEventDriver* driver = g_X11.eventDriver;
                     mode = palGetEventDispatchMode(driver, type);
                     if (mode != PAL_DISPATCH_MODE_NONE) {
-                        PalEvent event = {0};
-                        event.type = type;
-                        event.data = palPackUint32(keycode, scancode);
-                        event.data2 = palPackPointer(window);
-                        palPushEvent(driver, &event);
+                        PalEvent outEvent = {0};
+                        outEvent.type = type;
+                        outEvent.data = palPackUint32(keycode, scancode);
+                        outEvent.data2 = palPackPointer(window);
+                        palPushEvent(driver, &outEvent);
                     }
 
-                    // check for char event if enabled
+                    if (!pressed || !data || !data->ic) {
+                        break;
+                    }
+
                     type = PAL_EVENT_TYPE_KEYCHAR;
                     mode = palGetEventDispatchMode(driver, type);
                     if (mode == PAL_DISPATCH_MODE_NONE) {
                         break;
                     }
 
-                    int status;
+                    int status = 0;
                     char buffer[32];
-                    KeySym keySym;
+                    KeySym lookupSym = 0;
                     int len = g_X11.utf8LookupString(
                         data->ic,
                         &event.xkey,
                         buffer,
                         sizeof(buffer),
-                        &keySym,
+                        &lookupSym,
                         &status);
 
                     uint32_t codepoint = 0;
                     if (status == XLookupChars || status == XLookupBoth) {
-                        // decode to Unicode codepoint
                         unsigned char ch = (unsigned char)buffer[0];
                         if (ch < 0x80) {
-                            // 1 byte (A-Z)
                             codepoint = ch;
-
                         } else if ((ch >> 5) == 0x6 && len >= 2) {
-                            // 2 byte
                             codepoint = ((ch & 0x1F) << 6) | (buffer[1] & 0x3F);
-
                         } else if ((ch >> 4) == 0xE && len >= 3) {
-                            // 3 byte
                             // clang-format off
-                            codepoint = ((ch & 0x0F) << 12)       |
+                            codepoint = ((ch & 0x0F) << 12)    |
                                         ((buffer[1] & 0x3F) << 6) |
                                         (buffer[2] & 0x3F);
                             // clang-format on
-
                         } else if ((ch >> 3) == 0x1E && len >= 4) {
-                            // 4 byte
                             // clang-format off
-                            codepoint = ((ch & 0x07) << 18)        |
+                            codepoint = ((ch & 0x07) << 18)     |
                                         ((buffer[1] & 0x3F) << 12) |
                                         ((buffer[2] & 0x3F) << 6)  |
                                         (buffer[3] & 0x3F);
                             // clang-format on
                         }
 
-                        PalEvent event = {0};
-                        event.type = type;
-                        event.data = codepoint;
-                        event.data2 = palPackPointer(window);
-                        palPushEvent(driver, &event);
+                        if (codepoint > 0) {
+                            PalEvent outEvent = {0};
+                            outEvent.type = type;
+                            outEvent.data = codepoint;
+                            outEvent.data2 = palPackPointer(window);
+                            palPushEvent(driver, &outEvent);
+                        }
                     }
                 }
 #endif // PAL_HAS_EVENT_MODULE
