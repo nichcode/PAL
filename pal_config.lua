@@ -6,7 +6,7 @@ PAL_BUILD_STATIC = false
 PAL_BUILD_TESTS = true
 
 -- Generate compile_commands
-PAL_GENERATE_COMPILE_COMMANDS = false
+PAL_GENERATE_COMPILE_COMMANDS = true
 
 -- Generate .vscode folder (GNU Makefiles)
 PAL_GENERATE_VSCODE = true

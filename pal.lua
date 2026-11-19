@@ -63,22 +63,22 @@ project "PAL2"
                 "/usr/include/x86_64-linux-gnu/wayland-client.h"
             }
 
-            -- local found = false
-            -- for _, path in ipairs(waylandPaths) do
-            --     local file = io.open(path, "r")
-            --     if file then
-            --         file:close()
-            --         found = true
-            --         break
-            --     end
-            -- end
+            local found = false
+            for _, path in ipairs(waylandPaths) do
+                local file = io.open(path, "r")
+                if file then
+                    file:close()
+                    found = true
+                    break
+                end
+            end
 
-            -- if found then
-            --     defines { "PAL_HAS_WAYLAND_BACKEND=1" }
-            --     files { "src/video/wayland/*.c" }
-            -- else
-            --     defines { "PAL_HAS_WAYLAND_BACKEND=0" }
-            -- end
+            if found then
+                defines { "PAL_HAS_WAYLAND_BACKEND=1" }
+                files { "src/video/wayland/*.c" }
+            else
+                defines { "PAL_HAS_WAYLAND_BACKEND=0" }
+            end
 
             -- check for Xlib support. This is cross compiler
             local XPaths = {
