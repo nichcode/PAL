@@ -28,24 +28,18 @@
 VideoGLX g_VideoGlx = {0};
 static GLXGetProcAddressFn s_Load = nullptr;
 
-typedef union GLXSymbol
-{
-    void* raw;
-    GLXProc symbol;
-} GLXSymbol;
-
 GLXProc loadGLXProc(const char* name)
 {
     if (s_Load) {
-        GLXSymbol sym;
-        sym.raw = s_Load((const unsigned char*)name);
-        if (sym.raw) {
-            return sym.symbol;
+        GLXProc proc;
+        proc = s_Load((const unsigned char*)name);
+        if (proc) {
+            return proc;
         }
     }
 
     if (g_VideoGlx.libglx) {
-        return palGetSymbol(g_VideoGlx.libglx, name);
+        return (GLXProc)palGetSymbol(g_VideoGlx.libglx, name);
     }
 
     return nullptr;

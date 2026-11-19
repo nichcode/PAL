@@ -24,6 +24,7 @@
 
 #include "x11_helper.h"
 #include "pal2/core/memory.h"
+#include <string.h>
 
 RRMode x11FindMode(
     XRRScreenResources* resources,

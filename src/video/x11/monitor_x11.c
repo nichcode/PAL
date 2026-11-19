@@ -38,6 +38,21 @@ typedef struct MonitorContext {
     RROutput output;
 } MonitorContext;
 
+static void releaseMonitorContext(MonitorContext* ctx)
+{
+    if (ctx->crtc) {
+        g_X11.freeCrtcInfo(ctx->crtc);
+    }
+
+    if (ctx->outputInfo) {
+        g_X11.freeOutputInfo(ctx->outputInfo);
+    }
+
+    if (ctx->resources) {
+        g_X11.freeScreenResources(ctx->resources);
+    }
+}
+
 static PalBool acquireMonitorContext(
     PalMonitor* monitor,
     PalBool needCrtc,
@@ -75,21 +90,6 @@ static PalBool acquireMonitorContext(
     return PAL_TRUE;
 }
 
-static void releaseMonitorContext(MonitorContext* ctx)
-{
-    if (ctx->crtc) {
-        g_X11.freeCrtcInfo(ctx->crtc);
-    }
-
-    if (ctx->outputInfo) {
-        g_X11.freeOutputInfo(ctx->outputInfo);
-    }
-
-    if (ctx->resources) {
-        g_X11.freeScreenResources(ctx->resources);
-    }
-}
-
 static const XRRModeInfo* findModeById(
     const XRRScreenResources* resources,
     RRMode id)
@@ -122,10 +122,10 @@ static void fillMonitorMode(
     dst->refreshRate = calcRefreshRate(src);
 }
 
-static uint32_t estimateDpi(int width)
+static uint32_t estimateDpi(uint32_t width)
 {
     static const float steps[] = {1.0f, 1.2f, 1.5f, 1.75f, 2.0f};
-    float raw = width / 1920.0f;
+    float raw = (float)width / 1920.0f;
     float closest = steps[0];
     float minDiff = fabsf(raw - steps[0]);
 

@@ -445,7 +445,7 @@ typedef struct WindowData {
     int x;
     int y;
     uint32_t w;
-    int dpi;
+    uint32_t dpi;
     uint32_t h;
     PalWindowState state;
     PalWindow* window;
@@ -455,7 +455,7 @@ typedef struct WindowData {
 
 typedef struct MonitorData {
     PalBool used;
-    int dpi;
+    uint32_t dpi;
     int x;
     int y;
     uint32_t w;
@@ -471,18 +471,18 @@ typedef struct X11 {
     PalBool ownsDisplay;
     PalBool error;
     PalBool skipScreenEvent;
-    int bpp;
+    uint32_t bpp;
     int screen;
     int depth;
-    int monitorCount;
+    uint32_t monitorCount;
     int rrEventBase;
     XIM im;
     Display* display;
     Window root;
     XContext dataID;
 
-    int32_t maxWindowData;
-    int32_t maxMonitorData;
+    uint32_t maxWindowData;
+    uint32_t maxMonitorData;
     PalVideoFeatures features;
     const PalAllocator* allocator;
     struct PalEventDriver* eventDriver;

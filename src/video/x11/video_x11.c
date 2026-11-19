@@ -45,6 +45,8 @@ void x11RestoreWindow(PalWindow*);
 void x11ShowWindow(PalWindow*);
 void x11HideWindow(PalWindow*);
 void x11FlashWindow(PalWindow*, const PalFlashInfo*);
+PalResult x11AttachWindow(void*, PalWindow**);
+PalResult x11DetachWindow(PalWindow*, void**);
 void x11GetWindowStyle(PalWindow*, PalWindowStyle*);
 void x11GetWindowMonitor(PalWindow*, PalMonitor**);
 void x11GetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
@@ -95,6 +97,8 @@ const VideoBackend g_WaylandBackend = {
     .showWindow = x11ShowWindow,
     .hideWindow = x11HideWindow,
     .flashWindow = x11FlashWindow,
+    .attachWindow = x11AttachWindow,
+    .detachWindow = x11DetachWindow,
     .getWindowStyle = x11GetWindowStyle,
     .getWindowMonitor = x11GetWindowMonitor,
     .getWindowTitle = x11GetWindowTitle,

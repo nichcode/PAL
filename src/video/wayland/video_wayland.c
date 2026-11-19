@@ -45,6 +45,8 @@ void wlRestoreWindow(PalWindow*);
 void wlShowWindow(PalWindow*);
 void wlHideWindow(PalWindow*);
 void wlFlashWindow(PalWindow*, const PalFlashInfo*);
+PalResult wlAttachWindow(void*, PalWindow**);
+PalResult wlDetachWindow(PalWindow*, void**);
 void wlGetWindowStyle(PalWindow*, PalWindowStyle*);
 void wlGetWindowMonitor(PalWindow*, PalMonitor**);
 void wlGetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
@@ -95,6 +97,8 @@ const VideoBackend g_WaylandBackend = {
     .showWindow = wlShowWindow,
     .hideWindow = wlHideWindow,
     .flashWindow = wlFlashWindow,
+    .attachWindow = wlAttachWindow,
+    .detachWindow = wlDetachWindow,
     .getWindowStyle = wlGetWindowStyle,
     .getWindowMonitor = wlGetWindowMonitor,
     .getWindowTitle = wlGetWindowTitle,

@@ -38,6 +38,7 @@
 #include <X11/Xatom.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 
 X11 g_X11 = {0};
 X11Atoms g_X11Atoms = {0};
@@ -641,6 +642,11 @@ static void createKeycodeTable(void)
     g_X11Keyboard.keycodes[XK_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
+static void resetMonitorData()
+{
+    memset(g_X11.monitorData, 0, g_X11.maxMonitorData * sizeof(MonitorData));
+}
+
 static void cacheMonitors()
 {
     resetMonitorData();
@@ -653,7 +659,7 @@ static void cacheMonitors()
         if (info->connection == RR_Connected && info->crtc != None) {
             PalMonitor* monitor = TO_PAL_HANDLE(PalMonitor, output);
             MonitorData* data = nullptr;
-            data = xGetFreeMonitorData();
+            data = x11GetFreeMonitorData();
             if (!data) {
                 return;
             }
@@ -662,12 +668,12 @@ static void cacheMonitors()
             XRRCrtcInfo* crtc = g_X11.getCrtcInfo(g_X11.display, resources, info->crtc);
 
             // get DPI
-            float raw = crtc->width / 1920.0f;
+            float raw = (float)crtc->width / 1920.0f;
             float steps[] = {1.0f, 1.2f, 1.5f, 1.75, 2.0f};
             float closest = steps[0];
             float minDiff = fabsf(raw - steps[0]);
 
-            for (int i = 1; i < sizeof(steps) / sizeof(steps[0]); i++) {
+            for (uint32_t i = 1; i < sizeof(steps) / sizeof(steps[0]); i++) {
                 float diff = fabsf(raw - steps[i]);
                 if (diff < minDiff) {
                     minDiff = diff;
@@ -689,11 +695,6 @@ static void cacheMonitors()
     }
 
     g_X11.freeScreenResources(resources);
-}
-
-static void resetMonitorData()
-{
-    memset(g_X11.monitorData, 0, g_X11.maxMonitorData * sizeof(MonitorData));
 }
 
 static PalWindowState queryWindowState(Window xWin)
@@ -736,20 +737,20 @@ static PalWindowState queryWindowState(Window xWin)
     return state;
 }
 
-static int getWindowMonitorDPI(WindowData* data)
+static uint32_t getWindowMonitorDPI(WindowData* data)
 {
-    int winX = data->x + data->w / 2;
-    int winY = data->y + data->w / 2;
+    int winX = data->x + (int)data->w / 2;
+    int winY = data->y + (int)data->w / 2;
 
-    for (int i = 0; i < g_X11.maxMonitorData; i++) {
+    for (uint32_t i = 0; i < g_X11.maxMonitorData; i++) {
         if (!g_X11.monitorData->used) {
             continue;
         }
 
         // we found a monitor, check the monitor bounds with the window
         MonitorData* info = &g_X11.monitorData[i];
-        if (winX >= info->x && winX < info->x + info->w && winY >= info->y &&
-            winY < info->y + info->h) {
+        if (winX >= info->x && winX < info->x + (int)info->w && winY >= info->y &&
+            winY < info->y + (int)info->h) {
             return info->dpi;
         }
     }
@@ -948,7 +949,7 @@ void x11UpdateVideo(void)
         switch (event.type) {
             case ClientMessage: {
 #if PAL_HAS_EVENT_MODULE
-                Atom windowClose = event.xclient.data.l[0];
+                Atom windowClose = (Atom)event.xclient.data.l[0];
                 if (windowClose == g_X11Atoms.WM_DELETE_WINDOW) {
                     if (g_X11.eventDriver) {
                         PalEventDriver* driver = g_X11.eventDriver;
@@ -971,8 +972,8 @@ void x11UpdateVideo(void)
                 // skip the first configure event
                 if (data->skipConfigure) {
                     data->skipConfigure = PAL_FALSE;
-                    data->w = event.xconfigure.width;
-                    data->h = event.xconfigure.height;
+                    data->w = (uint32_t)event.xconfigure.width;
+                    data->h = (uint32_t)event.xconfigure.height;
                     data->x = event.xconfigure.x;
                     data->y = event.xconfigure.y;
                     break;
@@ -980,9 +981,12 @@ void x11UpdateVideo(void)
 
                 // real configure event
                 if (g_X11.eventDriver) {
-                    if (data->w != event.xconfigure.width || data->h != event.xconfigure.height) {
-                        data->w = event.xconfigure.width;
-                        data->h = event.xconfigure.height;
+                    uint32_t tmpWidth = (uint32_t)event.xconfigure.width;
+                    uint32_t tmpHeight = (uint32_t)event.xconfigure.height;
+
+                    if (data->w != tmpWidth || data->h != tmpHeight) {
+                        data->w = tmpWidth;
+                        data->h = tmpHeight;
 
 #if PAL_HAS_EVENT_MODULE
                         PalEventDriver* driver = g_X11.eventDriver;
@@ -1029,7 +1033,7 @@ void x11UpdateVideo(void)
                         // A window has to be moved before its can change monitors.
                         // We get the monitor the moved window is on and check if the dpi is
                         // different from the one it was created on.
-                        int monitorDPI = getWindowMonitorDPI(data);
+                        uint32_t monitorDPI = getWindowMonitorDPI(data);
                         if (monitorDPI != data->dpi) {
                             data->dpi = monitorDPI;
 
@@ -1055,8 +1059,8 @@ void x11UpdateVideo(void)
             case FocusIn: {
 #if PAL_HAS_EVENT_MODULE
                 if (g_X11.eventDriver) {
-                    int mode = event.xfocus.mode;
-                    if (mode == NotifyGrab || mode == NotifyUngrab) {
+                    int eventmode = event.xfocus.mode;
+                    if (eventmode == NotifyGrab || eventmode == NotifyUngrab) {
                         // ignore dragging and popup focus events
                         break;
                     }
@@ -1080,8 +1084,8 @@ void x11UpdateVideo(void)
             case FocusOut: {
     #if PAL_HAS_EVENT_MODULE
                 if (g_X11.eventDriver) {
-                    int mode = event.xfocus.mode;
-                    if (mode == NotifyGrab || mode == NotifyUngrab) {
+                    int eventmode = event.xfocus.mode;
+                    if (eventmode == NotifyGrab || eventmode == NotifyUngrab) {
                         // ignore dragging and popup focus events
                         break;
                     }
@@ -1143,7 +1147,7 @@ void x11UpdateVideo(void)
                 }
 
                 // store old monitor count
-                int oldCount = g_X11.monitorCount;
+                uint32_t oldCount = g_X11.monitorCount;
                 g_X11.monitorCount = 0;
                 cacheMonitors();
 
@@ -1209,7 +1213,7 @@ void x11UpdateVideo(void)
 
             case ButtonPress:
             case ButtonRelease: {
-                int xButton = event.xbutton.button;
+                int xButton = (int)event.xbutton.button;
                 PalBool pressed = (event.xbutton.type == ButtonPress);
                 PalMouseButton button = 0;
                 PalEventType type;
@@ -1282,7 +1286,7 @@ void x11UpdateVideo(void)
 
             case KeyPress:
             case KeyRelease: {
-                int xScancode = event.xkey.keycode;
+                int xScancode = (int)event.xkey.keycode;
                 PalBool pressed = (event.xbutton.type == KeyPress);
                 PalScancode scancode = PAL_SCANCODE_UNKNOWN;
                 PalKeycode keycode = PAL_KEYCODE_UNKNOWN;
@@ -1299,14 +1303,13 @@ void x11UpdateVideo(void)
 
                 } else {
                     int index = xScancode - 8;
-                    scancode = g_X11Keyboard.scancodes[index];
+                    scancode = (PalScancode)g_X11Keyboard.scancodes[index];
                 }
 
                 // Printable and text input keys are from the range 32 (PAL_KEYCODE_SPACE) and 122 (PAL_KEYCODE_Z).
                 // The rest are almost the same as their scancode
                 if (keySym >= XK_space && keySym <= XK_z) {
-                    // a printable or input key
-                    keycode = g_X11Keyboard.keycodes[keySym];
+                    keycode = (PalKeycode)g_X11Keyboard.keycodes[keySym];
 
                 } else {
                     // Since PalKeycode and PalScancode have the same integers
@@ -1368,14 +1371,14 @@ void x11UpdateVideo(void)
                     uint32_t codepoint = 0;
                     if (status == XLookupChars || status == XLookupBoth) {
                         // decode to Unicode codepoint
-                        unsigned char ch = buffer[0];
+                        unsigned char ch = (unsigned char)buffer[0];
                         if (ch < 0x80) {
                             // 1 byte (A-Z)
                             codepoint = ch;
 
                         } else if ((ch >> 5) == 0x6 && len >= 2) {
                             // 2 byte
-                            codepoint = ((ch & 0x1F) << 6) | buffer[1] & 0x3F;
+                            codepoint = ((ch & 0x1F) << 6) | (buffer[1] & 0x3F);
 
                         } else if ((ch >> 4) == 0xE && len >= 3) {
                             // 3 byte

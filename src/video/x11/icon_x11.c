@@ -43,7 +43,7 @@ PalResult x11CreateIcon(
     _icon[1] = (unsigned long)info->height;
 
     // convert from RGBA8 to ARGB32
-    for (int i = 0; i < info->width * info->height; i++) {
+    for (uint32_t i = 0; i < info->width * info->height; i++) {
         uint8_t r = info->pixels[i * 4 + 0]; // Red
         uint8_t g = info->pixels[i * 4 + 1]; // Green
         uint8_t b = info->pixels[i * 4 + 2]; // Blue

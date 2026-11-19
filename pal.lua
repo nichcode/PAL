@@ -75,6 +75,7 @@ project "PAL2"
 
             -- if found then
             --     defines { "PAL_HAS_WAYLAND_BACKEND=1" }
+            --     files { "src/video/wayland/*.c" }
             -- else
             --     defines { "PAL_HAS_WAYLAND_BACKEND=0" }
             -- end
@@ -97,19 +98,14 @@ project "PAL2"
 
             if found then
                 defines { "PAL_HAS_X11_BACKEND=1" }
+                files { "src/video/x11/*.c" }
             else
                 defines { "PAL_HAS_X11_BACKEND=0" }
             end
         end
 
         filter {"system:windows", "configurations:*"}
-            files { "src/video/win32/*.c" }
-
-        filter {"system:linux", "configurations:*"}
-            files {
-                "src/video/x11/*.c",
-                "src/video/wayland/*.c"
-            }
+            files { "src/video/win32/*.c" }      
             
         filter {}
     end

@@ -169,6 +169,14 @@ typedef void (*FlashWindowFn)(
     PalWindow* window, 
     const PalFlashInfo* info);
 
+typedef PalResult (*AttachWindowFn)(
+    void* windowHandle,
+    PalWindow** window);
+
+typedef PalResult (*DetachWindowFn)(
+    PalWindow* window,
+    void** windowHandle);
+
 /** This function has the same semantics and rules as palGetWindowStyle(). */
 typedef void (*GetWindowStyleFn)(
     PalWindow* window, 
@@ -334,6 +342,8 @@ typedef struct VideoBackend {
     ShowWindowFn showWindow;
     HideWindowFn hideWindow;
     FlashWindowFn flashWindow;
+    AttachWindowFn attachWindow;
+    DetachWindowFn detachWindow;
     GetWindowStyleFn getWindowStyle;
     GetWindowMonitorFn getWindowMonitor;
     GetWindowTitleFn getWindowTitle;

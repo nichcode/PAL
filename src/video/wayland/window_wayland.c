@@ -358,6 +358,26 @@ void wlFlashWindow(
     (void)window;
     (void)info;
 }
+
+PalResult wlAttachWindow(
+    void* windowHandle,
+    PalWindow** window)
+{
+    (void)windowHandle;
+    (void)window;
+
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+}
+
+PalResult wlDetachWindow(
+    PalWindow* window,
+    void** windowHandle)
+{
+    (void)window;
+    (void)windowHandle;
+
+    return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
+}
     
 void wlGetWindowStyle(
     PalWindow* window, 

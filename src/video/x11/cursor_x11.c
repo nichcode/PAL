@@ -32,12 +32,12 @@ PalResult x11CreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** cursor)
 {
-    XcursorImage* image = g_X11.cursorImageCreate(info->width, info->height);
-    image->xhot = info->xHotspot;
-    image->yhot = info->yHotspot;
+    XcursorImage* image = g_X11.cursorImageCreate((int)info->width, (int)info->height);
+    image->xhot = (XcursorDim)info->xHotspot;
+    image->yhot = (XcursorDim)info->yHotspot;
 
     // convert from RGBA8 to ARGB32
-    for (int i = 0; i < info->width * info->height; i++) {
+    for (uint32_t i = 0; i < info->width * info->height; i++) {
         uint8_t r = info->pixels[i * 4 + 0]; // Red
         uint8_t g = info->pixels[i * 4 + 1]; // Green
         uint8_t b = info->pixels[i * 4 + 2]; // Blue
@@ -66,7 +66,7 @@ PalResult x11CreateCursorFrom(
     PalCursorType type,
     PalCursor** cursor)
 {
-    int shape;
+    uint32_t shape;
     Cursor _cursor;
 
     switch (type) {
