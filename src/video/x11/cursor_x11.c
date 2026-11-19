@@ -32,7 +32,7 @@ PalResult x11CreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** cursor)
 {
-    XcursorImage* image = s_X11.cursorImageCreate(info->width, info->height);
+    XcursorImage* image = g_X11.cursorImageCreate(info->width, info->height);
     image->xhot = info->xHotspot;
     image->yhot = info->yHotspot;
 
@@ -51,14 +51,14 @@ PalResult x11CreateCursor(
         // clang-format on
     }
 
-    Cursor cursor = s_X11.cursorImageLoadCursor(s_X11.display, image);
-    if (!cursor) {
+    Cursor _cursor = g_X11.cursorImageLoadCursor(g_X11.display, image);
+    if (!_cursor) {
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    s_X11.cursorImageDestroy(image);
+    g_X11.cursorImageDestroy(image);
 
-    *outCursor = TO_PAL_HANDLE(PalCursor, cursor);
+    *cursor = TO_PAL_HANDLE(PalCursor, _cursor);
     return PAL_RESULT_SUCCESS;
 }
 
@@ -67,7 +67,7 @@ PalResult x11CreateCursorFrom(
     PalCursor** cursor)
 {
     int shape;
-    Cursor cursor;
+    Cursor _cursor;
 
     switch (type) {
         case PAL_CURSOR_TYPE_ARROW: {
@@ -96,15 +96,15 @@ PalResult x11CreateCursorFrom(
         }
     }
 
-    cursor = s_X11.createFontCursor(s_X11.display, shape);
+    _cursor = g_X11.createFontCursor(g_X11.display, shape);
     
-    *outCursor = TO_PAL_HANDLE(PalCursor, cursor);
+    *cursor = TO_PAL_HANDLE(PalCursor, _cursor);
     return PAL_RESULT_SUCCESS;
 }
 
 void x11DestroyCursor(PalCursor* cursor)
 {
-    s_X11.freeCursor(s_X11.display, FROM_PAL_HANDLE(Cursor, cursor));
+    g_X11.freeCursor(g_X11.display, FROM_PAL_HANDLE(Cursor, cursor));
 }
 
 void x11ShowCursor(PalBool show)
@@ -119,8 +119,8 @@ void x11ClipCursor(
     Window xWin = FROM_PAL_HANDLE(Window, window);
 
     if (clip) {
-        s_X11.grabPointer(
-            s_X11.display,
+        g_X11.grabPointer(
+            g_X11.display,
             xWin,
             True,
             0,
@@ -131,7 +131,7 @@ void x11ClipCursor(
             CurrentTime);
 
     } else {
-        s_X11.ungrabPointer(s_X11.display, CurrentTime);
+        g_X11.ungrabPointer(g_X11.display, CurrentTime);
     }
 }
 
@@ -145,7 +145,7 @@ void x11GetCursorPos(
     int rootX, rootY, winX, winY;
     unsigned int mask;
 
-    s_X11.queryPointer(s_X11.display, xWin, &root, &child, &rootX, &rootY, &winX, &winY, &mask);
+    g_X11.queryPointer(g_X11.display, xWin, &root, &child, &rootX, &rootY, &winX, &winY, &mask);
     if (x) {
         *x = winX;
     }
@@ -161,8 +161,8 @@ void x11SetCursorPos(
     int32_t y)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);
-    s_X11.warpPointer(s_X11.display, None, xWin, 0, 0, 0, 0, x, y);
-    s_X11.flush(s_X11.display);
+    g_X11.warpPointer(g_X11.display, None, xWin, 0, 0, 0, 0, x, y);
+    g_X11.flush(g_X11.display);
 }
 
 void x11SetWindowCursor(
@@ -173,13 +173,13 @@ void x11SetWindowCursor(
     Window xCursor = FROM_PAL_HANDLE(Cursor, cursor);
 
     if (xCursor) {
-        s_X11.defineCursor(s_X11.display, xWin, xCursor);
+        g_X11.defineCursor(g_X11.display, xWin, xCursor);
 
     } else {
-        s_X11.undefineCursor(s_X11.display, xWin);
+        g_X11.undefineCursor(g_X11.display, xWin);
     }
 
-    s_X11.flush(s_X11.display);
+    g_X11.flush(g_X11.display);
 }
 
 #endif // PAL_HAS_X11_BACKEND
