@@ -50,7 +50,7 @@ extern struct wl_interface xdgWmBaseInterface;
 static PalVideoDriver s_WaylandDriver = {0};
 
 /* =========================================================================
- * Helpers
+ * Helper
  * ========================================================================= */
 
 static void loadGlobals(void)
@@ -418,7 +418,7 @@ static void createKeycodeTable(void)
     g_WlKeyboard.keycodes[XKB_KEY_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
-static inline uint64_t getCurrentTime()
+static inline uint64_t getCurrentTime(void)
 {
     uint64_t now = palGetPerformanceCounter();
     return (now * 1000) / g_WlKeyboard.frequency;
@@ -444,7 +444,7 @@ static void getDriverFeatures(const char* interface)
     s_WaylandDriver.features = features;
 }
 
-static void getCursorTheme()
+static void getCursorTheme(void)
 {
     const char* theme = getenv("XCURSOR_THEME");
     if (theme && theme[0] == '\0') {

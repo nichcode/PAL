@@ -29,7 +29,6 @@
 #include "pal2/video/window.h"
 #include "pal2/video/monitor.h"
 
-#include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 #include <X11/Xcursor/Xcursor.h>
 #include <X11/Xresource.h>
@@ -37,19 +36,8 @@
 #define TO_PAL_HANDLE(type, val) ((type*)(uintptr_t)(val))
 #define FROM_PAL_HANDLE(type, handle) ((type)(uintptr_t)(handle))
 
-#define X11_INTERN_ATOM(x) s_X11Atoms.x = s_X11.internAtom(s_X11.display, #x, False)
+#define X11_INTERN_ATOM(x) g_X11Atoms.x = g_X11.internAtom(g_X11.display, #x, False)
 #define RANDR_SCREEN_CHANGE_EVENT 1040
-
-#define GLX_FBCONFIG_ID 0x8012
-typedef struct __GLXFBConfigRec* GLXFBConfig;
-
-typedef GLXFBConfig* (*GLXGetFBConfigsFn)(Display*, int, int*);
-typedef int (*GLXGetFBConfigAttribFn)(Display*, GLXFBConfig, int, int*);
-typedef XVisualInfo* (*GLXGetVisualFromFBConfigFn)(Display*, GLXFBConfig);
-
-typedef void (*GLXProc)();
-
-typedef GLXProc (*GLXGetProcAddressFn)(const unsigned char*);
 
 typedef Display* (*XOpenDisplayFn)(const char*);
 typedef int (*XCloseDisplayFn)(Display*);
@@ -476,11 +464,11 @@ typedef struct MonitorData {
 } MonitorData;
 
 typedef struct X11 {
-    void* handle;
-    void* xrandr;
-    void* glxHandle;
-    void* libcursor;
+    PalLibrary* libx11;
+    PalLibrary* libxrandr;
+    PalLibrary* libcursor;
 
+    PalBool ownsDisplay;
     PalBool error;
     PalBool skipScreenEvent;
     int bpp;
@@ -550,11 +538,6 @@ typedef struct X11 {
     XFreeFn free;
     XGetVisualInfoFn getVisualInfo;
 
-    // opengl
-    GLXGetFBConfigsFn glxGetFBConfigs;
-    GLXGetFBConfigAttribFn glxGetFBConfigAttrib;
-    GLXGetVisualFromFBConfigFn glxGetVisualFromFBConfig;
-
     XCreateFontCursorFn createFontCursor;
     XFreePixmapFn freePixmap;
     XSetWMHintsFn setWMHints;
@@ -588,8 +571,20 @@ typedef struct X11 {
     Xutf8LookupStringFn utf8LookupString;
 } X11;
 
+typedef struct X11Keyboard {
+    int scancodes[512];
+    int keycodes[256];
+} X11Keyboard;
+
+typedef struct X11Mouse {
+    int32_t lastX;
+    int32_t lastY;
+} X11Mouse;
+
 extern X11 g_X11;
 extern X11Atoms g_X11Atoms;
+extern X11Keyboard g_X11Keyboard;
+extern X11Mouse g_X11Mouse;
 
 RRMode x11FindMode(
     XRRScreenResources* resources,

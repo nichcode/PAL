@@ -57,8 +57,8 @@ typedef EGLint (*eglGetErrorFn)(void);
 typedef EGLBoolean (*eglBindAPIFn)(EGLenum);
 typedef EGLBoolean (*eglGetConfigsFn)(EGLDisplay, EGLConfig*, EGLint, EGLint*);
 
-typedef struct {
-    PalLibrary* handle;
+typedef struct VideoEGL {
+    PalLibrary* libegl;
     eglInitializeFn initialize;
     eglTerminateFn terminate;
     eglGetDisplayFn getDisplay;

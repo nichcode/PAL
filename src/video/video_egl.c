@@ -44,8 +44,8 @@ PalLibrarySymbol loadEGLProc(const char* name)
         }
     }
 
-    if (g_VideoEgl.handle) {
-        return palGetSymbol(g_VideoEgl.handle, name);
+    if (g_VideoEgl.libegl) {
+        return palGetSymbol(g_VideoEgl.libegl, name);
     }
 
     return nullptr;
@@ -53,17 +53,17 @@ PalLibrarySymbol loadEGLProc(const char* name)
 
 void loadVideoEGL(void)
 {
-    if (g_VideoEgl.handle) {
+    if (g_VideoEgl.libegl) {
         return;
     }
 
-    g_VideoEgl.handle = palLoadLibrary("libEGL.so.1");
-    if (!g_VideoEgl.handle) {
-        g_VideoEgl.handle = palLoadLibrary("libEGL.so");
+    g_VideoEgl.libegl = palLoadLibrary("libEGL.so.1");
+    if (!g_VideoEgl.libegl) {
+        g_VideoEgl.libegl = palLoadLibrary("libEGL.so");
     }
 
-    if (g_VideoEgl.handle) {
-        s_Load = (eglGetProcAddressFn)palGetSymbol(g_VideoEgl.handle, "eglGetProcAddress");
+    if (g_VideoEgl.libegl) {
+        s_Load = (eglGetProcAddressFn)palGetSymbol(g_VideoEgl.libegl, "eglGetProcAddress");
 
         g_VideoEgl.initialize = (eglInitializeFn)loadEGLProc("eglInitialize");
         g_VideoEgl.terminate = (eglTerminateFn)loadEGLProc("eglTerminate");
@@ -78,8 +78,8 @@ void loadVideoEGL(void)
 
 void unloadVideoEGL(void)
 {
-    if (g_VideoEgl.handle) {
-        palFreeLibrary(g_VideoEgl.handle);
+    if (g_VideoEgl.libegl) {
+        palFreeLibrary(g_VideoEgl.libegl);
     }
 
     memset(&g_VideoEgl, 0, sizeof(VideoEGL));
