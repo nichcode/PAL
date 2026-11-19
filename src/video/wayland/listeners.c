@@ -35,7 +35,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-static inline uint64_t getCurrentTime()
+static inline uint64_t getCurrentTime(void)
 {
     uint64_t now = palGetPerformanceCounter();
     return (now * 1000) / g_WlKeyboard.frequency;

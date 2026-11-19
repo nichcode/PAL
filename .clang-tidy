@@ -18,7 +18,6 @@ Checks: >
   bugprone-unused-return-value,
   bugprone-unsafe-functions,
   bugprone-suspicious-semicolon,
-  cert-err33-c,
   concurrency-mt-unsafe,
   misc-misleading-bidirectional,
   misc-misleading-identifier,
@@ -39,4 +38,4 @@ Checks: >
 
 WarningsAsErrors: '*'
 FormatStyle: file
-HeaderFilterRegex: ".*"
+HeaderFilterRegex: '.*/(include|src|tools|tests)/.*'

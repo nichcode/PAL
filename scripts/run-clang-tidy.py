@@ -12,13 +12,12 @@ def worker(info) -> None:
     """Worker that runs clang tidy for a file"""
 
     file, buildpath = info
-    cmd = ["clang-tidy", file, "-p", buildpath]
+    cmd = ["clang-tidy", "--quiet", file, "-p", buildpath]
     subprocess.run(cmd, shell=False)
 
 
 def main() -> None:
     root_dir = Path(__file__).resolve().parents[1]
-    print(root_dir)
     path = root_dir / "build/compile_commands.json"
 
     if not os.path.exists(path):

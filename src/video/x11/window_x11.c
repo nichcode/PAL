@@ -895,7 +895,7 @@ PalBool x11IsWindowVisible(PalWindow* window)
     return attr.map_state == IsViewable;
 }
 
-PalWindow* x11GetFocusWindow()
+PalWindow* x11GetFocusWindow(void)
 {
     Window window;
     int tmp;

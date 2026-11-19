@@ -54,7 +54,7 @@ void wlGetWindowPos(PalWindow*, int32_t*, int32_t*);
 void wlGetWindowSize(PalWindow*, uint32_t*, uint32_t*);
 void wlGetWindowState(PalWindow*, PalWindowState*);
 PalBool wlIsWindowVisible(PalWindow*);
-PalWindow* wlGetFocusWindow();
+PalWindow* wlGetFocusWindow(void);
 void wlGetWindowHandleInfo(PalWindow*, PalWindowHandleInfo*);
 void wlSetWindowOpacity(PalWindow*, float);
 void wlSetWindowStyle(PalWindow*, PalWindowStyle);

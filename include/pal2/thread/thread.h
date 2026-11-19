@@ -250,7 +250,7 @@ PAL_API void PAL_CALL palSleep(uint64_t milliseconds);
  * @since Added in version 2.0
  * @ingroup pal_thread
  */
-PAL_API void PAL_CALL palYield();
+PAL_API void PAL_CALL palYield(void);
 
 /**
  * @brief Gets the currently executing thread.
@@ -262,7 +262,7 @@ PAL_API void PAL_CALL palYield();
  * @since Added in version 2.0
  * @ingroup pal_thread
  */
-PAL_API PalThread* PAL_CALL palGetCurrentThread();
+PAL_API PalThread* PAL_CALL palGetCurrentThread(void);
 
 /**
  * @brief Gets the supported features of the thread system.
@@ -276,7 +276,7 @@ PAL_API PalThread* PAL_CALL palGetCurrentThread();
  * @since Added in version 2.0
  * @ingroup pal_thread
  */
-PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures();
+PAL_API PalThreadFeatures PAL_CALL palGetThreadFeatures(void);
 
 /**
  * @brief Gets the priority of a thread.

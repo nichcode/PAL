@@ -290,14 +290,14 @@ struct wl_buffer* wlCreateShmBuffer(
     const uint8_t* pixels,
     PalBool cursor);
 
-MonitorData* wlGetFreeMonitorData();
+MonitorData* wlGetFreeMonitorData(void);
 MonitorData* wlFindMonitorData(PalMonitor* monitor);
 void wlFreeMonitorData(PalMonitor* monitor);
-WindowData* wlGetFreeWindowData();
+WindowData* wlGetFreeWindowData(void);
 WindowData* wlFindWindowData(PalWindow* window);
 
 /** Defined in protocols.c */
-void wlSetupProtocols();
+void wlSetupProtocols(void);
 
 /** Defined in cursor_wayland.c */
 void wlApplyWindowCursor(WindowData* data);

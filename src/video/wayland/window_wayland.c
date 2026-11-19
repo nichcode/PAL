@@ -442,7 +442,7 @@ PalBool wlIsWindowVisible(PalWindow* window)
     return PAL_FALSE;
 }
 
-PalWindow* wlGetFocusWindow()
+PalWindow* wlGetFocusWindow(void)
 {
     return nullptr;
 }

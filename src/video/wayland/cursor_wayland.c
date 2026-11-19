@@ -97,7 +97,7 @@ PalResult wlCreateCursorFrom(
     PalCursorType type,
     PalCursor** cursor)
 {
-    const char *names[3] = { "left_ptr", nullptr, nullptr };
+    const char *names[4] = { "left_ptr", nullptr, nullptr, nullptr };
     switch (type) {
     case PAL_CURSOR_TYPE_HAND:
         names[0] = "pointer";
@@ -122,7 +122,7 @@ PalResult wlCreateCursorFrom(
     }
 
     struct wl_cursor* wlCursor = nullptr;
-    for (int i = 0; names[i] != NULL; i++) {
+    for (int i = 0; names[i] != nullptr; i++) {
         wlCursor = g_Wl.cursorThemeGetCursor(g_Wl.cursorTheme, names[i]);
         if (wlCursor) {
             break;

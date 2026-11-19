@@ -71,8 +71,8 @@ typedef struct VideoEGL {
 
 extern VideoEGL g_VideoEgl;
 
-void loadVideoEGL();
-void unloadVideoEGL();
+void loadVideoEGL(void);
+void unloadVideoEGL(void);
 
 #endif // VIDEO_EGL_H
 #endif // _WIN32

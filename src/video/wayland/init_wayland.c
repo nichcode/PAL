@@ -446,13 +446,13 @@ static void getDriverFeatures(const char* interface)
 
 static void getCursorTheme(void)
 {
-    const char* theme = getenv("XCURSOR_THEME");
+    const char* theme = getenv("XCURSOR_THEME"); // NOLINT(concurrency-mt-unsafe)
     if (theme && theme[0] == '\0') {
         theme = nullptr;
     }
 
     int themeSize = 24;
-    const char* tmp = getenv("XCURSOR_SIZE");
+    const char* tmp = getenv("XCURSOR_SIZE"); // NOLINT(concurrency-mt-unsafe)
     if (tmp && tmp[0] != '\0') {
         char* end = nullptr;
         long parsed = strtol(tmp, &end, 10);

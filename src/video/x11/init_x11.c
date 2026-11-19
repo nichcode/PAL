@@ -653,12 +653,12 @@ static void createKeycodeTable(void)
     g_X11Keyboard.keycodes[XK_bracketright] = PAL_KEYCODE_RBRACKET;
 }
 
-static void resetMonitorData()
+static void resetMonitorData(void)
 {
     memset(g_X11.monitorData, 0, g_X11.maxMonitorData * sizeof(MonitorData));
 }
 
-static void cacheMonitors()
+static void cacheMonitors(void)
 {
     resetMonitorData();
     XRRScreenResources* resources = nullptr;
@@ -1387,19 +1387,21 @@ void x11UpdateVideo(void)
                         if (ch < 0x80) {
                             codepoint = ch;
                         } else if ((ch >> 5) == 0x6 && len >= 2) {
-                            codepoint = ((ch & 0x1F) << 6) | (buffer[1] & 0x3F);
+                            codepoint = (((uint32_t)ch & 0x1Fu) << 6) | ((uint32_t)buffer[1] & 0x3Fu);
+
                         } else if ((ch >> 4) == 0xE && len >= 3) {
                             // clang-format off
-                            codepoint = ((ch & 0x0F) << 12)    |
-                                        ((buffer[1] & 0x3F) << 6) |
-                                        (buffer[2] & 0x3F);
+                            codepoint = (((uint32_t)ch & 0x0Fu) << 12)       |
+                                        (((uint32_t)buffer[1] & 0x3Fu) << 6) |
+                                        ((uint32_t)buffer[2] & 0x3Fu);
                             // clang-format on
+
                         } else if ((ch >> 3) == 0x1E && len >= 4) {
                             // clang-format off
-                            codepoint = ((ch & 0x07) << 18)     |
-                                        ((buffer[1] & 0x3F) << 12) |
-                                        ((buffer[2] & 0x3F) << 6)  |
-                                        (buffer[3] & 0x3F);
+                            codepoint = (((uint32_t)ch & 0x07u) << 18)        |
+                                        (((uint32_t)buffer[1] & 0x3Fu) << 12) |
+                                        (((uint32_t)buffer[2] & 0x3Fu) << 6)  |
+                                        ((uint32_t)buffer[3] & 0x3Fu);
                             // clang-format on
                         }
 
