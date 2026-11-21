@@ -36,7 +36,6 @@
 #define PROCESS_DPI_AWARE 2
 #define NULL_BUTTON_SERIAL 0xffffffffU
 #define VIDEO_CLASS L"PALVideoClass"
-#define VIDEO_PROP L"PALVideoData"
 
 typedef struct PendingEvent {
     PalBool pendingResize;

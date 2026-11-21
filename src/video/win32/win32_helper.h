@@ -39,6 +39,8 @@
 
 #include <windows.h>
 
+#define VIDEO_PROP L"PALVideoData"
+
 typedef HRESULT(WINAPI* GetDpiForMonitorFn)(
     HMONITOR,
     int32_t,

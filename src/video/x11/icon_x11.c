@@ -45,10 +45,10 @@ PalResult x11CreateIcon(
 
     // convert from RGBA8 to ARGB32
     for (uint64_t i = 0; i < pixelCount; i++) {
-        uint8_t r = info->pixels[i * 4 + 0]; // Red
-        uint8_t g = info->pixels[i * 4 + 1]; // Green
-        uint8_t b = info->pixels[i * 4 + 2]; // Blue
-        uint8_t a = info->pixels[i * 4 + 3]; // Alpha
+        uint8_t r = info->pixels[i * 4 + 0];
+        uint8_t g = info->pixels[i * 4 + 1];
+        uint8_t b = info->pixels[i * 4 + 2];
+        uint8_t a = info->pixels[i * 4 + 3];
 
         // clang-format off
         _icon[2 + i] = ((unsigned long)a << 24) |

@@ -79,10 +79,10 @@ struct wl_buffer* wlCreateShmBuffer(
 
         // convert from RGBA8 to ARGB32
         for (int i = 0; i < width * height; i++) {
-            uint8_t r = pixels[i * 4 + 0]; // Red
-            uint8_t g = pixels[i * 4 + 1]; // Green
-            uint8_t b = pixels[i * 4 + 2]; // Blue
-            uint8_t a = pixels[i * 4 + 3]; // Alpha
+            uint8_t r = pixels[i * 4 + 0];
+            uint8_t g = pixels[i * 4 + 1];
+            uint8_t b = pixels[i * 4 + 2];
+            uint8_t a = pixels[i * 4 + 3];
 
             // clang-format off
             dataPixels[i] = ((uint32_t)a << 24) |
