@@ -96,7 +96,7 @@ typedef struct Win32 {
     PalBool pushMouseDelta;
     WindowData* windowData;
     const PalAllocator* allocator;
-    PalEventDriver* eventDriver;
+    struct PalEventDriver* eventDriver;
     
     GetDpiForMonitorFn getDpiForMonitor;
     SetProcessAwarenessFn setProcessAwareness;
@@ -108,6 +108,14 @@ typedef struct Win32 {
 } Win32;
 
 extern Win32 g_Win32;
+
+PalResult win32CreateBitmap(
+    uint32_t width, 
+    uint32_t height, 
+    const uint8_t* pixels,
+    HBITMAP* bitmap);
+
+void win32DestroyBitmap(HBITMAP map);
 
 #endif // _WIN32
 #endif // _PAL_VIDEO_WIN32_H

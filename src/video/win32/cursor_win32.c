@@ -26,64 +26,14 @@
 #include "pal2/core/memory.h"
 #include "pal2/video/cursor.h"
 
-PalResult wlCreateCursor(
+PalResult win32CreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** cursor)
 {
-    BITMAPV5HEADER bitInfo = {0};
-    bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
-    bitInfo.bV5Width = info->width;
-    bitInfo.bV5Height = -(int32_t)info->height; // this is topdown by default
-
-    bitInfo.bV5Planes = 1;
-    bitInfo.bV5BitCount = 32; // PAL supports 32 bits
-    bitInfo.bV5Compression = BI_BITFIELDS;
-    bitInfo.bV5RedMask = 0x00FF0000;
-    bitInfo.bV5GreenMask = 0x0000FF00;
-    bitInfo.bV5BlueMask = 0x000000FF;
-    bitInfo.bV5AlphaMask = 0xFF000000;
-
-    HDC hdc = GetDC(nullptr);
-    void* dibPixels = nullptr;
-
-    // clang-format off
-    HBITMAP bitmap = g_Win32.createDIBSection(
-        hdc, 
-        (BITMAPINFO*)&bitInfo, 
-        DIB_RGB_COLORS, 
-        &dibPixels, 
-        nullptr, 
-        0);
-    // clang-format on
-
-    if (!bitmap) {
-        ReleaseDC(nullptr, hdc);
-        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
-    }
-
-    ReleaseDC(nullptr, hdc);
-
-    // convert RGBA to BGRA
-    uint8_t* pixels = (uint8_t*)dibPixels;
-    for (uint32_t i = 0; i < info->width * info->height; i++) {
-        uint8_t r = info->pixels[i * 4 + 0];
-        uint8_t g = info->pixels[i * 4 + 1];
-        uint8_t b = info->pixels[i * 4 + 2];
-        uint8_t a = info->pixels[i * 4 + 3];
-
-        // premultiply only if alpha is not 0
-        if (a == 0) {
-            r = g = b = 0;
-        } else {
-            r = (uint8_t)((r * a) / 255);
-            g = (uint8_t)((g * a) / 255);
-            b = (uint8_t)((b * a) / 255);
-        }
-
-        pixels[i * 4 + 0] = b;
-        pixels[i * 4 + 1] = g;
-        pixels[i * 4 + 2] = r;
-        pixels[i * 4 + 3] = a;
+    HBITMAP bitmap;
+    PalResult result = win32CreateBitmap(info->width, info->height, info->pixels, &bitmap);
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
     }
 
     ICONINFO iconInfo = {0};
@@ -94,7 +44,7 @@ PalResult wlCreateCursor(
     iconInfo.xHotspot = info->yHotspot;
 
     HCURSOR _cursor = CreateIconIndirect(&iconInfo);
-    g_Win32.deleteObject(bitmap);
+    win32DestroyBitmap(bitmap);
 
     if (!_cursor) {    
         return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
@@ -104,7 +54,7 @@ PalResult wlCreateCursor(
     return PAL_RESULT_SUCCESS;
 }
 
-PalResult wlCreateCursorFrom(
+PalResult win32CreateCursorFrom(
     PalCursorType type,
     PalCursor** cursor)
 {
@@ -144,17 +94,17 @@ PalResult wlCreateCursorFrom(
     return PAL_RESULT_SUCCESS;
 }
 
-void wlDestroyCursor(PalCursor* cursor)
+void win32DestroyCursor(PalCursor* cursor)
 {
     DestroyCursor((HCURSOR)cursor);
 }
 
-void wlShowCursor(PalBool show)
+void win32ShowCursor(PalBool show)
 {
     ShowCursor(show);
 }
 
-void wlClipCursor(
+void win32ClipCursor(
     PalWindow* window,
     PalBool clip)
 {
@@ -175,7 +125,7 @@ void wlClipCursor(
     }
 }
 
-void wlGetCursorPos(
+void win32GetCursorPos(
     PalWindow* window,
     int32_t* x,
     int32_t* y)
@@ -192,7 +142,7 @@ void wlGetCursorPos(
     }
 }
 
-void wlSetCursorPos(
+void win32SetCursorPos(
     PalWindow* window,
     int32_t x,
     int32_t y)
@@ -202,7 +152,7 @@ void wlSetCursorPos(
     SetCursorPos(pos.x, pos.y);
 }
 
-void wlSetWindowCursor(
+void win32SetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
