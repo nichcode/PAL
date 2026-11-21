@@ -269,6 +269,7 @@ PalResult wlCreateWindow(
     return PAL_RESULT_SUCCESS;
 
 cleanup:
+    // TODO: call destroy window
     if (decoration) {
         zxdgToplevelDecorationV1Destroy(decoration);
     }
