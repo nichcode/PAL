@@ -53,12 +53,15 @@ void platformGetPlatformInfo(PalPlatformInfo* info)
     info->type = PAL_PLATFORM_TYPE_LINUX;
 
     const char* session = getenv("XDG_SESSION_TYPE");
-    if (session && strcmp(session, "wayland") == 0) {
+    const char* waylandDisplay = getenv("WAYLAND_DISPLAY");
+    const char* x11Display = getenv("DISPLAY");
+
+    if ((session && strcmp(session, "wayland") == 0) || waylandDisplay != nullptr) {
         info->apiType = PAL_PLATFORM_API_TYPE_WAYLAND;
-    } else if (!session && getenv("WAYLAND_DISPLAY") != nullptr) {
-        info->apiType = PAL_PLATFORM_API_TYPE_WAYLAND;
-    } else {
+    } else if ((session && strcmp(session, "x11") == 0) || x11Display != nullptr) {
         info->apiType = PAL_PLATFORM_API_TYPE_X11;
+    } else {
+        info->apiType = PAL_PLATFORM_API_TYPE_HEADLESS;
     }
 
     char name[32] = {0};

@@ -21,7 +21,7 @@
  */
 
 #include "platform.h"
-#include "pal2/system/platform.h"
+#include "pal2/system/cpu.h"
 #include <string.h>
 
 void PAL_CALL palGetCPUInfo(

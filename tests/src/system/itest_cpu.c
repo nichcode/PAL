@@ -1,6 +1,6 @@
-
 #include "pal2/system/cpu.h"
 #include "pal2/core/log.h"
+#include <stdio.h>
 #include <string.h>
 
 static const char* cpuArchToString(PalCpuArch arch)
@@ -22,76 +22,93 @@ static const char* cpuArchToString(PalCpuArch arch)
         return "Arm64";
     }
 
-    return nullptr;
+    return "Unknown";
+}
+
+static void appendFeature(char* dst, size_t dstSize, const char* name)
+{
+    size_t len = strlen(dst);
+    if (len >= dstSize - 1) {
+        return;
+    }
+
+    if (len > 0) {
+        snprintf(dst + len, dstSize - len, " | %s", name);
+    } else {
+        snprintf(dst, dstSize, "%s", name);
+    }
 }
 
 int main(void)
 {
     palLog(nullptr, "Running CPU itest...");
 
-    PalCPUInfo info;
+    PalCPUInfo info = {0};
     palGetCPUInfo(nullptr, &info);
 
     palLog(nullptr, "Cpu: %s", info.model);
     palLog(nullptr, " Vendor: %s", info.vendor);
     palLog(nullptr, " Architecture: %s", cpuArchToString(info.architecture));
-    palLog(nullptr, " Number Of Cores: %d", info.numCores);
+    palLog(nullptr, " Number Of Cores: %u", info.numCores);
 
-    palLog(nullptr, " Number Of Processors: %d", info.numLogicalProcessors);
-    palLog(nullptr, " L1 Cache KB: %d", info.cacheL1);
-    palLog(nullptr, " L2 Cache KB: %d", info.cacheL2);
-    palLog(nullptr, " L3 Cache KB: %d", info.cacheL3);
+    palLog(nullptr, " Number Of Processors: %u", info.numLogicalProcessors);
+    palLog(nullptr, " L1 Cache KB: %u", info.cacheL1);
+    palLog(nullptr, " L2 Cache KB: %u", info.cacheL2);
+    palLog(nullptr, " L3 Cache KB: %u", info.cacheL3);
 
     char instructionSets[256] = {0};
     if (info.features & PAL_CPU_FEATURE_SSE) {
-        strcat(instructionSets, "SSE");
+        appendFeature(instructionSets, sizeof(instructionSets), "SSE");
     }
 
     if (info.features & PAL_CPU_FEATURE_SSE2) {
-        strcat(instructionSets, " | SSE2");
+        appendFeature(instructionSets, sizeof(instructionSets), "SSE2");
     }
 
     if (info.features & PAL_CPU_FEATURE_SSE3) {
-        strcat(instructionSets, " | SSE3");
+        appendFeature(instructionSets, sizeof(instructionSets), "SSE3");
     }
 
     if (info.features & PAL_CPU_FEATURE_SSSE3) {
-        strcat(instructionSets, " | SSSE3");
+        appendFeature(instructionSets, sizeof(instructionSets), "SSSE3");
     }
 
     if (info.features & PAL_CPU_FEATURE_SSE41) {
-        strcat(instructionSets, " | SSE4.1");
+        appendFeature(instructionSets, sizeof(instructionSets), "SSE4.1");
     }
 
     if (info.features & PAL_CPU_FEATURE_SSE42) {
-        strcat(instructionSets, " | SSE4.2");
+        appendFeature(instructionSets, sizeof(instructionSets), "SSE4.2");
     }
 
     if (info.features & PAL_CPU_FEATURE_AVX) {
-        strcat(instructionSets, " | AVX");
+        appendFeature(instructionSets, sizeof(instructionSets), "AVX");
     }
 
     if (info.features & PAL_CPU_FEATURE_AVX2) {
-        strcat(instructionSets, " | AVX2");
+        appendFeature(instructionSets, sizeof(instructionSets), "AVX2");
     }
 
     if (info.features & PAL_CPU_FEATURE_AVX512F) {
-        strcat(instructionSets, " | AVX-512F");
+        appendFeature(instructionSets, sizeof(instructionSets), "AVX-512F");
     }
 
     if (info.features & PAL_CPU_FEATURE_FMA3) {
-        strcat(instructionSets, " | FMA3");
+        appendFeature(instructionSets, sizeof(instructionSets), "FMA3");
     }
 
     if (info.features & PAL_CPU_FEATURE_BMI1) {
-        strcat(instructionSets, " | BMI1");
+        appendFeature(instructionSets, sizeof(instructionSets), "BMI1");
     }
-
+    
     if (info.features & PAL_CPU_FEATURE_BMI2) {
-        strcat(instructionSets, " | BMI2");
+        appendFeature(instructionSets, sizeof(instructionSets), "BMI2");
     }
 
-    palLog(nullptr, " Instructions Sets: %s", instructionSets);
+    palLog(
+        nullptr,
+        " Instruction Sets: %s",
+        instructionSets[0] != '\0' ? instructionSets : "None");
 
     return 0;
 }

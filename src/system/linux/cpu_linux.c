@@ -31,7 +31,7 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
-static uint32_t parseCache(const char* path)
+static uint32_t parseCacheSize(const char* path)
 {
     long cacheSize = 0;
     FILE* file = fopen(path, "r");
@@ -50,8 +50,54 @@ static uint32_t parseCache(const char* path)
     }
 
     fclose(file);
-
     return (cacheSize > 0) ? (uint32_t)cacheSize : 0;
+}
+
+static void parseCaches(PalCPUInfo* info)
+{
+    for (uint32_t i = 0; i < 6; i++) {
+        char path[128];
+        snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu0/cache/index%u/level", i);
+
+        FILE* levelFile = fopen(path, "r");
+        if (!levelFile) {
+            break;
+        }
+
+        uint32_t level = 0;
+        int parsed = fscanf(levelFile, "%u", &level);
+        fclose(levelFile);
+        if (parsed != 1) {
+            continue;
+        }
+
+        snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu0/cache/index%u/type", i);
+        FILE* typeFile = fopen(path, "r");
+        if (!typeFile) {
+            continue;
+        }
+
+        char type[32] = {0};
+        if (fgets(type, sizeof(type), typeFile)) {
+            type[strcspn(type, "\r\n")] = '\0';
+        }
+        fclose(typeFile);
+
+        if (strcmp(type, "Data") != 0 && strcmp(type, "Unified") != 0) {
+            continue;
+        }
+
+        snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu0/cache/index%u/size", i);
+        uint32_t sizeKB = parseCacheSize(path);
+
+        if (level == 1 && info->cacheL1 == 0) {
+            info->cacheL1 = sizeKB;
+        } else if (level == 2 && info->cacheL2 == 0) {
+            info->cacheL2 = sizeKB;
+        } else if (level == 3 && info->cacheL3 == 0) {
+            info->cacheL3 = sizeKB;
+        }
+    }
 }
 
 void platformGetCPUInfo(
@@ -68,14 +114,19 @@ void platformGetCPUInfo(
         char line[1024];
         PalBool parsedBasic = PAL_FALSE;
         uint32_t coresPerSocket = 0;
-        int32_t lastPhysicalId = -1;
+        uint64_t seenSockets = 0;
         uint32_t socketCount = 0;
 
         while (fgets(line, sizeof(line), file)) {
             int32_t physicalId = 0;
-            if (sscanf(line, "physical id : %d", &physicalId) == 1) {
-                if (physicalId != lastPhysicalId) {
-                    lastPhysicalId = physicalId;
+            if (sscanf(line, "physical id : %d", &physicalId) == 1 && physicalId >= 0) {
+                if (physicalId < 64) {
+                    uint64_t bit = (1ULL << (uint32_t)physicalId);
+                    if ((seenSockets & bit) == 0) {
+                        seenSockets |= bit;
+                        socketCount++;
+                    }
+                } else {
                     socketCount++;
                 }
             }
@@ -146,9 +197,7 @@ void platformGetCPUInfo(
         info->numCores = info->numLogicalProcessors;
     }
 
-    info->cacheL1 = parseCache("/sys/devices/system/cpu/cpu0/cache/index0/size");
-    info->cacheL2 = parseCache("/sys/devices/system/cpu/cpu0/cache/index2/size");
-    info->cacheL3 = parseCache("/sys/devices/system/cpu/cpu0/cache/index3/size");
+    parseCaches(info);
 
     struct utsname arch;
     if (uname(&arch) != 0) {

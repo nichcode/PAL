@@ -32,6 +32,7 @@
 
 #include <windows.h>
 
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif // _MSC_VER
@@ -56,31 +57,96 @@ static inline void cpuid(
 #endif // _MSC_VER
 }
 
-void platformGetCPUInfo(
-    const PalAllocator* allocator,
-    PalCPUInfo* info)
+static void queryX86Cpuid(PalCPUInfo* info)
 {
     int regs[4] = {0};
     cpuid(regs, 0, 0);
+    uint32_t maxLeaf = (uint32_t)regs[0];
 
     memcpy(info->vendor + 0, &regs[1], 4);
     memcpy(info->vendor + 4, &regs[3], 4);
     memcpy(info->vendor + 8, &regs[2], 4);
     info->vendor[12] = '\0';
 
-    int tmp = (int)0x80000002;
-    cpuid(regs, tmp, 0);
-    memcpy(info->model, regs, 16);
+    cpuid(regs, (int)0x80000000, 0);
+    uint32_t maxExtLeaf = (uint32_t)regs[0];
+    if (maxExtLeaf >= 0x80000004) {
+        cpuid(regs, (int)0x80000002, 0);
+        memcpy(info->model, regs, 16);
 
-    tmp = (int)0x80000003;
-    cpuid(regs, tmp, 0);
-    memcpy(info->model + 16, regs, 16);
+        cpuid(regs, (int)0x80000003, 0);
+        memcpy(info->model + 16, regs, 16);
 
-    tmp = (int)0x80000004;
-    cpuid(regs, tmp, 0);
-    memcpy(info->model + 32, regs, 16);
-    info->model[48] = '\0';
+        cpuid(regs, (int)0x80000004, 0);
+        memcpy(info->model + 32, regs, 16);
+        info->model[48] = '\0';
+    }
 
+    if (maxLeaf >= 1) {
+        cpuid(regs, 1, 0);
+        int ecx = regs[2];
+        int edx = regs[3];
+
+        if (edx & (1 << 25)) {
+            info->features |= PAL_CPU_FEATURE_SSE;
+        }
+
+        if (edx & (1 << 26)) {
+            info->features |= PAL_CPU_FEATURE_SSE2;
+        }
+
+        if (ecx & (1 << 0)) {
+            info->features |= PAL_CPU_FEATURE_SSE3;
+        }
+
+        if (ecx & (1 << 9)) {
+            info->features |= PAL_CPU_FEATURE_SSSE3;
+        }
+
+        if (ecx & (1 << 19)) {
+            info->features |= PAL_CPU_FEATURE_SSE41;
+        }
+
+        if (ecx & (1 << 20)) {
+            info->features |= PAL_CPU_FEATURE_SSE42;
+        }
+
+        if (ecx & (1 << 28)) {
+            info->features |= PAL_CPU_FEATURE_AVX;
+        }
+
+        if (ecx & (1 << 12)) {
+            info->features |= PAL_CPU_FEATURE_FMA3;
+        }
+    }
+
+    if (maxLeaf >= 7) {
+        cpuid(regs, 7, 0);
+        int ebx = regs[1];
+
+        if (ebx & (1 << 5)) {
+            info->features |= PAL_CPU_FEATURE_AVX2;
+        }
+
+        if (ebx & (1 << 3)) {
+            info->features |= PAL_CPU_FEATURE_BMI1;
+        }
+
+        if (ebx & (1 << 8)) {
+            info->features |= PAL_CPU_FEATURE_BMI2;
+        }
+        
+        if (ebx & (1 << 16)) {
+            info->features |= PAL_CPU_FEATURE_AVX512F;
+        }
+    }
+}
+#endif // x86 / x86_64
+
+void platformGetCPUInfo(
+    const PalAllocator* allocator,
+    PalCPUInfo* info)
+{
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
     info->numLogicalProcessors = sysInfo.dwNumberOfProcessors;
@@ -107,6 +173,13 @@ void platformGetCPUInfo(
         break;
     }
     }
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+    if (info->architecture == PAL_CPU_ARCH_X86 ||
+        info->architecture == PAL_CPU_ARCH_X86_64) {
+        queryX86Cpuid(info);
+    }
+#endif
 
     DWORD len = 0;
     GetLogicalProcessorInformationEx(RelationAll, nullptr, &len);
@@ -141,61 +214,6 @@ void platformGetCPUInfo(
 
     if (info->numCores == 0) {
         info->numCores = info->numLogicalProcessors;
-    }
-
-    cpuid(regs, 1, 0);
-    int ecx = regs[2];
-    int edx = regs[3];
-
-    if (edx & (1 << 25)) {
-        info->features |= PAL_CPU_FEATURE_SSE;
-    }
-
-    if (edx & (1 << 26)) {
-        info->features |= PAL_CPU_FEATURE_SSE2;
-    }
-
-    if (ecx & (1 << 0)) {
-        info->features |= PAL_CPU_FEATURE_SSE3;
-    }
-
-    if (ecx & (1 << 9)) {
-        info->features |= PAL_CPU_FEATURE_SSSE3;
-    }
-
-    if (ecx & (1 << 19)) {
-        info->features |= PAL_CPU_FEATURE_SSE41;
-    }
-
-    if (ecx & (1 << 20)) {
-        info->features |= PAL_CPU_FEATURE_SSE42;
-    }
-
-    if (ecx & (1 << 28)) {
-        info->features |= PAL_CPU_FEATURE_AVX;
-    }
-
-    if (ecx & (1 << 12)) {
-        info->features |= PAL_CPU_FEATURE_FMA3;
-    }
-
-    cpuid(regs, 7, 0);
-    int ebx = regs[1];
-
-    if (ebx & (1 << 5)) {
-        info->features |= PAL_CPU_FEATURE_AVX2;
-    }
-
-    if (ebx & (1 << 3)) {
-        info->features |= PAL_CPU_FEATURE_BMI1;
-    }
-
-    if (ebx & (1 << 8)) {
-        info->features |= PAL_CPU_FEATURE_BMI2;
-    }
-
-    if (ebx & (1 << 16)) {
-        info->features |= PAL_CPU_FEATURE_AVX512F;
     }
 }
 

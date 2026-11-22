@@ -14,6 +14,7 @@ is a capacity not a count of exiting events.
 ## System Module
 - Rename `PAL_PLATFORM_API_TYPE_ANDRIOD` to `PAL_PLATFORM_API_TYPE_ANDROID`.
 - Rename `PalPlatformInfo::totalMemory` to `PalPlatformInfo::totalDisk`.
+- Change `uint32_t` to `uint64_t` for memory fields.
 
 # Graphics Module
 - Rename `PAL_IMAGE_USAGE_COLOR_ATTACHEMENT` to `PAL_IMAGE_USAGE_COLOR_ATTACHMENT`.

@@ -1,4 +1,3 @@
-
 /**
  * @file platform.h
  * 
@@ -68,12 +67,13 @@ typedef uint32_t PalPlatformApiType;
  * @ingroup pal_system
  * @{
  */
-#define PAL_PLATFORM_TYPE_WINDOWS 0 /**< Windows. */
-#define PAL_PLATFORM_TYPE_LINUX 1 /**< Linux. */
-#define PAL_PLATFORM_TYPE_MACOS 2 /**< MacOS. */
-#define PAL_PLATFORM_TYPE_ANDROID 3 /**< Android. */
-#define PAL_PLATFORM_TYPE_IOS 4 /**< IOS. */
-#define PAL_PLATFORM_TYPE_COUNT 5 /**< Number of platform types. */
+#define PAL_PLATFORM_TYPE_UNKNOWN 0 /**< Unknown platform. */
+#define PAL_PLATFORM_TYPE_WINDOWS 1 /**< Windows. */
+#define PAL_PLATFORM_TYPE_LINUX 2 /**< Linux. */
+#define PAL_PLATFORM_TYPE_MACOS 3 /**< MacOS. */
+#define PAL_PLATFORM_TYPE_ANDROID 4 /**< Android. */
+#define PAL_PLATFORM_TYPE_IOS 5 /**< IOS. */
+#define PAL_PLATFORM_TYPE_COUNT 6 /**< Number of platform types. */
 /** @} */
 
 /**
