@@ -2,21 +2,20 @@
 #include "pal2/video/init.h"
 #include "pal2/core/log.h"
 #include "pal2/core/memory.h"
-#include <stdbool.h>
 
-bool defaultVideoDriver(void)
+PalBool defaultVideoDriver(void)
 {
     PalResult result = palInitVideo(nullptr, nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to initialize video system");
-        return false;
+        return PAL_FALSE;
     }
 
     palShutdownVideo();
-    return true;
+    return PAL_TRUE;
 }
 
-bool videoDriver(void)
+PalBool videoDriver(void)
 {
     PalVideoDriver* drivers = nullptr;
     uint32_t driverCount = 0;
@@ -25,7 +24,7 @@ bool videoDriver(void)
     drivers = palAllocate(nullptr, sizeof(PalVideoDriver) * driverCount, 0);
     if (!drivers) {
         palLog(nullptr, "Failed to allocate memory");
-        return false;
+        return PAL_FALSE;
     }
 
     PalVideoDriver selectedDriver = {0};
@@ -39,7 +38,7 @@ bool videoDriver(void)
     PalResult result = palInitVideo(nullptr, nullptr, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to initialize video system");
-        return false;
+        return PAL_FALSE;
     }
 
     palGetVideoDriver(&usedDriver);
@@ -50,18 +49,18 @@ bool videoDriver(void)
         usedDriver.id == selectedDriver.id &&
         usedDriver.type == selectedDriver.type
     ) {
-        return true;
+        return PAL_TRUE;
     }
     
     palLog(nullptr, "Video driver used was not the requested");
-    return false;
+    return PAL_FALSE;
 }
 
 int main(void)
 {
     palLog(nullptr, "Running video driver test...");
 
-    bool ret = defaultVideoDriver();
+    PalBool ret = defaultVideoDriver();
     if (!ret) {
         return -1;
     }

@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/vertex.h"
 
-bool vertexAttributeStruct(void)
+PalBool vertexAttributeStruct(void)
 {
     FieldInfo fields[] = {
         { "semanticID", {0, 4}, FIELD(PalVertexAttribute, semanticID) },
@@ -21,7 +21,7 @@ bool vertexAttributeStruct(void)
     return dumpStruct(&info);
 }
 
-bool vertexLayoutStruct(void)
+PalBool vertexLayoutStruct(void)
 {
     FieldInfo fields[] = {
         { "attributes", {0, 8}, FIELD(PalVertexLayout, attributes) },

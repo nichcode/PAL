@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/sampler.h"
 
-bool samplerAnisotropyCapabilitiesStruct(void)
+PalBool samplerAnisotropyCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxAnisotropy", {0, 4}, FIELD(PalSamplerAnisotropyCapabilities, maxAnisotropy) }
@@ -20,7 +20,7 @@ bool samplerAnisotropyCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool samplerCreateInfoStruct(void)
+PalBool samplerCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "enableCompare", {0, 4}, FIELD(PalSamplerCreateInfo, enableCompare) },

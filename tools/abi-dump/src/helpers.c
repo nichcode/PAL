@@ -5,13 +5,13 @@ uint32_t g_DumpFlags = 0;
 static const char* s_FailedString = "FAILED";
 static const char* s_PassedString = "PASSED";
 
-bool dumpStruct(const StructInfo* info)
+PalBool dumpStruct(const StructInfo* info)
 {
     uint32_t fieldSize = 0;
     const uint32_t expectedSize = 14;
     const uint32_t actualSize = 8;
     char seperator[256];
-    bool passed = PAL_TRUE;
+    PalBool passed = PAL_TRUE;
     const char* result = s_PassedString;
 
     if (info->expected.size != info->actual.size       ||

@@ -1,7 +1,7 @@
 
 #include "graphics.h"
 
-bool graphicsStructs(void)
+PalBool graphicsStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
@@ -11,7 +11,7 @@ bool graphicsStructs(void)
         palLog(nullptr, "");
     }
 
-    bool status = adapterInfoStruct();
+    PalBool status = adapterInfoStruct();
     if (status == PAL_FALSE) {
         return PAL_FALSE;
     }

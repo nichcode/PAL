@@ -1,7 +1,7 @@
 
 #include "video.h"
 
-bool videoStructs(void)
+PalBool videoStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
@@ -11,7 +11,7 @@ bool videoStructs(void)
         palLog(nullptr, "");
     }
 
-    bool status = monitorInfoStruct();
+    PalBool status = monitorInfoStruct();
     if (status == PAL_FALSE) {
         return PAL_FALSE;
     }

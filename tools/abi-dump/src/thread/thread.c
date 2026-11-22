@@ -1,7 +1,7 @@
 
 #include "thread.h"
 
-bool threadStructs(void)
+PalBool threadStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");

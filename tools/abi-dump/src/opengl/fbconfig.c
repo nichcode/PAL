@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/opengl/fbconfig.h"
 
-bool openglFBConfigStruct(void)
+PalBool openglFBConfigStruct(void)
 {
     FieldInfo fields[] = {
         {"doubleBuffer", {0, 4}, FIELD(PalGLFBConfig, doubleBuffer)},

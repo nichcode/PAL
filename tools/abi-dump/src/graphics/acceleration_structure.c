@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/acceleration_structure.h"
 
-bool accelerationStructureInstanceStruct(void)
+PalBool accelerationStructureInstanceStruct(void)
 {
     FieldInfo fields[] = {
         { "blas", {0, 8}, FIELD(PalAccelerationStructureInstance, blas) },
@@ -25,7 +25,7 @@ bool accelerationStructureInstanceStruct(void)
     return dumpStruct(&info);
 }
 
-bool accelerationStructureBuildSizeStruct(void)
+PalBool accelerationStructureBuildSizeStruct(void)
 {
     FieldInfo fields[] = {
         { "accelerationStructureSize", {0, 8}, FIELD(PalAccelerationStructureBuildSize, accelerationStructureSize) },
@@ -45,7 +45,7 @@ bool accelerationStructureBuildSizeStruct(void)
     return dumpStruct(&info);
 }
 
-bool geometryDataTriangleStruct(void)
+PalBool geometryDataTriangleStruct(void)
 {
     FieldInfo fields[] = {
         { "vertexBufferAddress", {0, 8}, FIELD(PalGeometryDataTriangle, vertexBufferAddress) },
@@ -69,7 +69,7 @@ bool geometryDataTriangleStruct(void)
     return dumpStruct(&info);
 }
 
-bool geometryDataAABBSStruct(void)
+PalBool geometryDataAABBSStruct(void)
 {
     FieldInfo fields[] = {
         { "bufferAddress", {0, 8}, FIELD(PalGeometryDataAABBS, bufferAddress) },
@@ -88,7 +88,7 @@ bool geometryDataAABBSStruct(void)
     return dumpStruct(&info);
 }
 
-bool geometryStruct(void)
+PalBool geometryStruct(void)
 {
     FieldInfo fields[] = {
         { "data", {0, 8}, FIELD(PalGeometry, data) },
@@ -109,7 +109,7 @@ bool geometryStruct(void)
     return dumpStruct(&info);
 }
 
-bool accelerationStructureBuildInfoStruct(void)
+PalBool accelerationStructureBuildInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "dst", {0, 8}, FIELD(PalAccelerationStructureBuildInfo, dst) },
@@ -135,7 +135,7 @@ bool accelerationStructureBuildInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool accelerationStructureCreateInfoStruct(void)
+PalBool accelerationStructureCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "buffer", {0, 8}, FIELD(PalAccelerationStructureCreateInfo, buffer) },

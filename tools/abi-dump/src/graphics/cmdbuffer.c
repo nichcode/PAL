@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/cmdbuffer.h"
 
-bool commandBufferSubmitInfoStruct(void)
+PalBool commandBufferSubmitInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "waitValue", {0, 8}, FIELD(PalCommandBufferSubmitInfo, waitValue) },

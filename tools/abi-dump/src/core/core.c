@@ -1,7 +1,7 @@
 
 #include "core.h"
 
-bool coreStructs(void)
+PalBool coreStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
@@ -11,7 +11,7 @@ bool coreStructs(void)
         palLog(nullptr, "");
     }
 
-    bool status = allocatorStruct();
+    PalBool status = allocatorStruct();
     if (status == PAL_FALSE) {
         return PAL_FALSE;
     }

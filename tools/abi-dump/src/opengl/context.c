@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/opengl/context.h"
 
-bool openglWindowStruct(void)
+PalBool openglWindowStruct(void)
 {
     FieldInfo fields[] = {
         {"instance", {0, 8}, FIELD(PalGLWindow, instance)},
@@ -21,7 +21,7 @@ bool openglWindowStruct(void)
     return dumpStruct(&info);
 }
 
-bool contextCreateInfoStruct(void)
+PalBool contextCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"window", {0, 8}, FIELD(PalGLContextCreateInfo, window)},

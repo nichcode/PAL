@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/format.h"
 
-bool formatInfoStruct(void)
+PalBool formatInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "usages", {0, 4}, FIELD(PalFormatInfo, usages) },

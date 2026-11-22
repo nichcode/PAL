@@ -1,13 +1,12 @@
 
 #include "pal2/core/log.h"
 #include "pal2/thread/thread.h"
-#include <stdbool.h>
 
 #define THREAD_COUNT 4
 
 typedef struct ThreadContext
 {
-    bool finished;
+    PalBool finished;
     PalThread* expectedHandle;
     PalThread* actualHandle;
 } ThreadContext;
@@ -16,12 +15,12 @@ static void* PAL_CALL worker(void* arg)
 {
     ThreadContext* context = arg;
     context->actualHandle = palGetCurrentThread();
-    context->finished = true;
+    context->finished = PAL_TRUE;
 
     return nullptr;
 }
 
-static bool threadCreationAndJoin(void)
+static PalBool threadCreationAndJoin(void)
 {
     PalThread* threads[THREAD_COUNT];
     ThreadContext contexts[THREAD_COUNT];
@@ -32,7 +31,7 @@ static bool threadCreationAndJoin(void)
     createInfo.allocator = nullptr;
 
     for (uint32_t i = 0; i < THREAD_COUNT; i++) {
-        contexts[i].finished = false;
+        contexts[i].finished = PAL_FALSE;
         contexts[i].expectedHandle = nullptr;
         contexts[i].actualHandle = nullptr;
 
@@ -41,7 +40,7 @@ static bool threadCreationAndJoin(void)
         PalResult result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
             palLog(nullptr, "Failed to create thread");
-            return false;
+            return PAL_FALSE;
         }
     }
 
@@ -49,21 +48,21 @@ static bool threadCreationAndJoin(void)
         PalResult result = palJoinThread(threads[i], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             palLog(nullptr, "Failed to join threads");
-            return false;
+            return PAL_FALSE;
         }
     }
 
     for (uint32_t i = 0; i < THREAD_COUNT; i++) {
         if (!contexts[i].finished) {
             palLog(nullptr, "Thread failed to complete");
-            return false;
+            return PAL_FALSE;
         }
     }
 
-    return true;
+    return PAL_TRUE;
 }
 
-static bool getCurrentThread(void)
+static PalBool getCurrentThread(void)
 {
     PalThread* threads[THREAD_COUNT];
     ThreadContext contexts[THREAD_COUNT];
@@ -74,7 +73,7 @@ static bool getCurrentThread(void)
     createInfo.allocator = nullptr;
 
     for (uint32_t i = 0; i < THREAD_COUNT; i++) {
-        contexts[i].finished = false;
+        contexts[i].finished = PAL_FALSE;
         contexts[i].expectedHandle = nullptr;
         contexts[i].actualHandle = nullptr;
 
@@ -83,7 +82,7 @@ static bool getCurrentThread(void)
         PalResult result = palCreateThread(&createInfo, &threads[i]);
         if (result != PAL_RESULT_SUCCESS) {
             palLog(nullptr, "Failed to create thread");
-            return false;
+            return PAL_FALSE;
         }
 
         contexts[i].expectedHandle = threads[i];
@@ -93,24 +92,24 @@ static bool getCurrentThread(void)
         PalResult result = palJoinThread(threads[i], nullptr);
         if (result != PAL_RESULT_SUCCESS) {
             palLog(nullptr, "Failed to join thread");
-            return false;
+            return PAL_FALSE;
         }
     }
 
     for (uint32_t i = 0; i < THREAD_COUNT; i++) {
         if (!contexts[i].finished) {
             palLog(nullptr, "Thread failed to complete");
-            return false;
+            return PAL_FALSE;
         }
 
         if (contexts[i].actualHandle == nullptr ||
             contexts[i].actualHandle != contexts[i].expectedHandle) {
             palLog(nullptr, "palGetCurrentThread() returned mismatched handle");
-            return false;
+            return PAL_FALSE;
         }
     }
 
-    return true;
+    return PAL_TRUE;
 }
 
 int main(void)

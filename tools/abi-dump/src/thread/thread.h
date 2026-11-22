@@ -4,6 +4,6 @@
 
 #include "helpers.h"
 
-bool threadCreateInfoStruct(void);
+PalBool threadCreateInfoStruct(void);
 
 #endif // ABI_DUMP_THREAD_H

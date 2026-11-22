@@ -4,7 +4,7 @@
 
 #include "helpers.h"
 
-bool platformInfoStruct(void);
-bool cpuInfoStruct(void);
+PalBool platformInfoStruct(void);
+PalBool cpuInfoStruct(void);
 
 #endif // ABI_DUMP_SYSTEM_H

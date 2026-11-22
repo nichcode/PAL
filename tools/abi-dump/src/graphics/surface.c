@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/surface.h"
 
-bool surfaceCapabilitiesStruct(void)
+PalBool surfaceCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "supportedPresentModes", {0, 4}, FIELD(PalSurfaceCapabilities, supportedPresentModes) },

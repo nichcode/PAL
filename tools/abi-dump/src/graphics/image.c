@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/image.h"
 
-bool imageInfoStruct(void)
+PalBool imageInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "usages", {0, 4}, FIELD(PalImageInfo, usages) },
@@ -29,7 +29,7 @@ bool imageInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool imageSubresourceRangeStruct(void)
+PalBool imageSubresourceRangeStruct(void)
 {
     FieldInfo fields[] = {
         { "aspect", {0, 4}, FIELD(PalImageSubresourceRange, aspect) },
@@ -51,7 +51,7 @@ bool imageSubresourceRangeStruct(void)
     return dumpStruct(&info);
 }
 
-bool bufferImageCopyInfoStruct(void)
+PalBool bufferImageCopyInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "bufferOffset", {0, 8}, FIELD(PalBufferImageCopyInfo, bufferOffset) },
@@ -81,7 +81,7 @@ bool bufferImageCopyInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool imageCopyInfoStruct(void)
+PalBool imageCopyInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "aspect", {0, 4}, FIELD(PalImageCopyInfo, aspect) },
@@ -113,7 +113,7 @@ bool imageCopyInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool imageCreateInfoStruct(void)
+PalBool imageCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "usages", {0, 4}, FIELD(PalImageCreateInfo, usages) },
@@ -140,7 +140,7 @@ bool imageCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool imageViewCreateInfoStruct(void)
+PalBool imageViewCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "format", {0, 4}, FIELD(PalImageViewCreateInfo, format) },
@@ -160,7 +160,7 @@ bool imageViewCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool imageStagingRequirementsStruct(void)
+PalBool imageStagingRequirementsStruct(void)
 {
     FieldInfo fields[] = {
         { "bufferSize", {0, 8}, FIELD(PalImageStagingRequirements, bufferSize) },

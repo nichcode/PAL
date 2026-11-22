@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/vtable1.h"
 
-bool graphicsBackendVtable1Struct(void)
+PalBool graphicsBackendVtable1Struct(void)
 {
     FieldInfo fields[] = {
         { "enumerateAdapters", {0, 8}, FIELD(PalGraphicsBackendVtable1, enumerateAdapters) },

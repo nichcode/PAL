@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/system/cpu.h"
 
-bool cpuInfoStruct(void)
+PalBool cpuInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"features", {0, 8}, FIELD(PalCPUInfo, features)},

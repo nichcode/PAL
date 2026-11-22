@@ -4,7 +4,6 @@
 
 #include "pal2/core/base.h"
 #include <stddef.h>
-#include <stdbool.h>
 
 #ifdef _MSC_VER
 #define ALIGNOF(type) __alignof(type)
@@ -55,6 +54,6 @@ typedef struct StructInfo {
 #define FIELD(type, field) ((FieldBase){offsetof(type, field), sizeof(((type*)0)->field)})
 #define STRUCT(type) ((StructBase){ALIGNOF(type), sizeof(type), PADDING(type)})
 
-bool dumpStruct(const StructInfo* info);
+PalBool dumpStruct(const StructInfo* info);
 
 #endif // ABI_DUMP_HELPERS_H

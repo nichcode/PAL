@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/video/init.h"
 
-bool videoDriverStruct(void)
+PalBool videoDriverStruct(void)
 {
     FieldInfo fields[] = {
         {"features", {0, 8}, FIELD(PalVideoDriver, features)},

@@ -4,99 +4,99 @@
 
 #include "helpers.h"
 
-bool adapterInfoStruct();
-bool imageCapabilitiesStruct();
-bool resourceCapabilitiesStruct();
-bool computeCapabilitiesStruct();
-bool viewportCapabilitiesStruct();
+PalBool adapterInfoStruct();
+PalBool imageCapabilitiesStruct();
+PalBool resourceCapabilitiesStruct();
+PalBool computeCapabilitiesStruct();
+PalBool viewportCapabilitiesStruct();
 
-bool adapterCapabilitiesStruct();
-bool formatInfoStruct();
-bool samplerAnisotropyCapabilitiesStruct();
-bool multiViewCapabilitiesStruct();
-bool multiViewportCapabilitiesStruct();
+PalBool adapterCapabilitiesStruct();
+PalBool formatInfoStruct();
+PalBool samplerAnisotropyCapabilitiesStruct();
+PalBool multiViewCapabilitiesStruct();
+PalBool multiViewportCapabilitiesStruct();
 
-bool depthStencilCapabilitiesStruct();
-bool fragmentShadingRateCapabilitiesStruct();
-bool meshCapabilitiesStruct();
-bool rayTracingCapabilitiesStruct();
-bool descriptorIndexingCapabilitiesStruct();
+PalBool depthStencilCapabilitiesStruct();
+PalBool fragmentShadingRateCapabilitiesStruct();
+PalBool meshCapabilitiesStruct();
+PalBool rayTracingCapabilitiesStruct();
+PalBool descriptorIndexingCapabilitiesStruct();
 
-bool memoryRequirementsStruct();
-bool shaderEntryInfoStruct();
-bool shaderCreateInfoStruct();
-bool surfaceCapabilitiesStruct();
-bool swapchainNextImageInfoStruct();
+PalBool memoryRequirementsStruct();
+PalBool shaderEntryInfoStruct();
+PalBool shaderCreateInfoStruct();
+PalBool surfaceCapabilitiesStruct();
+PalBool swapchainNextImageInfoStruct();
 
-bool swapchainCreateInfoStruct();
-bool imageInfoStruct();
-bool imageSubresourceRangeStruct();
-bool bufferImageCopyInfoStruct();
-bool imageCopyInfoStruct();
+PalBool swapchainCreateInfoStruct();
+PalBool imageInfoStruct();
+PalBool imageSubresourceRangeStruct();
+PalBool bufferImageCopyInfoStruct();
+PalBool imageCopyInfoStruct();
 
-bool imageCreateInfoStruct();
-bool imageViewCreateInfoStruct();
-bool samplerCreateInfoStruct();
-bool imageStagingRequirementsStruct();
-bool bufferCopyInfoStruct();
+PalBool imageCreateInfoStruct();
+PalBool imageViewCreateInfoStruct();
+PalBool samplerCreateInfoStruct();
+PalBool imageStagingRequirementsStruct();
+PalBool bufferCopyInfoStruct();
 
-bool drawIndirectDataStruct();
-bool drawIndexedIndirectDataStruct();
-bool dispatchIndirectDataStruct();
-bool accelerationStructureInstanceStruct();
-bool accelerationStructureBuildSizeStruct();
+PalBool drawIndirectDataStruct();
+PalBool drawIndexedIndirectDataStruct();
+PalBool dispatchIndirectDataStruct();
+PalBool accelerationStructureInstanceStruct();
+PalBool accelerationStructureBuildSizeStruct();
 
-bool geometryDataTriangleStruct();
-bool geometryDataAABBSStruct();
-bool geometryStruct();
-bool accelerationStructureBuildInfoStruct();
-bool accelerationStructureCreateInfoStruct();
+PalBool geometryDataTriangleStruct();
+PalBool geometryDataAABBSStruct();
+PalBool geometryStruct();
+PalBool accelerationStructureBuildInfoStruct();
+PalBool accelerationStructureCreateInfoStruct();
 
-bool vertexAttributeStruct();
-bool vertexLayoutStruct();
-bool rasterizerStateStruct();
-bool multisampleStateStruct();
-bool stencilOpStateStruct();
+PalBool vertexAttributeStruct();
+PalBool vertexLayoutStruct();
+PalBool rasterizerStateStruct();
+PalBool multisampleStateStruct();
+PalBool stencilOpStateStruct();
 
-bool depthStencilStateStruct();
-bool colorBlendAttachmentStruct();
-bool fragmentShadingRateStateStruct();
-bool pushConstantInfoStruct();
-bool pipelineLayoutCreateInfoStruct();
+PalBool depthStencilStateStruct();
+PalBool colorBlendAttachmentStruct();
+PalBool fragmentShadingRateStateStruct();
+PalBool pushConstantInfoStruct();
+PalBool pipelineLayoutCreateInfoStruct();
 
-bool graphicsPipelineCreateInfoStruct();
-bool computePipelineCreateInfoStruct();
-bool rayTracingShaderGroupCreateInfoStruct();
-bool rayTracingPipelineCreateInfoStruct();
-bool descriptorSetLayoutBindingStruct();
+PalBool graphicsPipelineCreateInfoStruct();
+PalBool computePipelineCreateInfoStruct();
+PalBool rayTracingShaderGroupCreateInfoStruct();
+PalBool rayTracingPipelineCreateInfoStruct();
+PalBool descriptorSetLayoutBindingStruct();
 
-bool descriptorPoolBindingSizeStruct();
-bool descriptorBufferInfoStruct();
-bool descriptorImageViewInfoStruct();
-bool descriptorSamplerInfoStruct();
-bool descriptorTLASInfoStruct();
+PalBool descriptorPoolBindingSizeStruct();
+PalBool descriptorBufferInfoStruct();
+PalBool descriptorImageViewInfoStruct();
+PalBool descriptorSamplerInfoStruct();
+PalBool descriptorTLASInfoStruct();
 
-bool descriptorSetWriteInfoStruct();
-bool descriptorSetLayoutCreateInfoStruct();
-bool descriptorPoolCreateInfoStruct();
-bool shaderBindingTableRecordInfoStruct();
-bool shaderBindingTableCreateInfoStruct();
+PalBool descriptorSetWriteInfoStruct();
+PalBool descriptorSetLayoutCreateInfoStruct();
+PalBool descriptorPoolCreateInfoStruct();
+PalBool shaderBindingTableRecordInfoStruct();
+PalBool shaderBindingTableCreateInfoStruct();
 
-bool commandBufferSubmitInfoStruct();
-bool clearValueStruct();
-bool attachmentDescStruct();
-bool viewportStruct();
-bool rect2DStruct();
+PalBool commandBufferSubmitInfoStruct();
+PalBool clearValueStruct();
+PalBool attachmentDescStruct();
+PalBool viewportStruct();
+PalBool rect2DStruct();
 
-bool renderingInfoStruct();
-bool renderingLayoutInfoStruct();
-bool workGroupBuildDataStruct();
-bool workGroupInfoStruct();
-bool barrierInfoStruct();
+PalBool renderingInfoStruct();
+PalBool renderingLayoutInfoStruct();
+PalBool workGroupBuildDataStruct();
+PalBool workGroupInfoStruct();
+PalBool barrierInfoStruct();
 
-bool graphicsBackendVtable1Struct();
-bool graphicsBackendVtable2Struct();
-bool graphicsDebuggerStruct();
-bool graphicsBackendInfoStruct();
+PalBool graphicsBackendVtable1Struct();
+PalBool graphicsBackendVtable2Struct();
+PalBool graphicsDebuggerStruct();
+PalBool graphicsBackendInfoStruct();
 
 #endif // ABI_DUMP_GRAPHICS_H

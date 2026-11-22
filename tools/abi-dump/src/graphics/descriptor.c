@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/descriptor.h"
 
-bool descriptorIndexingCapabilitiesStruct(void)
+PalBool descriptorIndexingCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "flags", {0, 4}, FIELD(PalDescriptorIndexingCapabilities, flags) },
@@ -32,7 +32,7 @@ bool descriptorIndexingCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorSetLayoutBindingStruct(void)
+PalBool descriptorSetLayoutBindingStruct(void)
 {
     FieldInfo fields[] = {
         { "descriptorCount", {0, 4}, FIELD(PalDescriptorSetLayoutBinding, descriptorCount) },
@@ -51,7 +51,7 @@ bool descriptorSetLayoutBindingStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorPoolBindingSizeStruct(void)
+PalBool descriptorPoolBindingSizeStruct(void)
 {
     FieldInfo fields[] = {
         { "bindingCount", {0, 4}, FIELD(PalDescriptorPoolBindingSize, bindingCount) },
@@ -70,7 +70,7 @@ bool descriptorPoolBindingSizeStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorBufferInfoStruct(void)
+PalBool descriptorBufferInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "buffer", {0, 8}, FIELD(PalDescriptorBufferInfo, buffer) },
@@ -91,7 +91,7 @@ bool descriptorBufferInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorImageViewInfoStruct(void)
+PalBool descriptorImageViewInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "imageView", {0, 8}, FIELD(PalDescriptorImageViewInfo, imageView) }
@@ -109,7 +109,7 @@ bool descriptorImageViewInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorSamplerInfoStruct(void)
+PalBool descriptorSamplerInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "sampler", {0, 8}, FIELD(PalDescriptorSamplerInfo, sampler) }
@@ -127,7 +127,7 @@ bool descriptorSamplerInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorTLASInfoStruct(void)
+PalBool descriptorTLASInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "sampler", {0, 8}, FIELD(PalDescriptorSamplerInfo, sampler) }
@@ -145,7 +145,7 @@ bool descriptorTLASInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorSetWriteInfoStruct(void)
+PalBool descriptorSetWriteInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "descriptorSet", {0, 8}, FIELD(PalDescriptorSetWriteInfo, descriptorSet) },
@@ -171,7 +171,7 @@ bool descriptorSetWriteInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorSetLayoutCreateInfoStruct(void)
+PalBool descriptorSetLayoutCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "bindings", {0, 8}, FIELD(PalDescriptorSetLayoutCreateInfo, bindings) },
@@ -191,7 +191,7 @@ bool descriptorSetLayoutCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool descriptorPoolCreateInfoStruct(void)
+PalBool descriptorPoolCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "bindingSizes", {0, 8}, FIELD(PalDescriptorPoolCreateInfo, bindingSizes) },

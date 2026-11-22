@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/video/window.h"
 
-bool flashInfoStruct(void)
+PalBool flashInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"flags", {0, 4}, FIELD(PalFlashInfo, flags)},
@@ -22,7 +22,7 @@ bool flashInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool windowHandleInfoStruct(void)
+PalBool windowHandleInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"nativeInstance", {0, 8}, FIELD(PalWindowHandleInfo, nativeInstance)},
@@ -44,7 +44,7 @@ bool windowHandleInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool windowCreateInfoStruct(void)
+PalBool windowCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"title", {0, 8}, FIELD(PalWindowCreateInfo, title)},

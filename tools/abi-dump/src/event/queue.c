@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/event/queue.h"
 
-bool eventQueueStruct(void)
+PalBool eventQueueStruct(void)
 {
     FieldInfo fields[] = {
         {"push", {0, 8}, FIELD(PalEventQueue, push)},

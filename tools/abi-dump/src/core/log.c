@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/core/log.h"
 
-bool loggerStruct(void)
+PalBool loggerStruct(void)
 {
     FieldInfo fields[] = {
         {"callback", {0, 8}, FIELD(PalLogger, callback)},

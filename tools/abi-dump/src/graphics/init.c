@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/init.h"
 
-bool graphicsDebuggerStruct(void)
+PalBool graphicsDebuggerStruct(void)
 {
     FieldInfo fields[] = {
         { "userData", {0, 8}, FIELD(PalGraphicsDebugger, userData) },
@@ -29,7 +29,7 @@ bool graphicsDebuggerStruct(void)
     return dumpStruct(&info);
 }
 
-bool graphicsBackendInfoStruct(void)
+PalBool graphicsBackendInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "vtable", {0, 8}, FIELD(PalGraphicsBackendInfo, vtable) },

@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/system/platform.h"
 
-bool platformInfoStruct(void)
+PalBool platformInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"type", {0, 4}, FIELD(PalPlatformInfo, type)},

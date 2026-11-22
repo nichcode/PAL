@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/sbt.h"
 
-bool shaderBindingTableRecordInfoStruct(void)
+PalBool shaderBindingTableRecordInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "localData", {0, 8}, FIELD(PalShaderBindingTableRecordInfo, localData) },
@@ -22,7 +22,7 @@ bool shaderBindingTableRecordInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool shaderBindingTableCreateInfoStruct(void)
+PalBool shaderBindingTableCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "records", {0, 8}, FIELD(PalShaderBindingTableCreateInfo, records) },

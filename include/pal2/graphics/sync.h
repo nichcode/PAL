@@ -54,7 +54,7 @@ typedef struct PalSemaphore PalSemaphore;
  * The created fence must be destroyed using @ref palDestroyFence().
  *
  * @param[in] device Device that creates the fence.
- * @param[in] signaled True if fence should be created signaled. If true, the fence must be reset
+ * @param[in] signaled True if fence should be created signaled. If `PAL_TRUE`, the fence must be reset
  * before waiting for it to prevent waiting forever.
  * @param[out] fence Output handle to receive the created fence.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.
@@ -157,7 +157,7 @@ PAL_API PalBool PAL_CALL palIsFenceSignaled(PalFence* fence);
  * The created semaphore must be destroyed using @ref palDestroySemaphore().
  *
  * @param[in] device Device that creates the semaphore.
- * @param[in] enableTimeline If true, `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported
+ * @param[in] enableTimeline If `PAL_TRUE`, `PAL_ADAPTER_FEATURE_TIMELINE_SEMAPHORE` must be supported
  * and enabled by the device creating the semaphore.
  * @param[out] semaphore Output handle to receive the created semaphore.
  * @return `PAL_RESULT_SUCCESS` on success or result value on failure.

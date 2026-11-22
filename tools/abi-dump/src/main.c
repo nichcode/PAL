@@ -11,7 +11,7 @@
 #define EXE_NAME "abi-dump"
 #endif // _WIN32
 
-static int logDumpStatus(bool status)
+static int logDumpStatus(PalBool status)
 {
     int ret = -1;
     const char* str = "FAILED";
@@ -24,7 +24,7 @@ static int logDumpStatus(bool status)
     return ret;
 }
 
-static bool checkPALVersion(void)
+static PalBool checkPALVersion(void)
 {
     PalVersion version;
     palGetVersion(&version);

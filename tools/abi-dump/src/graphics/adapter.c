@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/adapter.h"
 
-bool adapterInfoStruct(void)
+PalBool adapterInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "vram", {0, 8}, FIELD(PalAdapterInfo, vram) },
@@ -30,7 +30,7 @@ bool adapterInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool imageCapabilitiesStruct(void)
+PalBool imageCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxWidth", {0, 4}, FIELD(PalImageCapabilities, maxWidth) },
@@ -52,7 +52,7 @@ bool imageCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool resourceCapabilitiesStruct(void)
+PalBool resourceCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxPerStageSampledImages", {0, 4}, FIELD(PalResourceCapabilities, maxPerStageSampledImages) },
@@ -82,7 +82,7 @@ bool resourceCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool computeCapabilitiesStruct(void)
+PalBool computeCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxWorkGroupInvocations", {0, 4}, FIELD(PalComputeCapabilities, maxWorkGroupInvocations) },
@@ -102,7 +102,7 @@ bool computeCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool viewportCapabilitiesStruct(void)
+PalBool viewportCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxWidth", {0, 4}, FIELD(PalViewportCapabilities, maxWidth) },
@@ -123,7 +123,7 @@ bool viewportCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool adapterCapabilitiesStruct(void)
+PalBool adapterCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxComputeQueues", {0, 4}, FIELD(PalAdapterCapabilities, maxComputeQueues) },

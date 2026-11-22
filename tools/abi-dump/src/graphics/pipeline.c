@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/pipeline.h"
 
-bool multiViewCapabilitiesStruct(void)
+PalBool multiViewCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxViewCount", {0, 4}, FIELD(PalMultiViewCapabilities, maxViewCount) }
@@ -20,7 +20,7 @@ bool multiViewCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool multiViewportCapabilitiesStruct(void)
+PalBool multiViewportCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxCount", {0, 4}, FIELD(PalMultiViewportCapabilities, maxCount) }
@@ -38,7 +38,7 @@ bool multiViewportCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool depthStencilCapabilitiesStruct(void)
+PalBool depthStencilCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "supportedDepthResolveModes", {0, 4}, FIELD(PalDepthStencilCapabilities, supportedDepthResolveModes) },
@@ -59,7 +59,7 @@ bool depthStencilCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool fragmentShadingRateCapabilitiesStruct(void)
+PalBool fragmentShadingRateCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "supportedShadingRates", {0, 4}, FIELD(PalFragmentShadingRateCapabilities, supportedShadingRates) },
@@ -82,7 +82,7 @@ bool fragmentShadingRateCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool rayTracingCapabilitiesStruct(void)
+PalBool rayTracingCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxRecursionDepth", {0, 4}, FIELD(PalRayTracingCapabilities, maxRecursionDepth) },
@@ -106,7 +106,7 @@ bool rayTracingCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool rasterizerStateStruct(void)
+PalBool rasterizerStateStruct(void)
 {
     FieldInfo fields[] = {
         { "enableDepthClamp", {0, 4}, FIELD(PalRasterizerState, enableDepthClamp) },
@@ -131,7 +131,7 @@ bool rasterizerStateStruct(void)
     return dumpStruct(&info);
 }
 
-bool multisampleStateStruct(void)
+PalBool multisampleStateStruct(void)
 {
     FieldInfo fields[] = {
         { "sampleMask", {0, 8}, FIELD(PalMultisampleState, sampleMask) },
@@ -153,7 +153,7 @@ bool multisampleStateStruct(void)
     return dumpStruct(&info);
 }
 
-bool stencilOpStateStruct(void)
+PalBool stencilOpStateStruct(void)
 {
     FieldInfo fields[] = {
         { "failOp", {0, 4}, FIELD(PalStencilOpState, failOp) },
@@ -174,7 +174,7 @@ bool stencilOpStateStruct(void)
     return dumpStruct(&info);
 }
 
-bool depthStencilStateStruct(void)
+PalBool depthStencilStateStruct(void)
 {
     FieldInfo fields[] = {
         { "enableDepthTest", {0, 4}, FIELD(PalDepthStencilState, enableDepthTest) },
@@ -197,7 +197,7 @@ bool depthStencilStateStruct(void)
     return dumpStruct(&info);
 }
 
-bool colorBlendAttachmentStruct(void)
+PalBool colorBlendAttachmentStruct(void)
 {
     FieldInfo fields[] = {
         { "enableBlend", {0, 4}, FIELD(PalColorBlendAttachment, enableBlend) },
@@ -222,7 +222,7 @@ bool colorBlendAttachmentStruct(void)
     return dumpStruct(&info);
 }
 
-bool fragmentShadingRateStateStruct(void)
+PalBool fragmentShadingRateStateStruct(void)
 {
     FieldInfo fields[] = {
         { "rate", {0, 4}, FIELD(PalFragmentShadingRateState, rate) },
@@ -241,7 +241,7 @@ bool fragmentShadingRateStateStruct(void)
     return dumpStruct(&info);
 }
 
-bool pushConstantInfoStruct(void)
+PalBool pushConstantInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "offset", {0, 4}, FIELD(PalPushConstantInfo, offset) },
@@ -260,7 +260,7 @@ bool pushConstantInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool pipelineLayoutCreateInfoStruct(void)
+PalBool pipelineLayoutCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "descriptorSetLayouts", {0, 8}, FIELD(PalPipelineLayoutCreateInfo, descriptorSetLayouts) },
@@ -281,7 +281,7 @@ bool pipelineLayoutCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool graphicsPipelineCreateInfoStruct(void)
+PalBool graphicsPipelineCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "pipelineLayout", {0, 8}, FIELD(PalGraphicsPipelineCreateInfo, pipelineLayout) },
@@ -313,7 +313,7 @@ bool graphicsPipelineCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool computePipelineCreateInfoStruct(void)
+PalBool computePipelineCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "pipelineLayout", {0, 8}, FIELD(PalComputePipelineCreateInfo, pipelineLayout) },
@@ -332,7 +332,7 @@ bool computePipelineCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool rayTracingShaderGroupCreateInfoStruct(void)
+PalBool rayTracingShaderGroupCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "type", {0, 4}, FIELD(PalRayTracingShaderGroupCreateInfo, type) },
@@ -359,7 +359,7 @@ bool rayTracingShaderGroupCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool rayTracingPipelineCreateInfoStruct(void)
+PalBool rayTracingPipelineCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "pipelineLayout", {0, 8}, FIELD(PalRayTracingPipelineCreateInfo, pipelineLayout) },
@@ -385,7 +385,7 @@ bool rayTracingPipelineCreateInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool renderingLayoutInfoStruct(void)
+PalBool renderingLayoutInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "colorAttachmentsFormat", {0, 8}, FIELD(PalRenderingLayoutInfo, colorAttachmentsFormat) },

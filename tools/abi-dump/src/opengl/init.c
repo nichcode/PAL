@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/opengl/init.h"
 
-bool openglInfoStruct(void)
+PalBool openglInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"extensions", {0, 8}, FIELD(PalGLInfo, extensions)},

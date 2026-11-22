@@ -4,8 +4,8 @@
 
 #include "helpers.h"
 
-bool allocatorStruct(void);
-bool versionStruct(void);
-bool loggerStruct(void);
+PalBool allocatorStruct(void);
+PalBool versionStruct(void);
+PalBool loggerStruct(void);
 
 #endif // ABI_DUMP_CORE_H

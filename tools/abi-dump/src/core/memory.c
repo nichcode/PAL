@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/core/memory.h"
 
-bool allocatorStruct(void)
+PalBool allocatorStruct(void)
 {
     FieldInfo fields[] = {
         {"allocate", {0, 8}, FIELD(PalAllocator, allocate)},

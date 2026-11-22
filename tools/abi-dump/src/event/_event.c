@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/event/event.h"
 
-bool eventStruct(void)
+PalBool eventStruct(void)
 {
     FieldInfo fields[] = {
         {"data", {0, 8}, FIELD(PalEvent, data)},

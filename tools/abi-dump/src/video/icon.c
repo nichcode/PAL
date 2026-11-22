@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/video/icon.h"
 
-bool iconCreateInfoStruct(void)
+PalBool iconCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"pixels", {0, 8}, FIELD(PalIconCreateInfo, pixels)},

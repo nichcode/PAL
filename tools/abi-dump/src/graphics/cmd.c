@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/cmd.h"
 
-bool drawIndirectDataStruct(void)
+PalBool drawIndirectDataStruct(void)
 {
     FieldInfo fields[] = {
         { "vertexCount", {0, 4}, FIELD(PalDrawIndirectData, vertexCount) },
@@ -23,7 +23,7 @@ bool drawIndirectDataStruct(void)
     return dumpStruct(&info);
 }
 
-bool drawIndexedIndirectDataStruct(void)
+PalBool drawIndexedIndirectDataStruct(void)
 {
     FieldInfo fields[] = {
         { "indexCount", {0, 4}, FIELD(PalDrawIndexedIndirectData, indexCount) },
@@ -45,7 +45,7 @@ bool drawIndexedIndirectDataStruct(void)
     return dumpStruct(&info);
 }
 
-bool dispatchIndirectDataStruct(void)
+PalBool dispatchIndirectDataStruct(void)
 {
     FieldInfo fields[] = {
         { "groupCountXOrWidth", {0, 4}, FIELD(PalDispatchIndirectData, groupCountXOrWidth) },
@@ -65,7 +65,7 @@ bool dispatchIndirectDataStruct(void)
     return dumpStruct(&info);
 }
 
-bool clearValueStruct(void)
+PalBool clearValueStruct(void)
 {
     FieldInfo fields[] = {
         { "color", {0, 16}, FIELD(PalClearValue, color) },
@@ -85,7 +85,7 @@ bool clearValueStruct(void)
     return dumpStruct(&info);
 }
 
-bool attachmentDescStruct(void)
+PalBool attachmentDescStruct(void)
 {
     FieldInfo fields[] = {
         { "imageView", {0, 8}, FIELD(PalAttachmentDesc, imageView) },
@@ -111,7 +111,7 @@ bool attachmentDescStruct(void)
     return dumpStruct(&info);
 }
 
-bool viewportStruct(void)
+PalBool viewportStruct(void)
 {
     FieldInfo fields[] = {
         { "x", {0, 4}, FIELD(PalViewport, x) },
@@ -134,7 +134,7 @@ bool viewportStruct(void)
     return dumpStruct(&info);
 }
 
-bool rect2DStruct(void)
+PalBool rect2DStruct(void)
 {
     FieldInfo fields[] = {
         { "x", {0, 4}, FIELD(PalRect2D, x) },
@@ -155,7 +155,7 @@ bool rect2DStruct(void)
     return dumpStruct(&info);
 }
 
-bool renderingInfoStruct(void)
+PalBool renderingInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "colorAttachments", {0, 8}, FIELD(PalRenderingInfo, colorAttachments) },
@@ -182,7 +182,7 @@ bool renderingInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool workGroupBuildDataStruct(void)
+PalBool workGroupBuildDataStruct(void)
 {
     FieldInfo fields[] = {
         { "workCount", {0, 12}, FIELD(PalWorkGroupBuildData, workCount) },
@@ -202,7 +202,7 @@ bool workGroupBuildDataStruct(void)
     return dumpStruct(&info);
 }
 
-bool workGroupInfoStruct(void)
+PalBool workGroupInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "workGroupBase", {0, 12}, FIELD(PalWorkGroupInfo, workGroupBase) },
@@ -221,7 +221,7 @@ bool workGroupInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool barrierInfoStruct(void)
+PalBool barrierInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "oldState", {0, 4}, FIELD(PalBarrierInfo, oldState) },

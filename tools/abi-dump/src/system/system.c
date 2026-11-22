@@ -1,7 +1,7 @@
 
 #include "system.h"
 
-bool systemStructs(void)
+PalBool systemStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
@@ -11,7 +11,7 @@ bool systemStructs(void)
         palLog(nullptr, "");
     }
 
-    bool status = platformInfoStruct();
+    PalBool status = platformInfoStruct();
     if (status == PAL_FALSE) {
         return PAL_FALSE;
     }

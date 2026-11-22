@@ -1,7 +1,7 @@
 
 #include "opengl.h"
 
-bool openglStructs(void)
+PalBool openglStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
@@ -11,7 +11,7 @@ bool openglStructs(void)
         palLog(nullptr, "");
     }
 
-    bool status = openglInfoStruct();
+    PalBool status = openglInfoStruct();
     if (status == PAL_FALSE) {
         return PAL_FALSE;
     }

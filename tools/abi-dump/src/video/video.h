@@ -4,14 +4,14 @@
 
 #include "helpers.h"
 
-bool monitorInfoStruct();
-bool monitorModeStruct();
-bool flashInfoStruct();
-bool iconCreateInfoStruct();
-bool cursorCreateInfoStruct();
+PalBool monitorInfoStruct();
+PalBool monitorModeStruct();
+PalBool flashInfoStruct();
+PalBool iconCreateInfoStruct();
+PalBool cursorCreateInfoStruct();
 
-bool windowHandleInfoStruct();
-bool windowCreateInfoStruct();
-bool videoDriverStruct();
+PalBool windowHandleInfoStruct();
+PalBool windowCreateInfoStruct();
+PalBool videoDriverStruct();
 
 #endif // ABI_DUMP_VIDEO_H

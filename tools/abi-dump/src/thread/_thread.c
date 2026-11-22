@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/thread/thread.h"
 
-bool threadCreateInfoStruct(void)
+PalBool threadCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"stackSize", {0, 8}, FIELD(PalThreadCreateInfo, stackSize)},

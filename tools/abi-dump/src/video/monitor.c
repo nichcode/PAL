@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/video/monitor.h"
 
-bool monitorInfoStruct(void)
+PalBool monitorInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"x", {0, 4}, FIELD(PalMonitorInfo, x)},
@@ -28,7 +28,7 @@ bool monitorInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool monitorModeStruct(void)
+PalBool monitorModeStruct(void)
 {
     FieldInfo fields[] = {
         {"bpp", {0, 4}, FIELD(PalMonitorMode, bpp)},

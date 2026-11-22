@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/memory.h"
 
-bool memoryRequirementsStruct(void)
+PalBool memoryRequirementsStruct(void)
 {
     FieldInfo fields[] = {
         { "size", {0, 8}, FIELD(PalMemoryRequirements, size) },

@@ -4,9 +4,9 @@
 
 #include "helpers.h"
 
-bool openglInfoStruct(void);
-bool openglFBConfigStruct(void);
-bool openglWindowStruct(void);
-bool contextCreateInfoStruct(void);
+PalBool openglInfoStruct(void);
+PalBool openglFBConfigStruct(void);
+PalBool openglWindowStruct(void);
+PalBool contextCreateInfoStruct(void);
 
 #endif // ABI_DUMP_OPENGL_H

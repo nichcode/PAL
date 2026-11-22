@@ -24,7 +24,6 @@
 #include "system/platform.h"
 #include "pal2/core/library.h"
 #include "pal2/system/platform.h"
-#include <stdbool.h>
 #include <stdio.h>
 
 #ifdef _WIN32
@@ -36,7 +35,7 @@
 
 typedef LONG(WINAPI* RtlGetVersionFn)(PRTL_OSVERSIONINFOW info);
 
-static bool getPlatformVersion(PalVersion* version)
+static PalBool getPlatformVersion(PalVersion* version)
 {
     RtlGetVersionFn getVersion = nullptr;
     OSVERSIONINFOEXW info = {0};
@@ -47,18 +46,18 @@ static bool getPlatformVersion(PalVersion* version)
      */
     PalLibrary* ntdll = palLoadLibrary("ntdll.dll");
     if (!ntdll) {
-        return false;
+        return PAL_FALSE;
     }
 
     getVersion = (RtlGetVersionFn)palGetSymbol(ntdll, "RtlGetVersion");
     if (!getVersion) {
         palFreeLibrary(ntdll);
-        return false;
+        return PAL_FALSE;
     }
 
     if (getVersion((PRTL_OSVERSIONINFOW)&info) != 0) {
         palFreeLibrary(ntdll);
-        return false;
+        return PAL_FALSE;
     }
 
     version->major = info.dwMajorVersion;
@@ -67,29 +66,29 @@ static bool getPlatformVersion(PalVersion* version)
 
     palFreeLibrary(ntdll);
 
-    return true;
+    return PAL_TRUE;
 }
 
-static bool isVersion(
+static PalBool isVersion(
     const PalVersion* osVersion,
     uint32_t major,
     uint32_t minor,
     uint32_t build)
 {
     if (osVersion->major > major) {
-        return true;
+        return PAL_TRUE;
     }
 
     if (osVersion->major < major) {
-        return false;
+        return PAL_FALSE;
     }
 
     if (osVersion->minor > minor) {
-        return true;
+        return PAL_TRUE;
     }
 
     if (osVersion->minor < minor) {
-        return false;
+        return PAL_FALSE;
     }
 
     return osVersion->build >= build;

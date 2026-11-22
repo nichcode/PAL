@@ -2,11 +2,10 @@
 #include "pal2/thread/thread.h"
 #include "pal2/thread/tls.h"
 #include "pal2/core/log.h"
-#include <stdbool.h>
 
 typedef struct ThreadData
 {
-    bool tlsDestructorCalled;
+    PalBool tlsDestructorCalled;
     PalTLSId tlsId;
 } ThreadData;
 
@@ -19,7 +18,7 @@ static void PAL_CALL tlsDestructor(void* userData)
 {
     TLSData* data = userData;
     ThreadData* threadData = (ThreadData*)data->threadData;
-    threadData->tlsDestructorCalled = true;
+    threadData->tlsDestructorCalled = PAL_TRUE;
 
     if (data) {
         palFree(nullptr, data);
@@ -62,7 +61,7 @@ int main(void)
     }
 
     threadData->tlsId = tlsID;
-    threadData->tlsDestructorCalled = false;
+    threadData->tlsDestructorCalled = PAL_FALSE;
 
     PalThreadCreateInfo createInfo = {0};
     createInfo.arg = threadData;

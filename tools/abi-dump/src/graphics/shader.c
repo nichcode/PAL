@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/shader.h"
 
-bool meshCapabilitiesStruct(void)
+PalBool meshCapabilitiesStruct(void)
 {
     FieldInfo fields[] = {
         { "maxOutputPrimitives", {0, 4}, FIELD(PalMeshShaderCapabilities, maxOutputPrimitives) },
@@ -25,7 +25,7 @@ bool meshCapabilitiesStruct(void)
     return dumpStruct(&info);
 }
 
-bool shaderEntryInfoStruct(void)
+PalBool shaderEntryInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "entryName", {0, 8}, FIELD(PalShaderEntryInfo, entryName) },
@@ -45,7 +45,7 @@ bool shaderEntryInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool shaderCreateInfoStruct(void)
+PalBool shaderCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "bcode", {0, 8}, FIELD(PalShaderCreateInfo, code) },

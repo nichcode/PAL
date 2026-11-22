@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/video/cursor.h"
 
-bool cursorCreateInfoStruct(void)
+PalBool cursorCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"pixels", {0, 8}, FIELD(PalCursorCreateInfo, pixels)},

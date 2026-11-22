@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/event/driver.h"
 
-bool eventDriverCreateInfoStruct(void)
+PalBool eventDriverCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         {"allocator", {0, 8}, FIELD(PalEventDriverCreateInfo, allocator)},

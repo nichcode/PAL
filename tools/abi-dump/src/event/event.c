@@ -1,7 +1,7 @@
 
 #include "event.h"
 
-bool eventStructs(void)
+PalBool eventStructs(void)
 {
     if (!(g_DumpFlags & ABI_DUMP_QUICK)) {
         palLog(nullptr, "");
@@ -11,7 +11,7 @@ bool eventStructs(void)
         palLog(nullptr, "");
     }
 
-    bool status = eventStruct();
+    PalBool status = eventStruct();
     if (status == PAL_FALSE) {
         return PAL_FALSE;
     }

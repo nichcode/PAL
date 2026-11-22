@@ -30,7 +30,6 @@
 #include <string.h>
 #include <sys/utsname.h>
 #include <unistd.h>
-#include <stdbool.h>
 
 static uint32_t parseCache(const char* path)
 {
@@ -67,7 +66,7 @@ void platformGetCPUInfo(
     FILE* file = fopen("/proc/cpuinfo", "r");
     if (file) {
         char line[1024];
-        bool parsedBasic = false;
+        PalBool parsedBasic = PAL_FALSE;
         uint32_t coresPerSocket = 0;
         int32_t lastPhysicalId = -1;
         uint32_t socketCount = 0;
@@ -131,7 +130,7 @@ void platformGetCPUInfo(
                     }
                 }
 
-                parsedBasic = true;
+                parsedBasic = PAL_TRUE;
             }
         }
 

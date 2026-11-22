@@ -2,7 +2,6 @@
 #include "pal2/thread/thread.h"
 #include "pal2/thread/condvar.h"
 #include "pal2/core/log.h"
-#include <stdbool.h>
 
 #define THREAD_COUNT 4
 
@@ -14,8 +13,8 @@ typedef struct SharedData
 
 typedef struct ThreadData
 {
-    bool ready;
-    bool finished;
+    PalBool ready;
+    PalBool finished;
     SharedData* sharedData;
 } ThreadData;
 
@@ -31,7 +30,7 @@ static void* PAL_CALL worker(void* arg)
 
     palUnlockMutex(sharedData->mutex);
 
-    data->finished = true;
+    data->finished = PAL_TRUE;
 
     return nullptr;
 }
@@ -68,8 +67,8 @@ int main(void)
     createInfo.entry = worker;
 
     for (int32_t i = 0; i < THREAD_COUNT; i++) {
-        threadData[i].finished = false;
-        threadData[i].ready = false;
+        threadData[i].finished = PAL_FALSE;
+        threadData[i].ready = PAL_FALSE;
         threadData[i].sharedData = sharedData;
 
         createInfo.arg = (void*)&threadData[i];

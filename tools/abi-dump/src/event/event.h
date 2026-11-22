@@ -4,8 +4,8 @@
 
 #include "helpers.h"
 
-bool eventDriverCreateInfoStruct(void);
-bool eventQueueStruct(void);
-bool eventStruct(void);
+PalBool eventDriverCreateInfoStruct(void);
+PalBool eventQueueStruct(void);
+PalBool eventStruct(void);
 
 #endif // ABI_DUMP_EVENT_H

@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/core/version.h"
 
-bool versionStruct(void)
+PalBool versionStruct(void)
 {
     FieldInfo fields[] = {
         {"major", {0, 4}, FIELD(PalVersion, major)},

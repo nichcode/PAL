@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/swapchain.h"
 
-bool swapchainNextImageInfoStruct(void)
+PalBool swapchainNextImageInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "timeout", {0, 8}, FIELD(PalSwapchainNextImageInfo, timeout) },
@@ -22,7 +22,7 @@ bool swapchainNextImageInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool swapchainCreateInfoStruct(void)
+PalBool swapchainCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "clipped", {0, 4}, FIELD(PalSwapchainCreateInfo, clipped) },

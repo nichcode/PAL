@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "pal2/graphics/buffer.h"
 
-bool bufferCopyInfoStruct(void)
+PalBool bufferCopyInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "size", {0, 8}, FIELD(PalBufferCopyInfo, size) },
@@ -22,7 +22,7 @@ bool bufferCopyInfoStruct(void)
     return dumpStruct(&info);
 }
 
-bool bufferCreateInfoStruct(void)
+PalBool bufferCreateInfoStruct(void)
 {
     FieldInfo fields[] = {
         { "size", {0, 8}, FIELD(PalBufferCreateInfo, size) },
