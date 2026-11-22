@@ -30,6 +30,7 @@
 #endif // POSIX detection
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #if defined(__cplusplus)
@@ -40,6 +41,13 @@
     #define ATTR_NORETURN __attribute__((noreturn))
 #else
     #define ATTR_NORETURN
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+    #define ATTR_PRINTF(fmtIdx, argIdx) \
+        __attribute__((format(printf, fmtIdx, argIdx)))
+#else
+    #define ATTR_PRINTF(fmtIdx, argIdx)
 #endif
 
 ATTR_NORETURN void handleAssert(
@@ -59,18 +67,23 @@ ATTR_NORETURN void handleAssert(
 #endif // NDEBUG
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-#define ALIGN_UP(value, alignment) \
-    (((value) + ((alignment) - 1)) & ~(((value) - (value)) + ((alignment) - 1)))
 
+static inline uintptr_t alignUp(uintptr_t value, uintptr_t alignment)
+{
+    return (value + (alignment - 1)) & ~(alignment - 1);
+}
+
+ATTR_PRINTF(1, 0)
 void formatMsgArgs(
     const char* fmt, 
     va_list argsList, 
     char* buffer, 
-    uint64_t bufferSize);
+    size_t bufferSize);
 
+ATTR_PRINTF(3, 4)
 void formatMsg(
     char* buffer, 
-    uint64_t bufferSize, 
+    size_t bufferSize, 
     const char* fmt, 
     ...);
 

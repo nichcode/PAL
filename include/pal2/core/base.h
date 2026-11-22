@@ -1,4 +1,3 @@
-
 /**
  * @file base.h
  * 
@@ -26,6 +25,7 @@
 #ifndef PAL_CORE_BASE_H
 #define PAL_CORE_BASE_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 /**

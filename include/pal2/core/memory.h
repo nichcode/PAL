@@ -1,4 +1,3 @@
-
 /**
  * @file memory.h
  * 
@@ -42,7 +41,7 @@
  *
  * The function signature should look like this:
  * @code
- * void* PAL_CALL alloc(void* userData, uint64_t size, uint64_t alignment);
+ * void* PAL_CALL alloc(void* userData, size_t size, size_t alignment);
  * @endcode
  *
  * @param[in] userData User-defined data passed to the callback or `nullptr`.
@@ -57,8 +56,8 @@
  */
 typedef void*(PAL_CALL* PalAllocateFn)(
     void* userData,
-    uint64_t size,
-    uint64_t alignment);
+    size_t size,
+    size_t alignment);
 
 /**
  * @brief Memory deallocation function.
@@ -133,8 +132,8 @@ typedef struct PalAllocator {
  */
 PAL_API void* PAL_CALL palAllocate(
     const PalAllocator* allocator,
-    uint64_t size,
-    uint64_t alignment);
+    size_t size,
+    size_t alignment);
 
 /**
  * @brief Deallocates memory.

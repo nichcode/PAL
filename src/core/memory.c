@@ -26,10 +26,10 @@
 
 void* PAL_CALL palAllocate(
     const PalAllocator* allocator,
-    uint64_t size,
-    uint64_t alignment)
+    size_t size,
+    size_t alignment)
 {
-    uint64_t align = alignment;
+    size_t align = alignment;
     if (align == 0) {
         /** The implementation-defined default for the default allocator. */
         align = 16;
@@ -51,23 +51,19 @@ void* PAL_CALL palAllocate(
         align = sizeof(void*);
     }
 
-    uint64_t overhead = (align - 1) + sizeof(void*);
-    if (size > UINT64_MAX - overhead) {
+    size_t overhead = (align - 1) + sizeof(void*);
+    if (size > SIZE_MAX - overhead) {
         return nullptr;
     }
 
-    uint64_t totalSize = size + overhead;
-    if (totalSize > SIZE_MAX) {
-        return nullptr;
-    }
-
-    void* block = malloc((size_t)totalSize);
+    size_t totalSize = size + overhead;
+    void* block = malloc(totalSize);
     if (!block) {
         return nullptr;
     }
 
     uintptr_t address = (uintptr_t)block + sizeof(void*);
-    uintptr_t aligned = ALIGN_UP(address, align);
+    uintptr_t aligned = alignUp(address, align);
 
     ((void**)aligned)[-1] = block;
     return (void*)aligned;

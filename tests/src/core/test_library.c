@@ -1,13 +1,14 @@
-
 #include "pal2/core/library.h"
 #include "pal2/core/log.h"
 
 #ifdef _WIN32
 #define LIBRARY_NAME "ucrtbase.dll"
 #define SYMBOL_NAME "puts"
+#define GLOBAL_NAME "_environ"
 #else
 #define LIBRARY_NAME "libc.so.6"
 #define SYMBOL_NAME "printf"
+#define GLOBAL_NAME "environ"
 #endif // _WIN32
 
 typedef int (*PrintfFn)(const char* restrict fmt, ...);
@@ -25,6 +26,13 @@ int main(void)
     PrintfFn print = (PrintfFn)palGetSymbol(library, SYMBOL_NAME);
     if (!print) {
         palLog(nullptr, "Failed to get function symbol");
+        palFreeLibrary(library);
+        return -1;
+    }
+
+    char*** env = (char***)palGetGlobal(library, GLOBAL_NAME);
+    if (!env) {
+        palLog(nullptr, "Failed to get global symbol");
         palFreeLibrary(library);
         return -1;
     }

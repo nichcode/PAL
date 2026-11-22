@@ -49,23 +49,21 @@ void formatMsgArgs(
     const char* fmt,
     va_list argsList,
     char* buffer, 
-    uint64_t bufferSize)
+    size_t bufferSize)
 {
     if (!buffer || bufferSize == 0 || !fmt) {
         return;
     }
 
-    size_t maxLen = (bufferSize > SIZE_MAX) ? SIZE_MAX : (size_t)bufferSize;
-
     va_list argsListCopy;
     va_copy(argsListCopy, argsList);
-    (void)vsnprintf(buffer, maxLen, fmt, argsListCopy);
+    (void)vsnprintf(buffer, bufferSize, fmt, argsListCopy);
     va_end(argsListCopy);
 }
 
 void formatMsg(
     char* buffer,
-    uint64_t bufferSize,
+    size_t bufferSize,
     const char* fmt,
     ...)
 {

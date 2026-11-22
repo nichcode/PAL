@@ -1,4 +1,3 @@
-
 #include "pal2/core/result.h"
 #include "pal2/core/log.h"
 
@@ -17,10 +16,6 @@ int main(void)
 
     PalResult results[MAX_RESULTS] = {0};
 
-    /**
-     * We use dummy native code. This is fine because we are not formatting
-     * the result value.
-     */
     ResultInfo resultInfos[MAX_RESULTS] = {
         {PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED, PAL_RESULT_SOURCE_NONE, 0},
         {PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_D3D12, 122},
@@ -45,6 +40,13 @@ int main(void)
             source != info->source || 
             nativeCode != info->nativeCode) {
             palLog(nullptr, "Result values do not match");
+            return -1;
+        }
+
+        char buffer[256] = {0};
+        palFormatResult(result, sizeof(buffer), buffer);
+        if (buffer[0] == '\0') {
+            palLog(nullptr, "Formatted result string is empty");
             return -1;
         }
     }

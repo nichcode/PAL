@@ -32,7 +32,7 @@
 
 uint64_t platformGetPerformanceCounter(void)
 {
-    struct timespec ts;
+    struct timespec ts = {0};
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * FREQUENCY + (uint64_t)ts.tv_nsec;
 }

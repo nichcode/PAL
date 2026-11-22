@@ -57,9 +57,9 @@ void PAL_CALL palLog(
     va_end(argPtr);
 
     if (logger && logger->callback) {
-        data->isLogging = true;
+        data->isLogging = PAL_TRUE;
         logger->callback(logger->userData, data->tmp);
-        data->isLogging = false;
+        data->isLogging = PAL_FALSE;
 
     } else {
         (void)fprintf(stdout, "%s\n", data->tmp);

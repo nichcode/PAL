@@ -1,4 +1,3 @@
-
 /**
  * @file result.h
  * 
@@ -120,7 +119,7 @@ typedef uint16_t PalResultSource;
  */
 PAL_API void PAL_CALL palFormatResult(
     PalResult result,
-    uint64_t bufferSize,
+    size_t bufferSize,
     char* buffer);
 
 /**

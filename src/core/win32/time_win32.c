@@ -32,14 +32,14 @@
 
 uint64_t platformGetPerformanceCounter(void)
 {
-    LARGE_INTEGER counter;
+    LARGE_INTEGER counter = {0};
     QueryPerformanceCounter(&counter);
     return (uint64_t)counter.QuadPart;
 }
 
 uint64_t platformGetPerformanceFrequency(void)
 {
-    LARGE_INTEGER frequency;
+    LARGE_INTEGER frequency = {0};
     QueryPerformanceFrequency(&frequency);
     return (uint64_t)frequency.QuadPart;
 }

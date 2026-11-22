@@ -41,8 +41,7 @@ void platformFormatResult(
 #if defined(__GLIBC__) && defined(_GNU_SOURCE)
         const char* msg = strerror_r((int)code, buffer, FORMAT_BUFFER_SIZE);
         if (msg && msg != buffer) {
-            (void)strncpy(buffer, msg, FORMAT_BUFFER_SIZE - 1);
-            buffer[FORMAT_BUFFER_SIZE - 1] = '\0';
+            formatMsg(buffer, FORMAT_BUFFER_SIZE, "%s", msg);
         }
 #else
         if (strerror_r((int)code, buffer, FORMAT_BUFFER_SIZE) != 0) {

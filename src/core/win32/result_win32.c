@@ -44,17 +44,40 @@ void platformFormatResult(
 
     uint32_t code = palGetResultNativeCode(result);
     if (code != 0) {
-        DWORD len = FormatMessageA(
-            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        wchar_t wideBuf[FORMAT_BUFFER_SIZE];
+        DWORD len = FormatMessageW(
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS |
+            FORMAT_MESSAGE_MAX_WIDTH_MASK,
             nullptr,
             code,
             0,
-            buffer,
+            wideBuf,
             FORMAT_BUFFER_SIZE,
             nullptr);
 
-        while (len > 0 && (buffer[len - 1] == '\r' || buffer[len - 1] == '\n')) {
-            buffer[--len] = '\0';
+        while (len > 0 &&
+               (wideBuf[len - 1] == L'\r' ||
+                wideBuf[len - 1] == L'\n' ||
+                wideBuf[len - 1] == L' ')) {
+            wideBuf[--len] = L'\0';
+        }
+
+        if (len > 0) {
+            int written = WideCharToMultiByte(
+                CP_UTF8,
+                0,
+                wideBuf,
+                -1,
+                buffer,
+                FORMAT_BUFFER_SIZE,
+                nullptr,
+                nullptr);
+
+            if (written <= 0) {
+                buffer[0] = '\0';
+            }
+            buffer[FORMAT_BUFFER_SIZE - 1] = '\0';
         }
     }
 }

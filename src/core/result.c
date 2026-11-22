@@ -28,6 +28,9 @@ static const char* resultCodeToString(PalResult result)
 {
     PalResultCode code = palGetResultCode(result);
     switch (code) {
+    case PAL_RESULT_CODE_NONE:
+        return "PAL_RESULT_CODE_NONE";
+
     case PAL_RESULT_CODE_INVALID_ARGUMENT:
         return "PAL_RESULT_CODE_INVALID_ARGUMENT";
 
@@ -63,6 +66,9 @@ static const char* resultCodeToDescription(PalResult result)
 {
     PalResultCode code = palGetResultCode(result);
     switch (code) {
+    case PAL_RESULT_CODE_NONE:
+        return "Success";
+
     case PAL_RESULT_CODE_INVALID_ARGUMENT:
         return "Invalid argument";
 
@@ -122,7 +128,7 @@ static const char* resultSourceToString(PalResult result)
 
 void PAL_CALL palFormatResult(
     PalResult result,
-    uint64_t bufferSize,
+    size_t bufferSize,
     char* buffer)
 {
     ASSERT(buffer != nullptr, "buffer parameter is null");

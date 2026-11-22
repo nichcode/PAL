@@ -22,6 +22,7 @@
 
 #include "core/platform.h"
 #include "pal2/core/library.h"
+#include "pal2/core/memory.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -42,7 +43,7 @@ typedef union Symbol
 PalLibrary* platformLoadLibrary(const char* path)
 {
     if (!path) {
-        return (PalLibrary*)LoadLibraryW(nullptr);
+        return nullptr;
     }
 
     int len = MultiByteToWideChar(CP_UTF8, 0, path, -1, nullptr, 0);
@@ -50,13 +51,26 @@ PalLibrary* platformLoadLibrary(const char* path)
         return nullptr;
     }
 
-    wchar_t widePath[MAX_PATH];
+    wchar_t stackPath[MAX_PATH];
+    wchar_t* widePath = stackPath;
+    PalBool heapAllocated = PAL_FALSE;
+
     if (len > MAX_PATH) {
-        return nullptr;
+        widePath = palAllocate(nullptr, (size_t)len * sizeof(wchar_t), 0);
+        if (!widePath) {
+            return nullptr;
+        }
+        heapAllocated = PAL_TRUE;
     }
 
     MultiByteToWideChar(CP_UTF8, 0, path, -1, widePath, len);
-    return (PalLibrary*)LoadLibraryW(widePath);
+    HMODULE module = LoadLibraryW(widePath);
+
+    if (heapAllocated) {
+        palFree(nullptr, widePath);
+    }
+
+    return (PalLibrary*)module;
 }
 
 PalLibrarySymbol platformGetSymbol(

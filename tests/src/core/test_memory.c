@@ -1,4 +1,3 @@
-
 #include "pal2/core/memory.h"
 #include "pal2/core/log.h"
 #include <stdbool.h>
@@ -9,10 +8,10 @@ typedef struct AllocatorContext
     uint32_t deallocations;
 } AllocatorContext;
 
-void* PAL_CALL allocateFunction(
+static void* PAL_CALL allocateFunction(
     void* userData, 
-    uint64_t size, 
-    uint64_t alignment)
+    size_t size, 
+    size_t alignment)
 {
     void* block = palAllocate(nullptr, size, alignment);
     if (!block) {
@@ -24,7 +23,7 @@ void* PAL_CALL allocateFunction(
     return block;
 }
 
-void PAL_CALL freeFunction(void* userData, void* ptr)
+static void PAL_CALL freeFunction(void* userData, void* ptr)
 {
     palFree(nullptr, ptr);
 
@@ -32,7 +31,7 @@ void PAL_CALL freeFunction(void* userData, void* ptr)
     context->deallocations++;
 }
 
-bool defaultAllocator(void)
+static bool defaultAllocator(void)
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     uint64_t* ptr2 = palAllocate(nullptr, sizeof(uint64_t), 8);
@@ -51,7 +50,7 @@ bool defaultAllocator(void)
     return true;
 }
 
-bool nullFree(void)
+static bool nullFree(void)
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     if (!ptr1) {
@@ -66,11 +65,9 @@ bool nullFree(void)
     return true;
 }
 
-bool customAllocator(void)
+static bool customAllocator(void)
 {
     AllocatorContext context = {0};
-    context.allocations = 0;
-    context.deallocations = 0;
 
     PalAllocator allocator = {0};
     allocator.allocate = allocateFunction;
@@ -91,6 +88,11 @@ bool customAllocator(void)
     palFree(&allocator, ptr1);
     palFree(&allocator, ptr2);
 
+    if (context.allocations != 2 || context.deallocations != 2) {
+        palLog(nullptr, "Custom allocator counts do not match");
+        return false;
+    }
+
     return true;
 }
 
@@ -98,18 +100,15 @@ int main(void)
 {
     palLog(nullptr, "Running allocator test...");
 
-    bool ret = defaultAllocator();
-    if (!ret) {
+    if (!defaultAllocator()) {
         return -1;
     }
 
-    ret = nullFree();
-    if (!ret) {
+    if (!nullFree()) {
         return -1;
     }
 
-    ret = customAllocator();
-    if (!ret) {
+    if (!customAllocator()) {
         return -1;
     }
 

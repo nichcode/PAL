@@ -1,4 +1,3 @@
-
 /**
  * @file log.h
  * 
@@ -55,7 +54,7 @@ typedef void(PAL_CALL* PalLogCallback)(
     const char* msg);
 
 /**
- * @brief Maximum size of the log messagge buffer in bytes including 
+ * @brief Maximum size of the log message buffer in bytes including 
  * the NULL terminator.
  * @ingroup pal_core
  */

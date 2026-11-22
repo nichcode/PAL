@@ -1,4 +1,3 @@
-
 #include "pal2/core/time.h"
 #include "pal2/core/log.h"
 
@@ -18,16 +17,25 @@ int main(void)
 {
     palLog(nullptr, "Running time test...");
 
-    Timer timer;
+    Timer timer = {0};
     timer.frequency = palGetPerformanceFrequency();
+    if (timer.frequency == 0) {
+        palLog(nullptr, "Performance frequency is 0");
+        return -1;
+    }
+
     timer.startTime = palGetPerformanceCounter();
 
     double lastTime = getTime(&timer);
     double totalTime = 0.0;
     int32_t frameCount = 0;
 
-    while (totalTime < 5.0) {
+    while (totalTime < 0.05) {
         double now = getTime(&timer);
+        if (now < lastTime) {
+            palLog(nullptr, "Performance counter moved backwards");
+            return -1;
+        }
         totalTime = now - lastTime;
         frameCount++;
     }

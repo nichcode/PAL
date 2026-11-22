@@ -29,7 +29,7 @@
 
 static pthread_once_t s_TLSCreation = PTHREAD_ONCE_INIT;
 static pthread_key_t s_TLSID;
-static bool s_TLSCreated = false;
+static PalBool s_TLSCreated = PAL_FALSE;
 
 static void destroyTLSData(void* data)
 {
@@ -42,7 +42,7 @@ static void destroyTLSData(void* data)
 static void createTLSID(void)
 {
     if (pthread_key_create(&s_TLSID, destroyTLSData) == 0) {
-        s_TLSCreated = true;
+        s_TLSCreated = PAL_TRUE;
     }
 }
 

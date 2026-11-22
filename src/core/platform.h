@@ -27,7 +27,6 @@
 #include "pal2/core/result.h"
 #include "pal2/core/library.h"
 #include "pal2/core/log.h"
-#include <stdbool.h>
 
 /**
  * Platform contract for the core module.
@@ -57,7 +56,7 @@
 typedef struct LogTLSData
 {
     char tmp[PAL_LOG_MSG_SIZE];
-    bool isLogging;
+    PalBool isLogging;
 } LogTLSData;
 
 /**
