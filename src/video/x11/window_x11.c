@@ -267,7 +267,7 @@ PalResult x11CreateWindow(
 
     // check and set transparency
     if (info->style & PAL_WINDOW_STYLE_TRANSPARENT) {
-        if (!(g_X11.features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW)) {
+        if (!(g_X11Driver.features & PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW)) {
             return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }
         // we dont need to set any flag
@@ -358,7 +358,7 @@ PalResult x11CreateWindow(
 
     // borderless
     if (info->style & PAL_WINDOW_STYLE_BORDERLESS) {
-        if (!(g_X11.features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW)) {
+        if (!(g_X11Driver.features & PAL_VIDEO_FEATURE_BORDERLESS_WINDOW)) {
             g_X11.destroyWindow(g_X11.display, _window);
             return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }
@@ -376,7 +376,7 @@ PalResult x11CreateWindow(
 
     // tool window
     if (info->style & PAL_WINDOW_STYLE_TOOL) {
-        if (!(g_X11.features & PAL_VIDEO_FEATURE_TOOL_WINDOW)) {
+        if (!(g_X11Driver.features & PAL_VIDEO_FEATURE_TOOL_WINDOW)) {
             g_X11.destroyWindow(g_X11.display, _window);
             return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }
@@ -438,7 +438,7 @@ PalResult x11CreateWindow(
 
     // maximize
     if (info->state == PAL_WINDOW_STATE_MAXIMIZED) {
-        if (!(g_X11.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
+        if (!(g_X11Driver.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
             g_X11.destroyWindow(g_X11.display, _window);
             return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }
@@ -468,7 +468,7 @@ PalResult x11CreateWindow(
 
     // minimize
     if (info->state == PAL_WINDOW_STATE_MINIMIZED) {
-        if (!(g_X11.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
+        if (!(g_X11Driver.features & PAL_VIDEO_FEATURE_WINDOW_SET_STATE)) {
             g_X11.destroyWindow(g_X11.display, _window);
             return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
         }

@@ -49,7 +49,7 @@ PalResult wlAttachWindow(void*, PalWindow**);
 PalResult wlDetachWindow(PalWindow*, void**);
 void wlGetWindowStyle(PalWindow*, PalWindowStyle*);
 void wlGetWindowMonitor(PalWindow*, PalMonitor**);
-void wlGetWindowTitle(PalWindow*, uint64_t, uint64_t*, char*);
+void wlGetWindowTitle(PalWindow*, size_t, size_t*, char*);
 void wlGetWindowPos(PalWindow*, int32_t*, int32_t*);
 void wlGetWindowSize(PalWindow*, uint32_t*, uint32_t*);
 void wlGetWindowState(PalWindow*, PalWindowState*);

@@ -386,8 +386,8 @@ void win32GetWindowMonitor(
 
 void win32GetWindowTitle(
     PalWindow* window, 
-    uint64_t bufferSize, 
-    uint64_t* size, 
+    size_t bufferSize, 
+    size_t* size, 
     char* buffer)
 {
     wchar_t tmp[WINDOW_NAME_SIZE];

@@ -45,7 +45,7 @@ X11 g_X11 = {0};
 X11Atoms g_X11Atoms = {0};
 X11Keyboard g_X11Keyboard = {0};
 X11Mouse g_X11Mouse = {0};
-static PalVideoDriver s_X11Driver = {0};
+PalVideoDriver g_X11Driver = {0};
 
 /* =========================================================================
  * Helper
@@ -478,7 +478,7 @@ static void checkFeatures(void)
     features |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
     features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
-    s_X11Driver.features = features;
+    g_X11Driver.features = features;
 }
 
 static void createScancodeTable(void)
@@ -782,8 +782,8 @@ void x11ShutdownVideo(void);
 
 PalVideoDriver* x11GetVideoDriver(void)
 {
-    if (s_X11Driver.features != 0) {
-        return &s_X11Driver;
+    if (g_X11Driver.features != 0) {
+        return &g_X11Driver;
     }
 
     if (!g_X11.libx11) {
@@ -804,8 +804,8 @@ PalVideoDriver* x11GetVideoDriver(void)
         }
     }
 
-    s_X11Driver.type = PAL_VIDEO_DRIVER_TYPE_X11;
-    return &s_X11Driver;
+    g_X11Driver.type = PAL_VIDEO_DRIVER_TYPE_X11;
+    return &g_X11Driver;
 }
 
 PalResult x11InitVideo(

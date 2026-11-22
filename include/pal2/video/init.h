@@ -183,7 +183,7 @@ PAL_API void PAL_CALL palEnumerateVideoDrivers(
  * @sa palEnumerateVideoDrivers
  * @sa palGetVideoDriver
  */
-PAL_API void PAL_CALL palSetVideoDriver(PalVideoDriver* driver);
+PAL_API void PAL_CALL palSetVideoDriver(const PalVideoDriver* driver);
 
 /**
  * @brief Gets the active video driver.

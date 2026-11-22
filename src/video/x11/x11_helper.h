@@ -598,6 +598,7 @@ typedef struct X11Mouse {
 } X11Mouse;
 
 extern X11 g_X11;
+extern PalVideoDriver g_X11Driver;
 extern X11Atoms g_X11Atoms;
 extern X11Keyboard g_X11Keyboard;
 extern X11Mouse g_X11Mouse;

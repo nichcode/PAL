@@ -403,8 +403,8 @@ void wlGetWindowMonitor(
 
 void wlGetWindowTitle(
     PalWindow* window, 
-    uint64_t bufferSize, 
-    uint64_t* size, 
+    size_t bufferSize, 
+    size_t* size, 
     char* buffer)
 {
     (void)window;
