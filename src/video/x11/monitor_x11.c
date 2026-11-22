@@ -100,7 +100,7 @@ static const XRRModeInfo* findModeById(
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static uint32_t calcRefreshRate(const XRRModeInfo* mode)

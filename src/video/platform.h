@@ -88,8 +88,8 @@ typedef struct Mouse {
     PalBool state[PAL_MOUSE_BUTTON_COUNT];
     int32_t dx;
     int32_t dy;
-    int32_t WheelX;
-    int32_t WheelY;
+    int32_t wheelX;
+    int32_t wheelY;
 } Mouse;
 
 
@@ -141,7 +141,11 @@ typedef PalResult (*SetMonitorOrientationFn)(
  * Window
  * ========================================================================= */
 
-/** This function has the same semantics and rules as palCreateWindow(). */
+/** This function has the same semantics and rules as palCreateWindow(). 
+ * 
+ * Additional rules:
+ * - `info->title` may be nullptr, a empty string must be used.
+*/
 typedef PalResult (*CreateWindowFn)(
     const PalWindowCreateInfo* info, 
     PalWindow** outWindow);

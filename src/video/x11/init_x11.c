@@ -1285,8 +1285,8 @@ void x11UpdateVideo(void)
                 }
 
                 if (scrollX || scrollY) {
-                    g_Mouse.WheelX = scrollX;
-                    g_Mouse.WheelY = scrollY;
+                    g_Mouse.wheelX = scrollX;
+                    g_Mouse.wheelY = scrollY;
 
 #if PAL_HAS_EVENT_MODULE
                     if (g_X11.eventDriver) {

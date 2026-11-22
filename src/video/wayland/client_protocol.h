@@ -42,7 +42,7 @@ static inline void* wlRegistryBind(
         name,
         interface->name,
         version,
-        NULL);
+        nullptr);
 
     return (void*)id;
 }
@@ -64,7 +64,7 @@ static inline struct wl_registry* wlDisplayGetRegistry(struct wl_display* wl_dis
         g_Wl.registryInterface,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_display),
         0,
-        NULL);
+        nullptr);
 
     return (struct wl_registry*)registry;
 }
@@ -86,7 +86,7 @@ static inline struct wl_surface* wlCompositorCreateSurface(struct wl_compositor*
         g_Wl.surfaceInterface,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_compositor),
         0,
-        NULL);
+        nullptr);
 
     return (struct wl_surface*)id;
 }
@@ -96,7 +96,7 @@ static inline void wlSurfaceCommit(struct wl_surface* wl_surface)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_COMMIT,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
         0);
 }
@@ -106,7 +106,7 @@ static inline void wlSurfaceDestroy(struct wl_surface* wl_surface)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_DESTROY,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
         WL_MARSHAL_FLAG_DESTROY);
 }
@@ -123,7 +123,7 @@ static inline struct wl_shm_pool* wlShmCreatePool(
         g_Wl.shmPoolInterface,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_shm),
         0,
-        NULL,
+        nullptr,
         fd,
         size);
 
@@ -135,7 +135,7 @@ static inline void wlShmPoolDestroy(struct wl_shm_pool* wl_shm_pool)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_shm_pool,
         WL_SHM_POOL_DESTROY,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
         WL_MARSHAL_FLAG_DESTROY);
 }
@@ -155,7 +155,7 @@ static inline struct wl_buffer* wlShmPoolCreateBuffer(
         g_Wl.bufferInterface,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_shm_pool),
         0,
-        NULL,
+        nullptr,
         offset,
         width,
         height,
@@ -170,7 +170,7 @@ static inline void wlBufferDestroy(struct wl_buffer* wl_buffer)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_buffer,
         WL_BUFFER_DESTROY,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_buffer),
         WL_MARSHAL_FLAG_DESTROY);
 }
@@ -184,7 +184,7 @@ static inline void wlSurfaceAttach(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_ATTACH,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
         0,
         buffer,
@@ -202,7 +202,7 @@ static inline void wlSurfaceDamageBuffer(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_DAMAGE_BUFFER,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
         0,
         x,
@@ -236,7 +236,7 @@ static inline struct wl_pointer* wlSeatGetPointer(struct wl_seat* wl_seat)
         g_Wl.pointerInterface,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_seat),
         0,
-        NULL);
+        nullptr);
 
     return (struct wl_pointer*)id;
 }
@@ -250,7 +250,7 @@ static inline struct wl_keyboard* wlSeatGetKeyboard(struct wl_seat* wl_seat)
         g_Wl.keyboardInterface,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_seat),
         0,
-        NULL);
+        nullptr);
 
     return (struct wl_keyboard*)id;
 }
@@ -273,7 +273,7 @@ static inline void wlPointerSetCursor(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_pointer,
         WL_POINTER_SET_CURSOR,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_pointer),
         0,
         serial,
@@ -299,7 +299,7 @@ static inline struct wl_region* wlCompositorCreateRegion(struct wl_compositor* w
         g_Wl.regionInterface,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_compositor),
         0,
-        NULL);
+        nullptr);
 
     return (struct wl_region*)id;
 }
@@ -314,7 +314,7 @@ static inline void wlRegionAdd(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_region,
         WL_REGION_ADD,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_region),
         0,
         x,
@@ -330,7 +330,7 @@ static inline void wlSurfaceSetOpaqueRegion(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_surface,
         WL_SURFACE_SET_OPAQUE_REGION,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_surface),
         0,
         region);
@@ -341,9 +341,20 @@ static inline void wlRegionDestroy(struct wl_region* wl_region)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)wl_region,
         WL_REGION_DESTROY,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)wl_region),
         WL_MARSHAL_FLAG_DESTROY);
+}
+
+static inline int wlBufferAddListener(
+    struct wl_buffer *wl_buffer, 
+    const struct wl_buffer_listener *listener, 
+    void *data)
+{
+	return g_Wl.proxyAddListener(
+        (struct wl_proxy *) wl_buffer,
+        (void (**)(void)) listener,
+        data);
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND

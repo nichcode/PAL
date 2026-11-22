@@ -76,7 +76,7 @@ void wlGetMonitorInfo(
     info->orientation = monitorData->orientation;
 
     info->primary = PAL_FALSE; // no way to query
-    strcpy(info->name, monitorData->name);
+    snprintf(info->name, PAL_MONITOR_NAME_SIZE, "%s", monitorData->name);
 }
 
 void wlEnumerateMonitorModes(

@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
 #include "pal2/video/window.h"
+#include "platform.h"
 
 PalResult PAL_CALL palCreateWindow(
     const PalWindowCreateInfo* info,
@@ -31,7 +31,7 @@ PalResult PAL_CALL palCreateWindow(
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    if (!info || !window) {
+    if (!info || !window || !info->title || !info->width || !info->height) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -88,6 +88,36 @@ void PAL_CALL palFlashWindow(
     ASSERT(info != nullptr, "info parameter is nullptr");
 
     g_VideoBackend->flashWindow(window, info);
+}
+
+PalResult PAL_CALL palAttachWindow(
+    void* windowHandle,
+    PalWindow** window)
+{
+    if (!g_VideoInitialized) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
+    if (!windowHandle || !window) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+
+    return g_VideoBackend->attachWindow(windowHandle, window);
+}
+
+PalResult PAL_CALL palDetachWindow(
+    PalWindow* window,
+    void** windowHandle)
+{
+    if (!g_VideoInitialized) {
+        return PAL_RESULT_CODE_INVALID_OPERATION;
+    }
+
+    if (!window) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
+    
+    return g_VideoBackend->detachWindow(window, windowHandle);
 }
 
 void PAL_CALL palGetWindowStyle(
@@ -228,6 +258,6 @@ void PAL_CALL palSetWindowSize(
 void PAL_CALL palSetFocusWindow(PalWindow* window)
 {
     ASSERT(window != nullptr, "window parameter is nullptr");
-    
+
     g_VideoBackend->setFocusWindow(window);
 }

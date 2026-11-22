@@ -257,7 +257,6 @@ typedef struct PalWindowCreateInfo {
  * @result-code @ref PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED
  *
  * @note On `Wayland`:
- * - Creating non-resizable windows is not supported. It will be ignored.
  * - Creating windows on a specific monitor is not supported.
  * - Creating hidden windows is not supported. It will be ignored.
  *

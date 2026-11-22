@@ -65,7 +65,7 @@ static inline void xdgWmBasePong(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_wm_base,
         3, // XDG_WM_BASE_PONG
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_wm_base),
         0,
         serial);
@@ -90,7 +90,7 @@ static inline struct xdg_surface* xdgWmBaseGetXdgSurface(
         &xdg_surface_interface,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_wm_base),
         0,
-        NULL,
+        nullptr,
         surface);
 
     return (struct xdg_surface*)id;
@@ -105,7 +105,7 @@ static inline struct xdg_toplevel* xdgSurfaceGetToplevel(struct xdg_surface* xdg
         &xdg_toplevel_interface,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
         0,
-        NULL);
+        nullptr);
 
     return (struct xdg_toplevel*)id;
 }
@@ -117,7 +117,7 @@ static inline void xdgSurfaceAckConfigure(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_surface,
         4, // XDG_SURFACE_ACK_CONFIGURE
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
         0,
         serial);
@@ -136,7 +136,7 @@ static inline void xdgSurfaceDestroy(struct xdg_surface* xdg_surface)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_surface,
         0, // XDG_SURFACE_DESTROY
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_surface),
         WL_MARSHAL_FLAG_DESTROY);
 }
@@ -146,7 +146,7 @@ static inline void xdgToplevelDestroy(struct xdg_toplevel* xdg_toplevel)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         0, // XDG_TOPLEVEL_DESTROY
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         WL_MARSHAL_FLAG_DESTROY);
 }
@@ -158,7 +158,7 @@ static inline void xdgToplevelSetTitle(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         2, // XDG_TOPLEVEL_SET_TITLE
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0,
         title);
@@ -169,7 +169,7 @@ static inline void xdgToplevelSetMaximized(struct xdg_toplevel* xdg_toplevel)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         9, // XDG_TOPLEVEL_SET_MAXIMIZED
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0);
 }
@@ -179,7 +179,7 @@ static inline void xdgToplevelSetMinimized(struct xdg_toplevel* xdg_toplevel)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         13, // XDG_TOPLEVEL_SET_MINIMIZED
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0);
 }
@@ -200,7 +200,7 @@ static inline void xdgToplevelSetMinSize(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         8, // XDG_TOPLEVEL_SET_MIN_SIZE
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0,
         width,
@@ -215,7 +215,7 @@ static inline void xdgToplevelSetMaxSize(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         7, // XDG_TOPLEVEL_SET_MAX_SIZE
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0,
         width,
@@ -229,7 +229,7 @@ static inline void xdgToplevelSetAppId(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         3, // XDG_TOPLEVEL_SET_APP_ID
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0,
         app_id);
@@ -240,7 +240,7 @@ static inline void xdgToplevelUnsetMaximized(struct xdg_toplevel* xdg_toplevel)
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)xdg_toplevel,
         10, // XDG_TOPLEVEL_UNSET_MAXIMIZED
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)xdg_toplevel),
         0);
 }

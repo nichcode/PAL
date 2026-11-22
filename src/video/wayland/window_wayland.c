@@ -70,10 +70,36 @@ static PalBool eglWlBackend(const int fbConfigIndex)
     return (config != nullptr) ? PAL_TRUE : PAL_FALSE;
 }
 
+PalBool wlResizeSurfaceBuffer(
+    WindowData* winData, 
+    uint32_t w, 
+    uint32_t h)
+{
+    if (winData->eglWindow) {
+        g_Wl.eglWindowResize(winData->eglWindow, (int)w, (int)h, 0, 0);
+        return PAL_TRUE;
+    }
+
+    struct wl_buffer* buffer = wlCreateShmBuffer((int)w, (int)h, nullptr, PAL_FALSE);
+    if (!buffer) {
+        return PAL_FALSE;
+    }
+
+    struct wl_surface* wlSurface = (struct wl_surface*)winData->window;
+    wlSurfaceAttach(wlSurface, buffer, 0, 0);
+    wlSurfaceDamageBuffer(wlSurface, 0, 0, (int)w, (int)h);
+    wlSurfaceCommit(wlSurface);
+
+    winData->buffer = buffer;
+    return PAL_TRUE;
+}
+
 
 /* =========================================================================
  * API
  * ========================================================================= */
+
+void wlDestroyWindow(PalWindow* window);
 
 PalResult wlCreateWindow(
     const PalWindowCreateInfo* info, 
@@ -114,9 +140,8 @@ PalResult wlCreateWindow(
     memset(data, 0, sizeof(WindowData));
     data->used = PAL_TRUE;
     data->focused = PAL_FALSE;
-    data->state = PAL_WINDOW_STATE_RESTORED;
+    data->state = PAL_WINDOW_STATE_NORMAL;
 
-    // create surface
     surface = wlCompositorCreateSurface(g_Wl.compositor);
     if (!surface) {
         goto cleanup;
@@ -133,7 +158,6 @@ PalResult wlCreateWindow(
         goto cleanup;
     }
 
-    // set APP id
     const char* appID = info->appName;
     if (!appID || strlen(appID) == 0) {
         appID = "PAL";
@@ -150,7 +174,6 @@ PalResult wlCreateWindow(
     xdgToplevelAddListener(xdgToplevel, &g_XdgToplevelListener, data);
     xdgSurfaceAddListener(xdgSurface, &g_XdgSurfaceListener, data);
 
-    // decorated window
     if (!(info->style & PAL_WINDOW_STYLE_BORDERLESS)) {
         decoration = zxdgGetToplevelDecoration(g_Wl.decorationManager, xdgToplevel);
         if (decoration) {
@@ -182,14 +205,12 @@ PalResult wlCreateWindow(
     data->buffer = nullptr;
     data->isAttached = PAL_FALSE;
 
-    // minimize
     if (info->state == PAL_WINDOW_STATE_MINIMIZED) {
         xdgToplevelSetMinimized(xdgToplevel);
         wlSurfaceCommit(surface);
         data->state = PAL_WINDOW_STATE_MINIMIZED;
     }
 
-    // user provided a config id
     if (info->fbConfigIndex) {
         PalFBConfigBackend backend = info->fbConfigBackend;
         if (backend == PAL_FBCONFIG_BACKEND_PAL_OPENGL) {
@@ -245,6 +266,15 @@ PalResult wlCreateWindow(
 
     g_Wl.displayRoundtrip(g_Wl.display);
 
+    data->resizable = PAL_TRUE;
+    if (!(info->style & PAL_WINDOW_STYLE_RESIZABLE)) {
+        data->resizable = PAL_FALSE;
+        int32_t w = (int32_t)data->w;
+        int32_t h = (int32_t)data->h;
+        xdgToplevelSetMinSize(data->xdgToplevel, w, h);
+        xdgToplevelSetMaxSize(data->xdgToplevel, w, h);
+    }
+
 #if PAL_HAS_EVENT_MODULE
     if (!g_Wl.decorationManager && g_Wl.eventDriver) {
         PalEventDriver* driver = g_Wl.eventDriver;
@@ -269,32 +299,7 @@ PalResult wlCreateWindow(
     return PAL_RESULT_SUCCESS;
 
 cleanup:
-    // TODO: call destroy window
-    if (decoration) {
-        zxdgToplevelDecorationV1Destroy(decoration);
-    }
-
-    if (eglWindow) {
-        g_Wl.eglWindowDestroy(eglWindow);
-    }
-
-    if (buffer) {
-        wlBufferDestroy(buffer);
-    }
-
-    if (xdgToplevel) {
-        xdgToplevelDestroy(xdgToplevel);
-    }
-
-    if (xdgSurface) {
-        xdgSurfaceDestroy(xdgSurface);
-    }
-
-    if (surface) {
-        wlSurfaceDestroy(surface);
-    }
-
-    data->used = PAL_FALSE;
+    wlDestroyWindow(data->window);
     return result;
 }
 
@@ -501,9 +506,37 @@ void wlSetWindowSize(
     uint32_t height)
 {
     WindowData* data = wlFindWindowData(window);
-    xdgToplevelSetMinSize(data->xdgToplevel, (int)width, (int)height);
-    xdgToplevelSetMaxSize(data->xdgToplevel, (int)width, (int)height);
-    wlSurfaceCommit((struct wl_surface*)window);
+
+    if (data->w == width && data->h == height) {
+        return;
+    }
+
+    data->w = width;
+    data->h = height;
+
+    if (!data->resizable) {
+        int32_t w = (int32_t)width;
+        int32_t h = (int32_t)height;
+        xdgToplevelSetMinSize(data->xdgToplevel, w, h);
+        xdgToplevelSetMaxSize(data->xdgToplevel, w, h);
+    }
+
+    wlResizeSurfaceBuffer(data, width, height);
+
+#if PAL_HAS_EVENT_MODULE
+    if (g_Wl.eventDriver) {
+        PalEventType type = PAL_EVENT_TYPE_WINDOW_SIZE;
+        PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
+        mode = palGetEventDispatchMode(g_Wl.eventDriver, type);
+        if (mode != PAL_DISPATCH_MODE_NONE) {
+            PalEvent event = {0};
+            event.type = type;
+            event.data = palPackUint32(data->w, data->h);
+            event.data2 = palPackPointer(data->window);
+            palPushEvent(g_Wl.eventDriver, &event);
+        }
+    }
+#endif // PAL_HAS_EVENT_MODULE
 }
 
 void wlSetFocusWindow(PalWindow* window)

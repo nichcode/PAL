@@ -34,7 +34,7 @@ typedef union EGLSymbol
     PalLibrarySymbol symbol;
 } EGLSymbol;
 
-PalLibrarySymbol loadEGLProc(const char* name)
+static PalLibrarySymbol loadEGLProc(const char* name)
 {
     if (s_Load) {
         EGLSymbol sym;

@@ -197,7 +197,7 @@ PalResult win32CreateWindow(
     if (info->show) {
         if (showFlag == SW_HIDE) {
             showFlag = SW_SHOW;
-            data->state = PAL_WINDOW_STATE_RESTORED;
+            data->state = PAL_WINDOW_STATE_NORMAL;
         }
     }
 

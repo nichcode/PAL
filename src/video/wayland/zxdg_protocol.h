@@ -45,7 +45,7 @@ zxdgDecorationManagerV1Destroy(struct zxdg_decoration_manager_v1* zxdg_decoratio
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_decoration_manager_v1,
         0, // ZXDG_DECORATION_MANAGER_V1_DESTROY
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
         WL_MARSHAL_FLAG_DESTROY);
 }
@@ -61,7 +61,7 @@ static inline struct zxdg_toplevel_decoration_v1* zxdgGetToplevelDecoration(
         &zxdg_toplevel_decoration_v1_interface,
         g_Wl.proxyGetVersion((struct wl_proxy*)zxdg_decoration_manager_v1),
         0,
-        NULL,
+        nullptr,
         toplevel);
 
     return (struct zxdg_toplevel_decoration_v1*)id;
@@ -84,7 +84,7 @@ zxdgToplevelDecorationV1Destroy(struct zxdg_toplevel_decoration_v1* zxdg_topleve
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_toplevel_decoration_v1,
         0, // ZXDG_TOPLEVEL_DECORATION_V1_DESTROY
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
         WL_MARSHAL_FLAG_DESTROY);
 }
@@ -96,7 +96,7 @@ static inline void zxdgToplevelDecorationV1SetMode(
     g_Wl.proxyMarshalFlags(
         (struct wl_proxy*)zxdg_toplevel_decoration_v1,
         1, // ZXDG_TOPLEVEL_DECORATION_V1_SET_MODE,
-        NULL,
+        nullptr,
         g_Wl.proxyGetVersion((struct wl_proxy*)zxdg_toplevel_decoration_v1),
         0,
         mode);

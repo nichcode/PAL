@@ -36,7 +36,6 @@
 #include "video/video_egl.h"
 #include "wayland_helper.h"
 
-#include <dlfcn.h>
 #include <errno.h>
 #include <poll.h>
 #include <string.h>
@@ -225,6 +224,10 @@ static void loadProcs(PalBool loadAll)
     g_Wl.cursorThemeLoad = (wlCursorThemeLoadFn)palGetSymbol(
         g_Wl.libcursor, 
         "wl_cursor_theme_load");
+
+    g_Wl.cursorThemeDestroy = (wlCursorThemeDestroyFn)palGetSymbol(
+        g_Wl.libcursor, 
+        "wl_cursor_theme_destroy");
 
     g_Wl.cursorThemeGetCursor = (wlCursorThemeGetCursorFn)palGetSymbol(
         g_Wl.libcursor, 
@@ -441,7 +444,7 @@ static void getDriverFeatures(const char* interface)
         features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
     }
 
-    s_WaylandDriver.features = features;
+    s_WaylandDriver.features |= features;
 }
 
 static void getCursorTheme(void)
@@ -550,10 +553,10 @@ static void globalRemove(
 
     for (uint32_t i = 0; i < g_Wl.maxMonitorData; ++i) {
         if (g_Wl.monitorData[i].used && g_Wl.monitorData[i].wlName == name) {
-            MonitorData* data = &g_Wl.monitorData[i];
-            data->used = PAL_FALSE;
+            MonitorData* monitorData = &g_Wl.monitorData[i];
+            monitorData->used = PAL_FALSE;
 
-            g_Wl.proxyDestroy((struct wl_proxy*)data->monitor);
+            g_Wl.proxyDestroy((struct wl_proxy*)monitorData->monitor);
             g_Wl.monitorCount--;
         }
     }
@@ -600,6 +603,7 @@ PalVideoDriver* wlGetVideoDriver(void)
                 wlRegistryAddListener(g_Wl.registry, &s_DriverRegistryListener, nullptr);
 
                 g_Wl.displayRoundtrip(g_Wl.display);
+                g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.registry);
                 g_Wl.displayDisconnect(g_Wl.display);
             }
 
@@ -751,6 +755,10 @@ void wlShutdownVideo(void)
         g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.decorationManager);
     }
 
+    if (g_Wl.cursorTheme) {
+        g_Wl.cursorThemeDestroy(g_Wl.cursorTheme);
+    }
+
     if (g_Wl.shm) {
         g_Wl.proxyDestroy((struct wl_proxy*)g_Wl.shm);
     }
@@ -798,6 +806,8 @@ void wlUpdateVideo(void)
     // flush pending requests
     g_WlMouse.tmpScrollX = 0;
     g_WlMouse.tmpScrollY = 0;
+    g_Mouse.wheelX = 0; 
+    g_Mouse.wheelY = 0;
 
 #if PAL_HAS_EVENT_MODULE
     // key repeats. we only do this if the user wants key repeat events

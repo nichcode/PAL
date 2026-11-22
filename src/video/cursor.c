@@ -31,7 +31,7 @@ PalResult PAL_CALL palCreateCursor(
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    if (!info || !cursor) {
+    if (!info || !cursor || !info->pixels || info->width == 0 || info->height == 0) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 

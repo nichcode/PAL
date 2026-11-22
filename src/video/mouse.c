@@ -41,11 +41,12 @@ const PalBool* PAL_CALL palGetMouseState(void)
 
 const char* PAL_CALL palGetMouseButtonName(PalMouseButton button)
 {
-    if (button >= PAL_MOUSE_BUTTON_COUNT || !s_MouseButtonNames[button]) {
+    uint32_t index = (uint32_t)button;
+    if (index >= PAL_MOUSE_BUTTON_COUNT || !s_MouseButtonNames[index]) {
         return s_MouseButtonNames[PAL_MOUSE_BUTTON_UNKNOWN];
     }
 
-    return s_MouseButtonNames[button];
+    return s_MouseButtonNames[index];
 }
 
 void PAL_CALL palGetMouseDelta(
@@ -66,10 +67,10 @@ void PAL_CALL palGetMouseWheelDelta(
     float* dy)
 {
     if (dx) {
-        *dx = (float)g_Mouse.WheelX;
+        *dx = (float)g_Mouse.wheelX;
     }
 
     if (dy) {
-        *dy = (float)g_Mouse.WheelY;
+        *dy = (float)g_Mouse.wheelY;
     }
 }

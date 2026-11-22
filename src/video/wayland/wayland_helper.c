@@ -49,6 +49,18 @@ static int createShmFile(uint64_t size)
     return fd;
 }
 
+static void bufferHandleRelease(
+    void* data, 
+    struct wl_buffer* buffer)
+{
+    (void)data;
+    wlBufferDestroy(buffer);
+}
+
+static const struct wl_buffer_listener s_BufferListener = {
+    .release = bufferHandleRelease,
+};
+
 struct wl_buffer* wlCreateShmBuffer(
     int width,
     int height,
@@ -84,6 +96,15 @@ struct wl_buffer* wlCreateShmBuffer(
             uint8_t b = pixels[i * 4 + 2];
             uint8_t a = pixels[i * 4 + 3];
 
+            // premultiply only if alpha is not 0
+            if (a == 0) {
+                r = g = b = 0;
+            } else {
+                r = (uint8_t)((r * a) / 255);
+                g = (uint8_t)((g * a) / 255);
+                b = (uint8_t)((b * a) / 255);
+            }
+
             // clang-format off
             dataPixels[i] = ((uint32_t)a << 24) |
                             ((uint32_t)r << 16) |
@@ -103,6 +124,8 @@ struct wl_buffer* wlCreateShmBuffer(
     }
 
     buffer = wlShmPoolCreateBuffer(pool, 0, width, height, stride, format);
+    wlBufferAddListener(buffer, &s_BufferListener, nullptr);
+
     wlShmPoolDestroy(pool);
     munmap(data, size);
     close(fd);

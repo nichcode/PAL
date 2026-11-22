@@ -588,7 +588,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_MOUSEHWHEEL: {
             int32_t delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            g_Mouse.WheelX = delta / WHEEL_DELTA;
+            g_Mouse.wheelX = delta / WHEEL_DELTA;
 
 #if PAL_HAS_EVENT_MODULE
             if (g_Win32.eventDriver) {
@@ -597,7 +597,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
-                    event.data = palPackFloat((float)g_Mouse.WheelX, 0);
+                    event.data = palPackFloat((float)g_Mouse.wheelX, 0);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -609,7 +609,7 @@ LRESULT CALLBACK videoProc(
 
         case WM_MOUSEWHEEL: {
             int32_t delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            g_Mouse.WheelY = delta / WHEEL_DELTA;
+            g_Mouse.wheelY = delta / WHEEL_DELTA;
 
 #if PAL_HAS_EVENT_MODULE
             if (g_Win32.eventDriver) {
@@ -618,7 +618,7 @@ LRESULT CALLBACK videoProc(
                 if (mode != PAL_DISPATCH_MODE_NONE) {
                     PalEvent event = {0};
                     event.type = PAL_EVENT_TYPE_MOUSE_WHEEL;
-                    event.data = palPackFloat(0, (float)g_Mouse.WheelY);
+                    event.data = palPackFloat(0, (float)g_Mouse.wheelY);
                     event.data2 = palPackPointer((PalWindow*)hwnd);
                     palPushEvent(driver, &event);
                 }
@@ -979,13 +979,13 @@ PalResult win32InitVideo(
         *selectedInstance = (void*)g_Win32.instance;
     }
 
-    g_Win32.defaultCursor = LoadCursorW(NULL, IDC_ARROW);
+    g_Win32.defaultCursor = LoadCursorW(nullptr, IDC_ARROW);
 
     WNDCLASSEXW wc = {0};
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.hCursor = g_Win32.defaultCursor;
-    wc.hIcon = LoadIconW(NULL, IDI_APPLICATION);
-    wc.hIconSm = LoadIconW(NULL, IDI_APPLICATION);
+    wc.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+    wc.hIconSm = LoadIconW(nullptr, IDI_APPLICATION);
     wc.hInstance = g_Win32.instance;
     wc.lpfnWndProc = videoProc;
     wc.lpszClassName = VIDEO_CLASS;
@@ -1067,7 +1067,7 @@ void win32UpdateVideo(void)
     g_Mouse.dy = 0;
 
     MSG msg;
-    while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+    while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
     }

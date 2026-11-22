@@ -127,7 +127,7 @@ static PalResult setMonitorMode(
         settingsFlag = CDS_TEST;
     }
 
-    ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, NULL, settingsFlag, NULL);
+    ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, nullptr, settingsFlag, nullptr);
     if (result != DISP_CHANGE_SUCCESSFUL) {
         return palMakeResult(PAL_RESULT_CODE_INVALID_HANDLE, PAL_RESULT_SOURCE_WIN32, GetLastError());
     }
@@ -205,7 +205,7 @@ void win32GetMonitorInfo(
     info->width = mi.rcMonitor.right - mi.rcMonitor.left;
     info->height = mi.rcMonitor.bottom - mi.rcWork.top;
 
-    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, 0, mi.szDevice, -1, info->name, 32, nullptr, nullptr);
 
     DEVMODE devMode = {0};
     devMode.dmSize = sizeof(DEVMODE);
@@ -344,7 +344,7 @@ PalResult win32SetMonitorOrientation(
     devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYORIENTATION;
     devMode.dmDisplayOrientation = _orientation;
 
-    ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, NULL, CDS_RESET, NULL);
+    ULONG result = ChangeDisplaySettingsExW(mi.szDevice, &devMode, nullptr, CDS_RESET, nullptr);
     if (result != DISP_CHANGE_SUCCESSFUL) {
         return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
     }

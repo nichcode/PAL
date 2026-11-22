@@ -92,7 +92,7 @@ static void outputGeometry(
     }
     }
 
-    snprintf(monitorData->name, 32, "%s %s", make, model);
+    snprintf(monitorData->name, PAL_MONITOR_NAME_SIZE, "%s %s", make, model);
 }
 
 static void outputMode(
@@ -397,33 +397,35 @@ static void pointerHandleButton(
     }
 
     PalBool pressed = state == WL_POINTER_BUTTON_STATE_PRESSED;
-    PalMouseButton _button = 0;
+    PalMouseButton palButton = PAL_MOUSE_BUTTON_UNKNOWN;
     PalEventType type = PAL_EVENT_TYPE_MOUSE_BUTTONUP;
 
     if (button == BTN_LEFT) {
-        _button = PAL_MOUSE_BUTTON_LEFT;
+        palButton = PAL_MOUSE_BUTTON_LEFT;
 
     } else if (button == BTN_RIGHT) {
-        _button = PAL_MOUSE_BUTTON_RIGHT;
+        palButton = PAL_MOUSE_BUTTON_RIGHT;
 
     } else if (button == BTN_MIDDLE) {
-        _button = PAL_MOUSE_BUTTON_MIDDLE;
+        palButton = PAL_MOUSE_BUTTON_MIDDLE;
 
     } else if (button == BTN_SIDE) {
-        _button = PAL_MOUSE_BUTTON_X1;
+        palButton = PAL_MOUSE_BUTTON_X1;
 
     } else if (button == BTN_EXTRA) {
-        _button = PAL_MOUSE_BUTTON_X2;
+        palButton = PAL_MOUSE_BUTTON_X2;
     }
 
     if (pressed) {
         type = PAL_EVENT_TYPE_MOUSE_BUTTONDOWN;
     }
 
-    g_Mouse.state[_button] = pressed;
+    if (palButton != PAL_MOUSE_BUTTON_UNKNOWN) {
+        g_Mouse.state[palButton] = pressed;
+    }
 
 #if PAL_HAS_EVENT_MODULE
-    if (g_Wl.eventDriver) {
+    if (g_Wl.eventDriver && palButton != PAL_MOUSE_BUTTON_UNKNOWN) {
         PalEventDriver* driver = g_Wl.eventDriver;
         PalDispatchMode mode = PAL_DISPATCH_MODE_NONE;
         mode = palGetEventDispatchMode(driver, type);
@@ -434,7 +436,7 @@ static void pointerHandleButton(
             // since we are not drawing decorations for users they need the serial
             // in order to draw their decorations we put the serial at the upper 32 so
             // ABI is preserved
-            event.data = palPackUint32(_button, serial);
+            event.data = palPackUint32(palButton, serial);
             event.data2 = palPackPointer(window);
             palPushEvent(driver, &event);
         }
@@ -512,8 +514,8 @@ static void pointerHandleFrame(
     const int dx = (int)g_WlMouse.accumScrollX;
     const int dy = (int)g_WlMouse.accumScrollY;
 
-    g_Mouse.WheelX = dx;
-    g_Mouse.WheelY = dy;
+    g_Mouse.wheelX = dx;
+    g_Mouse.wheelY = dy;
     g_WlMouse.accumScrollX -= dx;
     g_WlMouse.accumScrollY -= dy;
     g_WlMouse.pendingScroll = PAL_FALSE;
@@ -761,11 +763,11 @@ static void keyboardHandleKey(
             return;
         }
 
-        PalEvent event = {0};
-        event.type = type;
-        event.data = codepoint;
-        event.data2 = palPackPointer(window);
-        palPushEvent(driver, &event);
+        PalEvent charEvent = {0};
+        charEvent.type = type;
+        charEvent.data = codepoint;
+        charEvent.data2 = palPackPointer(window);
+        palPushEvent(driver, &charEvent);
     }
 #endif // PAL_HAS_EVENT_MODULE
 }
@@ -880,14 +882,12 @@ static void xdgSurfaceHandleConfigure(
                     return;
                 }
 
-                struct wl_surface* _surface = nullptr;
-                _surface = (struct wl_surface*)winData->window;
-                wlSurfaceAttach(_surface, buffer, 0, 0);
-                wlSurfaceDamageBuffer(_surface, 0, 0, (int)winData->w, (int)winData->h);
-                wlSurfaceCommit(_surface);
+                struct wl_surface* wlSurface = nullptr;
+                wlSurface = (struct wl_surface*)winData->window;
+                wlSurfaceAttach(wlSurface, buffer, 0, 0);
+                wlSurfaceDamageBuffer(wlSurface, 0, 0, (int)winData->w, (int)winData->h);
+                wlSurfaceCommit(wlSurface);
 
-                // destroy old buffer
-                wlBufferDestroy(winData->buffer);
                 winData->buffer = buffer;
             }
 
@@ -970,9 +970,8 @@ static void xdgToplevelHandleConfigure(
         winData->pushStateEvent = PAL_TRUE;
     }
 
-    if (width > 0 && height > 0) {
+    if (winData->resizable && width > 0 && height > 0) {
         if ((uint32_t)width != winData->w || (uint32_t)height != winData->h) {
-            // size change
             winData->pushConfigureEvent = PAL_TRUE;
         }
 

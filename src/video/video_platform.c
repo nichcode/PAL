@@ -22,15 +22,13 @@
 
 #include "platform.h"
 
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-
 #if defined(_WIN32)
 extern const VideoBackend g_Win32Backend;
 #endif // _WIN32
-#if defined(PAL_HAS_WAYLAND_BACKEND)
+#if PAL_HAS_WAYLAND_BACKEND
 extern const VideoBackend g_WaylandBackend;
 #endif // PAL_HAS_WAYLAND_BACKEND
-#if defined(PAL_HAS_X11_BACKEND)
+#if PAL_HAS_X11_BACKEND
 extern const VideoBackend g_X11Backend;
 #endif // PAL_HAS_X11_BACKEND
 
@@ -38,16 +36,17 @@ static const VideoBackend* backends[] = {
 #if defined(_WIN32)
     &g_Win32Backend,
 #endif // _WIN32
-#if defined(PAL_HAS_WAYLAND_BACKEND)
+#if PAL_HAS_WAYLAND_BACKEND
     &g_WaylandBackend,
 #endif // PAL_HAS_WAYLAND_BACKEND
-#if defined(PAL_HAS_X11_BACKEND)
+#if PAL_HAS_X11_BACKEND
     &g_X11Backend,
 #endif // PAL_HAS_X11_BACKEND
+    nullptr
 };
 
 const VideoBackend* const* platformGetVideoBackends(uint32_t* count)
 {
-    *count = ARRAY_SIZE(backends);
+    *count = (uint32_t)(ARRAY_SIZE(backends) - 1);
     return backends;
 }

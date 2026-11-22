@@ -118,7 +118,7 @@ void PAL_CALL palEnumerateMonitorModes(
 
     g_VideoBackend->enumerateMonitorModes(monitor, count, modes);
     if (modes) {
-        qsort(modes, *count, sizeof(PalMonitorMode), compareModes);
+        qsort(modes, (size_t)*count, sizeof(PalMonitorMode), compareModes);
     }
 }
 

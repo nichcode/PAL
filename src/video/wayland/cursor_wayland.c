@@ -62,34 +62,34 @@ PalResult wlCreateCursor(
     const PalCursorCreateInfo* info,
     PalCursor** cursor)
 {
-    WaylandCursor* _cursor = palAllocate(g_Wl.allocator, sizeof(WaylandCursor), 0);
-    if (!_cursor) {
+    WaylandCursor* cursorData = palAllocate(g_Wl.allocator, sizeof(WaylandCursor), 0);
+    if (!cursorData) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    _cursor->surface = wlCompositorCreateSurface(g_Wl.compositor);
-    if (!_cursor->surface) {
-        palFree(g_Wl.allocator, _cursor);
+    cursorData->surface = wlCompositorCreateSurface(g_Wl.compositor);
+    if (!cursorData->surface) {
+        palFree(g_Wl.allocator, cursorData);
         return PAL_RESULT_CODE_PLATFORM_FAILURE;
     }
 
-    _cursor->buffer = wlCreateShmBuffer((int)info->width, (int)info->height, info->pixels, PAL_TRUE);
-    if (!_cursor->buffer) {
-        wlSurfaceDestroy(_cursor->surface);
-        palFree(g_Wl.allocator, _cursor);
+    cursorData->buffer = wlCreateShmBuffer((int)info->width, (int)info->height, info->pixels, PAL_TRUE);
+    if (!cursorData->buffer) {
+        wlSurfaceDestroy(cursorData->surface);
+        palFree(g_Wl.allocator, cursorData);
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE,
             PAL_RESULT_SOURCE_POSIX,
             (uint32_t)errno);
     }
 
-    wlSurfaceAttach(_cursor->surface, _cursor->buffer, 0, 0);
-    wlSurfaceCommit(_cursor->surface);
-    _cursor->hotspotX = info->xHotspot;
-    _cursor->hotspotY = info->yHotspot;
-    _cursor->isCustom = PAL_TRUE;
+    wlSurfaceAttach(cursorData->surface, cursorData->buffer, 0, 0);
+    wlSurfaceCommit(cursorData->surface);
+    cursorData->hotspotX = info->xHotspot;
+    cursorData->hotspotY = info->yHotspot;
+    cursorData->isCustom = PAL_TRUE;
 
-    *cursor = (PalCursor*)_cursor;
+    *cursor = (PalCursor*)cursorData;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -136,28 +136,28 @@ PalResult wlCreateCursorFrom(
             (uint32_t)errno);
     }
 
-    WaylandCursor* _cursor = palAllocate(g_Wl.allocator, sizeof(WaylandCursor), 0);
-    if (!_cursor) {
+    WaylandCursor* cursorData = palAllocate(g_Wl.allocator, sizeof(WaylandCursor), 0);
+    if (!cursorData) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    _cursor->surface = wlCompositorCreateSurface(g_Wl.compositor);
-    if (!_cursor->surface) {
-        palFree(g_Wl.allocator, _cursor);
+    cursorData->surface = wlCompositorCreateSurface(g_Wl.compositor);
+    if (!cursorData->surface) {
+        palFree(g_Wl.allocator, cursorData);
         return palMakeResult(
             PAL_RESULT_CODE_PLATFORM_FAILURE,
             PAL_RESULT_SOURCE_POSIX,
             (uint32_t)errno);
     }
 
-    _cursor->buffer = g_Wl.cursorImageGetBuffer(wlCursor->images[0]);
-    wlSurfaceAttach(_cursor->surface, _cursor->buffer, 0, 0);
-    wlSurfaceCommit(_cursor->surface);
-    _cursor->hotspotX = (int)wlCursor->images[0]->hotspot_x;
-    _cursor->hotspotY = (int)wlCursor->images[0]->hotspot_y;
-    _cursor->isCustom = PAL_FALSE;
+    cursorData->buffer = g_Wl.cursorImageGetBuffer(wlCursor->images[0]);
+    wlSurfaceAttach(cursorData->surface, cursorData->buffer, 0, 0);
+    wlSurfaceCommit(cursorData->surface);
+    cursorData->hotspotX = (int)wlCursor->images[0]->hotspot_x;
+    cursorData->hotspotY = (int)wlCursor->images[0]->hotspot_y;
+    cursorData->isCustom = PAL_FALSE;
 
-    *cursor = (PalCursor*)_cursor;
+    *cursor = (PalCursor*)cursorData;
     return PAL_RESULT_SUCCESS;
 }
 

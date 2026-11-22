@@ -31,7 +31,7 @@ PalResult PAL_CALL palCreateIcon(
         return PAL_RESULT_CODE_INVALID_OPERATION;
     }
 
-    if (!info || !icon) {
+    if (!info || !icon || !info->pixels || info->width == 0 || info->height == 0) {
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
@@ -50,7 +50,6 @@ void PAL_CALL palSetWindowIcon(
     PalIcon* icon)
 {
     ASSERT(window != nullptr, "window parameter is nullptr");
-    ASSERT(icon != nullptr, "icon parameter is nullptr");
 
     g_VideoBackend->setWindowIcon(window, icon);
 }

@@ -71,7 +71,7 @@ const struct wl_interface xdg_positioner_interface = {
     10,
     xdg_positioner_requests,
     0,
-    NULL,
+    nullptr,
 };
 
 static const struct wl_message xdg_surface_requests[] = {
@@ -154,7 +154,7 @@ const struct wl_interface xdg_popup_interface = {
  * ========================================================================= */
 
 static const struct wl_interface* xdg_decoration_unstable_v1_types[] = {
-    NULL,
+    nullptr,
     &zxdg_toplevel_decoration_v1_interface,
     &xdg_toplevel_interface,
 };
@@ -170,7 +170,7 @@ const struct wl_interface zxdg_decoration_manager_v1_interface = {
     2,
     zxdg_decoration_manager_v1_requests,
     0,
-    NULL,
+    nullptr,
 };
 
 static const struct wl_message zxdg_toplevel_decoration_v1_requests[] = {
@@ -198,10 +198,10 @@ const struct wl_interface zxdg_toplevel_decoration_v1_interface = {
 
 void wlSetupProtocols(void)
 {
-    xdg_shell_types[0] = NULL;
-    xdg_shell_types[1] = NULL;
-    xdg_shell_types[2] = NULL;
-    xdg_shell_types[3] = NULL;
+    xdg_shell_types[0] = nullptr;
+    xdg_shell_types[1] = nullptr;
+    xdg_shell_types[2] = nullptr;
+    xdg_shell_types[3] = nullptr;
     xdg_shell_types[4] = &xdg_positioner_interface;
     xdg_shell_types[5] = &xdg_surface_interface;
     xdg_shell_types[6] = g_Wl.surfaceInterface;
@@ -211,19 +211,19 @@ void wlSetupProtocols(void)
     xdg_shell_types[10] = &xdg_positioner_interface;
     xdg_shell_types[11] = &xdg_toplevel_interface;
     xdg_shell_types[12] = g_Wl.seatInterface;
-    xdg_shell_types[13] = NULL;
-    xdg_shell_types[14] = NULL;
-    xdg_shell_types[15] = NULL;
+    xdg_shell_types[13] = nullptr;
+    xdg_shell_types[14] = nullptr;
+    xdg_shell_types[15] = nullptr;
     xdg_shell_types[16] = g_Wl.seatInterface;
-    xdg_shell_types[17] = NULL;
+    xdg_shell_types[17] = nullptr;
     xdg_shell_types[18] = g_Wl.seatInterface;
-    xdg_shell_types[19] = NULL;
-    xdg_shell_types[20] = NULL;
+    xdg_shell_types[19] = nullptr;
+    xdg_shell_types[20] = nullptr;
     xdg_shell_types[21] = g_Wl.outputInterface;
     xdg_shell_types[22] = g_Wl.seatInterface;
-    xdg_shell_types[23] = NULL;
+    xdg_shell_types[23] = nullptr;
     xdg_shell_types[24] = &xdg_positioner_interface;
-    xdg_shell_types[25] = NULL;
+    xdg_shell_types[25] = nullptr;
 }
 
 #endif // PAL_HAS_WAYLAND_BACKEND

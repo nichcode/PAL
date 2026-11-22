@@ -164,19 +164,20 @@ const char* PAL_CALL palGetScancodeName(PalScancode scancode)
 {
     // We keep one mapping and do a direct cast from a scancode to keycode.
     // This works because both share the same literal.
-    PalKeycode key = (PalKeycode)scancode;
+    uint32_t key = (uint32_t)scancode;
     if (key >= PAL_KEYCODE_COUNT || !s_KeyNames[key]) {
         return s_KeyNames[PAL_KEYCODE_UNKNOWN];
     }
-    
+
     return s_KeyNames[key];
 }
 
 const char* PAL_CALL palGetKeycodeName(PalKeycode keycode)
 {
-    if (keycode >= PAL_KEYCODE_COUNT || !s_KeyNames[keycode]) {
+    uint32_t key = (uint32_t)keycode;
+    if (key >= PAL_KEYCODE_COUNT || !s_KeyNames[key]) {
         return s_KeyNames[PAL_KEYCODE_UNKNOWN];
     }
 
-    return s_KeyNames[keycode];
+    return s_KeyNames[key];
 }

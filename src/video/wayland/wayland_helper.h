@@ -105,6 +105,7 @@ typedef int (*xkbKeymapKeyRepeatsFn)(struct xkb_keymap*, xkb_keycode_t);
  * ========================================================================= */
 
 typedef struct wl_cursor_theme* (*wlCursorThemeLoadFn)(const char*, int, struct wl_shm*);
+typedef void (*wlCursorThemeDestroyFn)(struct wl_cursor_theme*);
 typedef struct wl_cursor* (*wlCursorThemeGetCursorFn)(struct wl_cursor_theme*, const char*);
 typedef struct wl_buffer* (*wlCursorImageGetBufferFn)(struct wl_cursor_image*);
 
@@ -113,7 +114,6 @@ typedef struct wl_buffer* (*wlCursorImageGetBufferFn)(struct wl_cursor_image*);
  * ========================================================================= */
 
 struct wl_egl_window;
-struct wl_surface;
 typedef struct wl_egl_window* (*wlEglWindowCreateFn)(struct wl_surface*, int, int);
 typedef void (*wlEglWindowDestroyFn)(struct wl_egl_window*);
 typedef void (*wlEglWindowResizeFn)(struct wl_egl_window*, int, int, int, int);
@@ -155,6 +155,7 @@ typedef struct WindowData {
     PalBool focused;
     PalBool pushConfigureEvent;
     PalBool pushStateEvent;
+    PalBool resizable;
     int x;
     int y;
     uint32_t w;
@@ -243,6 +244,7 @@ typedef struct Wayland {
     wlEglWindowResizeFn eglWindowResize;
 
     wlCursorThemeLoadFn cursorThemeLoad;
+    wlCursorThemeDestroyFn cursorThemeDestroy;
     wlCursorThemeGetCursorFn cursorThemeGetCursor;
     wlCursorImageGetBufferFn cursorImageGetBuffer;
 
@@ -301,6 +303,12 @@ void wlSetupProtocols(void);
 
 /** Defined in cursor_wayland.c */
 void wlApplyWindowCursor(WindowData* data);
+
+/** Defined in window_wayland.c */
+PalBool wlResizeSurfaceBuffer(
+    WindowData* winData, 
+    uint32_t w, 
+    uint32_t h);
 
 #endif // PAL_HAS_WAYLAND_BACKEND
 #endif // WAYLAND_HELPER_H

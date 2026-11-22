@@ -101,6 +101,16 @@ PalResult PAL_CALL palInitVideo(
     }
 
     uint32_t selectedIndex = (s_Driver.id < backendCount) ? s_Driver.id : 0;
+    if (s_Driver.type != PAL_VIDEO_DRIVER_TYPE_UNKNOWN) {
+        for (uint32_t i = 0; i < backendCount; i++) {
+            PalVideoDriver* candidateDriver = backends[i]->getDriver();
+            if (candidateDriver && candidateDriver->type == s_Driver.type) {
+                selectedIndex = i;
+                break;
+            }
+        }
+    }
+
     void* selectedInstance = nullptr;
     const VideoBackend* selectedBackend = backends[selectedIndex];
 
