@@ -41,9 +41,8 @@ PalResult platformCreateCondVar(
 
     InitializeConditionVariable(&condVarImpl->handle);
     condVarImpl->allocator = allocator;
-    
-    *condVar = condVarImpl;
 
+    *condVar = condVarImpl;
     return PAL_RESULT_SUCCESS;
 }
 
@@ -57,25 +56,23 @@ PalResult platformWaitCondVar(
     PalMutex* mutex)
 {
     BOOL ret = SleepConditionVariableCS(
-        &condVar->handle, 
-        &mutex->handle, 
+        &condVar->handle,
+        &mutex->handle,
         INFINITE);
 
     if (!ret) {
         DWORD error = GetLastError();
-
         if (error == ERROR_TIMEOUT) {
             return palMakeResult(
-                PAL_RESULT_CODE_TIMEOUT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_TIMEOUT,
+                PAL_RESULT_SOURCE_WIN32,
                 error);
         }
+
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
+            error);
     }
 
     return PAL_RESULT_SUCCESS;
@@ -86,26 +83,26 @@ PalResult platformWaitCondVarTimeout(
     PalMutex* mutex,
     uint64_t milliseconds)
 {
+    DWORD timeout = (milliseconds >= INFINITE) ? (INFINITE - 1) : (DWORD)milliseconds;
+
     BOOL ret = SleepConditionVariableCS(
-        &condVar->handle, 
-        &mutex->handle, 
-        (DWORD)milliseconds);
+        &condVar->handle,
+        &mutex->handle,
+        timeout);
 
     if (!ret) {
         DWORD error = GetLastError();
-
         if (error == ERROR_TIMEOUT) {
             return palMakeResult(
-                PAL_RESULT_CODE_TIMEOUT, 
-                PAL_RESULT_SOURCE_WIN32, 
-                error);
-
-        } else {
-            return palMakeResult(
-                PAL_RESULT_CODE_PLATFORM_FAILURE, 
-                PAL_RESULT_SOURCE_WIN32, 
+                PAL_RESULT_CODE_TIMEOUT,
+                PAL_RESULT_SOURCE_WIN32,
                 error);
         }
+
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_WIN32,
+            error);
     }
 
     return PAL_RESULT_SUCCESS;

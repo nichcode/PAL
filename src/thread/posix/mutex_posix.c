@@ -35,9 +35,16 @@ PalResult platformCreateMutex(
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
-    pthread_mutex_init(&pmutex->handle, nullptr);
-    pmutex->allocator = allocator;
+    int ret = pthread_mutex_init(&pmutex->handle, nullptr);
+    if (ret != 0) {
+        palFree(allocator, pmutex);
+        return palMakeResult(
+            PAL_RESULT_CODE_PLATFORM_FAILURE,
+            PAL_RESULT_SOURCE_POSIX,
+            (uint32_t)ret);
+    }
 
+    pmutex->allocator = allocator;
     *mutex = pmutex;
 
     return PAL_RESULT_SUCCESS;

@@ -1,4 +1,3 @@
-
 #include "pal2/core/log.h"
 #include "pal2/thread/thread.h"
 
@@ -7,7 +6,6 @@
 typedef struct ThreadContext
 {
     PalBool finished;
-    PalThread* expectedHandle;
     PalThread* actualHandle;
 } ThreadContext;
 
@@ -22,19 +20,13 @@ static void* PAL_CALL worker(void* arg)
 
 static PalBool threadCreationAndJoin(void)
 {
-    PalThread* threads[THREAD_COUNT];
-    ThreadContext contexts[THREAD_COUNT];
+    PalThread* threads[THREAD_COUNT] = {0};
+    ThreadContext contexts[THREAD_COUNT] = {0};
 
     PalThreadCreateInfo createInfo = {0};
     createInfo.entry = worker;
-    createInfo.stackSize = 0;
-    createInfo.allocator = nullptr;
 
     for (uint32_t i = 0; i < THREAD_COUNT; i++) {
-        contexts[i].finished = PAL_FALSE;
-        contexts[i].expectedHandle = nullptr;
-        contexts[i].actualHandle = nullptr;
-
         createInfo.arg = &contexts[i];
 
         PalResult result = palCreateThread(&createInfo, &threads[i]);
@@ -64,19 +56,13 @@ static PalBool threadCreationAndJoin(void)
 
 static PalBool getCurrentThread(void)
 {
-    PalThread* threads[THREAD_COUNT];
-    ThreadContext contexts[THREAD_COUNT];
+    PalThread* threads[THREAD_COUNT] = {0};
+    ThreadContext contexts[THREAD_COUNT] = {0};
 
     PalThreadCreateInfo createInfo = {0};
     createInfo.entry = worker;
-    createInfo.stackSize = 0;
-    createInfo.allocator = nullptr;
 
     for (uint32_t i = 0; i < THREAD_COUNT; i++) {
-        contexts[i].finished = PAL_FALSE;
-        contexts[i].expectedHandle = nullptr;
-        contexts[i].actualHandle = nullptr;
-
         createInfo.arg = &contexts[i];
 
         PalResult result = palCreateThread(&createInfo, &threads[i]);
@@ -84,8 +70,6 @@ static PalBool getCurrentThread(void)
             palLog(nullptr, "Failed to create thread");
             return PAL_FALSE;
         }
-
-        contexts[i].expectedHandle = threads[i];
     }
 
     for (uint32_t i = 0; i < THREAD_COUNT; i++) {
@@ -103,7 +87,7 @@ static PalBool getCurrentThread(void)
         }
 
         if (contexts[i].actualHandle == nullptr ||
-            contexts[i].actualHandle != contexts[i].expectedHandle) {
+            contexts[i].actualHandle != threads[i]) {
             palLog(nullptr, "palGetCurrentThread() returned mismatched handle");
             return PAL_FALSE;
         }

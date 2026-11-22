@@ -38,7 +38,9 @@ PalResult PAL_CALL palJoinThread(
     PalThread* thread,
     void** retval)
 {
-    ASSERT(thread != nullptr, "The specified thread is null");
+    if (!thread) {
+        return PAL_RESULT_CODE_INVALID_HANDLE;
+    }
 
     return platformJoinThread(thread, retval);
 }
@@ -86,14 +88,13 @@ uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread)
 
 void PAL_CALL palGetThreadName(
     PalThread* thread,
-    uint64_t bufferSize,
-    uint64_t* size,
+    size_t bufferSize,
+    size_t* size,
     char* buffer)
 {
     ASSERT(thread != nullptr, "The specified thread is null");
-    ASSERT(
-        buffer != nullptr && bufferSize != 0, 
-        "The specified buffer is invalid");
+    ASSERT(size != nullptr || buffer != nullptr, "Both size and buffer cannot be null");
+    ASSERT(buffer == nullptr || bufferSize != 0, "The specified buffer size is zero");
 
     platformGetThreadName(thread, bufferSize, size, buffer);
 }
@@ -102,7 +103,13 @@ PalResult PAL_CALL palSetThreadPriority(
     PalThread* thread,
     PalThreadPriority priority)
 {
-    ASSERT(thread != nullptr, "The specified thread is null");
+    if (!thread) {
+        return PAL_RESULT_CODE_INVALID_HANDLE;
+    }
+
+    if (priority >= PAL_THREAD_PRIORITY_COUNT) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
 
     return platformSetThreadPriority(thread, priority);
 }
@@ -111,7 +118,13 @@ PalResult PAL_CALL palSetThreadAffinity(
     PalThread* thread,
     uint64_t mask)
 {
-    ASSERT(thread != nullptr, "The specified thread is null");
+    if (!thread) {
+        return PAL_RESULT_CODE_INVALID_HANDLE;
+    }
+
+    if (mask == 0) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
 
     return platformSetThreadAffinity(thread, mask);
 }
@@ -120,8 +133,13 @@ PalResult PAL_CALL palSetThreadName(
     PalThread* thread,
     const char* name)
 {
-    ASSERT(thread != nullptr, "The specified thread is null");
-    ASSERT(name != nullptr, "The specified name is null");
+    if (!thread) {
+        return PAL_RESULT_CODE_INVALID_HANDLE;
+    }
+
+    if (!name) {
+        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    }
 
     return platformSetThreadName(thread, name);
 }

@@ -129,7 +129,7 @@ typedef void* (PAL_CALL* PalThreadFn)(void* arg);
  * @ingroup pal_thread
  */
 typedef struct PalThreadCreateInfo {
-    uint64_t stackSize; /**< Thread stack size in bytes, or `0` for the platform default. */
+    size_t stackSize; /**< Thread stack size in bytes, or `0` for the platform default. */
     const PalAllocator* allocator; /**< Allocator to use, or `nullptr` for the default. */
     PalThreadFn entry; /**< Thread entry function. */
     void* arg; /**< User-defined data passed to `entry`, or `nullptr`. */
@@ -336,8 +336,8 @@ PAL_API uint64_t PAL_CALL palGetThreadAffinity(PalThread* thread);
  */
 PAL_API void PAL_CALL palGetThreadName(
     PalThread* thread,
-    uint64_t bufferSize,
-    uint64_t* size,
+    size_t bufferSize,
+    size_t* size,
     char* buffer);
 
 /**

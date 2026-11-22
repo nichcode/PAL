@@ -47,8 +47,23 @@ PalResult platformCreateThread(
         ret = pthread_create(&pthread, nullptr, info->entry, info->arg);
     } else {
         pthread_attr_t attr;
-        pthread_attr_init(&attr);
-        pthread_attr_setstacksize(&attr, info->stackSize);
+        ret = pthread_attr_init(&attr);
+        if (ret != 0) {
+            return palMakeResult(
+                PAL_RESULT_CODE_PLATFORM_FAILURE,
+                PAL_RESULT_SOURCE_POSIX,
+                (uint32_t)ret);
+        }
+
+        ret = pthread_attr_setstacksize(&attr, info->stackSize);
+        if (ret != 0) {
+            pthread_attr_destroy(&attr);
+            return palMakeResult(
+                PAL_RESULT_CODE_INVALID_ARGUMENT,
+                PAL_RESULT_SOURCE_POSIX,
+                (uint32_t)ret);
+        }
+
         ret = pthread_create(&pthread, &attr, info->entry, info->arg);
         pthread_attr_destroy(&attr);
     }
@@ -174,8 +189,8 @@ uint64_t platformGetThreadAffinity(PalThread* thread)
 
 void platformGetThreadName(
     PalThread* thread,
-    uint64_t bufferSize,
-    uint64_t* size,
+    size_t bufferSize,
+    size_t* size,
     char* buffer)
 {
 #ifdef __linux__
@@ -194,11 +209,11 @@ void platformGetThreadName(
 
     size_t len = strlen(tmp) + 1;
     if (size) {
-        *size = (uint64_t)len;
+        *size = len;
     }
 
     if (buffer && bufferSize > 0) {
-        size_t copyLen = (len < bufferSize) ? (len - 1) : (size_t)(bufferSize - 1);
+        size_t copyLen = (len < bufferSize) ? (len - 1) : (bufferSize - 1);
         memcpy(buffer, tmp, copyLen);
         buffer[copyLen] = '\0';
     }

@@ -108,8 +108,8 @@ uint64_t platformGetThreadAffinity(PalThread* thread);
 /** This function has the same semantics and rules as palGetThreadName(). */
 void platformGetThreadName(
     PalThread* thread,
-    uint64_t bufferSize,
-    uint64_t* size,
+    size_t bufferSize,
+    size_t* size,
     char* buffer);
 
 /** This function has the same semantics and rules as palSetThreadPriority(). */

@@ -1,4 +1,3 @@
-
 #include "pal2/thread/thread.h"
 #include "pal2/thread/tls.h"
 #include "pal2/core/log.h"
@@ -16,18 +15,18 @@ typedef struct TLSData
 
 static void PAL_CALL tlsDestructor(void* userData)
 {
-    TLSData* data = userData;
-    ThreadData* threadData = (ThreadData*)data->threadData;
-    threadData->tlsDestructorCalled = PAL_TRUE;
-
-    if (data) {
-        palFree(nullptr, data);
+    if (!userData) {
+        return;
     }
+
+    TLSData* data = userData;
+    data->threadData->tlsDestructorCalled = PAL_TRUE;
+    palFree(nullptr, data);
 }
 
 static void* PAL_CALL worker(void* arg)
 {
-    ThreadData* threadData = (ThreadData*)arg;
+    ThreadData* threadData = arg;
 
     TLSData* tlsData = palAllocate(nullptr, sizeof(TLSData), 0);
     if (!tlsData) {
@@ -35,9 +34,8 @@ static void* PAL_CALL worker(void* arg)
         return nullptr;
     }
 
-    palSetTLS(threadData->tlsId, tlsData);
-
     tlsData->threadData = threadData;
+    palSetTLS(threadData->tlsId, tlsData);
 
     return nullptr;
 }
@@ -56,6 +54,7 @@ int main(void)
 
     ThreadData* threadData = palAllocate(nullptr, sizeof(ThreadData), 0);
     if (!threadData) {
+        palDestroyTLS(tlsID);
         palLog(nullptr, "Failed to allocate memory");
         return -1;
     }
@@ -66,17 +65,19 @@ int main(void)
     PalThreadCreateInfo createInfo = {0};
     createInfo.arg = threadData;
     createInfo.entry = worker;
-    createInfo.stackSize = 0;
-    createInfo.allocator = nullptr;
 
     PalResult result = palCreateThread(&createInfo, &thread);
     if (result != PAL_RESULT_SUCCESS) {
+        palFree(nullptr, threadData);
+        palDestroyTLS(tlsID);
         palLog(nullptr, "Failed to create thread");
         return -1;
     }
 
     result = palJoinThread(thread, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
+        palFree(nullptr, threadData);
+        palDestroyTLS(tlsID);
         palLog(nullptr, "Failed to join thread");
         return -1;
     }
@@ -84,11 +85,11 @@ int main(void)
     palDestroyTLS(tlsID);
 
     if (!threadData->tlsDestructorCalled) {
+        palFree(nullptr, threadData);
         palLog(nullptr, "TLS destructor was not called");
         return -1;
     }
 
     palFree(nullptr, threadData);
-
     return 0;
 }
