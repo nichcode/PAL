@@ -27,14 +27,13 @@
 
 #include "pal2/core/library.h"
 
-#define EGL_CAST(type, value) ((type)(value))
 #define EGL_OPENGL_API 0x30A2
 #define EGL_OPENGL_BIT 0x0008
 #define EGL_OPENGL_ES_BIT 0x0001
 #define EGL_OPENGL_ES_API 0x30A0
-#define EGL_NO_CONTEXT EGL_CAST(EGLContext, 0)
-#define EGL_NO_DISPLAY EGL_CAST(EGLDisplay, 0)
-#define EGL_NO_SURFACE EGL_CAST(EGLSurface, 0)
+#define EGL_NO_CONTEXT ((EGLContext)nullptr)
+#define EGL_NO_DISPLAY ((EGLDisplay)nullptr)
+#define EGL_NO_SURFACE ((EGLSurface)nullptr)
 #define EGL_NATIVE_VISUAL_ID 0x302E
 
 typedef void* EGLConfig;

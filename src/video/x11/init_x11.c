@@ -661,8 +661,12 @@ static void resetMonitorData(void)
 static void cacheMonitors(void)
 {
     resetMonitorData();
+
     XRRScreenResources* resources = nullptr;
     resources = g_X11.getScreenResources(g_X11.display, g_X11.root);
+    if (!resources) {
+        return;
+    }
 
     for (int i = 0; i < resources->noutput; ++i) {
         RROutput output = resources->outputs[i];
@@ -672,6 +676,7 @@ static void cacheMonitors(void)
             MonitorData* data = nullptr;
             data = x11GetFreeMonitorData();
             if (!data) {
+                g_X11.freeOutputInfo(info);
                 return;
             }
 
@@ -1138,6 +1143,7 @@ void x11UpdateVideo(void)
                         }
 
 #if PAL_HAS_EVENT_MODULE
+                    if (g_X11.eventDriver) {
                         PalEventDriver* driver = g_X11.eventDriver;
                         PalEventType type = PAL_EVENT_TYPE_WINDOW_STATE;
                         mode = palGetEventDispatchMode(driver, type);
@@ -1149,6 +1155,7 @@ void x11UpdateVideo(void)
                             event.data2 = palPackPointer(window);
                             palPushEvent(driver, &event);
                         }
+                    }
 #endif // PAL_HAS_EVENT_MODULE
                     }
                 }

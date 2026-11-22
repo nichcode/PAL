@@ -28,11 +28,17 @@ PalResult PAL_CALL palCreateIcon(
     PalIcon** icon)
 {
     if (!g_VideoInitialized) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     if (!info || !icon || !info->pixels || info->width == 0 || info->height == 0) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->createIcon(info, icon);

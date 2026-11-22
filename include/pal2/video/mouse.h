@@ -1,4 +1,3 @@
-
 /**
  * @file mouse.h
  * 
@@ -79,6 +78,7 @@ PAL_API const PalBool* PAL_CALL palGetMouseState(void);
  * This function returns the name of a mouse button. The returned string must not be
  * modified or freed by the user. The memory is owned by PAL.
  * 
+ * @param [in] button The mouse button.
  * @return UTF-8 Mouse button name on success or "Unknown" on failure.
  *
  * @thread-safety Thread safe.

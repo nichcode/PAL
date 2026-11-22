@@ -28,11 +28,19 @@ PalResult PAL_CALL palCreateWindow(
     PalWindow** window)
 {
     if (!g_VideoInitialized) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
-    if (!info || !window || !info->title || !info->width || !info->height) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    if (!info || !window || !info->width || !info->height ||
+        info->fbConfigBackend >= PAL_FBCONFIG_BACKEND_COUNT ||
+        info->state >= PAL_WINDOW_STATE_COUNT) {
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->createWindow(info, window);
@@ -95,11 +103,17 @@ PalResult PAL_CALL palAttachWindow(
     PalWindow** window)
 {
     if (!g_VideoInitialized) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     if (!windowHandle || !window) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->attachWindow(windowHandle, window);
@@ -110,11 +124,17 @@ PalResult PAL_CALL palDetachWindow(
     void** windowHandle)
 {
     if (!g_VideoInitialized) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     if (!window) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
     
     return g_VideoBackend->detachWindow(window, windowHandle);
@@ -142,11 +162,12 @@ void PAL_CALL palGetWindowMonitor(
 
 void PAL_CALL palGetWindowTitle(
     PalWindow* window,
-    uint64_t bufferSize,
-    uint64_t* size,
+    size_t bufferSize,
+    size_t* size,
     char* buffer)
 {
     ASSERT(window != nullptr, "window parameter is nullptr");
+    ASSERT(buffer == nullptr || bufferSize > 0, "buffer is not nullptr but bufferSize is 0");
 
     g_VideoBackend->getWindowTitle(window, bufferSize, size, buffer);
 }

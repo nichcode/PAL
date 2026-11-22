@@ -1,4 +1,3 @@
-
 /**
  * @file window.h
  * 
@@ -529,8 +528,8 @@ PAL_API void PAL_CALL palGetWindowMonitor(
  */
 PAL_API void PAL_CALL palGetWindowTitle(
     PalWindow* window,
-    uint64_t bufferSize,
-    uint64_t* size,
+    size_t bufferSize,
+    size_t* size,
     char* buffer);
 
 /**

@@ -733,8 +733,8 @@ void x11GetWindowMonitor(
 
 void x11GetWindowTitle(
     PalWindow* window, 
-    uint64_t bufferSize, 
-    uint64_t* size, 
+    size_t bufferSize, 
+    size_t* size, 
     char* buffer)
 {
     Window xWin = FROM_PAL_HANDLE(Window, window);

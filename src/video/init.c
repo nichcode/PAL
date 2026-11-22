@@ -60,7 +60,7 @@ void PAL_CALL palEnumerateVideoDrivers(
     }
 }
 
-void PAL_CALL palSetVideoDriver(PalVideoDriver* driver)
+void PAL_CALL palSetVideoDriver(const PalVideoDriver* driver)
 {
     ASSERT(driver != nullptr, "driver parameter is null");
 

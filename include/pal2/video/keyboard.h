@@ -1,4 +1,3 @@
-
 /**
  * @file keyboard.h
  * 
@@ -324,6 +323,7 @@ PAL_API const PalBool* PAL_CALL palGetScancodeState(void);
  * This function returns the name of a scancode. The returned string must not be
  * modified or freed by the user. The memory is owned by PAL.
  * 
+ * @param [in] scancode The scancode.
  * @return UTF-8 Scancode name on success or "Unknown" on failure.
  *
  * @thread-safety Thread safe.
@@ -339,6 +339,7 @@ PAL_API const char* PAL_CALL palGetScancodeName(PalScancode scancode);
  * This function returns the name of a keycode. The returned string must not be
  * modified or freed by the user. The memory is owned by PAL.
  * 
+ * @param [in] keycode The keycode.
  * @return UTF-8 Keycode name on success or "Unknown" on failure.
  *
  * @thread-safety Thread safe.

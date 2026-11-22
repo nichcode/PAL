@@ -194,8 +194,8 @@ typedef void (*GetWindowMonitorFn)(
 /** This function has the same semantics and rules as palGetWindowTitle(). */
 typedef void (*GetWindowTitleFn)(
     PalWindow* window, 
-    uint64_t bufferSize, 
-    uint64_t* outSize, 
+    size_t bufferSize, 
+    size_t* outSize, 
     char* outBuffer);
 
 /** This function has the same semantics and rules as palGetWindowPos(). */

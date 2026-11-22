@@ -80,11 +80,17 @@ PalResult PAL_CALL palEnumerateMonitors(
     PalMonitor** monitors)
 {
     if (!g_VideoInitialized) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     if (!count || (!monitors && *count > 0)) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->enumerateMonitors(count, monitors);
@@ -137,7 +143,10 @@ PalResult PAL_CALL palSetMonitorMode(
     const PalMonitorMode* mode)
 {
     if (!monitor || !mode) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->setMonitorMode(monitor, mode);
@@ -148,7 +157,10 @@ PalResult PAL_CALL palValidateMonitorMode(
     const PalMonitorMode* mode)
 {
     if (!monitor || !mode) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->validateMonitorMode(monitor, mode);
@@ -158,8 +170,11 @@ PalResult PAL_CALL palSetMonitorOrientation(
     PalMonitor* monitor,
     PalOrientation orientation)
 {
-    if (!monitor) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    if (!monitor || orientation >= PAL_ORIENTATION_COUNT) {
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->setMonitorOrientation(monitor, orientation);

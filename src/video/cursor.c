@@ -28,11 +28,17 @@ PalResult PAL_CALL palCreateCursor(
     PalCursor** cursor)
 {
     if (!g_VideoInitialized) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     if (!info || !cursor || !info->pixels || info->width == 0 || info->height == 0) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->createCursor(info, cursor);
@@ -43,11 +49,17 @@ PalResult PAL_CALL palCreateCursorFrom(
     PalCursor** cursor)
 {
     if (!g_VideoInitialized) {
-        return PAL_RESULT_CODE_INVALID_OPERATION;
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_OPERATION,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
-    if (!cursor) {
-        return PAL_RESULT_CODE_INVALID_ARGUMENT;
+    if (!cursor || type >= PAL_CURSOR_TYPE_COUNT) {
+        return palMakeResult(
+            PAL_RESULT_CODE_INVALID_ARGUMENT,
+            PAL_RESULT_SOURCE_NONE,
+            0);
     }
 
     return g_VideoBackend->createCursorFrom(type, cursor);

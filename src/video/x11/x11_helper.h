@@ -498,7 +498,6 @@ typedef struct X11 {
 
     uint32_t maxWindowData;
     uint32_t maxMonitorData;
-    PalVideoFeatures features;
     const PalAllocator* allocator;
     struct PalEventDriver* eventDriver;
     WindowData* windowData;
