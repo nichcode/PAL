@@ -7,8 +7,8 @@ project "PAL2"
     else
         kind "SharedLib"
         defines {
-            "_PAL_EXPORT",
-            "_PAL_BUILD_DLL"
+            "PAL_EXPORT",
+            "PAL_BUILD_DLL"
         }
     end
 

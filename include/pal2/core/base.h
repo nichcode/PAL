@@ -64,41 +64,41 @@ typedef uint32_t PalBool;
  * @ingroup pal_core
  */
 #define PAL_CALL __stdcall
-#ifdef _PAL_EXPORT
+#ifdef PAL_EXPORT
 /**
  * @brief Exports symbols when building the PAL shared library.
  * @ingroup pal_core
  */
-#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllexport)
+#define PAL_DECLSPEC __declspec(dllexport)
 #else
 /**
  * @brief Imports symbols from the PAL shared library.
  * @ingroup pal_core
  */
-#define PAL_DECLSPEC PAL_EXTERN_C __declspec(dllimport)
-#endif // _PAL_EXPORT
+#define PAL_DECLSPEC __declspec(dllimport)
+#endif // PAL_EXPORT
 #else
 /**
  * @brief Calling convention of PAL functions and callbacks.
  * @ingroup pal_core
  */
 #define PAL_CALL
-#ifdef _PAL_EXPORT
+#ifdef PAL_EXPORT
 /**
  * @brief Exports symbols when building the PAL shared library.
  * @ingroup pal_core
  */
-#define PAL_DECLSPEC PAL_EXTERN_C __attribute__((visibility("default")))
+#define PAL_DECLSPEC __attribute__((visibility("default")))
 #else
 /**
  * @brief Imports symbols from the PAL shared library.
  * @ingroup pal_core
  */
-#define PAL_DECLSPEC PAL_EXTERN_C
-#endif // _PAL_EXPORT
+#define PAL_DECLSPEC
+#endif // PAL_EXPORT
 #endif // _WIN32
 
-#ifdef _PAL_BUILD_DLL
+#ifdef PAL_BUILD_DLL
 /**
  * @brief Marks a function as part of the PAL API
  * @ingroup pal_core
@@ -110,7 +110,7 @@ typedef uint32_t PalBool;
  * @ingroup pal_core
  */
 #define PAL_API PAL_EXTERN_C
-#endif // _PAL_BUILD_DLL
+#endif // PAL_BUILD_DLL
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 /**
