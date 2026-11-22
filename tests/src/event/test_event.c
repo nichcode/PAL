@@ -1,7 +1,5 @@
-
 #include "pal2/event/driver.h"
 #include "pal2/core/log.h"
-#include <stdbool.h>
 
 typedef struct EventContext
 {
@@ -18,7 +16,7 @@ static void PAL_CALL onEvent(
     context->counter++;
 }
 
-static bool createDefaultEventQueue(
+static PalBool createDefaultEventQueue(
     EventContext* context, 
     PalEventDriver** eventDriver)
 {
@@ -32,23 +30,28 @@ static bool createDefaultEventQueue(
     PalResult result = palCreateEventDriver(&createInfo, &driver);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to create event driver");
-        return false;
+        return PAL_FALSE;
     }
 
     *eventDriver = driver;
-
-    return true;
+    return PAL_TRUE;
 }
 
-bool pushCallback(void)
+PalBool pushCallback(void)
 {
     PalEventDriver* eventDriver = nullptr;
     EventContext context = {0};
-    context.counter = 0;
 
-    bool ret = createDefaultEventQueue(&context, &eventDriver);
-    if (!ret) {
-        return false;
+    if (!createDefaultEventQueue(&context, &eventDriver)) {
+        return PAL_FALSE;
+    }
+
+    PalEvent ignoredEvent = {0};
+    ignoredEvent.type = PAL_EVENT_TYPE_USER;
+    palPushEvent(eventDriver, &ignoredEvent);
+    if (context.counter != 0) {
+        palDestroyEventDriver(eventDriver);
+        return PAL_FALSE;
     }
 
     for (uint32_t i = 0; i < PAL_EVENT_TYPE_COUNT; i++) {
@@ -65,32 +68,27 @@ bool pushCallback(void)
         palPushEvent(eventDriver, &event);
     }
 
-    if (context.counter != PAL_DEFAULT_QUEUE_EVENT_COUNT) {
-        return false;
-    }
-
-    return true;
+    palDestroyEventDriver(eventDriver);
+    return context.counter == PAL_DEFAULT_QUEUE_EVENT_COUNT;
 }
 
-bool pushPoll(void)
+PalBool pushPoll(void)
 {
     PalEventDriver* eventDriver = nullptr;
     EventContext context = {0};
-    context.counter = 0;
 
-    bool ret = createDefaultEventQueue(&context, &eventDriver);
-    if (!ret) {
-        return false;
+    if (!createDefaultEventQueue(&context, &eventDriver)) {
+        return PAL_FALSE;
     }
 
     for (uint32_t i = 0; i < PAL_EVENT_TYPE_COUNT; i++) {
         palSetEventDispatchMode(eventDriver, i, PAL_DISPATCH_MODE_POLL);
     }
 
-    for (uint32_t i = 0; i < PAL_DEFAULT_QUEUE_EVENT_COUNT; i++) {
+    for (uint32_t i = 0; i < PAL_DEFAULT_QUEUE_EVENT_COUNT + 1; i++) {
         PalEvent event = {0};
         event.type = i % PAL_EVENT_TYPE_COUNT;
-        event.data = 1;
+        event.data = i;
         event.data2 = 2;
         event.userId = 0;
 
@@ -98,29 +96,29 @@ bool pushPoll(void)
     }
 
     PalEvent event = {0};
+    uint64_t expectedFirstData = 1;
     while (palPollEvent(eventDriver, &event)) {
+        if (event.data != expectedFirstData++) {
+            palDestroyEventDriver(eventDriver);
+            return PAL_FALSE;
+        }
         context.counter++;
     }
 
-    if (context.counter != PAL_DEFAULT_QUEUE_EVENT_COUNT) {
-        return false;
-    }
-
-    return true;
+    palDestroyEventDriver(eventDriver);
+    return context.counter == PAL_DEFAULT_QUEUE_EVENT_COUNT;
 }
 
 int main(void)
 {
     palLog(nullptr, "Running event test...");
 
-    bool ret = pushCallback();
-    if (!ret) {
-        return false;
+    if (!pushCallback()) {
+        return -1;
     }
 
-    ret = pushPoll();
-    if (!ret) {
-        return false;
+    if (!pushPoll()) {
+        return -1;
     }
 
     return 0;

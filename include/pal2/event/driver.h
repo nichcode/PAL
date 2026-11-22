@@ -1,4 +1,3 @@
-
 /**
  * @file driver.h
  * 
@@ -162,7 +161,7 @@ PAL_API void PAL_CALL palSetEventDispatchMode(
  *
  * @param[in] eventDriver Event driver.
  * @param[in] type Event type.
- * @return The dispatch mode on success or @ref PAL_DISPATCH_MODE_NONE on failure.
+ * @return The dispatch mode for the specified event type.
  *
  * @thread-safety Thread safe.
  *
@@ -204,7 +203,7 @@ PAL_API PalDispatchMode PAL_CALL palGetEventDispatchMode(
  */
 PAL_API void PAL_CALL palPushEvent(
     PalEventDriver* eventDriver,
-    PalEvent* event);
+    const PalEvent* event);
 
 /**
  * @brief Retrieves the next available event from the queue.

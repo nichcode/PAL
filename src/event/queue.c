@@ -31,12 +31,17 @@ typedef struct QueueData
     PalEvent data[PAL_DEFAULT_QUEUE_EVENT_COUNT];
 } QueueData;
 
-static void PAL_CALL eventPush(
-    void* queue,
-    PalEvent* event)
+typedef struct DefaultEventQueue
 {
-    PalEventQueue* eventQueue = queue;
-    QueueData* data = eventQueue->userData;
+    PalEventQueue interface;
+    QueueData data;
+} DefaultEventQueue;
+
+static void PAL_CALL eventPush(
+    void* userData,
+    const PalEvent* event)
+{
+    QueueData* data = userData;
 
     if ((data->tail - data->head) >= PAL_DEFAULT_QUEUE_EVENT_COUNT) {
         data->head++;
@@ -46,11 +51,10 @@ static void PAL_CALL eventPush(
 }
 
 static PalBool PAL_CALL eventPoll(
-    void* queue,
+    void* userData,
     PalEvent* outEvent)
 {
-    PalEventQueue* eventQueue = queue;
-    QueueData* data = eventQueue->userData;
+    QueueData* data = userData;
     if (data->head == data->tail) {
         return PAL_FALSE;
     }
@@ -61,31 +65,22 @@ static PalBool PAL_CALL eventPoll(
 
 PalEventQueue* createDefaultQueue(const PalAllocator* allocator)
 {
-    PalEventQueue* queue = nullptr;
-    queue = palAllocate(allocator, sizeof(PalEventQueue), 0);
+    DefaultEventQueue* queue = palAllocate(allocator, sizeof(DefaultEventQueue), 0);
     if (!queue) {
         return nullptr;
     }
 
-    QueueData* queueData = nullptr;
-    queueData = palAllocate(allocator, sizeof(QueueData), 0);
-    if (!queueData) {
-        palFree(allocator, queue);
-        return nullptr;
-    }
+    memset(queue, 0, sizeof(DefaultEventQueue));
+    queue->interface.userData = &queue->data;
+    queue->interface.poll = eventPoll;
+    queue->interface.push = eventPush;
 
-    memset(queueData, 0, sizeof(QueueData));
-    queue->userData = queueData;
-    queue->poll = eventPoll;
-    queue->push = eventPush;
-
-    return queue;
+    return &queue->interface;
 }
 
 void destroyDefaultQueue(
     const PalAllocator* allocator,
     PalEventQueue* queue)
 {
-    palFree(allocator, queue->userData);
     palFree(allocator, queue);
 }

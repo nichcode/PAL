@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
@@ -53,22 +52,18 @@ PalResult PAL_CALL palCreateEventDriver(
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    PalEventDriver* driver = nullptr;
-    driver = palAllocate(info->allocator, sizeof(PalEventDriver), 0);
+    PalEventDriver* driver = palAllocate(info->allocator, sizeof(PalEventDriver), 0);
     if (!driver) {
         return PAL_RESULT_CODE_OUT_OF_MEMORY;
     }
 
     memset(driver, 0, sizeof(PalEventDriver));
-    if (info->allocator) {
-        driver->allocator = info->allocator;
-    }
+    driver->allocator = info->allocator;
 
     if (info->queue) {
         // user supplied an event queue
         driver->queue = info->queue;
         driver->freeQueue = PAL_FALSE;
-
     } else {
         PalEventQueue* queue = createDefaultQueue(info->allocator);
         if (!queue) {
@@ -84,7 +79,6 @@ PalResult PAL_CALL palCreateEventDriver(
     driver->userData = info->userData;
 
     *eventDriver = driver;
-
     return PAL_RESULT_SUCCESS;
 }
 
@@ -107,6 +101,7 @@ void PAL_CALL palSetEventDispatchMode(
 {
     ASSERT(eventDriver != nullptr, "The specified event driver is null");
     ASSERT(type < PAL_EVENT_TYPE_COUNT, "Invalid event type");
+    ASSERT(mode < PAL_DISPATCH_MODE_COUNT, "Invalid dispatch mode");
 
     eventDriver->modes[type] = mode;
 }
@@ -123,26 +118,26 @@ PalDispatchMode PAL_CALL palGetEventDispatchMode(
 
 void PAL_CALL palPushEvent(
     PalEventDriver* eventDriver,
-    PalEvent* event)
+    const PalEvent* event)
 {
     ASSERT(eventDriver != nullptr, "The specified event driver is null");
     ASSERT(event != nullptr, "The specified event is null");
     ASSERT(event->type < PAL_EVENT_TYPE_COUNT, "Invalid event type");
-    ASSERT(
-        eventDriver->modes[event->type] != PAL_DISPATCH_MODE_NONE, 
-        "There is no dispatch mode for the specified event");
 
     PalDispatchMode mode = eventDriver->modes[event->type];
+    if (mode == PAL_DISPATCH_MODE_NONE) {
+        return;
+    }
+
     if (mode == PAL_DISPATCH_MODE_CALLBACK) {
         if (eventDriver->callback) {
             eventDriver->callback(eventDriver->userData, event);
         }
-
         return;
     }
 
     if (mode == PAL_DISPATCH_MODE_POLL) {
-        eventDriver->queue->push(eventDriver->queue, event);
+        eventDriver->queue->push(eventDriver->queue->userData, event);
     }
 }
 
@@ -153,5 +148,5 @@ PalBool PAL_CALL palPollEvent(
     ASSERT(eventDriver != nullptr, "The specified event driver is null");
     ASSERT(event != nullptr, "The specified event is null");
 
-    return eventDriver->queue->poll(eventDriver->queue, event);
+    return eventDriver->queue->poll(eventDriver->queue->userData, event);
 }

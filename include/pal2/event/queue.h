@@ -1,4 +1,3 @@
-
 /**
  * @file queue.h
  * 
@@ -39,7 +38,7 @@
  *
  * The function signature should look like this:
  * @code
- * void PAL_CALL queuePush(void* userData, PalEvent* event);
+ * void PAL_CALL queuePush(void* userData, const PalEvent* event);
  * @endcode
  *
  * @param[in] userData User-defined data passed to the function, or `nullptr`.
@@ -52,7 +51,7 @@
  */
 typedef void(PAL_CALL* PalPushFn)(
     void* userData,
-    PalEvent* event);
+    const PalEvent* event);
 
 /**
  * @typedef PalPollFn

@@ -1,7 +1,5 @@
-
 #include "pal2/event/driver.h"
 #include "pal2/core/log.h"
-#include <stdbool.h>
 #include <string.h>
 
 #define MAX_EVENTS 64
@@ -14,20 +12,18 @@ typedef struct QueueData
 } QueueData;
 
 static void PAL_CALL eventPush(
-    void* queue,
-    PalEvent* event)
+    void* userData,
+    const PalEvent* event)
 {
-    PalEventQueue* eventQueue = queue;
-    QueueData* data = eventQueue->userData;
+    QueueData* data = userData;
     data->data[data->tail++ % MAX_EVENTS] = *event;
 }
 
 static PalBool PAL_CALL eventPoll(
-    void* queue,
+    void* userData,
     PalEvent* outEvent)
 {
-    PalEventQueue* eventQueue = queue;
-    QueueData* data = eventQueue->userData;
+    QueueData* data = userData;
     if (data->head == data->tail) {
         return PAL_FALSE;
     }
@@ -36,42 +32,34 @@ static PalBool PAL_CALL eventPoll(
     return PAL_TRUE;
 }
 
-bool defaultQueue(void)
+PalBool defaultQueue(void)
 {
     PalEventDriverCreateInfo createInfo = {0};
-    createInfo.allocator = nullptr;
-    createInfo.callback = nullptr;
-    createInfo.queue = nullptr;
-    createInfo.userData = nullptr;
 
     PalEventDriver* eventDriver = nullptr;
     PalResult result = palCreateEventDriver(&createInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
         palLog(nullptr, "Failed to create event driver");
-        return false;
+        return PAL_FALSE;
     }
 
     palDestroyEventDriver(eventDriver);
-
-    return true;
+    return PAL_TRUE;
 }
 
-bool customQueue(void)
+PalBool customQueue(void)
 {
-    PalEventQueue* queue = nullptr;
-    queue = palAllocate(nullptr, sizeof(PalEventQueue), 0);
+    PalEventQueue* queue = palAllocate(nullptr, sizeof(PalEventQueue), 0);
     if (!queue) {
         palLog(nullptr, "Failed to allocate event queue");
-        return false;
+        return PAL_FALSE;
     }
 
-    QueueData* queueData = nullptr;
-    queueData = palAllocate(nullptr, sizeof(QueueData), 0);
+    QueueData* queueData = palAllocate(nullptr, sizeof(QueueData), 0);
     if (!queueData) {
         palFree(nullptr, queue);
-
         palLog(nullptr, "Failed to allocate event queue data");
-        return false;
+        return PAL_FALSE;
     }
 
     memset(queueData, 0, sizeof(QueueData));
@@ -80,40 +68,43 @@ bool customQueue(void)
     queue->push = eventPush;
 
     PalEventDriverCreateInfo createInfo = {0};
-    createInfo.allocator = nullptr;
-    createInfo.callback = nullptr;
     createInfo.queue = queue;
-    createInfo.userData = nullptr;
 
     PalEventDriver* eventDriver = nullptr;
     PalResult result = palCreateEventDriver(&createInfo, &eventDriver);
     if (result != PAL_RESULT_SUCCESS) {
-        palFree(nullptr, queue->userData);
+        palFree(nullptr, queueData);
         palFree(nullptr, queue);
-
         palLog(nullptr, "Failed to create event driver");
-        return false;
+        return PAL_FALSE;
     }
 
-    palDestroyEventDriver(eventDriver);
+    palSetEventDispatchMode(eventDriver, PAL_EVENT_TYPE_USER, PAL_DISPATCH_MODE_POLL);
 
-    palFree(nullptr, queue->userData);
+    PalEvent pushed = {0};
+    pushed.type = PAL_EVENT_TYPE_USER;
+    pushed.data = 42;
+    palPushEvent(eventDriver, &pushed);
+
+    PalEvent polled = {0};
+    PalBool ok = palPollEvent(eventDriver, &polled) && (polled.data == 42);
+
+    palDestroyEventDriver(eventDriver);
+    palFree(nullptr, queueData);
     palFree(nullptr, queue);
 
-    return true;
+    return ok;
 }
 
 int main(void)
 {
     palLog(nullptr, "Running event driver test...");
 
-    bool ret = defaultQueue();
-    if (!ret) {
+    if (!defaultQueue()) {
         return -1;
     }
 
-    ret = customQueue();
-    if (!ret) {
+    if (!customQueue()) {
         return -1;
     }
 

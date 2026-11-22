@@ -1,6 +1,5 @@
 #include "pal2/core/memory.h"
 #include "pal2/core/log.h"
-#include <stdbool.h>
 
 typedef struct AllocatorContext
 {
@@ -31,14 +30,14 @@ static void PAL_CALL freeFunction(void* userData, void* ptr)
     context->deallocations++;
 }
 
-static bool defaultAllocator(void)
+static PalBool defaultAllocator(void)
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     uint64_t* ptr2 = palAllocate(nullptr, sizeof(uint64_t), 8);
 
     if (!ptr1 || !ptr2) {
         palLog(nullptr, "Failed to allocate memory with default allocator");
-        return false;
+        return PAL_FALSE;
     }
 
     *ptr1 = 100000;
@@ -47,25 +46,25 @@ static bool defaultAllocator(void)
     palFree(nullptr, ptr1);
     palFree(nullptr, ptr2);
 
-    return true;
+    return PAL_TRUE;
 }
 
-static bool nullFree(void)
+static PalBool nullFree(void)
 {
     uint32_t* ptr1 = palAllocate(nullptr, sizeof(uint32_t), 0);
     if (!ptr1) {
         palLog(nullptr, "Failed to allocate memory with default allocator");
-        return false;
+        return PAL_FALSE;
     }
 
     palFree(nullptr, ptr1);
     ptr1 = nullptr;
     palFree(nullptr, ptr1);
 
-    return true;
+    return PAL_TRUE;
 }
 
-static bool customAllocator(void)
+static PalBool customAllocator(void)
 {
     AllocatorContext context = {0};
 
@@ -79,7 +78,7 @@ static bool customAllocator(void)
 
     if (!ptr1 || !ptr2) {
         palLog(nullptr, "Failed to allocate memory with custom allocator");
-        return false;
+        return PAL_FALSE;
     }
 
     *ptr1 = 100000;
@@ -90,10 +89,10 @@ static bool customAllocator(void)
 
     if (context.allocations != 2 || context.deallocations != 2) {
         palLog(nullptr, "Custom allocator counts do not match");
-        return false;
+        return PAL_FALSE;
     }
 
-    return true;
+    return PAL_TRUE;
 }
 
 int main(void)
