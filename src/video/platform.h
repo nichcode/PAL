@@ -57,7 +57,7 @@
 */
 typedef PalVideoDriver* (*GetVideoDriverFn)(void);
 
-/** Initializes the video backend. 
+/** This function has the same semantics and rules as palInitVideo().
  * 
  * Additional rules:
  * - `preferredInstance` is the users requested instance. It may be nullptr.
