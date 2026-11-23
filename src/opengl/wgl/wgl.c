@@ -36,8 +36,8 @@ PalResult wglMakeContextCurrent(PalGLWindow*, PalGLContext*);
 PalResult wglSwapBuffers(PalGLWindow*, PalGLContext*);
 void wglSetSwapInterval(int32_t);
 
-static GLBackend g_WglBackend = {
-    .init = wglShutdownGL,
+const GLBackend g_WglBackend = {
+    .init = wglInitGL,
     .shutdown = wglShutdownGL,
     .getProcAddress = wglGetGLProcAddress,
     .enumerateFBConfigs = wglEnumerateGLFBConfigs,

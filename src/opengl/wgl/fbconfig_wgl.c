@@ -27,8 +27,8 @@ PalResult wglEnumerateGLFBConfigs(
     uint32_t* count,
     PalGLFBConfig* configs)
 {
-    int32_t configCount = 0;
-    int32_t maxConfigCount = 0;
+    uint32_t configCount = 0;
+    uint32_t maxConfigCount = 0;
     int32_t nativeCount = 0;
     const int32_t configAttrib = WGL_NUMBER_PIXEL_FORMATS_ARB;
 
@@ -36,7 +36,7 @@ PalResult wglEnumerateGLFBConfigs(
         maxConfigCount = *count;
     }
 
-    // check if we support modern extention
+    // check if we support modern extension
     if (g_Wgl.getPixelFormatAttribivARB) {
         // get framebuffer config with extensions
         if (!g_Wgl.getPixelFormatAttribivARB(g_Wgl.hdc, 0, 0, 1, &configAttrib, &nativeCount)) {
@@ -66,6 +66,10 @@ PalResult wglEnumerateGLFBConfigs(
 
         int32_t values[sizeof(attributes) / sizeof(attributes[0])];
         for (int32_t i = 1; i <= nativeCount; i++) {
+            if (configs && configCount >= maxConfigCount) {
+                break;
+            }
+
             if (!g_Wgl.getPixelFormatAttribivARB(
                     g_Wgl.hdc,
                     i,
@@ -76,24 +80,22 @@ PalResult wglEnumerateGLFBConfigs(
                 continue;
             }
 
-            // we index the values list in the same way as the arributes list
-            // so index 0 is WGL_SUPPORT_OPENGL_ARB and 1 is
-            // WGL_DRAW_TO_WINDOW_ARB
+            // WGL_SUPPORT_OPENGL_ARB and WGL_DRAW_TO_WINDOW_ARB
             if (!values[0] || !values[1]) {
-                // WGL_SUPPORT_OPENGL_ARB and WGL_DRAW_TO_WINDOW_ARB support
                 continue;
             }
 
+            // WGL_PIXEL_TYPE_ARB
             if (values[2] != WGL_TYPE_RGBA_ARB) {
-                // WGL_PIXEL_TYPE_ARB support
                 continue;
             }
 
+            // WGL_ACCELERATION_ARB
             if (values[3] == WGL_NO_ACCELERATION_ARB) {
                 continue;
             }
 
-            if (configs && configCount < maxConfigCount) {
+            if (configs) {
                 PalGLFBConfig* config = &configs[configCount];
                 config->index = i;
 
@@ -109,14 +111,9 @@ PalResult wglEnumerateGLFBConfigs(
                     config->samples = 1;
                 }
 
-                // WGL_STEREO_ARB
-                config->stereo = values[11];
-
-                // WGL_DOUBLE_BUFFER_ARB
-                config->doubleBuffer = values[12];
-
-                // WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB
-                config->sRGB = values[13];
+                config->stereo = values[11] ? PAL_TRUE : PAL_FALSE;
+                config->doubleBuffer = values[12] ? PAL_TRUE : PAL_FALSE;
+                config->sRGB = values[13] ? PAL_TRUE : PAL_FALSE;
             }
             configCount++;
         }
@@ -126,6 +123,10 @@ PalResult wglEnumerateGLFBConfigs(
         nativeCount = g_Gdi.describePixelFormat(g_Wgl.hdc, 1, 0, nullptr);
 
         for (int32_t i = 1; i <= nativeCount; i++) {
+            if (configs && configCount >= maxConfigCount) {
+                break;
+            }
+
             PIXELFORMATDESCRIPTOR pfd;
             if (!g_Gdi.describePixelFormat(g_Wgl.hdc, i, sizeof(PIXELFORMATDESCRIPTOR), &pfd)) {
                 continue;
@@ -144,7 +145,7 @@ PalResult wglEnumerateGLFBConfigs(
                 continue;
             }
 
-            if (configs && configCount < maxConfigCount) {
+            if (configs) {
                 PalGLFBConfig* config = &configs[configCount];
                 config->index = i;
 
@@ -164,9 +165,6 @@ PalResult wglEnumerateGLFBConfigs(
         }
     }
 
-    if (!configs) {
-        *count = configCount;
-    }
-    
+    *count = configCount;
     return PAL_RESULT_SUCCESS;
 }

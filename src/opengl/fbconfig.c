@@ -43,7 +43,7 @@ const PalGLFBConfig* PAL_CALL palGetClosestGLFBConfig(
     int32_t score = 0;
     int32_t bestScore = 0x7FFFFFFF;
     PalGLFBConfig* best = nullptr;
-    for (int32_t i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         PalGLFBConfig* tmp = &configs[i];
 
         // filter out hard constraints

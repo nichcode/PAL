@@ -135,6 +135,7 @@ PalResult wglInitGL(
     PalResult result = PAL_RESULT_CODE_PLATFORM_FAILURE;
     g_GLInfo.api = PAL_GL_API_OPENGL;
     g_GLInfo.backend = PAL_GL_BACKEND_WGL;
+    HGLRC context = nullptr;
 
     if (api != PAL_GL_API_OPENGL) {
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
@@ -195,9 +196,9 @@ PalResult wglInitGL(
 
     int32_t pixelFormat = g_Gdi.choosePixelFormat(g_Wgl.hdc, &pfd);
     g_Gdi.setPixelFormat(g_Wgl.hdc, pixelFormat, &pfd);
-    g_Wgl.context = g_Wgl.createContext(g_Wgl.hdc);
+    context = g_Wgl.createContext(g_Wgl.hdc);
 
-    if (!g_Wgl.makeCurrent(g_Wgl.hdc, g_Wgl.context)) {
+    if (!g_Wgl.makeCurrent(g_Wgl.hdc, context)) {
         result = palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
         goto cleanup;
     }
@@ -209,19 +210,22 @@ PalResult wglInitGL(
 #else
         sscanf(version, "%d.%d", &g_GLInfo.major, &g_GLInfo.minor);
 #endif
+        snprintf(g_GLInfo.version, sizeof(g_GLInfo.version), "%s", version);
     }
 
     const char* renderer = (const char*)g_Wgl.glGetString(GL_RENDERER);
+    if (renderer) {
+        snprintf(g_GLInfo.graphicsCard, sizeof(g_GLInfo.graphicsCard), "%s", renderer);
+    }
+
     const char* vendor = (const char*)g_Wgl.glGetString(GL_VENDOR);
-    
-    strcpy(g_GLInfo.vendor, vendor);
-    strcpy(g_GLInfo.version, version);
-    strcpy(g_GLInfo.graphicsCard, renderer);
+    if (vendor) {
+        snprintf(g_GLInfo.vendor, sizeof(g_GLInfo.vendor), "%s", vendor);
+    }
 
     const char* extensions = nullptr;
     if (g_Wgl.getExtensionsStringARB) {
         extensions = g_Wgl.getExtensionsStringARB(g_Wgl.hdc);
-
     } else if (g_Wgl.getExtensionsStringEXT) {
         extensions = g_Wgl.getExtensionsStringEXT();
     }
@@ -231,15 +235,9 @@ PalResult wglInitGL(
             g_GLInfo.extensions |= PAL_GL_EXTENSION_MULTISAMPLE;
         }
 
-        if (checkString("WGL_ARB_framebuffer_sRGB", extensions)) {
-            g_GLInfo.extensions |= PAL_GL_EXTENSION_COLORSPACE_SRGB;
-        }
-
-        if (checkString("WGL_EXT_framebuffer_sRGB", extensions)) {
-            g_GLInfo.extensions |= PAL_GL_EXTENSION_COLORSPACE_SRGB;
-        }
-
-        if (checkString("WGL_EXT_colorspace", extensions)) {
+        if (checkString("WGL_ARB_framebuffer_sRGB", extensions) ||
+            checkString("WGL_EXT_framebuffer_sRGB", extensions) ||
+            checkString("WGL_EXT_colorspace", extensions)) {
             g_GLInfo.extensions |= PAL_GL_EXTENSION_COLORSPACE_SRGB;
         }
 
@@ -270,11 +268,14 @@ PalResult wglInitGL(
         if (checkString("WGL_ARB_context_flush_control", extensions)) {
             g_GLInfo.extensions |= PAL_GL_EXTENSION_FLUSH_CONTROL;
         }
-        
+
         if (checkString("WGL_ARB_pixel_format", extensions)) {
             g_GLInfo.extensions |= PAL_GL_EXTENSION_PIXEL_FORMAT;
         }
     }
+
+    g_Wgl.makeCurrent(nullptr, nullptr);
+    g_Wgl.deleteContext(context);
 
     return PAL_RESULT_SUCCESS;
 
@@ -287,10 +288,6 @@ cleanup:
 void wglShutdownGL()
 {
     g_Wgl.makeCurrent(g_Wgl.hdc, nullptr);
-
-    if (g_Wgl.context) {
-        g_Wgl.deleteContext(g_Wgl.context);
-    }
 
     if (g_Wgl.window) {
         ReleaseDC(g_Wgl.window, g_Wgl.hdc);
@@ -315,7 +312,13 @@ void* wglGetGLProcAddress(const char* name)
 
 const PalBool* wglGetSupportedGLAPIs(void* instance)
 {
-    s_SupportedAPIs[PAL_GL_API_OPENGL] = PAL_TRUE;
+    if (instance) {
+        s_SupportedAPIs[PAL_GL_API_OPENGL] = PAL_TRUE;
+        s_SupportedAPIs[PAL_GL_API_OPENGL_ES] = PAL_FALSE;
+        return s_SupportedAPIs;
+    }
+
+    s_SupportedAPIs[PAL_GL_API_OPENGL] = PAL_FALSE;
     s_SupportedAPIs[PAL_GL_API_OPENGL_ES] = PAL_FALSE;
     return s_SupportedAPIs;
 }

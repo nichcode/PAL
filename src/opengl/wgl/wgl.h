@@ -178,7 +178,6 @@ typedef struct WGL {
     HINSTANCE instance;
     HWND window;
     HDC hdc;
-    HGLRC context;
     const PalAllocator* allocator;
 
     wglGetProcAddressFn getProcAddress;
