@@ -123,11 +123,6 @@ PalResult eglCreateGLContext(
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    ContextData* data = getFreeContextData();
-    if (!data) {
-        return PAL_RESULT_CODE_OUT_OF_MEMORY;
-    }
-
     EGLint numConfigs = 0;
     if (!g_Egl.getConfigs(g_Egl.display, nullptr, 0, &numConfigs)) {
         return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_EGL, (uint32_t)g_Egl.getError());
@@ -141,11 +136,16 @@ PalResult eglCreateGLContext(
 
     g_Egl.getConfigs(g_Egl.display, eglConfigs, numConfigs, &numConfigs);
     EGLConfig config = eglConfigs[info->fbConfig->index];
-    EGLContext* share = nullptr;
+    palFree(g_Egl.allocator, eglConfigs);
+
+    ContextData* data = getFreeContextData();
+    if (!data) {
+        return PAL_RESULT_CODE_OUT_OF_MEMORY;
+    }
+
+    EGLContext share = EGL_NO_CONTEXT;
     if (info->shareContext) {
         share = (EGLContext)info->shareContext;
-    } else {
-        share = EGL_NO_CONTEXT;
     }
 
     int32_t attribs[40];
@@ -153,7 +153,6 @@ PalResult eglCreateGLContext(
     int32_t profile = 0;
     int32_t flags = 0;
 
-    // the first element is the key and the second is the value
     if (g_Egl.apiType == EGL_OPENGL_API) {
         attribs[index++] = EGL_CONTEXT_MAJOR_VERSION_KHR;
         attribs[index++] = (int32_t)info->major;
@@ -192,7 +191,6 @@ PalResult eglCreateGLContext(
 
         if (info->reset == PAL_GL_CONTEXT_RESET_LOSE_CONTEXT) {
             attribs[index++] = EGL_LOSE_CONTEXT_ON_RESET_KHR;
-
         } else if (info->reset == PAL_GL_CONTEXT_RESET_NO_NOTIFICATION) {
             attribs[index++] = EGL_NO_RESET_NOTIFICATION_KHR;
         }
@@ -216,7 +214,9 @@ PalResult eglCreateGLContext(
 
     EGLContext eglContext = g_Egl.createContext(g_Egl.display, config, share, attribs);
     if (eglContext == EGL_NO_CONTEXT) {
+        data->used = PAL_FALSE;
         EGLint error = g_Egl.getError();
+
         if (error == EGL_BAD_CONFIG || error == EGL_BAD_ATTRIBUTE) {
             return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_EGL, (uint32_t)error);
         } else {
@@ -240,7 +240,10 @@ PalResult eglCreateGLContext(
         surfaceAttribs);
 
     if (surface == EGL_NO_SURFACE) {
+        g_Egl.destroyContext(g_Egl.display, eglContext);
+        data->used = PAL_FALSE;
         EGLint error = g_Egl.getError();
+
         if (error == EGL_BAD_CONFIG) {
             return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_EGL, (uint32_t)error);
         } else {
@@ -251,14 +254,15 @@ PalResult eglCreateGLContext(
     // make the context current and swap for the first time
     // this will make the window visible
     if (g_Egl.makeCurrent(g_Egl.display, surface, surface, eglContext)) {
-        g_Egl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        g_Egl.glClear(0x00004000);
+        if (g_Egl.glClearColor && g_Egl.glClear) {
+            g_Egl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            g_Egl.glClear(0x00004000);
+        }
 
         g_Egl.swapBuffers(g_Egl.display, surface);
         g_Egl.makeCurrent(g_Egl.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     }
 
-    palFree(g_Egl.allocator, eglConfigs);
     data->context = (PalGLContext*)eglContext;
     data->surface = surface;
 
@@ -271,9 +275,11 @@ void eglDestroyGLContext(PalGLContext* context)
     ContextData* data = findContextData(context);
     g_Egl.makeCurrent(g_Egl.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     g_Egl.destroyContext(g_Egl.display, (EGLContext)context);
-    g_Egl.destroySurface(g_Egl.display, data->surface);
 
-    data->used = PAL_FALSE;
+    if (data) {
+        g_Egl.destroySurface(g_Egl.display, data->surface);
+        data->used = PAL_FALSE;
+    }
 }
 
 PalResult eglMakeContextCurrent(
@@ -286,8 +292,7 @@ PalResult eglMakeContextCurrent(
             return PAL_RESULT_CODE_INVALID_HANDLE;
         }
 
-        EGLBoolean ret;
-        ret = g_Egl.makeCurrent(g_Egl.display, data->surface, data->surface, (EGLConfig)context);
+        EGLBoolean ret = g_Egl.makeCurrent(g_Egl.display, data->surface, data->surface, (EGLContext)context);
         if (!ret) {
             EGLint error = g_Egl.getError();
             if (error == EGL_BAD_CONTEXT || error == EGL_BAD_SURFACE) {

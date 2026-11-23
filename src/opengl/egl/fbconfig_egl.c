@@ -40,7 +40,7 @@ PalResult eglEnumerateGLFBConfigs(
 
     EGLint numConfigs = 0;
     if (!g_Egl.getConfigs(g_Egl.display, nullptr, 0, &numConfigs)) {
-        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_EGL, (uint32_t)(uint32_t)g_Egl.getError());
+        return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_EGL, (uint32_t)g_Egl.getError());
     }
 
     size_t configSize = sizeof(EGLConfig) * (size_t)numConfigs;
@@ -51,7 +51,12 @@ PalResult eglEnumerateGLFBConfigs(
 
     g_Egl.getConfigs(g_Egl.display, eglConfigs, numConfigs, &numConfigs);
     for (EGLint i = 0; i < numConfigs; i++) {
-        EGLint surfaceType = 0, renderable = 0;
+        if (configs && configCount >= maxConfigCount) {
+            break;
+        }
+
+        EGLint surfaceType = 0;
+        EGLint renderable = 0;
         EGLint colorType = 0;
 
         EGLConfig config = eglConfigs[i];
@@ -63,13 +68,12 @@ PalResult eglEnumerateGLFBConfigs(
             continue;
         }
 
-        if (g_Egl.apiType == EGL_OPENGL_ES3_BIT) {
-            // EGL_OPENGL_ES2_BIT
+        if (g_Egl.apiTypeBit == EGL_OPENGL_ES3_BIT) {
             if (!(renderable & EGL_OPENGL_ES2_BIT) && !(renderable & EGL_OPENGL_ES3_BIT)) {
                 continue;
             }
-
-        } else if (g_Egl.apiType == EGL_OPENGL_ES2_BIT) {
+            
+        } else if (g_Egl.apiTypeBit == EGL_OPENGL_ES2_BIT) {
             if (!(renderable & EGL_OPENGL_ES2_BIT)) {
                 continue;
             }
@@ -84,7 +88,7 @@ PalResult eglEnumerateGLFBConfigs(
             continue;
         }
 
-        if (configs && configCount < maxConfigCount) {
+        if (configs) {
             PalGLFBConfig* fbConfig = &configs[configCount];
             fbConfig->index = (uint16_t)i;
 
@@ -111,14 +115,11 @@ PalResult eglEnumerateGLFBConfigs(
             fbConfig->stencilBits = (uint16_t)stencilBits;
             fbConfig->samples = (uint16_t)samples;
 
-            // True for EGL_WINDOW_BIT
             fbConfig->doubleBuffer = PAL_TRUE;
             fbConfig->stereo = PAL_FALSE;
 
             fbConfig->sRGB = PAL_FALSE;
             if (g_GLInfo.extensions & PAL_GL_EXTENSION_COLORSPACE_SRGB) {
-                // since EGL does not have a bit to check SRGB support
-                // we check if all the color bits are greater than or equal to 8
                 if (fbConfig->redBits >= 8 && fbConfig->greenBits >= 8 && fbConfig->blueBits >= 8) {
                     fbConfig->sRGB = PAL_TRUE;
                 }
@@ -128,10 +129,7 @@ PalResult eglEnumerateGLFBConfigs(
     }
 
     palFree(g_Egl.allocator, eglConfigs);
-
-    if (!configs) {
-        *count = configCount;
-    }
+    *count = configCount;
 
     return PAL_RESULT_SUCCESS;
 }

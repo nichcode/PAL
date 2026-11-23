@@ -22,10 +22,10 @@
 
 #ifdef _WIN32
 
-#include "wgl.h"
 #include "opengl/platform.h"
 #include "pal2/opengl/context.h"
 #include "pal2/opengl/init.h"
+#include "wgl.h"
 
 PalResult wglCreateGLContext(
     const PalGLContextCreateInfo* info,
@@ -70,14 +70,16 @@ PalResult wglCreateGLContext(
         return PAL_RESULT_CODE_INVALID_ARGUMENT;
     }
 
-    HDC hdc = GetDC((HWND)info->window->window);
+    HWND hwnd = (HWND)info->window->window;
+    HDC hdc = GetDC(hwnd);
     if (!hdc) {
         return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, GetLastError());
     }
 
     if (g_Gdi.getPixelFormat(hdc) != info->fbConfig->index) {
-        ReleaseDC((HWND)info->window->window, hdc);
-        return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, GetLastError());
+        DWORD error = GetLastError();
+        ReleaseDC(hwnd, hdc);
+        return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, error);
     }
 
     HGLRC share = nullptr;
@@ -92,7 +94,6 @@ PalResult wglCreateGLContext(
         int32_t profile = 0;
         int32_t flags = 0;
 
-        // the first element is the key and the second is the value
         attribs[index++] = WGL_CONTEXT_MAJOR_VERSION_ARB;
         attribs[index++] = info->major;
 
@@ -126,7 +127,6 @@ PalResult wglCreateGLContext(
 
             if (info->reset == PAL_GL_CONTEXT_RESET_LOSE_CONTEXT) {
                 attribs[index++] = WGL_LOSE_CONTEXT_ON_RESET_ARB;
-
             } else if (info->reset == PAL_GL_CONTEXT_RESET_NO_NOTIFICATION) {
                 attribs[index++] = WGL_NO_RESET_NOTIFICATION_ARB;
             }
@@ -150,8 +150,8 @@ PalResult wglCreateGLContext(
 
         wglContext = g_Wgl.createContextAttribsARB(hdc, share, attribs);
         if (!wglContext) {
-            ReleaseDC((HWND)info->window->window, hdc);
             DWORD error = GetLastError();
+            ReleaseDC(hwnd, hdc);
             if (error == ERROR_INVALID_PROFILE_ARB) {
                 return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, error);
             } else {
@@ -162,20 +162,22 @@ PalResult wglCreateGLContext(
     } else {
         wglContext = g_Wgl.createContext(hdc);
         if (!wglContext) {
-            ReleaseDC((HWND)info->window->window, hdc);
-            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
+            DWORD error = GetLastError();
+            ReleaseDC(hwnd, hdc);
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
 
         if (share) {
             if (!g_Wgl.shareLists(share, wglContext)) {
+                DWORD error = GetLastError();
                 g_Wgl.deleteContext(wglContext);
-                ReleaseDC((HWND)info->window->window, hdc);
-                return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
+                ReleaseDC(hwnd, hdc);
+                return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
             }
         }
     }
 
-    ReleaseDC((HWND)info->window->window, hdc);
+    ReleaseDC(hwnd, hdc);
     *context = (PalGLContext*)wglContext;
 
     return PAL_RESULT_SUCCESS;
@@ -191,8 +193,8 @@ PalResult wglMakeContextCurrent(
     PalGLContext* context)
 {
     if (context && glWindow) {
-        // get hdc
-        HDC hdc = GetDC((HWND)glWindow->window);
+        HWND hwnd = (HWND)glWindow->window;
+        HDC hdc = GetDC(hwnd);
         if (!hdc) {
             return palMakeResult(
                 PAL_RESULT_CODE_INVALID_ARGUMENT,
@@ -202,12 +204,12 @@ PalResult wglMakeContextCurrent(
 
         if (!g_Wgl.makeCurrent(hdc, (HGLRC)context)) {
             DWORD error = GetLastError();
+            ReleaseDC(hwnd, hdc);
             if (error == ERROR_INVALID_HANDLE) {
                 return palMakeResult(
                     PAL_RESULT_CODE_INVALID_ARGUMENT,
                     PAL_RESULT_SOURCE_WIN32,
                     error);
-
             } else {
                 return palMakeResult(
                     PAL_RESULT_CODE_PLATFORM_FAILURE,
@@ -215,7 +217,7 @@ PalResult wglMakeContextCurrent(
                     error);
             }
         }
-        ReleaseDC((HWND)glWindow->window, hdc);
+        ReleaseDC(hwnd, hdc);
 
     } else if (!context && !glWindow) {
         g_Wgl.makeCurrent(nullptr, nullptr);
@@ -230,22 +232,23 @@ PalResult wglSwapBuffers(
 {
     (void)context;
 
-    HDC hdc = GetDC((HWND)glWindow->window);
+    HWND hwnd = (HWND)glWindow->window;
+    HDC hdc = GetDC(hwnd);
     if (!hdc) {
         return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, GetLastError());
     }
 
     if (!g_Gdi.swapBuffers(hdc)) {
         DWORD error = GetLastError();
+        ReleaseDC(hwnd, hdc);
         if (error == ERROR_INVALID_PIXEL_FORMAT) {
             return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_WIN32, error);
-
         } else {
             return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, error);
         }
     }
 
-    ReleaseDC((HWND)glWindow->window, hdc);
+    ReleaseDC(hwnd, hdc);
     return PAL_RESULT_SUCCESS;
 }
 

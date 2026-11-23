@@ -38,9 +38,7 @@ PalResult wglEnumerateGLFBConfigs(
         maxConfigCount = *count;
     }
 
-    // check if we support modern extension
     if (g_Wgl.getPixelFormatAttribivARB) {
-        // get framebuffer config with extensions
         if (!g_Wgl.getPixelFormatAttribivARB(g_Wgl.hdc, 0, 0, 1, &configAttrib, &nativeCount)) {
             return palMakeResult(
                 PAL_RESULT_CODE_PLATFORM_FAILURE,
@@ -48,7 +46,6 @@ PalResult wglEnumerateGLFBConfigs(
                 GetLastError());
         }
 
-        // attributes we care about
         int32_t attributes[] = {
             WGL_SUPPORT_OPENGL_ARB,
             WGL_DRAW_TO_WINDOW_ARB,
@@ -82,17 +79,14 @@ PalResult wglEnumerateGLFBConfigs(
                 continue;
             }
 
-            // WGL_SUPPORT_OPENGL_ARB and WGL_DRAW_TO_WINDOW_ARB
             if (!values[0] || !values[1]) {
                 continue;
             }
 
-            // WGL_PIXEL_TYPE_ARB
             if (values[2] != WGL_TYPE_RGBA_ARB) {
                 continue;
             }
 
-            // WGL_ACCELERATION_ARB
             if (values[3] == WGL_NO_ACCELERATION_ARB) {
                 continue;
             }
@@ -101,13 +95,13 @@ PalResult wglEnumerateGLFBConfigs(
                 PalGLFBConfig* config = &configs[configCount];
                 config->index = i;
 
-                config->redBits = values[4];     // WGL_RED_BITS_ARB
-                config->greenBits = values[5];   // WGL_GREEN_BITS_ARB
-                config->blueBits = values[6];    // WGL_BLUE_BITS_ARB
-                config->alphaBits = values[7];   // WGL_ALPHA_BITS_ARB
-                config->depthBits = values[8];   // WGL_DEPTH_BITS_ARB
-                config->stencilBits = values[9]; // WGL_STENCIL_BITS_ARB
-                config->samples = values[10];    // WGL_SAMPLES_ARB
+                config->redBits = values[4];
+                config->greenBits = values[5];
+                config->blueBits = values[6];
+                config->alphaBits = values[7];
+                config->depthBits = values[8];
+                config->stencilBits = values[9];
+                config->samples = values[10];
 
                 if (config->samples == 0) {
                     config->samples = 1;
@@ -121,7 +115,6 @@ PalResult wglEnumerateGLFBConfigs(
         }
 
     } else {
-        // get pixel format with legacy pixel descriptor
         nativeCount = g_Gdi.describePixelFormat(g_Wgl.hdc, 1, 0, nullptr);
 
         for (int32_t i = 1; i <= nativeCount; i++) {
@@ -134,7 +127,6 @@ PalResult wglEnumerateGLFBConfigs(
                 continue;
             }
 
-            // filter for opengl pixel formats
             if (!(pfd.dwFlags & PFD_SUPPORT_OPENGL) || !(pfd.dwFlags & PFD_DRAW_TO_WINDOW)) {
                 continue;
             }
