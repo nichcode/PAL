@@ -20,10 +20,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "opengl/platform.h"
-
 // clang-format off
 #ifdef _WIN32
+
+#include "opengl/platform.h"
 
 PalResult wglInitGL(PalGLAPI, void*, const PalAllocator*);
 void wglShutdownGL();

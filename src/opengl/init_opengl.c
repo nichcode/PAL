@@ -23,6 +23,10 @@
 #include "platform.h"
 #include "pal2/opengl/init.h"
 
+const GLBackend* g_GLBackend = nullptr;
+PalGLInfo g_GLInfo = {0};
+PalBool g_GLInitialized = PAL_FALSE;
+
 PalResult PAL_CALL palInitGL(
     PalGLAPI api,
     void* instance,

@@ -109,3 +109,15 @@ project "PAL2"
             
         filter {}
     end
+
+    if (PAL_BUILD_OPENGL_MODULE) then
+        files { "src/opengl/*.c" }
+
+        filter {"system:windows", "configurations:*"}
+            files { "src/opengl/wgl/*.c" }
+
+        filter {"system:linux", "configurations:*"}
+            files { "src/opengl/egl/*.c" }
+
+        filter {}
+    end

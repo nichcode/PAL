@@ -20,6 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef _WIN32
+
 #include "wgl.h"
 #include "opengl/platform.h"
 #include "pal2/opengl/init.h"
@@ -206,9 +208,9 @@ PalResult wglInitGL(
     const char* version = (const char*)g_Wgl.glGetString(GL_VERSION);
     if (version) {
 #ifdef _MSC_VER
-        sscanf_s(version, "%d.%d", &g_GLInfo.major, &g_GLInfo.minor);
+        sscanf_s(version, "%u.%u", &g_GLInfo.major, &g_GLInfo.minor);
 #else
-        sscanf(version, "%d.%d", &g_GLInfo.major, &g_GLInfo.minor);
+        sscanf(version, "%u.%u", &g_GLInfo.major, &g_GLInfo.minor);
 #endif
         snprintf(g_GLInfo.version, sizeof(g_GLInfo.version), "%s", version);
     }
@@ -322,3 +324,5 @@ const PalBool* wglGetSupportedGLAPIs(void* instance)
     s_SupportedAPIs[PAL_GL_API_OPENGL_ES] = PAL_FALSE;
     return s_SupportedAPIs;
 }
+
+#endif // _WIN32

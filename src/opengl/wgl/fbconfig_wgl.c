@@ -20,6 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef _WIN32
+
 #include "wgl.h"
 #include "pal2/opengl/fbconfig.h"
 
@@ -168,3 +170,5 @@ PalResult wglEnumerateGLFBConfigs(
     *count = configCount;
     return PAL_RESULT_SUCCESS;
 }
+
+#endif // _WIN32

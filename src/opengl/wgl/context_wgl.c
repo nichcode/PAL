@@ -20,6 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef _WIN32
+
 #include "wgl.h"
 #include "opengl/platform.h"
 #include "pal2/opengl/context.h"
@@ -251,3 +253,5 @@ void wglSetSwapInterval(int32_t interval)
 {
     g_Wgl.swapIntervalEXT(interval);
 }
+
+#endif // _WIN32

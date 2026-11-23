@@ -22,7 +22,7 @@
 
 #include "platform.h"
 #include "pal2/opengl/fbconfig.h"
-#include <math.h>
+#include <stdlib.h>
 
 PalResult PAL_CALL palEnumerateGLFBConfigs(
     uint32_t* count,

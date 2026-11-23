@@ -27,7 +27,7 @@ PAL_BUILD_THREAD_MODULE = true
 PAL_BUILD_VIDEO_MODULE = true
 
 -- Build opengl module
-PAL_BUILD_OPENGL_MODULE = false
+PAL_BUILD_OPENGL_MODULE = true
 
 -- Build graphics module
 PAL_BUILD_GRAPHICS_MODULE = false
