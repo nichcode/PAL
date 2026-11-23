@@ -205,7 +205,7 @@ PAL_API PalResult PAL_CALL palInitGL(
  *
  * @sa palInitGL
  */
-PAL_API void PAL_CALL palShutdownGL();
+PAL_API void PAL_CALL palShutdownGL(void);
 
 /**
  * @brief Gets information about the OpenGL driver.
@@ -222,7 +222,7 @@ PAL_API void PAL_CALL palShutdownGL();
  * @since Added in version 2.0
  * @ingroup pal_opengl
  */
-PAL_API const PalGLInfo* PAL_CALL palGetGLInfo();
+PAL_API const PalGLInfo* PAL_CALL palGetGLInfo(void);
 
 /**
  * @brief Gets the address of an OpenGL function.

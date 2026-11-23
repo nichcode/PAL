@@ -37,14 +37,14 @@ PalResult PAL_CALL palInitGL(
     return g_GLBackend->init(api, instance, allocator);
 }
 
-void PAL_CALL palShutdownGL()
+void PAL_CALL palShutdownGL(void)
 {
     ASSERT(g_GLInitialized != PAL_FALSE, "GL system not initialized");
 
     g_GLBackend->shutdown();
 }
 
-const PalGLInfo* PAL_CALL palGetGLInfo()
+const PalGLInfo* PAL_CALL palGetGLInfo(void)
 {
     ASSERT(g_GLInitialized != PAL_FALSE, "GL system not initialized");
 
