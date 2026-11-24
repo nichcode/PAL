@@ -131,7 +131,7 @@ void wglShutdownGL();
 
 PalResult wglInitGL(
     PalGLAPI api,
-    void* instance,
+    const void* instance,
     const PalAllocator* allocator)
 {
     PalResult result = PAL_RESULT_CODE_PLATFORM_FAILURE;
@@ -312,7 +312,7 @@ void* wglGetGLProcAddress(const char* name)
     return proc;
 }
 
-const PalBool* wglGetSupportedGLAPIs(void* instance)
+const PalBool* wglGetSupportedGLAPIs(const void* instance)
 {
     if (instance) {
         s_SupportedAPIs[PAL_GL_API_OPENGL] = PAL_TRUE;

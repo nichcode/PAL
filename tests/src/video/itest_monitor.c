@@ -69,7 +69,7 @@ int main(void)
 
     result = palEnumerateMonitors(&count, nullptr);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to get query monitors");
+        palLog(nullptr, "Failed to query monitors");
         ret = -1;
         goto cleanup;
     }
@@ -91,7 +91,7 @@ int main(void)
 
     result = palEnumerateMonitors(&count, monitors);
     if (result != PAL_RESULT_SUCCESS) {
-        palLog(nullptr, "Failed to get query monitors");
+        palLog(nullptr, "Failed to query monitors");
         ret = -1;
         goto cleanup;
     }
@@ -116,9 +116,9 @@ int main(void)
 
         palEnumerateMonitorModes(monitor, &modeCount, modes);
 
-        for (uint32_t i = 0; i < modeCount; i++) {
-            PalMonitorMode* mode = &modes[i];
-            logMonitorMode(mode, i);
+        for (uint32_t j = 0; j < modeCount; j++) {
+            PalMonitorMode* mode = &modes[j];
+            logMonitorMode(mode, j);
         }
 
         palFree(nullptr, modes);

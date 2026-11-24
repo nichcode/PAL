@@ -212,7 +212,7 @@ typedef struct ContextData {
 
 typedef struct EGL {
     PalLibrary* libegl;
-    void* instance;
+    const void* instance;
     ContextData* contextData;
     EGLDisplay display;
 

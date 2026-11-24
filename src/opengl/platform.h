@@ -48,14 +48,14 @@
 /** This function has the same semantics and rules as palInitGL(). */
 typedef PalResult (*InitGLFn)(
     PalGLAPI api,
-    void* instance,
+    const void* instance,
     const PalAllocator* allocator);
 
 /** This function has the same semantics and rules as palShutdownGL(). */
 typedef void (*ShutdownGLFn)(void);
 
 /** This function has the same semantics and rules as palGetSupportedGLAPIs(). */
-typedef const PalBool* (*GetSupportedGLAPIsFn)(void* instance);
+typedef const PalBool* (*GetSupportedGLAPIsFn)(const void* instance);
 
 /** This function has the same semantics and rules as palGetGLProcAddress(). */
 typedef void* (*GetGLProcAddressFn)(const char* name);

@@ -116,7 +116,7 @@ void eglShutdownGL();
 
 PalResult eglInitGL(
     PalGLAPI api,
-    void* instance,
+    const void* instance,
     const PalAllocator* allocator)
 {
     PalResult result = PAL_RESULT_CODE_PLATFORM_FAILURE;
@@ -156,7 +156,7 @@ PalResult eglInitGL(
         goto cleanup;
     }
 
-    EGLDisplay display = g_Egl.getDisplay(instance);
+    EGLDisplay display = g_Egl.getDisplay((EGLNativeDisplayType)instance);
     if (display == EGL_NO_DISPLAY) {
         result = palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_EGL, (uint32_t)g_Egl.getError());
         goto cleanup;
@@ -365,7 +365,7 @@ void* eglGetGLProcAddress(const char* name)
     return proc;
 }
 
-const PalBool* eglGetSupportedGLAPIs(void* instance)
+const PalBool* eglGetSupportedGLAPIs(const void* instance)
 {
     PalLibrary* libegl = palLoadLibrary("libEGL.so");
     if (!libegl) {
@@ -387,7 +387,7 @@ const PalBool* eglGetSupportedGLAPIs(void* instance)
     }
     // clang-format on
 
-    EGLDisplay display = getDisplay(instance);
+    EGLDisplay display = getDisplay((EGLNativeDisplayType)instance);
     if (display == EGL_NO_DISPLAY) {
         palFreeLibrary(libegl);
         return nullptr;

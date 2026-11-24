@@ -27,6 +27,7 @@
 
 #include "pal2/core/result.h"
 #include "pal2/core/memory.h"
+#include "pal2/core/library.h"
 
 /**
  * @typedef PalGLExtensions
@@ -70,6 +71,12 @@ typedef uint32_t PalGLBackend;
  * @ingroup pal_opengl
  */
 typedef uint32_t PalGLAPI;
+
+#ifdef _WIN32
+#define PAL_GL_APIENTRY __stdcall
+#else
+#define PAL_GL_APIENTRY
+#endif // _WIN32
 
 /**
  * @brief Maximum size of the vendor name, including the NULL terminator.
@@ -185,7 +192,7 @@ typedef struct PalGLInfo {
  */
 PAL_API PalResult PAL_CALL palInitGL(
     PalGLAPI api,
-    void* instance,
+    const void* instance,
     const PalAllocator* allocator);
 
 /**
@@ -243,7 +250,7 @@ PAL_API const PalGLInfo* PAL_CALL palGetGLInfo(void);
  *
  * @sa palInitGL
  */
-PAL_API void* PAL_CALL palGetGLProcAddress(const char* name);
+PAL_API PalLibrarySymbol PAL_CALL palGetGLProcAddress(const char* name);
 
 /**
  * @brief Gets the supported OpenGL APIs of an instance.
@@ -266,6 +273,6 @@ PAL_API void* PAL_CALL palGetGLProcAddress(const char* name);
  *
  * @sa palInitGL
  */
-PAL_API const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance);
+PAL_API const PalBool* PAL_CALL palGetSupportedGLAPIs(const void* instance);
 
 #endif // PAL_OPENGL_INIT_H

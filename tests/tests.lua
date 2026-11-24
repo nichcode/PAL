@@ -51,3 +51,11 @@ if (PAL_BUILD_VIDEO_MODULE) then
         addTest(file)
     end
 end
+
+
+if (PAL_BUILD_OPENGL_MODULE) then
+    local openglFiles = os.matchfiles("src/opengl/*.c")
+    for _, file in ipairs(openglFiles) do
+        addTest(file)
+    end
+end

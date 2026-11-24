@@ -25,10 +25,10 @@
 
 #include "opengl/platform.h"
 
-PalResult eglInitGL(PalGLAPI, void*, const PalAllocator*);
+PalResult eglInitGL(PalGLAPI, const void*, const PalAllocator*);
 void eglShutdownGL();
 void* eglGetGLProcAddress(const char*);
-const PalBool* eglGetSupportedGLAPIs(void*);
+const PalBool* eglGetSupportedGLAPIs(const void*);
 PalResult eglEnumerateGLFBConfigs(uint32_t*, PalGLFBConfig*);
 PalResult eglCreateGLContext(const PalGLContextCreateInfo*, PalGLContext**);
 void eglDestroyGLContext(PalGLContext*);

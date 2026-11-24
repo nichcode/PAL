@@ -27,9 +27,15 @@ const GLBackend* g_GLBackend = nullptr;
 PalGLInfo g_GLInfo = {0};
 PalBool g_GLInitialized = PAL_FALSE;
 
+typedef union GLSymbol
+{
+    void* raw;
+    PalLibrarySymbol symbol;
+} GLSymbol;
+
 PalResult PAL_CALL palInitGL(
     PalGLAPI api,
-    void* instance,
+    const void* instance,
     const PalAllocator* allocator)
 {
     ASSERT(instance != nullptr, "instance parameter is nullptr");
@@ -54,15 +60,22 @@ const PalGLInfo* PAL_CALL palGetGLInfo(void)
     return nullptr;
 }
 
-void* PAL_CALL palGetGLProcAddress(const char* name)
+PalLibrarySymbol PAL_CALL palGetGLProcAddress(const char* name)
 {
     if (g_GLInitialized) {
-        return g_GLBackend->getProcAddress(name);
+        GLSymbol sym;
+        sym.raw = g_GLBackend->getProcAddress(name);
+        if (sym.raw) {
+            return sym.symbol;
+        }
+
+        return nullptr;
     }
-    return nullptr;   
+
+    return nullptr;
 }
 
-const PalBool* PAL_CALL palGetSupportedGLAPIs(void* instance)
+const PalBool* PAL_CALL palGetSupportedGLAPIs(const void* instance)
 {
     return g_GLBackend->getSupportedAPIs(instance);
 }
