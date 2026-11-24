@@ -46,7 +46,6 @@ const GLBackend g_WglBackend = {
     .makeContextCurrent = wglMakeContextCurrent,
     .swapBuffers = wglSwapBuffers,
     .setSwapInterval = wglSetSwapInterval,
-    .getSupportedAPIs = wglGetSupportedGLAPIs
 };
 
 // clang-format on

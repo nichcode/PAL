@@ -26,7 +26,7 @@
 #if defined(_WIN32)
 extern const GLBackend g_WglBackend;
 #endif // _WIN32
-#if defined(PAL_HAS_WAYLAND_BACKEND) || defined(PAL_HAS_X11_BACKEND)
+#if PLATFORM_EGL
 extern const GLBackend g_EglBackend;
 #endif // PAL_HAS_WAYLAND_BACKEND
 
@@ -34,7 +34,7 @@ static const GLBackend* backends[] = {
 #if defined(_WIN32)
     &g_WglBackend,
 #endif // _WIN32
-#if defined(PAL_HAS_WAYLAND_BACKEND) || defined(PAL_HAS_X11_BACKEND)
+#if PLATFORM_EGL
     &g_EglBackend,
 #endif // PAL_HAS_WAYLAND_BACKEND
     nullptr

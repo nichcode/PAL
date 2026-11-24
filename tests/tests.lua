@@ -53,7 +53,7 @@ if (PAL_BUILD_VIDEO_MODULE) then
 end
 
 
-if (PAL_BUILD_OPENGL_MODULE) then
+if (PAL_BUILD_OPENGL_MODULE) and (PAL_BUILD_VIDEO_MODULE) and (PAL_BUILD_EVENT_MODULE) then
     local openglFiles = os.matchfiles("src/opengl/*.c")
     for _, file in ipairs(openglFiles) do
         addTest(file)

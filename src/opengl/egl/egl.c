@@ -21,7 +21,8 @@
  */
 
 // clang-format off
-#if defined(PAL_HAS_WAYLAND_BACKEND) || defined(PAL_HAS_X11_BACKEND)
+#include "shared.h"
+#if PLATFORM_EGL
 
 #include "opengl/platform.h"
 
@@ -46,7 +47,6 @@ const GLBackend g_EglBackend = {
     .makeContextCurrent = eglMakeContextCurrent,
     .swapBuffers = eglSwapBuffers,
     .setSwapInterval = eglSetSwapInterval,
-    .getSupportedAPIs = eglGetSupportedGLAPIs
 };
 
 // clang-format on

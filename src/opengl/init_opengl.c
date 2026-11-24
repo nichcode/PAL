@@ -22,6 +22,7 @@
 
 #include "platform.h"
 #include "pal2/opengl/init.h"
+#include <string.h>
 
 const GLBackend* g_GLBackend = nullptr;
 PalGLInfo g_GLInfo = {0};
@@ -33,14 +34,58 @@ typedef union GLSymbol
     PalLibrarySymbol symbol;
 } GLSymbol;
 
+const PalBool* eglGetSupportedGLAPIs(const void*);
+const PalBool* wglGetSupportedGLAPIs(const void*);
+
 PalResult PAL_CALL palInitGL(
     PalGLAPI api,
     const void* instance,
     const PalAllocator* allocator)
 {
+    if (g_GLInitialized) {
+        return PAL_RESULT_SUCCESS;
+    }
+
     ASSERT(instance != nullptr, "instance parameter is nullptr");
 
-    return g_GLBackend->init(api, instance, allocator);
+    uint32_t backendCount = 0;
+    const GLBackend* const* backends = platformGetGLBackends(&backendCount);
+    if (backendCount == 0) {
+        return palMakeResult(
+            PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED,
+            PAL_RESULT_SOURCE_NONE,
+            0);
+    }
+
+    uint32_t selectedIndex = 0; // first supported backend
+    const GLBackend* selectedBackend = backends[selectedIndex];
+    PalResult result = selectedBackend->init(api, instance, allocator);
+
+    if (result != PAL_RESULT_SUCCESS) {
+        for (uint32_t i = 0; i < backendCount; i++) {
+            if (i == selectedIndex) {
+                continue;
+            }
+
+            const GLBackend* candidate = backends[i];
+            result = candidate->init(api, instance, allocator);
+
+            if (result == PAL_RESULT_SUCCESS) {
+                selectedBackend = candidate;
+                selectedIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (result != PAL_RESULT_SUCCESS) {
+        return result;
+    }
+
+    g_GLBackend = selectedBackend;
+    g_GLInitialized = PAL_TRUE;
+
+    return PAL_RESULT_SUCCESS;
 }
 
 void PAL_CALL palShutdownGL(void)
@@ -48,6 +93,9 @@ void PAL_CALL palShutdownGL(void)
     ASSERT(g_GLInitialized != PAL_FALSE, "GL system not initialized");
 
     g_GLBackend->shutdown();
+    g_GLBackend = nullptr;
+    g_GLInitialized = PAL_FALSE;
+    memset(&g_GLInfo, 0, sizeof(PalGLInfo));
 }
 
 const PalGLInfo* PAL_CALL palGetGLInfo(void)
@@ -77,5 +125,9 @@ PalLibrarySymbol PAL_CALL palGetGLProcAddress(const char* name)
 
 const PalBool* PAL_CALL palGetSupportedGLAPIs(const void* instance)
 {
-    return g_GLBackend->getSupportedAPIs(instance);
+#if PLATFORM_EGL
+    return eglGetSupportedGLAPIs(instance);
+#elif defined(_WIN32)
+    return wglGetSupportedGLAPIs(instance);
+#endif // PLATFORM_EGL
 }

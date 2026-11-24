@@ -29,6 +29,12 @@
 #define PLATFORM_POSIX 0
 #endif // POSIX detection
 
+#if defined(PAL_HAS_WAYLAND_BACKEND) || defined(PAL_HAS_X11_BACKEND)
+#define PLATFORM_EGL 1
+#else
+#define PLATFORM_EGL 0
+#endif // EGL detection
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>

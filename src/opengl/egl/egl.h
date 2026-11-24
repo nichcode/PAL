@@ -23,7 +23,8 @@
 #ifndef EGL_BACKEND_H
 #define EGL_BACKEND_H
 
-#if defined(PAL_HAS_WAYLAND_BACKEND) || defined(PAL_HAS_X11_BACKEND)
+#include "shared.h"
+#if PLATFORM_EGL
 
 #include "pal2/core/library.h"
 #include "pal2/core/memory.h"

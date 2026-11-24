@@ -101,7 +101,6 @@ typedef void (*SetSwapIntervalFn)(int32_t interval);
 typedef struct GLBackend {
     InitGLFn init;
     ShutdownGLFn shutdown;
-    GetSupportedGLAPIsFn getSupportedAPIs;
     EnumerateGLFBConfigsFn enumerateFBConfigs;
     GetGLProcAddressFn getProcAddress;
 

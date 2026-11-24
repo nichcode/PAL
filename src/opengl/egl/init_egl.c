@@ -20,7 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#if defined(PAL_HAS_WAYLAND_BACKEND) || defined(PAL_HAS_X11_BACKEND)
+#include "shared.h"
+#if PLATFORM_EGL
 
 #include "egl.h"
 #include "opengl/platform.h"
