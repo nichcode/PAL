@@ -28,7 +28,7 @@ static inline double getTime(Timer* timer)
 
 int main(void)
 {
-    palLog(nullptr, "Running cursor test...");
+    palLog(nullptr, "Running cursor itest...");
 
     Timer timer;
     timer.frequency = palGetPerformanceFrequency();
@@ -175,7 +175,9 @@ cleanup:
     }
 
     for (uint32_t i = 0; i < CURSOR_COUNT; i++) {
-        palDestroyCursor(cursors[i]);
+        if (cursors[i]) {
+            palDestroyCursor(cursors[i]);
+        }
     }
 
     palShutdownVideo();

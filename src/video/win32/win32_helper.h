@@ -32,6 +32,11 @@
 #define NOMINMAX
 #endif // NOMINMAX
 
+#ifndef UNICODE
+#define UNICODE
+#define _UNICODE
+#endif // UNICODE
+
 #include "pal2/core/library.h"
 #include "pal2/video/init.h"
 #include "pal2/video/window.h"

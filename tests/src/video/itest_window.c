@@ -11,7 +11,7 @@
 
 int main(void)
 {
-    palLog(nullptr, "Running window test...");
+    palLog(nullptr, "Running window itest...");
 
     PalEventDriver* eventDriver = nullptr;
     PalWindow* window = nullptr;
@@ -45,6 +45,7 @@ int main(void)
     windowCreateInfo.width = 640;
     windowCreateInfo.show = PAL_TRUE;
     windowCreateInfo.title = "Window";
+    windowCreateInfo.style = PAL_WINDOW_STYLE_RESIZABLE;
 
     if (!(features & PAL_VIDEO_FEATURE_DECORATED_WINDOW)) {
         windowCreateInfo.style = PAL_WINDOW_STYLE_BORDERLESS;

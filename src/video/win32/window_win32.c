@@ -84,8 +84,8 @@ PalResult win32CreateWindow(
     PalMonitor* monitor = nullptr;
     PalMonitorInfo monitorInfo;
 
-    uint32_t style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
-    uint32_t exStyle = 0;
+    LONG_PTR style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
+    LONG_PTR exStyle = 0;
 
     if (!(info->style & PAL_WINDOW_STYLE_NO_MINIMIZEBOX)) {
         style |= WS_MINIMIZEBOX;
@@ -127,26 +127,26 @@ PalResult win32CreateWindow(
     palGetMonitorInfo(monitor, &monitorInfo);
     int32_t x, y = 0;
     if (info->center) {
-        x = monitorInfo.x + (monitorInfo.width - info->width) / 2;
-        y = monitorInfo.y + (monitorInfo.height - info->height) / 2;
+        x = monitorInfo.x + (int32_t)(monitorInfo.width - info->width) / 2;
+        y = monitorInfo.y + (int32_t)(monitorInfo.height - info->height) / 2;
     } else {
         x = monitorInfo.x + 100;
         y = monitorInfo.y + 100;
     }
 
     RECT rect = {0, 0, 0, 0};
-    rect.right = info->width;
-    rect.bottom = info->height;
-    AdjustWindowRectEx(&rect, style, 0, exStyle);
+    rect.right = (LONG)info->width;
+    rect.bottom = (LONG)info->height;
+    AdjustWindowRectEx(&rect, (DWORD)style, 0, (DWORD)exStyle);
 
     wchar_t buffer[WINDOW_NAME_SIZE];
     MultiByteToWideChar(CP_UTF8, 0, info->title, -1, buffer, 256);
 
     handle = CreateWindowExW(
-        exStyle,
+        (DWORD)exStyle,
         VIDEO_CLASS,
         buffer,
-        style,
+        (DWORD)style,
         x,
         y,
         rect.right - rect.left,
@@ -394,7 +394,7 @@ void win32GetWindowTitle(
     GetWindowTextW((HWND)window, tmp, WINDOW_NAME_SIZE);
     int len = WideCharToMultiByte(CP_UTF8, 0, tmp, -1, nullptr, 0, 0, 0);
     if (size) {
-        *size = len - 1;
+        *size = (size_t)(len - 1);
     }
 
     if (buffer && bufferSize > 0) {
@@ -409,9 +409,8 @@ void win32GetWindowPos(
     int32_t* x, 
     int32_t* y)
 {
-    //TODO: client
     RECT rect;
-    GetWindowRect((HWND)window, &rect);
+    GetClientRect((HWND)window, &rect);
 
     if (x) {
         *x = rect.left;
@@ -427,16 +426,15 @@ void win32GetWindowSize(
     uint32_t* width, 
     uint32_t* height)
 {
-    //TODO: client
     RECT rect;
-    GetWindowRect((HWND)window, &rect);
+    GetClientRect((HWND)window, &rect);
 
     if (width) {
-        *width = rect.right - rect.left;
+        *width = (uint32_t)(rect.right - rect.left);
     }
 
     if (height) {
-        *height = rect.bottom - rect.top;
+        *height = (uint32_t)(rect.bottom - rect.top);
     }
 }
 
@@ -460,7 +458,7 @@ void win32GetWindowState(
 
 PalBool win32IsWindowVisible(PalWindow* window)
 {
-    return IsWindowVisible((HWND)window);
+    return (PalBool)IsWindowVisible((HWND)window);
 }
 
 PalWindow* win32GetFocusWindow(void)
@@ -490,8 +488,8 @@ void win32SetWindowStyle(
     PalWindow* window, 
     PalWindowStyle style)
 {
-    DWORD win32Style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
-    DWORD exStyle = 0;
+    LONG_PTR win32Style = WS_CAPTION | WS_SYSMENU | WS_OVERLAPPED;
+    LONG_PTR exStyle = 0;
 
     if (style & PAL_WINDOW_STYLE_RESIZABLE) {
         win32Style |= WS_THICKFRAME;
@@ -551,8 +549,24 @@ void win32SetWindowPos(
     int32_t x, 
     int32_t y)
 {
-    // TODO: get client
-    SetWindowPos((HWND)window, nullptr, x, y, 0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
+    HWND hwnd = (HWND)window;
+    RECT rect = { 0, 0, 0, 0 };
+    DWORD style   = (DWORD)GetWindowLongPtrW(hwnd, GWL_STYLE);
+    DWORD exStyle = (DWORD)GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+    BOOL hasMenu  = (GetMenu(hwnd) != NULL);
+
+    AdjustWindowRectEx(&rect, style, hasMenu, exStyle);
+    int outerX = (int)x + rect.left;
+    int outerY = (int)y + rect.top;
+
+    SetWindowPos(
+        hwnd,
+        nullptr,
+        outerX,
+        outerY,
+        0,
+        0,
+        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
 }
 
 void win32SetWindowSize(
@@ -560,15 +574,25 @@ void win32SetWindowSize(
     uint32_t width, 
     uint32_t height)
 {
-    // TODO: get client
+    HWND hwnd = (HWND)window;
+    RECT rect = { 0, 0, (LONG)width, (LONG)height };
+    DWORD style   = (DWORD)GetWindowLongPtrW(hwnd, GWL_STYLE);
+    DWORD exStyle = (DWORD)GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+    BOOL hasMenu  = (GetMenu(hwnd) != NULL);
+
+    AdjustWindowRectEx(&rect, style, hasMenu, exStyle);
+    int outerWidth  = rect.right - rect.left;
+    int outerHeight = rect.bottom - rect.top;
+
     SetWindowPos(
-        (HWND)window,
+        hwnd,
         HWND_TOP,
         0,
         0,
-        width,
-        height,
-        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER);
+        outerWidth,
+        outerHeight,
+        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOZORDER
+    );
 }
 
 void win32SetFocusWindow(PalWindow* window)

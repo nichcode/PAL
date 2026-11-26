@@ -75,7 +75,7 @@ void win32GetCursorPos(PalWindow*, int32_t*, int32_t*);
 void win32SetCursorPos(PalWindow*, int32_t, int32_t);
 void win32SetWindowCursor(PalWindow*, PalCursor*);
 
-const VideoBackend g_win32Backend = {
+const VideoBackend g_Win32Backend = {
     .getDriver = win32GetVideoDriver,
     .init = win32InitVideo,
     .shutdown = win32ShutdownVideo,

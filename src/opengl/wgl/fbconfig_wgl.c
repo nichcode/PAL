@@ -93,15 +93,15 @@ PalResult wglEnumerateGLFBConfigs(
 
             if (configs) {
                 PalGLFBConfig* config = &configs[configCount];
-                config->index = i;
+                config->index = (uint16_t)i;
 
-                config->redBits = values[4];
-                config->greenBits = values[5];
-                config->blueBits = values[6];
-                config->alphaBits = values[7];
-                config->depthBits = values[8];
-                config->stencilBits = values[9];
-                config->samples = values[10];
+                config->redBits = (uint16_t)values[4];
+                config->greenBits = (uint16_t)values[5];
+                config->blueBits = (uint16_t)values[6];
+                config->alphaBits = (uint16_t)values[7];
+                config->depthBits = (uint16_t)values[8];
+                config->stencilBits = (uint16_t)values[9];
+                config->samples = (uint16_t)values[10];
 
                 if (config->samples == 0) {
                     config->samples = 1;
@@ -141,7 +141,7 @@ PalResult wglEnumerateGLFBConfigs(
 
             if (configs) {
                 PalGLFBConfig* config = &configs[configCount];
-                config->index = i;
+                config->index = (uint16_t)i;
 
                 config->redBits = pfd.cRedBits;
                 config->greenBits = pfd.cGreenBits;

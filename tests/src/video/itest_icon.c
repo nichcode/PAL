@@ -11,7 +11,7 @@
 
 int main(void)
 {
-    palLog(nullptr, "Running icon test...");
+    palLog(nullptr, "Running icon itest...");
 
     PalEventDriver* eventDriver = nullptr;
     PalWindow* window = nullptr;

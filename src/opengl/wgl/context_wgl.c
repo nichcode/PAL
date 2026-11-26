@@ -95,10 +95,10 @@ PalResult wglCreateGLContext(
         int32_t flags = 0;
 
         attribs[index++] = WGL_CONTEXT_MAJOR_VERSION_ARB;
-        attribs[index++] = info->major;
+        attribs[index++] = (int32_t)info->major;
 
         attribs[index++] = WGL_CONTEXT_MINOR_VERSION_ARB;
-        attribs[index++] = info->minor;
+        attribs[index++] = (int32_t)info->minor;
 
         if (info->profile != PAL_GL_PROFILE_NONE) {
             attribs[index++] = WGL_CONTEXT_PROFILE_MASK_ARB;

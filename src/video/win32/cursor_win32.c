@@ -40,8 +40,8 @@ PalResult win32CreateCursor(
     iconInfo.fIcon = FALSE;
     iconInfo.hbmColor = bitmap;
     iconInfo.hbmMask = bitmap;
-    iconInfo.xHotspot = info->xHotspot;
-    iconInfo.xHotspot = info->yHotspot;
+    iconInfo.xHotspot = (DWORD)info->xHotspot;
+    iconInfo.xHotspot = (DWORD)info->yHotspot;
 
     HCURSOR _cursor = CreateIconIndirect(&iconInfo);
     win32DestroyBitmap(bitmap);
@@ -81,7 +81,7 @@ PalResult win32CreateCursorFrom(
     }
 
     case PAL_CURSOR_TYPE_WAIT: {
-        cursor = LoadCursorW(nullptr, IDC_WAIT);
+        _cursor = LoadCursorW(nullptr, IDC_WAIT);
         break;
     }
     }
@@ -101,7 +101,7 @@ void win32DestroyCursor(PalCursor* cursor)
 
 void win32ShowCursor(PalBool show)
 {
-    ShowCursor(show);
+    ShowCursor((WINBOOL)show);
 }
 
 void win32ClipCursor(
@@ -156,9 +156,23 @@ void win32SetWindowCursor(
     PalWindow* window,
     PalCursor* cursor)
 {
-    WindowData* data = (WindowData*)GetPropW((HWND)window, VIDEO_PROP);
-    if (data) {
-        data->cursor = (HCURSOR)cursor;
+    HWND hwnd = (HWND)window;
+    WindowData* data = (WindowData*)GetPropW(hwnd, VIDEO_PROP);
+    if (!data) {
+        return;
+    }
+
+    data->cursor = (HCURSOR)cursor;
+
+    POINT pt;
+    if (GetCursorPos(&pt)) {
+        PalBool isHovered = (WindowFromPoint(pt) == hwnd);
+        LRESULT hit = SendMessageW(hwnd, WM_NCHITTEST, 0, MAKELPARAM(pt.x, pt.y));
+        PalBool inClient = isHovered && (hit == HTCLIENT);
+
+        if (inClient || GetCapture() == hwnd) {
+            SetCursor(data->cursor);
+        }
     }
 }
 

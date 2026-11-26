@@ -25,8 +25,8 @@
 
 #include "opengl/platform.h"
 
-PalResult wglInitGL(PalGLAPI, void*, const PalAllocator*);
-void wglShutdownGL();
+PalResult wglInitGL(PalGLAPI, const void*, const PalAllocator*);
+void wglShutdownGL(void);
 void* wglGetGLProcAddress(const char*);
 const PalBool* wglGetSupportedGLAPIs(void*);
 PalResult wglEnumerateGLFBConfigs(uint32_t*, PalGLFBConfig*);

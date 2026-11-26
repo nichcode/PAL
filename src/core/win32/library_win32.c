@@ -36,7 +36,8 @@
  */
 typedef union Symbol
 {
-    FARPROC raw;
+    void* raw;
+    FARPROC farProc;
     PalLibrarySymbol symbol;
 } Symbol;
 
@@ -78,13 +79,15 @@ PalLibrarySymbol platformGetSymbol(
     const char* name)
 {
     Symbol sym;
-    sym.raw = GetProcAddress((HMODULE)library, name);
+    sym.farProc = GetProcAddress((HMODULE)library, name);
     return sym.symbol;
 }
 
 void* platformGetGlobal(PalLibrary* library, const char* name)
 {
-    return (void*)GetProcAddress((HMODULE)library, name);
+    Symbol sym;
+    sym.farProc = GetProcAddress((HMODULE)library, name);
+    return sym.raw;
 }
 
 void platformFreeLibrary(PalLibrary* library)

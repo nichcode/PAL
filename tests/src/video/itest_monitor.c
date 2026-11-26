@@ -54,7 +54,7 @@ static void logMonitorInfo(const PalMonitorInfo* info)
 
 int main(void)
 {
-    palLog(nullptr, "Running monitor test...");
+    palLog(nullptr, "Running monitor itest...");
 
     PalMonitor** monitors = nullptr;
     uint32_t count = 0;

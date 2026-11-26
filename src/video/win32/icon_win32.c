@@ -47,7 +47,7 @@ PalResult win32CreateIcon(
         return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
     }
 
-    icon = (PalIcon*)_icon;
+    *icon = (PalIcon*)_icon;
     return PAL_RESULT_SUCCESS;
 }
 

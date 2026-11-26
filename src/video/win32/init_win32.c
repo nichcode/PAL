@@ -107,46 +107,46 @@ static void checkFeatures(void)
 {
     PalVideoFeatures features = 0;
 
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_MONITOR_SET_MODE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_MONITOR_GET_MODE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_MULTI_MONITORS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_SIZE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_SIZE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_POS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_POS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_TITLE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_TITLE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_NO_MINIMIZEBOX;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_STYLE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_CURSOR_SET_POS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_ICON;
+    features |= PAL_VIDEO_FEATURE_MONITOR_SET_ORIENTATION;
+    features |= PAL_VIDEO_FEATURE_MONITOR_GET_ORIENTATION;
+    features |= PAL_VIDEO_FEATURE_BORDERLESS_WINDOW;
+    features |= PAL_VIDEO_FEATURE_TRANSPARENT_WINDOW;
+    features |= PAL_VIDEO_FEATURE_TOOL_WINDOW;
+    features |= PAL_VIDEO_FEATURE_MONITOR_SET_MODE;
+    features |= PAL_VIDEO_FEATURE_MONITOR_GET_MODE;
+    features |= PAL_VIDEO_FEATURE_MULTI_MONITORS;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_SIZE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_SIZE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_POS;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_POS;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_STATE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_STATE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_VISIBILITY;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_VISIBILITY;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_TITLE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_TITLE;
+    features |= PAL_VIDEO_FEATURE_NO_MAXIMIZEBOX;
+    features |= PAL_VIDEO_FEATURE_NO_MINIMIZEBOX;
+    features |= PAL_VIDEO_FEATURE_CLIP_CURSOR;
+    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_CAPTION;
+    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_TRAY;
+    features |= PAL_VIDEO_FEATURE_WINDOW_FLASH_INTERVAL;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_INPUT_FOCUS;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_INPUT_FOCUS;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_STYLE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_STYLE;
+    features |= PAL_VIDEO_FEATURE_CURSOR_SET_POS;
+    features |= PAL_VIDEO_FEATURE_CURSOR_GET_POS;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_ICON;
 
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
-    s_Win32Driver.features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
+    features |= PAL_VIDEO_FEATURE_TOPMOST_WINDOW;
+    features |= PAL_VIDEO_FEATURE_DECORATED_WINDOW;
+    features |= PAL_VIDEO_FEATURE_CURSOR_SET_VISIBILITY;
+    features |= PAL_VIDEO_FEATURE_WINDOW_GET_MONITOR;
+    features |= PAL_VIDEO_FEATURE_MONITOR_GET_PRIMARY;
+    features |= PAL_VIDEO_FEATURE_FOREIGN_WINDOWS;
+    features |= PAL_VIDEO_FEATURE_MONITOR_VALIDATE_MODE;
+    features |= PAL_VIDEO_FEATURE_WINDOW_SET_CURSOR;
 
     if (g_Win32.getDpiForMonitor && g_Win32.setProcessAwareness) {
         features |= PAL_VIDEO_FEATURE_HIGH_DPI;
@@ -559,7 +559,7 @@ LRESULT CALLBACK videoProc(
                     palPushEvent(driver, &event);
                 }
             }
-#endif PAL_HAS_EVENT_MODULE
+#endif // PAL_HAS_EVENT_MODULE
 
             return 0;
         }
@@ -771,23 +771,23 @@ LRESULT CALLBACK videoProc(
             int32_t win32Keycode;
             int32_t win32Scancode;
             PalBool pressed = PAL_FALSE;
-            PalBool extended = PAL_FALSE;
+            int32_t extended = PAL_FALSE;
 
             pressed = (HIWORD(lParam) & KF_UP) ? PAL_FALSE : PAL_TRUE;
             extended = (lParam >> 24) & 1; // we use this for special keys
             win32Scancode = (HIWORD(lParam) & (KF_EXTENDED | 0xff));
-            win32Keycode = (UINT)wParam;
+            win32Keycode = (int32_t)wParam;
 
             // spcecial scancode handling
             if (!extended && win32Scancode == 0x045) {
                 scancode = PAL_SCANCODE_NUMLOCK;
 
             } else {
-                uint16_t index = win32Scancode | (extended << 8);
-                scancode = s_Win32Keyboard.scancodes[index];
+                uint16_t index = (uint16_t)(win32Scancode | (extended << 8));
+                scancode = (PalScancode)s_Win32Keyboard.scancodes[index];
             }
 
-            keycode = s_Win32Keyboard.keycodes[win32Keycode];
+            keycode = (PalKeycode)s_Win32Keyboard.keycodes[win32Keycode];
             if (keycode == PAL_KEYCODE_UNKNOWN) {
                 keycode = (PalKeycode)(uint32_t)scancode;
             }
@@ -884,7 +884,7 @@ LRESULT CALLBACK videoProc(
             } else if (character >= 0xDC00 && character <= 0xDFFF) {
                 if (s_Win32Keyboard.pendingHighSurrogate) {
                     // low surrogate we combine both
-                    uint32_t high = s_Win32Keyboard.pendingHighSurrogate - 0xD800;
+                    uint32_t high = (uint32_t)s_Win32Keyboard.pendingHighSurrogate - 0xD800;
                     uint32_t low = character - 0xDC00;
                     codepoint = 0x10000 + ((high << 10) | low);
                     s_Win32Keyboard.pendingHighSurrogate = 0;

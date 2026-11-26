@@ -24,7 +24,7 @@
 
 #include "win32_helper.h"
 
-HBITMAP win32CreateBitmap(
+PalResult win32CreateBitmap(
     uint32_t width, 
     uint32_t height, 
     const uint8_t* pixels,
@@ -32,8 +32,8 @@ HBITMAP win32CreateBitmap(
 {
     BITMAPV5HEADER bitInfo = {0};
     bitInfo.bV5Size = sizeof(BITMAPV5HEADER);
-    bitInfo.bV5Width = width;
-    bitInfo.bV5Height = -(int32_t)height; // this is topdown by default
+    bitInfo.bV5Width = (LONG)width;
+    bitInfo.bV5Height = -(LONG)height; // this is topdown by default
 
     bitInfo.bV5Planes = 1;
     bitInfo.bV5BitCount = 32; // PAL supports 32 bits

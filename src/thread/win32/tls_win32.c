@@ -32,7 +32,8 @@
 
 PalTLSId platformCreateTLS(PaTlsDestructorFn destructor)
 {
-    DWORD tlsid = FlsAlloc((PFLS_CALLBACK_FUNCTION)(void*)destructor);
+    PFLS_CALLBACK_FUNCTION callback = (PFLS_CALLBACK_FUNCTION)(uintptr_t)destructor;
+    DWORD tlsid = FlsAlloc(callback);
     if (tlsid == FLS_OUT_OF_INDEXES) {
         return 0;
     }

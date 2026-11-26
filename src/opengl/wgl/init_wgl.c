@@ -25,6 +25,7 @@
 #include "wgl.h"
 #include "opengl/platform.h"
 #include "pal2/opengl/init.h"
+#include <stdio.h>
 
 #define GL_CLASS L"PALGLClass"
 
@@ -32,92 +33,103 @@ GDI g_Gdi = {0};
 WGL g_Wgl = {0};
 static PalBool s_SupportedAPIs[2] = {0};
 
+typedef union WGLSymbol {
+    void* raw;
+    PROC proc;
+    FARPROC farProc;
+} WGLSymbol;
+
 /* =========================================================================
  * Helper
  * ========================================================================= */
 
-typedef union WGLSymbol
-{
-    void* raw;
-    PalLibrarySymbol symbol;
-} WGLSymbol;
-
-static PalLibrarySymbol loadWGLProc(const char* name)
+static PROC loadWGLProc(const char* name)
 {
     WGLSymbol sym;
-    sym.raw = g_Wgl.getProcAddress(name);
-    if (sym.raw) {
-        return sym.symbol;
+    sym.farProc = g_Wgl.getProcAddress(name);
+    if (sym.farProc) {
+        return sym.proc;
     }
-    
+
+    if (g_Wgl.opengl) {
+        WGLSymbol sym;
+        sym.farProc = GetProcAddress((HMODULE)g_Wgl.opengl, name);
+        if (sym.farProc) {
+            return sym.proc;
+        }
+    }
+
     return nullptr;
 }
 
-static void loadProcs()
+static void loadProcs(PalBool loadExtensions)
 {
     // clang-format off
 
-    g_Wgl.getProcAddress = (wglGetProcAddressFn)palGetSymbol(
-        g_Wgl.opengl,
-        "wglGetProcAddress");
+    if (!loadExtensions) {
+        g_Wgl.getProcAddress = (wglGetProcAddressFn)palGetSymbol(
+            g_Wgl.opengl,
+            "wglGetProcAddress");
 
-    g_Gdi.choosePixelFormat = (ChoosePixelFormatFn)palGetSymbol(
-        g_Gdi.gdi,
-        "ChoosePixelFormat");
+        g_Gdi.choosePixelFormat = (ChoosePixelFormatFn)palGetSymbol(
+            g_Gdi.gdi,
+            "ChoosePixelFormat");
 
-    g_Gdi.setPixelFormat = (SetPixelFormatFn)palGetSymbol(
-        g_Gdi.gdi,
-        "SetPixelFormat");
+        g_Gdi.setPixelFormat = (SetPixelFormatFn)palGetSymbol(
+            g_Gdi.gdi,
+            "SetPixelFormat");
 
-    g_Gdi.getPixelFormat = (GetPixelFormatFn)palGetSymbol(
-        g_Gdi.gdi,
-        "GetPixelFormat");
+        g_Gdi.getPixelFormat = (GetPixelFormatFn)palGetSymbol(
+            g_Gdi.gdi,
+            "GetPixelFormat");
 
-    g_Gdi.describePixelFormat = (DescribePixelFormatFn)palGetSymbol(
-        g_Gdi.gdi,
-        "DescribePixelFormat");
+        g_Gdi.describePixelFormat = (DescribePixelFormatFn)palGetSymbol(
+            g_Gdi.gdi,
+            "DescribePixelFormat");
 
-    g_Gdi.swapBuffers = (SwapBuffersFn)palGetSymbol(
-        g_Gdi.gdi,
-        "SwapBuffers");
+        g_Gdi.swapBuffers = (GDISwapBuffersFn)palGetSymbol(
+            g_Gdi.gdi,
+            "SwapBuffers");
 
-    g_Wgl.createContext = (wglCreateContextFn)palGetSymbol(
-        g_Wgl.opengl,
-        "wglCreateContext");
+        g_Wgl.createContext = (wglCreateContextFn)palGetSymbol(
+            g_Wgl.opengl,
+            "wglCreateContext");
 
-    g_Wgl.deleteContext = (wglDeleteContextFn)palGetSymbol(
-        g_Wgl.opengl,
-        "wglDeleteContext");
+        g_Wgl.deleteContext = (wglDeleteContextFn)palGetSymbol(
+            g_Wgl.opengl,
+            "wglDeleteContext");
 
-    g_Wgl.makeCurrent = (wglMakeCurrentFn)palGetSymbol(
-        g_Wgl.opengl,
-        "wglMakeCurrent");
+        g_Wgl.makeCurrent = (wglMakeCurrentFn)palGetSymbol(
+            g_Wgl.opengl,
+            "wglMakeCurrent");
 
-    g_Wgl.shareLists = (wglShareListsFn)palGetSymbol(
-        g_Wgl.opengl,
-        "wglShareLists");
+        g_Wgl.shareLists = (wglShareListsFn)palGetSymbol(
+            g_Wgl.opengl,
+            "wglShareLists");
 
-    g_Wgl.choosePixelFormatARB = (wglChoosePixelFormatARBFn)loadWGLProc(
+    } else {
+        g_Wgl.choosePixelFormatARB = (wglChoosePixelFormatARBFn)loadWGLProc(
         "wglChoosePixelFormatARB");
 
-    g_Wgl.getPixelFormatAttribivARB = (wglGetPixelFormatAttribivARBFn)loadWGLProc(
-        "wglGetPixelFormatAttribivARB");
+        g_Wgl.getPixelFormatAttribivARB = (wglGetPixelFormatAttribivARBFn)loadWGLProc(
+            "wglGetPixelFormatAttribivARB");
 
-    g_Wgl.createContextAttribsARB = (wglCreateContextAttribsARBFn)loadWGLProc(
-        "wglCreateContextAttribsARB");
+        g_Wgl.createContextAttribsARB = (wglCreateContextAttribsARBFn)loadWGLProc(
+            "wglCreateContextAttribsARB");
 
-    g_Wgl.swapIntervalEXT = (wglSwapIntervalEXTFn)loadWGLProc(
-        "wglSwapIntervalEXT");
+        g_Wgl.swapIntervalEXT = (wglSwapIntervalEXTFn)loadWGLProc(
+            "wglSwapIntervalEXT");
 
-    g_Wgl.getExtensionsStringARB = (wglGetExtensionsStringARBFn)loadWGLProc(
-        "wglGetExtensionsStringARB");
+        g_Wgl.getExtensionsStringARB = (wglGetExtensionsStringARBFn)loadWGLProc(
+            "wglGetExtensionsStringARB");
 
-    g_Wgl.getExtensionsStringEXT = (wglGetExtensionsStringEXTFn)loadWGLProc(
-        "wglGetExtensionsStringEXT");
+        g_Wgl.getExtensionsStringEXT = (wglGetExtensionsStringEXTFn)loadWGLProc(
+            "wglGetExtensionsStringEXT");
 
-    g_Wgl.glGetString = (glGetStringFn)palGetSymbol(
-        g_Wgl.opengl,
-        "glGetString");
+        g_Wgl.glGetString = (glGetStringFn)palGetSymbol(
+            g_Wgl.opengl,
+            "glGetString");
+    }
 
     // clang-format on
 }
@@ -134,6 +146,8 @@ PalResult wglInitGL(
     const void* instance,
     const PalAllocator* allocator)
 {
+    (void)allocator;
+
     PalResult result = PAL_RESULT_CODE_PLATFORM_FAILURE;
     g_GLInfo.api = PAL_GL_API_OPENGL;
     g_GLInfo.backend = PAL_GL_BACKEND_WGL;
@@ -143,14 +157,14 @@ PalResult wglInitGL(
         return PAL_RESULT_CODE_FEATURE_NOT_SUPPORTED;
     }
 
-    g_Gdi.gdi = LoadLibraryA("gdi32.dll");
-    g_Wgl.opengl = LoadLibraryA("opengl32.dll");
+    g_Gdi.gdi = palLoadLibrary("gdi32.dll");
+    g_Wgl.opengl = palLoadLibrary("opengl32.dll");
     if (!g_Gdi.gdi || !g_Wgl.opengl) {
         result = palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
         goto cleanup;
     }
 
-    g_Wgl.instance = instance;
+    g_Wgl.instance = (HINSTANCE)instance;
     WNDCLASSEXW wc = {0};
     wc.style = CS_OWNDC;
     wc.lpfnWndProc = DefWindowProcW;
@@ -181,7 +195,7 @@ PalResult wglInitGL(
         goto cleanup;
     }
 
-    loadProcs();
+    loadProcs(PAL_FALSE);
 
     g_Wgl.hdc = GetDC(g_Wgl.window);
 
@@ -204,6 +218,8 @@ PalResult wglInitGL(
         result = palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_WIN32, GetLastError());
         goto cleanup;
     }
+
+    loadProcs(PAL_TRUE);
 
     const char* version = (const char*)g_Wgl.glGetString(GL_VERSION);
     if (version) {
@@ -297,19 +313,21 @@ void wglShutdownGL()
         UnregisterClassW(GL_CLASS, g_Wgl.instance);
     }
 
-    FreeLibrary(g_Wgl.opengl);
-    FreeLibrary(g_Gdi.gdi);
+    palFreeLibrary(g_Wgl.opengl);
+    palFreeLibrary(g_Gdi.gdi);
 
     memset(&g_Wgl, 0, sizeof(WGL));
 }
 
 void* wglGetGLProcAddress(const char* name)
 {
-    void* proc = g_Wgl.getProcAddress(name);
-    if (!proc) {
-        proc = (void*)GetProcAddress(g_Wgl.opengl, name);
+    WGLSymbol sym;
+    sym.proc = g_Wgl.getProcAddress(name);
+    if (!sym.proc) {
+        sym.farProc = GetProcAddress((HMODULE)g_Wgl.opengl, name);
     }
-    return proc;
+
+    return sym.raw;
 }
 
 const PalBool* wglGetSupportedGLAPIs(const void* instance)

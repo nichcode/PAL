@@ -111,7 +111,7 @@ typedef int(WINAPI* DescribePixelFormatFn)(
 
 typedef int(WINAPI* GetPixelFormatFn)(HDC);
 
-typedef BOOL(WINAPI* SwapBuffersFn)(HDC);
+typedef BOOL(WINAPI* GDISwapBuffersFn)(HDC);
 
 /* =========================================================================
  * WGL
@@ -170,7 +170,7 @@ typedef struct GDI {
     DescribePixelFormatFn describePixelFormat;
     ChoosePixelFormatFn choosePixelFormat;
     GetPixelFormatFn getPixelFormat;
-    SwapBuffersFn swapBuffers;
+    GDISwapBuffersFn swapBuffers;
 } GDI;
 
 typedef struct WGL {
