@@ -31,3 +31,6 @@ Makefile
 
 # python cache files
 **.pyc
+
+# Cmake files
+CMakeLists.txt
