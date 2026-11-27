@@ -1,4 +1,3 @@
-
 -- Build PAL as a static library
 PAL_BUILD_STATIC = false
 
