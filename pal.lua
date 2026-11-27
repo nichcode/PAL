@@ -153,3 +153,60 @@ project "PAL2"
 
         filter {}
     end
+
+    if PAL_BUILD_GRAPHICS_MODULE then
+        files { "src/graphics/*.c" }
+
+        local vulkanSdk = os.getenv("VULKAN_SDK")
+        local hasVulkan = false
+
+        if vulkanSdk and os.isfile(path.join(vulkanSdk, "include/vulkan/vulkan.h")) then
+            hasVulkan = true
+            includedirs {
+                path.join(vulkanSdk, "include")
+            }
+            
+        elseif os.isfile("/usr/include/vulkan/vulkan.h") or os.isfile("/usr/local/include/vulkan/vulkan.h") then
+            hasVulkan = true
+        end
+
+        if hasVulkan then
+            defines { "PAL_HAS_VULKAN_BACKEND=1" }
+            files { "src/graphics/vulkan/*.c" }
+        else
+            defines { "PAL_HAS_VULKAN_BACKEND=0" }
+        end
+
+        local hasD3D12 = false
+        local d3d12Include = ""
+        if (_ACTION == "vs2022") or (_ACTION == "vs2026") then
+            local base = "C:/Program Files (x86)/Windows Kits/10/Include"
+            local versions = os.matchdirs(base .. "/*")
+            table.sort(versions)
+
+            for i = #versions, 1, -1 do
+                local v = versions[i]
+                d3d12Include = path.join(v, "um")
+                if (os.isdir(d3d12Include)) then
+                    break
+                end
+            end
+        else
+            d3d12Include = path.join(gccBasePath, "include")
+        end
+
+        if (os.isfile(path.join(d3d12Include, "d3d12.h"))) then
+            hasD3D12 = true
+        end
+
+        if (hasD3D12) then
+            includedirs {
+                d3d12Include
+            }
+
+            defines { "PAL_HAS_D3D12_BACKEND=1" }
+            files { "src/graphics/d3d12/*.c" }
+        else
+            defines { "PAL_HAS_D3D12_BACKEND=0" }
+        end
+    end
