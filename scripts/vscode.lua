@@ -44,7 +44,6 @@ function generateProperties()
     prjIncludes = removeDuplicates(prjIncludes)
     prjDefines = removeDuplicates(prjDefines)
 
-    os.mkdir(".vscode")
     local file = io.open(".vscode/c_cpp_properties.json", "w")
     if not file then
         print("Failed to write to .vscode/c_cpp_properties.json")
@@ -83,7 +82,6 @@ function generateTasks()
     print("\n=======================================================")
     print("Generating .vscode/tasks.json")
 
-    os.mkdir(".vscode")
     local file = io.open(".vscode/tasks.json", "w")
     if not file then
         print("Failed to write to .vscode/tasks.json")
@@ -128,7 +126,6 @@ function generateLaunch()
     print("\n=======================================================")
     print("Generating .vscode/launch.json")
 
-    os.mkdir(".vscode")
     local file = io.open(".vscode/launch.json", "w")
     if not file then
         print("Failed to write to .vscode/launch.json")
@@ -190,8 +187,8 @@ function generateLaunch()
     file:write('            "setupCommands": [\n')
     file:write('                {\n')
     file:write('                    "description": "Let gdb load our script",\n')
-    file:write('                    "text": "source ${workspaceFolder}/scripts/gdb-format.py",\n')
-    file:write('                    "ignoreFailures": false\n')
+    file:write('                    "text": "source ${workspaceFolder}/build/gdb-format.py",\n')
+    file:write('                    "ignoreFailures": true\n')
     file:write('                },\n')
     file:write('                {\n')
     file:write('                    "description": "Enable pretty printing for gdb",\n')
@@ -215,7 +212,6 @@ function generateSettings()
     print("\n=======================================================")
     print("Generating .vscode/settings.json")
 
-    os.mkdir(".vscode")
     local file = io.open(".vscode/settings.json", "w")
     if not file then
         print("Failed to write to .vscode/settings.json")
@@ -231,9 +227,34 @@ function generateSettings()
     file:close()
 end
 
+function generateGdbFormatter()
+    print("\n=======================================================")
+    print("Generating GDB formatter")
+
+    local nullDev = os.ishost("windows") and "NUL" or "/dev/null"
+    local candidates = { "python", "python3", "py -3" }
+
+    for _, py in ipairs(candidates) do
+        local cmd = string.format(
+            '%s scripts/gen-formatdb.py >%s 2>&1 && %s scripts/gen-format.py gdb >%s 2>&1',
+            py, nullDev, py, nullDev
+        )
+        
+        if os.execute(cmd) then
+            return
+        end
+    end
+
+    print("Python not found. Skipping GDB formatter generation.")
+end
+
+
 function generateVSCode()
+    os.mkdir(".vscode")
+    
     generateProperties()
     generateTasks()
     generateLaunch()
     generateSettings()
+    generateGdbFormatter()
 end
