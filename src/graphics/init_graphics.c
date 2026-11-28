@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "platform.h"
 #include "pal2/graphics/init.h"
+#include "platform.h"
 
 #define MAX_BACKENDS (PAL_MAX_CUSTOM_BACKENDS + 2)
 
@@ -40,8 +40,11 @@ PalBool g_GraphicsInitialized = PAL_FALSE;
 
 static PalBool validateVtable1(const PalGraphicsBackendVtable1* vtable)
 {
-    // clang-format off
+    if (!vtable) {
+        return PAL_FALSE;
+    }
 
+    // clang-format off
     if (!vtable->enumerateAdapters                             ||
         !vtable->getAdapterInfo                                ||
         !vtable->getAdapterCapabilities                        ||
@@ -126,53 +129,80 @@ static PalBool validateVtable1(const PalGraphicsBackendVtable1* vtable)
         !vtable->destroyPipeline) {
         return PAL_FALSE;
     }
-
     // clang-format on
+
     return PAL_TRUE;
 }
 
 static PalBool validateVtable2(const PalGraphicsBackendVtable2* vtable)
 {
-    if (!validateVtable1(vtable->vtable1)) {
+    if (!vtable || !validateVtable1(vtable->vtable1)) {
         return PAL_FALSE;
     }
 
     // clang-format off
-
-    if (!vtable->canQueueShareOwnership      || 
+    if (!vtable->canQueueShareOwnership      ||
         !vtable->canQueueUseUsageState       ||
         !vtable->canQueueUsePipelineStages   ||
         !vtable->cmdImageOwnershipTransfer   ||
         !vtable->cmdBufferOwnershipTransfer) {
         return PAL_FALSE;
     }
-
     // clang-format on
+
     return PAL_TRUE;
 }
 
-static PalBool addBackend(const PalGraphicsBackendInfo* info)
+static PalBool addBackend(
+    const PalGraphicsBackendInfo* info,
+    PalBool isCore,
+    ShutdownGraphicsFn shutdownFn)
 {
-    GraphicsBackend* backend = &s_Graphics.backends[s_Graphics.backendCount++];
-    memset(backend, 0, sizeof(GraphicsBackend));
+    if (!info || !info->vtable || s_Graphics.backendCount >= MAX_BACKENDS) {
+        return PAL_FALSE;
+    }
+
+    GraphicsBackend backend = {0};
+    backend.isCore = isCore;
+    backend.shutdown = shutdownFn;
 
     if (info->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1) {
-        const PalGraphicsBackendVtable1* vtable = (PalGraphicsBackendVtable1*)info->vtable;
+        const PalGraphicsBackendVtable1* vtable = (const PalGraphicsBackendVtable1*)info->vtable;
         if (!validateVtable1(vtable)) {
             return PAL_FALSE;
         }
-        backend->vtbl1 = vtable;
+        backend.vtbl1 = vtable;
 
     } else if (info->version == PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2) {
-        const PalGraphicsBackendVtable2* vtable = (PalGraphicsBackendVtable2*)info->vtable;
+        const PalGraphicsBackendVtable2* vtable = (const PalGraphicsBackendVtable2*)info->vtable;
         if (!validateVtable2(vtable)) {
             return PAL_FALSE;
         }
-        backend->vtbl1 = vtable->vtable1;
-        backend->vtbl2 = vtable;
+        backend.vtbl1 = vtable->vtable1;
+        backend.vtbl2 = vtable;
+
+    } else {
+        return PAL_FALSE;
     }
 
+    s_Graphics.backends[s_Graphics.backendCount++] = backend;
     return PAL_TRUE;
+}
+
+static void shutdownCoreBackends(void)
+{
+    for (uint32_t i = 0; i < s_Graphics.backendCount; i++) {
+        GraphicsBackend* backend = &s_Graphics.backends[i];
+        if (backend->isCore && backend->shutdown) {
+            backend->shutdown();
+        }
+    }
+}
+
+const GraphicsBackend* graphicsGetBackends(uint32_t* count)
+{
+    *count = s_Graphics.backendCount;
+    return s_Graphics.backends;
 }
 
 /* =========================================================================
@@ -189,45 +219,64 @@ PalResult PAL_CALL palInitGraphics(
         return PAL_RESULT_SUCCESS;
     }
 
+    if (backendCount > 0 && !backends) {
+        return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_NONE, 0);
+    }
+
+    if (backendCount > PAL_MAX_CUSTOM_BACKENDS) {
+        return palMakeResult(PAL_RESULT_CODE_OUT_OF_MEMORY, PAL_RESULT_SOURCE_NONE, 0);
+    }
+
     uint32_t coreBackendCount = 0;
     const GraphicsBackend* const* coreBackends = platformGetGraphicsBackends(&coreBackendCount);
     for (uint32_t i = 0; i < coreBackendCount; i++) {
-        const GraphicsBackend* backend = coreBackends[i];
-        PalResult result = backend->init(debugger, allocator);
+        const GraphicsBackend* coreBackend = coreBackends[i];
+        if (!coreBackend || !coreBackend->init) {
+            continue;
+        }
 
+        PalResult result = coreBackend->init(debugger, allocator);
         if (result != PAL_RESULT_SUCCESS) {
             continue;
         }
 
         PalGraphicsBackendInfo backendInfo = {0};
-        backendInfo.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
-        backendInfo.vtable = backend->vtbl2;
-        addBackend(&backendInfo);
+        if (coreBackend->vtbl2) {
+            backendInfo.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_2;
+            backendInfo.vtable = coreBackend->vtbl2;
+        } else {
+            backendInfo.version = PAL_GRAPHICS_BACKEND_VTABLE_VERSION_1;
+            backendInfo.vtable = coreBackend->vtbl1;
+        }
+
+        if (!addBackend(&backendInfo, PAL_TRUE, coreBackend->shutdown)) {
+            if (coreBackend->shutdown) {
+                coreBackend->shutdown();
+            }
+
+            shutdownCoreBackends();
+            memset(&s_Graphics, 0, sizeof(s_Graphics));
+            return palMakeResult(PAL_RESULT_CODE_PLATFORM_FAILURE, PAL_RESULT_SOURCE_NONE, 0);
+        }
     }
 
     for (uint32_t i = 0; i < backendCount; i++) {
-        if (!addBackend(&backends[i])) {
-            return PAL_RESULT_CODE_INVALID_ARGUMENT;
+        if (!addBackend(&backends[i], PAL_FALSE, NULL)) {
+            shutdownCoreBackends();
+            memset(&s_Graphics, 0, sizeof(s_Graphics));
+            return palMakeResult(PAL_RESULT_CODE_INVALID_ARGUMENT, PAL_RESULT_SOURCE_NONE, 0);
         }
     }
-    
+
+    s_Graphics.allocator = allocator;
     g_GraphicsInitialized = PAL_TRUE;
     return PAL_RESULT_SUCCESS;
 }
 
-void PAL_CALL palShutdownGraphics()
+void PAL_CALL palShutdownGraphics(void)
 {
     ASSERT(g_GraphicsInitialized != PAL_FALSE, "Graphics system not initialized");
-
-    uint32_t backendCount = 0;
-    const GraphicsBackend* const* backends = platformGetGraphicsBackends(&backendCount);
-    for (uint32_t i = 0; i < backendCount; i++) {
-        const GraphicsBackend* backend = backends[i];
-        if (backend->isCore) {
-            backend->shutdown();
-        }
-    }
-
+    shutdownCoreBackends();
     memset(&s_Graphics, 0, sizeof(s_Graphics));
     g_GraphicsInitialized = PAL_FALSE;
 }

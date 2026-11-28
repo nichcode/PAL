@@ -23,32 +23,39 @@
 #ifndef GRAPHICS_PLATFORM_H
 #define GRAPHICS_PLATFORM_H
 
-#include "shared.h"
 #include "pal2/core/memory.h"
 #include "pal2/graphics/init.h"
 #include "pal2/graphics/vtable2.h"
+#include "shared.h"
 
 /** Initializes the graphics backend. */
 typedef PalResult (*InitGraphicsFn)(
     const PalGraphicsDebugger* debugger,
     const PalAllocator* allocator);
 
-/** Shutdowns the graphics backend */
+/** Shuts down the graphics backend. */
 typedef void (*ShutdownGraphicsFn)(void);
 
-typedef struct GraphicsVtable {
+typedef struct GraphicsBackend {
     PalBool isCore;
     InitGraphicsFn init;
     ShutdownGraphicsFn shutdown;
-    
+
     const PalGraphicsBackendVtable1* vtbl1;
     const PalGraphicsBackendVtable2* vtbl2;
 } GraphicsBackend;
 
+#define GRAPHICS_HANDLE(name)                                                                                          \
+    struct name {                                                                                                      \
+        GraphicsBackend* backend;                                                                                      \
+    };
 
 extern PalBool g_GraphicsInitialized;
 
 /** Gets all supported internal backends per platform. */
 const GraphicsBackend* const* platformGetGraphicsBackends(uint32_t* count);
+
+/** Gets all active backends registered during initialization. */
+const GraphicsBackend* graphicsGetBackends(uint32_t* count);
 
 #endif // GRAPHICS_PLATFORM_H
