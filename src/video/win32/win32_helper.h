@@ -20,8 +20,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef _PAL_VIDEO_WIN32_H
-#define _PAL_VIDEO_WIN32_H
+#ifndef WIN32_HELPER_H
+#define WIN32_HELPER_H
 #ifdef _WIN32
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -124,4 +124,4 @@ PalResult win32CreateBitmap(
 void win32DestroyBitmap(HBITMAP map);
 
 #endif // _WIN32
-#endif // _PAL_VIDEO_WIN32_H
+#endif // WIN32_HELPER_H

@@ -221,6 +221,6 @@ PAL_API PalResult PAL_CALL palInitGraphics(
  *
  * @sa palInitGraphics
  */
-PAL_API void PAL_CALL palShutdownGraphics();
+PAL_API void PAL_CALL palShutdownGraphics(void);
 
 #endif // PAL_GRAPHICS_INIT_H

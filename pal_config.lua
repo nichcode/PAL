@@ -5,7 +5,7 @@ PAL_BUILD_STATIC = false
 PAL_BUILD_TESTS = true
 
 -- Generate compile_commands
-PAL_GENERATE_COMPILE_COMMANDS = true
+PAL_GENERATE_COMPILE_COMMANDS = false
 
 -- Generate .vscode folder (GNU Makefiles)
 PAL_GENERATE_VSCODE = true
@@ -20,13 +20,13 @@ PAL_BUILD_EVENT_MODULE = true
 PAL_BUILD_SYSTEM_MODULE = true
 
 -- Build thread module
-PAL_BUILD_THREAD_MODULE = true
+PAL_BUILD_THREAD_MODULE = false
 
 -- Build video module
 PAL_BUILD_VIDEO_MODULE = true
 
 -- Build opengl module
-PAL_BUILD_OPENGL_MODULE = true
+PAL_BUILD_OPENGL_MODULE = false
 
 -- Build graphics module
-PAL_BUILD_GRAPHICS_MODULE = false
+PAL_BUILD_GRAPHICS_MODULE = true
