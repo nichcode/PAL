@@ -1,6 +1,6 @@
 /**
  * @file vtable2.h
- * 
+ *
  * Copyright (C) 2025-2026 Nicholas Agbo <agbonicholas04@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
@@ -27,6 +27,38 @@
 
 #include "vtable1.h"
 
+/** This function has the same semantics and rules as palCanQueueShareOwnership(). */
+typedef PalBool(PAL_CALL* CanQueueShareOwnershipFn)(
+    PalQueue*,
+    PalQueue*);
+
+/** This function has the same semantics and rules as palCanQueueUseUsageState(). */
+typedef PalBool(PAL_CALL* CanQueueUseUsageStateFn)(
+    PalQueue*,
+    PalUsageState);
+
+/** This function has the same semantics and rules as palCanQueueUsePipelineStages(). */
+typedef PalBool(PAL_CALL* CanQueueUsePipelineStagesFn)(
+    PalQueue*,
+    PalPipelineStages);
+
+/** This function has the same semantics and rules as palCmdImageOwnershipTransfer(). */
+typedef void(PAL_CALL* CmdImageOwnershipTransferFn)(
+    PalCommandBuffer*,
+    PalCommandBuffer*,
+    PalImage*,
+    PalImageSubresourceRange*,
+    PalUsageState,
+    PalPipelineStages);
+
+/** This function has the same semantics and rules as palCmdBufferOwnershipTransfer(). */
+typedef void(PAL_CALL* CmdBufferOwnershipTransferFn)(
+    PalCommandBuffer*,
+    PalCommandBuffer*,
+    PalBuffer*,
+    PalUsageState,
+    PalPipelineStages);
+
 /**
  * @struct PalGraphicsBackendVtable2
  * @brief Graphics backend dispatch table version 2.
@@ -39,19 +71,12 @@
  * @ingroup pal_graphics
  */
 typedef struct PalGraphicsBackendVtable2 {
-    //clang-format off
-    const PalGraphicsBackendVtable1* vtable1; /**< Version 1 vtable. */
-    /** Implements @ref palCanQueueShareOwnership(). */
-    PalBool(PAL_CALL* canQueueShareOwnership)(PalQueue*, PalQueue*);
-    /** Implements @ref palCanQueueUseUsageState(). */
-    PalBool(PAL_CALL* canQueueUseUsageState)(PalQueue*, PalUsageState);
-    /** Implements @ref palCanQueueUsePipelineStages(). */
-    PalBool(PAL_CALL* canQueueUsePipelineStages)(PalQueue*, PalPipelineStages);
-    /** Implements @ref palCmdImageOwnershipTransfer(). */
-    void(PAL_CALL* cmdImageOwnershipTransfer)(PalCommandBuffer*, PalCommandBuffer*, PalImage*, PalImageSubresourceRange*, PalUsageState, PalPipelineStages);
-    /** Implements @ref palCmdBufferOwnershipTransfer(). */
-    void(PAL_CALL* cmdBufferOwnershipTransfer)(PalCommandBuffer*, PalCommandBuffer*, PalBuffer*, PalUsageState, PalPipelineStages);
-    //clang-format on
+    const PalGraphicsBackendVtable1* vtable1;
+    CanQueueShareOwnershipFn canQueueShareOwnership;
+    CanQueueUseUsageStateFn canQueueUseUsageState;
+    CanQueueUsePipelineStagesFn canQueueUsePipelineStages;
+    CmdImageOwnershipTransferFn cmdImageOwnershipTransfer;
+    CmdBufferOwnershipTransferFn cmdBufferOwnershipTransfer;
 } PalGraphicsBackendVtable2;
 
 #endif // PAL_GRAPHICS_VTABLE2_H
